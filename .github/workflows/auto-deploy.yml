@@ -106,10 +106,14 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: ./backend
 
       - name: 🚀 Deploy Backend
-        run: wrangler deploy
+        run: npx wrangler deploy
         working-directory: ./backend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         continue-on-error: false
 
       - name: ✅ Backend deployed
@@ -159,10 +163,14 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: ./frontend
 
       - name: 🚀 Deploy Frontend to Cloudflare Pages
-        run: wrangler pages deploy dist --project-name=vantrangedu
+        run: npx wrangler pages deploy dist --project-name=vantrangedu
         working-directory: ./frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         continue-on-error: false
 
       - name: ✅ Frontend deployed
