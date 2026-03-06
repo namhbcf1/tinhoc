@@ -1,0 +1,119 @@
+{
+  "examType": "vstep",
+  "level": "B2",
+  "title": "VSTEP B2 Mock Test 1",
+  "description": "Bài thi thử VSTEP B2 - Đánh giá năng lực tiếng Anh trình độ B2",
+  "duration": 120,
+  "passingScore": 60,
+  "shuffleQuestions": true,
+  "shuffleOptions": true,
+  "sections": [
+    {
+      "name": "Listening",
+      "description": "Phần nghe hiểu",
+      "timeLimit": 40,
+      "isLockedAfterComplete": true,
+      "scoringRule": "raw_to_band",
+      "instructions": "Bạn sẽ nghe các đoạn hội thoại và trả lời câu hỏi. Mỗi đoạn sẽ được phát 2 lần.",
+      "questions": [
+        {
+          "type": "mcq",
+          "questionText": "What is the main topic of the conversation?",
+          "options": [
+            "A) Planning a vacation",
+            "B) Discussing work schedule",
+            "C) Making dinner plans",
+            "D) Shopping for groceries"
+          ],
+          "answerKey": "A",
+          "points": 1,
+          "difficulty": "easy",
+          "explanation": "The conversation focuses on planning a vacation trip.",
+          "orderIndex": 1
+        },
+        {
+          "type": "mcq",
+          "questionText": "Where does the man want to go?",
+          "options": [
+            "A) Beach",
+            "B) Mountains",
+            "C) City",
+            "D) Countryside"
+          ],
+          "answerKey": "B",
+          "points": 1,
+          "difficulty": "medium",
+          "explanation": "The man mentions wanting to go to the mountains for hiking.",
+          "orderIndex": 2
+        }
+      ]
+    },
+    {
+      "name": "Reading",
+      "description": "Phần đọc hiểu",
+      "timeLimit": 60,
+      "isLockedAfterComplete": false,
+      "scoringRule": "raw_to_band",
+      "instructions": "Đọc các đoạn văn và trả lời câu hỏi.",
+      "questions": [
+        {
+          "type": "mcq",
+          "questionText": "What is the main idea of the passage?",
+          "options": [
+            "A) The history of technology",
+            "B) The impact of social media",
+            "C) Environmental protection",
+            "D) Educational reforms"
+          ],
+          "answerKey": "B",
+          "points": 1,
+          "difficulty": "medium",
+          "explanation": "The passage discusses how social media has changed communication.",
+          "orderIndex": 1
+        },
+        {
+          "type": "multi_select",
+          "questionText": "Which of the following are mentioned as benefits? (Select all that apply)",
+          "options": [
+            "A) Increased connectivity",
+            "B) Better education",
+            "C) Faster information sharing",
+            "D) Improved health"
+          ],
+          "answerKey": "A,C",
+          "points": 2,
+          "difficulty": "hard",
+          "explanation": "The passage mentions increased connectivity and faster information sharing as benefits.",
+          "orderIndex": 2
+        }
+      ]
+    },
+    {
+      "name": "Writing",
+      "description": "Phần viết",
+      "timeLimit": 40,
+      "isLockedAfterComplete": false,
+      "scoringRule": "raw_to_band",
+      "instructions": "Viết một bài luận về chủ đề được đưa ra. Tối thiểu 150 từ.",
+      "questions": [
+        {
+          "type": "essay",
+          "questionText": "Write an essay discussing the advantages and disadvantages of online learning. Minimum 150 words.",
+          "answerKey": "",
+          "points": 20,
+          "difficulty": "hard",
+          "explanation": "Essay will be graded based on content, organization, vocabulary, and grammar.",
+          "orderIndex": 1
+        }
+      ]
+    }
+  ]
+}
+
+
+
+
+
+
+
+

@@ -1,0 +1,227 @@
+/* Posts Management - Chuẩn Teachers */
+
+.posts-management-page {
+  padding: 24px;
+  background: #f8f9fa;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* Page Header - Card Layout (Chuẩn) */
+.posts-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 20px 24px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  gap: 20px;
+  min-height: 60px;
+}
+
+.posts-page-header h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #2c3e50;
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 200px);
+}
+
+.posts-page-header .btn-primary {
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 160px;
+}
+
+/* Filters Section - Card Layout (Chuẩn) */
+.posts-filters-section {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 20px 24px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  flex-wrap: wrap;
+  transition: box-shadow 0.2s ease;
+}
+
+.posts-filters-section:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.posts-filter-group {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.posts-filter-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.posts-filter-select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  background: white;
+  color: #111827;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.posts-filter-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Table Container - Card Layout (Chuẩn) */
+.posts-table-container {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.posts-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.posts-table thead {
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.posts-table th {
+  padding: 14px 16px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.posts-table td {
+  padding: 18px 16px;
+  font-size: 13px;
+  color: #111827;
+  text-align: center;
+  vertical-align: middle;
+  line-height: 1.5;
+}
+
+.posts-table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.2s ease;
+}
+
+.posts-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.posts-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.posts-action-buttons {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+}
+
+.posts-btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.posts-btn-edit {
+  background: #3b82f6;
+  color: white;
+}
+
+.posts-btn-edit:hover {
+  background: #2563eb;
+}
+
+.posts-btn-publish {
+  background: #10b981;
+  color: white;
+}
+
+.posts-btn-publish:hover {
+  background: #059669;
+}
+
+.posts-btn-unpublish {
+  background: #f59e0b;
+  color: white;
+}
+
+.posts-btn-unpublish:hover {
+  background: #d97706;
+}
+
+.posts-btn-delete {
+  background: #ef4444;
+  color: white;
+}
+
+.posts-btn-delete:hover {
+  background: #dc2626;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+
+.empty-state p {
+  font-size: 16px;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .posts-filters-section {
+    flex-direction: column;
+  }
+
+  .posts-table-container {
+    overflow-x: auto;
+  }
+
+  .posts-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}

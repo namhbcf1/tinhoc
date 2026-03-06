@@ -1,0 +1,877 @@
+/* ========================================
+   MOBILE UX 2.0 - MODERN MOBILE DESIGN
+   Nâng cấp giao diện mobile với thiết kế hiện đại
+   ======================================== */
+
+/* CSS Variables for Mobile Design */
+:root {
+    /* Spacing */
+    --mobile-space-xs: 4px;
+    --mobile-space-sm: 8px;
+    --mobile-space-md: 16px;
+    --mobile-space-lg: 24px;
+    --mobile-space-xl: 32px;
+
+    /* Touch Targets - iOS/Android minimum 44px */
+    --mobile-touch: 44px;
+    --mobile-touch-lg: 48px;
+
+    /* Typography */
+    --mobile-font-base: 16px;
+    --mobile-font-sm: 14px;
+    --mobile-font-lg: 18px;
+    --mobile-font-xl: 20px;
+    --mobile-font-2xl: 24px;
+    --mobile-font-3xl: 28px;
+
+    /* Colors - Modern Palette */
+    --mobile-bg: #f8fafc;
+    --mobile-card: #ffffff;
+    --mobile-border: #e2e8f0;
+    --mobile-text: #0f172a;
+    --mobile-text-muted: #64748b;
+    --mobile-text-light: #94a3b8;
+
+    /* Brand Colors */
+    --mobile-primary: #10b981;
+    --mobile-primary-dark: #059669;
+    --mobile-primary-light: #d1fae5;
+    --mobile-accent: #06b6d4;
+    --mobile-accent-dark: #0891b2;
+
+    /* Gradients */
+    --mobile-gradient-primary: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+    --mobile-gradient-dark: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    --mobile-gradient-light: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+
+    /* Shadows */
+    --mobile-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --mobile-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --mobile-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --mobile-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --mobile-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+    /* Border Radius */
+    --mobile-radius-sm: 8px;
+    --mobile-radius: 12px;
+    --mobile-radius-lg: 16px;
+    --mobile-radius-xl: 24px;
+    --mobile-radius-full: 9999px;
+
+    /* Transitions */
+    --mobile-transition: all 0.2s ease;
+    --mobile-transition-fast: all 0.15s ease;
+    --mobile-transition-slow: all 0.3s ease;
+}
+
+/* ========================================
+   BASE MOBILE PAGE - ENHANCED
+   ======================================== */
+
+.admin-mobile-page {
+    padding: var(--mobile-space-md);
+    background: var(--mobile-bg);
+    min-height: 100vh;
+    overflow-x: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+@media (max-width: 480px) {
+    .admin-mobile-page {
+        padding: var(--mobile-space-sm);
+    }
+}
+
+@media (max-width: 360px) {
+    .admin-mobile-page {
+        padding: 10px;
+    }
+}
+
+/* ========================================
+   MODERN TYPOGRAPHY
+   ======================================== */
+
+.admin-mobile-page h1 {
+    font-size: var(--mobile-font-2xl);
+    font-weight: 700;
+    color: var(--mobile-text);
+    line-height: 1.2;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.025em;
+}
+
+.admin-mobile-page h2 {
+    font-size: var(--mobile-font-xl);
+    font-weight: 600;
+    color: var(--mobile-text);
+    line-height: 1.3;
+    margin: 0 0 12px 0;
+    letter-spacing: -0.02em;
+}
+
+.admin-mobile-page h3 {
+    font-size: var(--mobile-font-lg);
+    font-weight: 600;
+    color: var(--mobile-text);
+    line-height: 1.4;
+    margin: 0 0 8px 0;
+}
+
+.admin-mobile-page p {
+    font-size: var(--mobile-font-base);
+    color: var(--mobile-text);
+    line-height: 1.6;
+    margin: 0 0 12px 0;
+}
+
+.admin-mobile-page small {
+    font-size: var(--mobile-font-sm);
+    color: var(--mobile-text-muted);
+    line-height: 1.5;
+}
+
+/* ========================================
+   MODERN CARDS
+   ======================================== */
+
+.admin-mobile-card {
+    background: var(--mobile-card);
+    border-radius: var(--mobile-radius-lg);
+    padding: var(--mobile-space-md);
+    margin-bottom: var(--mobile-space-md);
+    box-shadow: var(--mobile-shadow);
+    border: 1px solid var(--mobile-border);
+    transition: var(--mobile-transition);
+}
+
+.admin-mobile-card:hover {
+    box-shadow: var(--mobile-shadow-md);
+}
+
+.admin-mobile-card:active {
+    transform: scale(0.99);
+}
+
+.admin-mobile-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--mobile-space-md);
+    padding-bottom: var(--mobile-space-md);
+    border-bottom: 1px solid var(--mobile-border);
+}
+
+.admin-mobile-card-title {
+    font-size: var(--mobile-font-lg);
+    font-weight: 600;
+    color: var(--mobile-text);
+    margin: 0;
+}
+
+.admin-mobile-card-content {
+    font-size: var(--mobile-font-base);
+    color: var(--mobile-text);
+    line-height: 1.6;
+}
+
+/* Glass Card Effect */
+.admin-mobile-card-glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* ========================================
+   MODERN BUTTONS
+   ======================================== */
+
+.admin-mobile-btn {
+    min-height: var(--mobile-touch);
+    padding: 12px 24px;
+    font-size: var(--mobile-font-base);
+    font-weight: 600;
+    border-radius: var(--mobile-radius);
+    border: none;
+    cursor: pointer;
+    transition: var(--mobile-transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-mobile-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(255, 255, 255, 0.1), transparent);
+    opacity: 0;
+    transition: var(--mobile-transition);
+}
+
+.admin-mobile-btn:active {
+    transform: scale(0.98);
+}
+
+.admin-mobile-btn:active::before {
+    opacity: 1;
+}
+
+.admin-mobile-btn-primary {
+    background: var(--mobile-gradient-primary);
+    color: white;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.admin-mobile-btn-primary:active {
+    box-shadow: 0 1px 2px rgba(16, 185, 129, 0.3);
+}
+
+.admin-mobile-btn-secondary {
+    background: #f1f5f9;
+    color: var(--mobile-text);
+}
+
+.admin-mobile-btn-secondary:active {
+    background: #e2e8f0;
+}
+
+.admin-mobile-btn-outline {
+    background: transparent;
+    color: var(--mobile-primary);
+    border: 2px solid var(--mobile-primary);
+}
+
+.admin-mobile-btn-outline:active {
+    background: var(--mobile-primary-light);
+}
+
+.admin-mobile-btn-danger {
+    background: #ef4444;
+    color: white;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+.admin-mobile-btn-danger:active {
+    background: #dc2626;
+}
+
+.admin-mobile-btn-ghost {
+    background: transparent;
+    color: var(--mobile-text-muted);
+}
+
+.admin-mobile-btn-ghost:active {
+    background: #f1f5f9;
+}
+
+.admin-mobile-btn-full {
+    width: 100%;
+}
+
+.admin-mobile-btn-icon {
+    width: var(--mobile-touch);
+    height: var(--mobile-touch);
+    padding: 0;
+    min-width: var(--mobile-touch);
+    border-radius: var(--mobile-radius);
+}
+
+@media (max-width: 480px) {
+    .admin-mobile-btn {
+        padding: 10px 20px;
+        font-size: 15px;
+        min-height: 44px;
+        gap: 6px;
+        border-radius: 10px;
+    }
+
+    .admin-mobile-btn-icon {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+    }
+}
+
+@media (max-width: 360px) {
+    .admin-mobile-btn {
+        padding: 8px 16px;
+        font-size: 14px;
+        min-height: 42px;
+        gap: 4px;
+        border-radius: 8px;
+    }
+}
+
+/* ========================================
+   MODERN STATS GRID
+   ======================================== */
+
+.admin-mobile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--mobile-space-md);
+    margin-bottom: var(--mobile-space-lg);
+}
+
+.admin-mobile-stat-card {
+    background: var(--mobile-card);
+    border-radius: var(--mobile-radius-lg);
+    padding: var(--mobile-space-md);
+    box-shadow: var(--mobile-shadow);
+    border: 1px solid var(--mobile-border);
+    transition: var(--mobile-transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-mobile-stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--mobile-gradient-primary);
+}
+
+.admin-mobile-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--mobile-shadow-md);
+}
+
+.admin-mobile-stat-value {
+    font-size: var(--mobile-font-2xl);
+    font-weight: 800;
+    color: var(--mobile-text);
+    margin: 8px 0 4px;
+    letter-spacing: -0.025em;
+}
+
+.admin-mobile-stat-label {
+    font-size: var(--mobile-font-sm);
+    color: var(--mobile-text-muted);
+    font-weight: 500;
+}
+
+/* ========================================
+   MODERN LISTS
+   ======================================== */
+
+.admin-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: var(--mobile-card);
+    border-radius: var(--mobile-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--mobile-shadow);
+    border: 1px solid var(--mobile-border);
+}
+
+.admin-mobile-list-item {
+    min-height: 60px;
+    padding: var(--mobile-space-md);
+    background: var(--mobile-card);
+    border-bottom: 1px solid var(--mobile-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: var(--mobile-transition);
+    touch-action: manipulation;
+}
+
+.admin-mobile-list-item:last-child {
+    border-bottom: none;
+}
+
+.admin-mobile-list-item:active {
+    background: #f8fafc;
+    transform: scale(0.995);
+}
+
+/* ========================================
+   MODERN EMPTY STATES
+   ======================================== */
+
+.admin-mobile-empty {
+    text-align: center;
+    padding: var(--mobile-space-xl) var(--mobile-space-md);
+    color: var(--mobile-text-muted);
+}
+
+.admin-mobile-empty-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--mobile-space-md);
+    opacity: 0.4;
+    background: var(--mobile-gradient-light);
+    border-radius: var(--mobile-radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-mobile-empty-text {
+    font-size: var(--mobile-font-base);
+    color: var(--mobile-text-muted);
+}
+
+/* ========================================
+   MODERN LOADING STATES
+   ======================================== */
+
+.admin-mobile-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--mobile-space-xl);
+    color: var(--mobile-text-muted);
+}
+
+.admin-mobile-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--mobile-border);
+    border-top-color: var(--mobile-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: var(--mobile-space-md);
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Skeleton Loading */
+.admin-mobile-skeleton {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--mobile-radius);
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ========================================
+   MODERN BADGES
+   ======================================== */
+
+.admin-mobile-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: var(--mobile-radius-full);
+    font-size: var(--mobile-font-sm);
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.admin-mobile-badge-success {
+    background: var(--mobile-primary-light);
+    color: var(--mobile-primary-dark);
+}
+
+.admin-mobile-badge-warning {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.admin-mobile-badge-danger {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.admin-mobile-badge-info {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+/* ========================================
+   MODERN INPUT FIELDS
+   ======================================== */
+
+.admin-mobile-input {
+    width: 100%;
+    min-height: var(--mobile-touch);
+    padding: 12px 16px;
+    font-size: var(--mobile-font-base);
+    border: 2px solid var(--mobile-border);
+    border-radius: var(--mobile-radius);
+    background: var(--mobile-card);
+    color: var(--mobile-text);
+    transition: var(--mobile-transition);
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.admin-mobile-input:focus {
+    outline: none;
+    border-color: var(--mobile-primary);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.admin-mobile-input::placeholder {
+    color: var(--mobile-text-light);
+}
+
+/* ========================================
+   MODERN HEADER
+   ======================================== */
+
+.admin-mobile-header-modern {
+    background: var(--mobile-gradient-primary);
+    padding: var(--mobile-space-md);
+    padding-top: calc(var(--mobile-space-md) + env(safe-area-inset-top));
+    color: white;
+}
+
+.admin-mobile-header-modern .title {
+    font-size: var(--mobile-font-xl);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+
+.admin-mobile-header-modern .subtitle {
+    font-size: var(--mobile-font-sm);
+    opacity: 0.8;
+}
+
+/* ========================================
+   MODERN SECTION HEADERS
+   ======================================== */
+
+.admin-mobile-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--mobile-space-md);
+}
+
+.admin-mobile-section-title {
+    font-size: var(--mobile-font-lg);
+    font-weight: 700;
+    color: var(--mobile-text);
+    letter-spacing: -0.02em;
+}
+
+.admin-mobile-section-action {
+    font-size: var(--mobile-font-sm);
+    color: var(--mobile-primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--mobile-transition);
+}
+
+.admin-mobile-section-action:active {
+    opacity: 0.7;
+}
+
+/* ========================================
+   MODERN DIVIDERS
+   ======================================== */
+
+.admin-mobile-divider {
+    height: 1px;
+    background: var(--mobile-border);
+    margin: var(--mobile-space-md) 0;
+}
+
+.admin-mobile-divider-text {
+    display: flex;
+    align-items: center;
+    gap: var(--mobile-space-md);
+    margin: var(--mobile-space-lg) 0;
+    color: var(--mobile-text-muted);
+    font-size: var(--mobile-font-sm);
+}
+
+.admin-mobile-divider-text::before,
+.admin-mobile-divider-text::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--mobile-border);
+}
+
+/* ========================================
+   MODERN AVATARS
+   ======================================== */
+
+.admin-mobile-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--mobile-radius-full);
+    object-fit: cover;
+    border: 2px solid white;
+    box-shadow: var(--mobile-shadow-sm);
+}
+
+.admin-mobile-avatar-sm {
+    width: 36px;
+    height: 36px;
+}
+
+.admin-mobile-avatar-lg {
+    width: 64px;
+    height: 64px;
+}
+
+.admin-mobile-avatar-placeholder {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--mobile-radius-full);
+    background: var(--mobile-gradient-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: var(--mobile-font-lg);
+}
+
+/* ========================================
+   MODERN PROGRESS BARS
+   ======================================== */
+
+.admin-mobile-progress {
+    height: 8px;
+    background: var(--mobile-border);
+    border-radius: var(--mobile-radius-full);
+    overflow: hidden;
+}
+
+.admin-mobile-progress-bar {
+    height: 100%;
+    background: var(--mobile-gradient-primary);
+    border-radius: var(--mobile-radius-full);
+    transition: width 0.5s ease;
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.admin-mobile-animate-fade-in {
+    animation: fadeIn 0.3s ease forwards;
+}
+
+.admin-mobile-animate-slide-up {
+    animation: slideInUp 0.3s ease forwards;
+}
+
+.admin-mobile-animate-slide-left {
+    animation: slideInLeft 0.3s ease forwards;
+}
+
+.admin-mobile-animate-scale-in {
+    animation: scaleIn 0.2s ease forwards;
+}
+
+/* Stagger animations */
+.admin-mobile-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.admin-mobile-stagger > *:nth-child(2) { animation-delay: 50ms; }
+.admin-mobile-stagger > *:nth-child(3) { animation-delay: 100ms; }
+.admin-mobile-stagger > *:nth-child(4) { animation-delay: 150ms; }
+.admin-mobile-stagger > *:nth-child(5) { animation-delay: 200ms; }
+.admin-mobile-stagger > *:nth-child(6) { animation-delay: 250ms; }
+.admin-mobile-stagger > *:nth-child(7) { animation-delay: 300ms; }
+.admin-mobile-stagger > *:nth-child(8) { animation-delay: 350ms; }
+
+/* ========================================
+   RESPONSIVE HELPERS
+   ======================================== */
+
+@media (max-width: 480px) {
+    .admin-mobile-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-mobile-page {
+        padding: 12px;
+    }
+
+    .admin-mobile-stat-card {
+        padding: 14px;
+    }
+}
+
+@media (max-width: 360px) {
+    :root {
+        --mobile-font-base: 15px;
+        --mobile-font-lg: 17px;
+        --mobile-font-xl: 19px;
+        --mobile-font-2xl: 22px;
+    }
+
+    .admin-mobile-page {
+        padding: 10px;
+    }
+}
+
+/* ========================================
+   DARK MODE SUPPORT (Future)
+   ======================================== */
+
+@media (prefers-color-scheme: dark) {
+    .admin-mobile-page {
+        background: #0f172a;
+    }
+
+    .admin-mobile-card {
+        background: #1e293b;
+        border-color: #334155;
+    }
+
+    .admin-mobile-text {
+        color: #f1f5f9;
+    }
+
+    .admin-mobile-text-muted {
+        color: #94a3b8;
+    }
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+.admin-mobile-flex {
+    display: flex;
+}
+
+.admin-mobile-flex-col {
+    flex-direction: column;
+}
+
+.admin-mobile-items-center {
+    align-items: center;
+}
+
+.admin-mobile-justify-between {
+    justify-content: space-between;
+}
+
+.admin-mobile-gap-sm {
+    gap: var(--mobile-space-sm);
+}
+
+.admin-mobile-gap-md {
+    gap: var(--mobile-space-md);
+}
+
+.admin-mobile-gap-lg {
+    gap: var(--mobile-space-lg);
+}
+
+.admin-mobile-mt-sm {
+    margin-top: var(--mobile-space-sm);
+}
+
+.admin-mobile-mt-md {
+    margin-top: var(--mobile-space-md);
+}
+
+.admin-mobile-mt-lg {
+    margin-top: var(--mobile-space-lg);
+}
+
+.admin-mobile-mb-sm {
+    margin-bottom: var(--mobile-space-sm);
+}
+
+.admin-mobile-mb-md {
+    margin-bottom: var(--mobile-space-md);
+}
+
+.admin-mobile-mb-lg {
+    margin-bottom: var(--mobile-space-lg);
+}
+
+.admin-mobile-p-sm {
+    padding: var(--mobile-space-sm);
+}
+
+.admin-mobile-p-md {
+    padding: var(--mobile-space-md);
+}
+
+.admin-mobile-p-lg {
+    padding: var(--mobile-space-lg);
+}
+
+.admin-mobile-text-center {
+    text-align: center;
+}
+
+.admin-mobile-font-bold {
+    font-weight: 700;
+}
+
+.admin-mobile-w-full {
+    width: 100%;
+}

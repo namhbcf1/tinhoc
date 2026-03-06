@@ -1,0 +1,48 @@
+/* TeacherMobileLayout.css */
+
+@import url('../../styles/MobileDesignSystem.css');
+
+/* ── Root wrapper ─────────────────────────────────────────────────────────── */
+.teacher-mobile-layout {
+    min-height: 100dvh;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--mb-bg);
+    position: relative;
+}
+
+.teacher-mobile-layout.ios {
+    padding-top: env(safe-area-inset-top);
+}
+
+/* Teacher active = orange */
+.teacher-mobile-layout .mobile-drawer-item.active {
+    background: var(--mb-teacher-bg);
+    color: var(--mb-teacher-dark);
+    font-weight: var(--mb-font-semibold);
+}
+
+.teacher-mobile-layout .mobile-drawer-item.active .mobile-drawer-item-icon {
+    background: var(--mb-teacher);
+    color: var(--mb-text-inverse);
+}
+
+.mobile-bottom-nav.teacher .mobile-bottom-nav-item.active {
+    background: var(--mb-teacher-bg);
+}
+
+.mobile-bottom-nav.teacher .mobile-bottom-nav-item.active .mobile-bottom-nav-icon,
+.mobile-bottom-nav.teacher .mobile-bottom-nav-item.active .mobile-bottom-nav-label {
+    color: var(--mb-teacher);
+}
+
+/* Drawer animation */
+.teacher-mobile-layout .mobile-drawer.open {
+    animation: mb-teacher-slideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes mb-teacher-slideIn {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+}

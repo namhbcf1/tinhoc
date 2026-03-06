@@ -1,0 +1,441 @@
+.mobile-data-card {
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    touch-action: pan-y;
+    will-change: transform;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+    .mobile-data-card {
+        padding: 10px;
+        margin-bottom: 8px;
+        border-radius: 10px;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-data-card {
+        padding: 8px;
+        margin-bottom: 6px;
+    }
+}
+
+.mobile-data-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e1;
+}
+
+.mobile-data-card:active {
+    transform: scale(0.98);
+}
+
+.mobile-data-card.ios {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.mobile-data-card.android {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-data-card-content {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.mobile-data-card-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.mobile-data-card-primary {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 8px;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+@media (max-width: 480px) {
+    .mobile-data-card-primary {
+        font-size: 15px;
+        margin-bottom: 6px;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-data-card-primary {
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+}
+
+.mobile-data-card-secondary {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mobile-data-card-field {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+@media (max-width: 480px) {
+    .mobile-data-card-field {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-data-card-field {
+        font-size: 12px;
+    }
+}
+
+.mobile-data-card-label {
+    font-weight: 500;
+}
+
+.mobile-data-card-value {
+    color: #0f172a;
+}
+
+.mobile-data-card-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+    .mobile-data-card-actions {
+        gap: 4px;
+    }
+}
+
+.mobile-data-card-action-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: #f1f5f9;
+    color: #64748b;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+    .mobile-data-card-action-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-data-card-action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+    }
+}
+
+.mobile-data-card-action-btn:active {
+    transform: scale(0.9);
+    background: #e2e8f0;
+}
+
+.mobile-data-card-action-btn.delete {
+    color: #dc2626;
+}
+
+.mobile-data-card-action-btn.delete:active {
+    background: #fee2e2;
+}
+
+.mobile-data-card-expanded {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 1000px;
+    }
+}
+
+.mobile-data-card.expanded {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.mobile-data-card-swipe-action {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.mobile-data-card-swipe-action.delete {
+    right: 0;
+    background: #dc2626;
+}
+
+.mobile-data-card-swipe-action.edit {
+    left: 0;
+    background: #16a34a;
+}
+
+
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    touch-action: pan-y;
+    will-change: transform;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+    .mobile-data-card {
+        padding: 10px;
+        margin-bottom: 8px;
+        border-radius: 10px;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-data-card {
+        padding: 8px;
+        margin-bottom: 6px;
+    }
+}
+
+.mobile-data-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e1;
+}
+
+.mobile-data-card:active {
+    transform: scale(0.98);
+}
+
+.mobile-data-card.ios {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.mobile-data-card.android {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-data-card-content {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.mobile-data-card-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.mobile-data-card-primary {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 8px;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+@media (max-width: 480px) {
+    .mobile-data-card-primary {
+        font-size: 15px;
+        margin-bottom: 6px;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-data-card-primary {
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+}
+
+.mobile-data-card-secondary {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mobile-data-card-field {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+@media (max-width: 480px) {
+    .mobile-data-card-field {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-data-card-field {
+        font-size: 12px;
+    }
+}
+
+.mobile-data-card-label {
+    font-weight: 500;
+}
+
+.mobile-data-card-value {
+    color: #0f172a;
+}
+
+.mobile-data-card-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+    .mobile-data-card-actions {
+        gap: 4px;
+    }
+}
+
+.mobile-data-card-action-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: #f1f5f9;
+    color: #64748b;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+    .mobile-data-card-action-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-data-card-action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+    }
+}
+
+.mobile-data-card-action-btn:active {
+    transform: scale(0.9);
+    background: #e2e8f0;
+}
+
+.mobile-data-card-action-btn.delete {
+    color: #dc2626;
+}
+
+.mobile-data-card-action-btn.delete:active {
+    background: #fee2e2;
+}
+
+.mobile-data-card-expanded {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 1000px;
+    }
+}
+
+.mobile-data-card.expanded {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.mobile-data-card-swipe-action {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.mobile-data-card-swipe-action.delete {
+    right: 0;
+    background: #dc2626;
+}
+
+.mobile-data-card-swipe-action.edit {
+    left: 0;
+    background: #16a34a;
+}
+

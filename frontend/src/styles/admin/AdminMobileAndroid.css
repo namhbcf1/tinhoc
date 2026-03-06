@@ -1,0 +1,148 @@
+/* ========================================
+   ANDROID SPECIFIC STYLES (Material Design 3)
+   ======================================== */
+
+/* Android Typography - Roboto Font Stack */
+.admin-mobile-layout.android,
+.admin-mobile-page.android {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+}
+
+/* Android Card Elevation */
+.admin-mobile-layout.android .admin-mobile-card,
+.admin-mobile-page.android .admin-mobile-card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.admin-mobile-layout.android .admin-mobile-card:active {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Android Button Styles - Material Design */
+.admin-mobile-layout.android .admin-mobile-btn {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.admin-mobile-layout.android .admin-mobile-btn-primary {
+    box-shadow: 0 2px 4px rgba(22, 163, 74, 0.3);
+}
+
+.admin-mobile-layout.android .admin-mobile-btn:active {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transform: translateY(1px);
+}
+
+/* Android Ripple Effect */
+.admin-mobile-layout.android .admin-mobile-btn,
+.admin-mobile-layout.android .admin-mobile-list-item {
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-mobile-layout.android .admin-mobile-btn::after,
+.admin-mobile-layout.android .admin-mobile-list-item::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.1);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+}
+
+.admin-mobile-layout.android .admin-mobile-btn:active::after,
+.admin-mobile-layout.android .admin-mobile-list-item:active::after {
+    width: 200px;
+    height: 200px;
+}
+
+/* Android Input Styles */
+.admin-mobile-layout.android input,
+.admin-mobile-layout.android textarea,
+.admin-mobile-layout.android select {
+    border-bottom: 2px solid #e2e8f0;
+    border-radius: 0;
+    padding: 12px 0;
+    background: transparent;
+}
+
+.admin-mobile-layout.android input:focus,
+.admin-mobile-layout.android textarea:focus,
+.admin-mobile-layout.android select:focus {
+    border-bottom-color: #16a34a;
+    box-shadow: none;
+}
+
+/* Android Bottom Sheet Style */
+.admin-mobile-layout.android .mobile-modal {
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* Android List Item Styles */
+.admin-mobile-layout.android .admin-mobile-list-item {
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.admin-mobile-layout.android .admin-mobile-list-item:active {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+/* Android FAB (Floating Action Button) Style */
+.admin-mobile-layout.android .mobile-fab {
+    position: fixed;
+    bottom: 80px;
+    right: 16px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #16a34a;
+    color: white;
+    border: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 50;
+    transition: all 0.2s ease;
+}
+
+.admin-mobile-layout.android .mobile-fab:active {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transform: scale(0.95);
+}
+
+/* Android Status Bar */
+.admin-mobile-layout.android .admin-mobile-header {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Android Transitions */
+.admin-mobile-layout.android * {
+    transition-timing-function: cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Android Safe Area (for notched devices) */
+@supports (padding: max(0px)) {
+    .admin-mobile-layout.android {
+        padding-top: max(0px, env(safe-area-inset-top));
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+    }
+}
+
+/* Android Keyboard Avoidance */
+.admin-mobile-layout.android .mobile-form {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+
+

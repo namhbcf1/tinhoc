@@ -1,0 +1,768 @@
+/* Import Design System */
+@import '../../../styles/teacher/TeacherDesignSystem.css';
+
+/* ============================================
+   ATTENDANCE PAGE
+   Using Design System Variables
+   ============================================ */
+
+.attendance-page-modern {
+  padding: var(--spacing-2xl);
+  max-width: 1400px;
+  margin: 0 auto;
+  background: var(--teacher-bg-secondary);
+  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100); /* Fix for mobile browsers */
+  box-sizing: border-box;
+  /* Safe area support */
+  padding-top: calc(var(--spacing-2xl) + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(var(--spacing-2xl) + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(var(--spacing-2xl) + env(safe-area-inset-left, 0px));
+  padding-right: calc(var(--spacing-2xl) + env(safe-area-inset-right, 0px));
+}
+
+/* Header */
+.attendance-header-modern {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-2xl);
+  padding: var(--spacing-xl);
+  background: linear-gradient(135deg, var(--teacher-primary) 0%, var(--teacher-primary-dark) 100%);
+  border-radius: var(--radius-lg);
+  color: white;
+  box-shadow: var(--shadow-lg);
+}
+
+.attendance-header-modern h1 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+}
+
+.header-subtitle {
+  margin: 0;
+  opacity: 0.9;
+  font-size: var(--font-size-sm);
+}
+
+.class-info-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(10px);
+}
+
+.badge-label {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.badge-value {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+}
+
+/* Main Card */
+.attendance-card-modern {
+  background: var(--teacher-bg);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-2xl);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.attendance-form-modern {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+}
+
+/* Selection Section */
+.selection-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-xl);
+  padding-bottom: var(--spacing-2xl);
+  border-bottom: 2px solid var(--teacher-border-light);
+}
+
+.form-group-modern {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.form-group-modern label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--teacher-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.label-icon {
+  color: var(--teacher-primary);
+}
+
+.select-modern,
+.input-modern {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 2px solid var(--teacher-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+  transition: all var(--transition-base);
+  background: var(--teacher-bg);
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.select-modern:focus,
+.input-modern:focus {
+  outline: none;
+  border-color: var(--teacher-primary);
+  box-shadow: 0 0 0 3px var(--teacher-primary-lighter);
+}
+
+.select-modern:disabled,
+.input-modern:disabled {
+  background: var(--teacher-bg-tertiary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Summary Cards */
+.summary-cards-modern {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.summary-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  background: var(--teacher-bg-tertiary);
+  border-radius: var(--radius-md);
+  border: 2px solid transparent;
+  transition: all var(--transition-base);
+}
+
+.summary-card.total {
+  border-color: var(--teacher-border);
+}
+
+.summary-card.present {
+  border-color: var(--teacher-success);
+  background: var(--teacher-success-light);
+}
+
+.summary-card.absent {
+  border-color: var(--teacher-error);
+  background: var(--teacher-error-light);
+}
+
+.summary-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--teacher-bg);
+  color: var(--teacher-text-tertiary);
+  font-size: var(--font-size-xl);
+}
+
+.summary-icon.present-icon {
+  background: var(--teacher-success);
+  color: white;
+}
+
+.summary-icon.absent-icon {
+  background: var(--teacher-error);
+  color: white;
+}
+
+.summary-content {
+  flex: 1;
+}
+
+.summary-label {
+  font-size: 13px;
+  color: var(--teacher-text-tertiary);
+  margin-bottom: var(--spacing-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.summary-value {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--teacher-text-primary);
+}
+
+.summary-value.present-value {
+  color: var(--teacher-success);
+}
+
+.summary-value.absent-value {
+  color: var(--teacher-error);
+}
+
+/* Quick Actions */
+.quick-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 2px solid var(--teacher-border);
+  border-radius: var(--radius-sm);
+  background: var(--teacher-bg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.quick-action-btn.present-btn {
+  color: var(--teacher-success);
+  border-color: var(--teacher-success);
+}
+
+.quick-action-btn.present-btn:hover:not(:disabled) {
+  background: var(--teacher-success-light);
+}
+
+.quick-action-btn.absent-btn {
+  color: var(--teacher-error);
+  border-color: var(--teacher-error);
+}
+
+.quick-action-btn.absent-btn:hover:not(:disabled) {
+  background: var(--teacher-error-light);
+}
+
+.quick-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Table */
+.table-wrapper-modern {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--teacher-border);
+}
+
+.attendance-table-modern {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--teacher-bg);
+}
+
+.attendance-table-modern thead {
+  background: var(--teacher-primary);
+  color: white;
+}
+
+.attendance-table-modern th {
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.attendance-table-modern th.attendance-col {
+  text-align: center;
+}
+
+.attendance-table-modern td {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--teacher-border-light);
+  color: var(--teacher-text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.attendance-table-modern tbody tr:hover {
+  background: var(--teacher-bg-tertiary);
+}
+
+.attendance-table-modern tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-muted {
+  color: var(--teacher-text-muted);
+}
+
+.cccd-code {
+  background: var(--teacher-bg-tertiary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--teacher-text-primary);
+}
+
+/* Radio Buttons */
+.attendance-cell {
+  text-align: center;
+}
+
+.radio-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.radio-label input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.radio-custom {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--teacher-border);
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+  transition: all var(--transition-base);
+}
+
+.radio-label.present-label input:checked + .radio-custom {
+  border-color: var(--teacher-success);
+  background: var(--teacher-success);
+}
+
+.radio-label.present-label input:checked + .radio-custom::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  background: white;
+  border-radius: 50%;
+}
+
+.radio-label.absent-label input:checked + .radio-custom {
+  border-color: var(--teacher-error);
+  background: var(--teacher-error);
+}
+
+.radio-label.absent-label input:checked + .radio-custom::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  background: white;
+  border-radius: 50%;
+}
+
+.radio-label input:disabled + .radio-custom {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Submit Button */
+.form-actions-modern {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--spacing-xl);
+  border-top: 2px solid var(--teacher-border-light);
+}
+
+.btn-submit-modern {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-2xl);
+  background: var(--teacher-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-md);
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-submit-modern:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  background: var(--teacher-primary-dark);
+}
+
+.btn-submit-modern:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* History Section */
+.history-section-modern {
+  background: var(--teacher-bg);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-2xl);
+  box-shadow: var(--shadow-md);
+}
+
+.history-header {
+  margin-bottom: var(--spacing-2xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 2px solid var(--teacher-border-light);
+}
+
+.history-header h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin: 0;
+  font-size: var(--font-size-2xl);
+  color: var(--teacher-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.history-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+}
+
+.history-block-modern {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.history-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--teacher-text-secondary);
+  margin: 0;
+}
+
+/* Date Cards Grid */
+.date-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.date-card-modern {
+  padding: var(--spacing-lg);
+  background: var(--teacher-bg-tertiary);
+  border: 2px solid var(--teacher-border);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+}
+
+.date-card-modern:hover {
+  border-color: var(--teacher-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.date-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.date-text {
+  font-weight: var(--font-weight-semibold);
+  color: var(--teacher-text-primary);
+  font-size: var(--font-size-base);
+}
+
+.percent-badge {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.percent-badge.high {
+  background: var(--teacher-success-light);
+  color: #065f46;
+}
+
+.percent-badge.medium {
+  background: var(--teacher-warning-light);
+  color: #92400e;
+}
+
+.percent-badge.low {
+  background: var(--teacher-error-light);
+  color: #991b1b;
+}
+
+.date-card-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+}
+
+.stat-label {
+  color: var(--teacher-text-tertiary);
+}
+
+.stat-value {
+  font-weight: var(--font-weight-semibold);
+  color: var(--teacher-text-primary);
+}
+
+.present-stat .stat-value {
+  color: var(--teacher-success);
+}
+
+.absent-stat .stat-value {
+  color: var(--teacher-error);
+}
+
+/* Student Table */
+.student-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--teacher-border);
+}
+
+.student-table-modern {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--teacher-bg);
+}
+
+.student-table-modern thead {
+  background: var(--teacher-bg-tertiary);
+}
+
+.student-table-modern th {
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  color: var(--teacher-text-primary);
+  border-bottom: 2px solid var(--teacher-border);
+}
+
+.student-table-modern td {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--teacher-border-light);
+  color: var(--teacher-text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.student-table-modern tbody tr:hover {
+  background: var(--teacher-bg-tertiary);
+}
+
+.percent-badge-table {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  display: inline-block;
+}
+
+.percent-badge-table.high {
+  background: var(--teacher-success-light);
+  color: #065f46;
+}
+
+.percent-badge-table.medium {
+  background: var(--teacher-warning-light);
+  color: #92400e;
+}
+
+.percent-badge-table.low {
+  background: var(--teacher-error-light);
+  color: #991b1b;
+}
+
+.loading-section {
+  padding: var(--spacing-3xl);
+  text-align: center;
+}
+
+/* Animations */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ============================================
+   MOBILE RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .attendance-page-modern {
+    padding: var(--spacing-lg) !important; /* 16px - comfortable spacing */
+    background: var(--teacher-bg);
+    /* Safe area support */
+    padding-top: calc(var(--spacing-lg) + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(var(--spacing-lg) + env(safe-area-inset-left, 0px));
+    padding-right: calc(var(--spacing-lg) + env(safe-area-inset-right, 0px));
+    margin: 0;
+    max-width: 100%;
+  }
+
+  .attendance-header-modern {
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    border-radius: var(--radius-md);
+  }
+
+  .attendance-header-modern h1 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .attendance-card-modern,
+  .history-section-modern {
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    border-radius: var(--radius-md);
+  }
+
+  .attendance-form-modern {
+    gap: var(--spacing-lg);
+  }
+
+  .selection-section {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+  }
+
+  .summary-cards-modern {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .summary-card {
+    padding: var(--spacing-lg);
+  }
+
+  .summary-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .summary-value {
+    font-size: var(--font-size-2xl);
+  }
+
+  .quick-actions {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .table-wrapper-modern,
+  .student-table-wrapper {
+    margin: 0 calc(-1 * var(--spacing-lg));
+    padding: 0 var(--spacing-lg);
+    width: calc(100% + 2 * var(--spacing-lg));
+  }
+
+  .attendance-table-modern,
+  .student-table-modern {
+    font-size: var(--font-size-xs);
+    min-width: 600px;
+  }
+
+  .attendance-table-modern th,
+  .attendance-table-modern td,
+  .student-table-modern th,
+  .student-table-modern td {
+    padding: var(--spacing-sm) var(--spacing-md);
+    white-space: nowrap;
+  }
+
+  /* Hide less important columns on mobile */
+  .attendance-table-modern th:nth-child(4),
+  .attendance-table-modern td:nth-child(4),
+  .attendance-table-modern th:nth-child(5),
+  .attendance-table-modern td:nth-child(5) {
+    display: none;
+  }
+
+  .radio-custom {
+    width: 32px;
+    height: 32px;
+  }
+
+  .btn-submit-modern {
+    width: 100%;
+  }
+
+  .date-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .attendance-page-modern {
+    padding: var(--spacing-md);
+  }
+
+  .attendance-header-modern h1 {
+    font-size: var(--font-size-xl);
+  }
+
+  .attendance-card-modern,
+  .history-section-modern {
+    padding: var(--spacing-md);
+  }
+}

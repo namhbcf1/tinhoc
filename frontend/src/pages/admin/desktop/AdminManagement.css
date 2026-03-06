@@ -1,0 +1,194 @@
+.admin-management-page {
+  padding: 24px;
+  background: #f8f9fa;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.admins-table-container {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admins-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admins-table thead {
+  background: #f8f9fa;
+}
+
+.admins-table th {
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #2c3e50;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.admins-table td {
+  padding: 12px;
+  border-bottom: 1px solid #e0e0e0;
+  vertical-align: middle;
+  font-size: 14px;
+}
+
+.admins-table td:first-child {
+  font-weight: 600;
+  color: #111827;
+}
+
+.admins-table td:nth-child(2) {
+  color: #374151;
+  font-weight: 500;
+}
+
+.admins-table td:nth-child(4),
+.admins-table td:nth-child(5) {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.admins-table tr:hover {
+  background: #f8f9fa;
+}
+
+.admins-table tr.inactive {
+  opacity: 0.6;
+}
+
+.role-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.role-super_admin {
+  background: #dc2626;
+  color: white;
+}
+
+.role-admin {
+  background: #2563eb;
+  color: white;
+}
+
+.role-staff {
+  background: #6b7280;
+  color: white;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge.active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.action-buttons .btn {
+  padding: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+/* Using global admin-modal-overlay & admin-modal-content */
+
+.modal-content h2 {
+  margin: 0 0 20px 0;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.admin-form-grid .form-group:last-child {
+  grid-column: 1 / -1;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #95a5a6;
+}
+
+@media (max-width: 768px) {
+  .admins-table-container {
+    overflow-x: auto;
+  }
+
+  .admins-table {
+    min-width: 800px;
+  }
+}

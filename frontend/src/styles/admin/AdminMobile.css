@@ -1,0 +1,897 @@
+/* ========================================
+   ADMIN MOBILE BASE STYLES
+   ======================================== */
+
+:root {
+    /* Mobile Spacing */
+    --mobile-spacing-xs: 4px;
+    --mobile-spacing-sm: 8px;
+    --mobile-spacing-md: 16px;
+    --mobile-spacing-lg: 24px;
+    --mobile-spacing-xl: 32px;
+
+    /* Mobile Touch Targets */
+    --mobile-touch-target: 44px; /* iOS/Android minimum */
+    --mobile-touch-target-large: 48px;
+
+    /* Mobile Typography */
+    --mobile-font-base: 16px; /* Prevent zoom on iOS */
+    --mobile-font-sm: 14px;
+    --mobile-font-lg: 18px;
+    --mobile-font-xl: 20px;
+    --mobile-font-2xl: 24px;
+
+    /* Mobile Line Heights */
+    --mobile-line-height-tight: 1.2;
+    --mobile-line-height-normal: 1.5;
+    --mobile-line-height-relaxed: 1.6;
+
+    /* Mobile Colors */
+    --mobile-bg: #f8fafc;
+    --mobile-card-bg: #ffffff;
+    --mobile-border: #e2e8f0;
+    --mobile-text: #0f172a;
+    --mobile-text-muted: #64748b;
+    --mobile-text-light: #94a3b8;
+}
+
+/* ========================================
+   BASE MOBILE ADMIN PAGE
+   ======================================== */
+
+.admin-mobile-page {
+    padding: 16px;
+    background: var(--mobile-bg);
+    min-height: calc(100vh - 64px);
+    padding-bottom: calc(64px + 16px);
+    overflow-x: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+    .admin-mobile-page {
+        padding: 12px;
+        padding-bottom: calc(64px + 12px);
+    }
+}
+
+@media (max-width: 360px) {
+    .admin-mobile-page {
+        padding: 10px;
+        padding-bottom: calc(64px + 10px);
+    }
+}
+
+/* ========================================
+   MOBILE TYPOGRAPHY
+   ======================================== */
+
+.admin-mobile-page h1 {
+    font-size: var(--mobile-font-2xl);
+    font-weight: 700;
+    color: var(--mobile-text);
+    line-height: var(--mobile-line-height-tight);
+    margin: 0 0 8px 0;
+}
+
+.admin-mobile-page h2 {
+    font-size: var(--mobile-font-xl);
+    font-weight: 700;
+    color: var(--mobile-text);
+    line-height: var(--mobile-line-height-tight);
+    margin: 0 0 12px 0;
+}
+
+.admin-mobile-page h3 {
+    font-size: var(--mobile-font-lg);
+    font-weight: 600;
+    color: var(--mobile-text);
+    line-height: var(--mobile-line-height-normal);
+    margin: 0 0 8px 0;
+}
+
+.admin-mobile-page p {
+    font-size: var(--mobile-font-base);
+    color: var(--mobile-text);
+    line-height: var(--mobile-line-height-relaxed);
+    margin: 0 0 12px 0;
+}
+
+.admin-mobile-page small {
+    font-size: var(--mobile-font-sm);
+    color: var(--mobile-text-muted);
+    line-height: var(--mobile-line-height-normal);
+}
+
+/* ========================================
+   MOBILE CARDS
+   ======================================== */
+
+.admin-mobile-card {
+    background: var(--mobile-card-bg);
+    border-radius: 12px;
+    padding: var(--mobile-spacing-md);
+    margin-bottom: var(--mobile-spacing-md);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--mobile-border);
+}
+
+.admin-mobile-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--mobile-spacing-md);
+    padding-bottom: var(--mobile-spacing-md);
+    border-bottom: 1px solid var(--mobile-border);
+}
+
+.admin-mobile-card-title {
+    font-size: var(--mobile-font-lg);
+    font-weight: 600;
+    color: var(--mobile-text);
+    margin: 0;
+}
+
+.admin-mobile-card-content {
+    font-size: var(--mobile-font-base);
+    color: var(--mobile-text);
+    line-height: var(--mobile-line-height-relaxed);
+}
+
+/* ========================================
+   MOBILE BUTTONS
+   ======================================== */
+
+.admin-mobile-btn {
+    min-height: var(--mobile-touch-target);
+    padding: 12px 20px;
+    font-size: var(--mobile-font-base);
+    font-weight: 600;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.admin-mobile-btn:active {
+    transform: scale(0.98);
+}
+
+.admin-mobile-btn-primary {
+    background: #16a34a;
+    color: white;
+}
+
+.admin-mobile-btn-primary:active {
+    background: #15803d;
+}
+
+.admin-mobile-btn-secondary {
+    background: #f1f5f9;
+    color: var(--mobile-text);
+}
+
+.admin-mobile-btn-secondary:active {
+    background: #e2e8f0;
+}
+
+.admin-mobile-btn-outline {
+    background: transparent;
+    color: #16a34a;
+    border: 1px solid #16a34a;
+}
+
+.admin-mobile-btn-outline:active {
+    background: #f0fdf4;
+}
+
+.admin-mobile-btn-danger {
+    background: #dc2626;
+    color: white;
+}
+
+.admin-mobile-btn-danger:active {
+    background: #b91c1c;
+}
+
+.admin-mobile-btn-ghost {
+    background: transparent;
+    color: var(--mobile-text-muted);
+}
+
+.admin-mobile-btn-ghost:active {
+    background: #f1f5f9;
+}
+
+.admin-mobile-btn-full {
+    width: 100%;
+}
+
+.admin-mobile-btn-icon {
+    width: var(--mobile-touch-target);
+    height: var(--mobile-touch-target);
+    padding: 0;
+    min-width: var(--mobile-touch-target);
+}
+
+@media (max-width: 480px) {
+    .admin-mobile-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+        min-height: 40px;
+        gap: 6px;
+        border-radius: 10px;
+    }
+    
+    .admin-mobile-btn-icon {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+    }
+}
+
+@media (max-width: 360px) {
+    .admin-mobile-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+        min-height: 38px;
+        gap: 4px;
+        border-radius: 8px;
+    }
+    
+    .admin-mobile-btn-icon {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+    }
+}
+
+/* ========================================
+   MOBILE STATS GRID
+   ======================================== */
+
+.admin-mobile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--mobile-spacing-md);
+    margin-bottom: var(--mobile-spacing-lg);
+}
+
+.admin-mobile-stat-card {
+    background: var(--mobile-card-bg);
+    border-radius: 12px;
+    padding: var(--mobile-spacing-md);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--mobile-border);
+}
+
+.admin-mobile-stat-value {
+    font-size: var(--mobile-font-2xl);
+    font-weight: 800;
+    color: var(--mobile-text);
+    margin: 8px 0 4px;
+}
+
+.admin-mobile-stat-label {
+    font-size: var(--mobile-font-sm);
+    color: var(--mobile-text-muted);
+    font-weight: 500;
+}
+
+/* ========================================
+   MOBILE LISTS
+   ======================================== */
+
+.admin-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.admin-mobile-list-item {
+    min-height: 56px;
+    padding: var(--mobile-spacing-md);
+    background: var(--mobile-card-bg);
+    border-bottom: 1px solid var(--mobile-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    touch-action: manipulation;
+}
+
+.admin-mobile-list-item:active {
+    background: #f1f5f9;
+}
+
+.admin-mobile-list-item:last-child {
+    border-bottom: none;
+}
+
+/* ========================================
+   MOBILE EMPTY STATES
+   ======================================== */
+
+.admin-mobile-empty {
+    text-align: center;
+    padding: var(--mobile-spacing-xl) var(--mobile-spacing-md);
+    color: var(--mobile-text-muted);
+}
+
+.admin-mobile-empty-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto var(--mobile-spacing-md);
+    opacity: 0.5;
+}
+
+.admin-mobile-empty-text {
+    font-size: var(--mobile-font-base);
+    color: var(--mobile-text-muted);
+}
+
+/* ========================================
+   MOBILE LOADING STATES
+   ======================================== */
+
+.admin-mobile-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--mobile-spacing-xl);
+    color: var(--mobile-text-muted);
+}
+
+.admin-mobile-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--mobile-border);
+    border-top-color: #16a34a;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: var(--mobile-spacing-md);
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ========================================
+   MOBILE SAFE AREA SUPPORT
+   ======================================== */
+
+@supports (padding: max(0px)) {
+    .admin-mobile-safe-top {
+        padding-top: max(16px, env(safe-area-inset-top));
+    }
+
+    .admin-mobile-safe-bottom {
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+
+    .admin-mobile-safe-left {
+        padding-left: max(16px, env(safe-area-inset-left));
+    }
+
+    .admin-mobile-safe-right {
+        padding-right: max(16px, env(safe-area-inset-right));
+    }
+}
+
+/* ========================================
+   MOBILE UTILITIES
+   ======================================== */
+
+.admin-mobile-section {
+    margin-bottom: var(--mobile-spacing-lg);
+}
+
+.admin-mobile-divider {
+    height: 1px;
+    background: var(--mobile-border);
+    margin: var(--mobile-spacing-md) 0;
+}
+
+.admin-mobile-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: var(--mobile-font-sm);
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.admin-mobile-badge-success {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.admin-mobile-badge-warning {
+    background: #fffbeb;
+    color: #f59e0b;
+}
+
+.admin-mobile-badge-danger {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.admin-mobile-badge-info {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+/* ========================================
+   MOBILE RESPONSIVE HELPERS
+   ======================================== */
+
+@media (max-width: 480px) {
+    .admin-mobile-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-mobile-page {
+        padding: 12px;
+    }
+}
+
+
+   ======================================== */
+
+:root {
+    /* Mobile Spacing */
+    --mobile-spacing-xs: 4px;
+    --mobile-spacing-sm: 8px;
+    --mobile-spacing-md: 16px;
+    --mobile-spacing-lg: 24px;
+    --mobile-spacing-xl: 32px;
+
+    /* Mobile Touch Targets */
+    --mobile-touch-target: 44px; /* iOS/Android minimum */
+    --mobile-touch-target-large: 48px;
+
+    /* Mobile Typography */
+    --mobile-font-base: 16px; /* Prevent zoom on iOS */
+    --mobile-font-sm: 14px;
+    --mobile-font-lg: 18px;
+    --mobile-font-xl: 20px;
+    --mobile-font-2xl: 24px;
+
+    /* Mobile Line Heights */
+    --mobile-line-height-tight: 1.2;
+    --mobile-line-height-normal: 1.5;
+    --mobile-line-height-relaxed: 1.6;
+
+    /* Mobile Colors */
+    --mobile-bg: #f8fafc;
+    --mobile-card-bg: #ffffff;
+    --mobile-border: #e2e8f0;
+    --mobile-text: #0f172a;
+    --mobile-text-muted: #64748b;
+    --mobile-text-light: #94a3b8;
+}
+
+/* ========================================
+   BASE MOBILE ADMIN PAGE
+   ======================================== */
+
+.admin-mobile-page {
+    padding: 16px;
+    background: var(--mobile-bg);
+    min-height: calc(100vh - 64px);
+    padding-bottom: calc(64px + 16px);
+    overflow-x: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+    .admin-mobile-page {
+        padding: 12px;
+        padding-bottom: calc(64px + 12px);
+    }
+}
+
+@media (max-width: 360px) {
+    .admin-mobile-page {
+        padding: 10px;
+        padding-bottom: calc(64px + 10px);
+    }
+}
+
+/* ========================================
+   MOBILE TYPOGRAPHY
+   ======================================== */
+
+.admin-mobile-page h1 {
+    font-size: var(--mobile-font-2xl);
+    font-weight: 700;
+    color: var(--mobile-text);
+    line-height: var(--mobile-line-height-tight);
+    margin: 0 0 8px 0;
+}
+
+.admin-mobile-page h2 {
+    font-size: var(--mobile-font-xl);
+    font-weight: 700;
+    color: var(--mobile-text);
+    line-height: var(--mobile-line-height-tight);
+    margin: 0 0 12px 0;
+}
+
+.admin-mobile-page h3 {
+    font-size: var(--mobile-font-lg);
+    font-weight: 600;
+    color: var(--mobile-text);
+    line-height: var(--mobile-line-height-normal);
+    margin: 0 0 8px 0;
+}
+
+.admin-mobile-page p {
+    font-size: var(--mobile-font-base);
+    color: var(--mobile-text);
+    line-height: var(--mobile-line-height-relaxed);
+    margin: 0 0 12px 0;
+}
+
+.admin-mobile-page small {
+    font-size: var(--mobile-font-sm);
+    color: var(--mobile-text-muted);
+    line-height: var(--mobile-line-height-normal);
+}
+
+/* ========================================
+   MOBILE CARDS
+   ======================================== */
+
+.admin-mobile-card {
+    background: var(--mobile-card-bg);
+    border-radius: 12px;
+    padding: var(--mobile-spacing-md);
+    margin-bottom: var(--mobile-spacing-md);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--mobile-border);
+}
+
+.admin-mobile-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--mobile-spacing-md);
+    padding-bottom: var(--mobile-spacing-md);
+    border-bottom: 1px solid var(--mobile-border);
+}
+
+.admin-mobile-card-title {
+    font-size: var(--mobile-font-lg);
+    font-weight: 600;
+    color: var(--mobile-text);
+    margin: 0;
+}
+
+.admin-mobile-card-content {
+    font-size: var(--mobile-font-base);
+    color: var(--mobile-text);
+    line-height: var(--mobile-line-height-relaxed);
+}
+
+/* ========================================
+   MOBILE BUTTONS
+   ======================================== */
+
+.admin-mobile-btn {
+    min-height: var(--mobile-touch-target);
+    padding: 12px 20px;
+    font-size: var(--mobile-font-base);
+    font-weight: 600;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.admin-mobile-btn:active {
+    transform: scale(0.98);
+}
+
+.admin-mobile-btn-primary {
+    background: #16a34a;
+    color: white;
+}
+
+.admin-mobile-btn-primary:active {
+    background: #15803d;
+}
+
+.admin-mobile-btn-secondary {
+    background: #f1f5f9;
+    color: var(--mobile-text);
+}
+
+.admin-mobile-btn-secondary:active {
+    background: #e2e8f0;
+}
+
+.admin-mobile-btn-outline {
+    background: transparent;
+    color: #16a34a;
+    border: 1px solid #16a34a;
+}
+
+.admin-mobile-btn-outline:active {
+    background: #f0fdf4;
+}
+
+.admin-mobile-btn-danger {
+    background: #dc2626;
+    color: white;
+}
+
+.admin-mobile-btn-danger:active {
+    background: #b91c1c;
+}
+
+.admin-mobile-btn-ghost {
+    background: transparent;
+    color: var(--mobile-text-muted);
+}
+
+.admin-mobile-btn-ghost:active {
+    background: #f1f5f9;
+}
+
+.admin-mobile-btn-full {
+    width: 100%;
+}
+
+.admin-mobile-btn-icon {
+    width: var(--mobile-touch-target);
+    height: var(--mobile-touch-target);
+    padding: 0;
+    min-width: var(--mobile-touch-target);
+}
+
+@media (max-width: 480px) {
+    .admin-mobile-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+        min-height: 40px;
+        gap: 6px;
+        border-radius: 10px;
+    }
+    
+    .admin-mobile-btn-icon {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+    }
+}
+
+@media (max-width: 360px) {
+    .admin-mobile-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+        min-height: 38px;
+        gap: 4px;
+        border-radius: 8px;
+    }
+    
+    .admin-mobile-btn-icon {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+    }
+}
+
+/* ========================================
+   MOBILE STATS GRID
+   ======================================== */
+
+.admin-mobile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--mobile-spacing-md);
+    margin-bottom: var(--mobile-spacing-lg);
+}
+
+.admin-mobile-stat-card {
+    background: var(--mobile-card-bg);
+    border-radius: 12px;
+    padding: var(--mobile-spacing-md);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--mobile-border);
+}
+
+.admin-mobile-stat-value {
+    font-size: var(--mobile-font-2xl);
+    font-weight: 800;
+    color: var(--mobile-text);
+    margin: 8px 0 4px;
+}
+
+.admin-mobile-stat-label {
+    font-size: var(--mobile-font-sm);
+    color: var(--mobile-text-muted);
+    font-weight: 500;
+}
+
+/* ========================================
+   MOBILE LISTS
+   ======================================== */
+
+.admin-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.admin-mobile-list-item {
+    min-height: 56px;
+    padding: var(--mobile-spacing-md);
+    background: var(--mobile-card-bg);
+    border-bottom: 1px solid var(--mobile-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    touch-action: manipulation;
+}
+
+.admin-mobile-list-item:active {
+    background: #f1f5f9;
+}
+
+.admin-mobile-list-item:last-child {
+    border-bottom: none;
+}
+
+/* ========================================
+   MOBILE EMPTY STATES
+   ======================================== */
+
+.admin-mobile-empty {
+    text-align: center;
+    padding: var(--mobile-spacing-xl) var(--mobile-spacing-md);
+    color: var(--mobile-text-muted);
+}
+
+.admin-mobile-empty-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto var(--mobile-spacing-md);
+    opacity: 0.5;
+}
+
+.admin-mobile-empty-text {
+    font-size: var(--mobile-font-base);
+    color: var(--mobile-text-muted);
+}
+
+/* ========================================
+   MOBILE LOADING STATES
+   ======================================== */
+
+.admin-mobile-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--mobile-spacing-xl);
+    color: var(--mobile-text-muted);
+}
+
+.admin-mobile-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--mobile-border);
+    border-top-color: #16a34a;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: var(--mobile-spacing-md);
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ========================================
+   MOBILE SAFE AREA SUPPORT
+   ======================================== */
+
+@supports (padding: max(0px)) {
+    .admin-mobile-safe-top {
+        padding-top: max(16px, env(safe-area-inset-top));
+    }
+
+    .admin-mobile-safe-bottom {
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+
+    .admin-mobile-safe-left {
+        padding-left: max(16px, env(safe-area-inset-left));
+    }
+
+    .admin-mobile-safe-right {
+        padding-right: max(16px, env(safe-area-inset-right));
+    }
+}
+
+/* ========================================
+   MOBILE UTILITIES
+   ======================================== */
+
+.admin-mobile-section {
+    margin-bottom: var(--mobile-spacing-lg);
+}
+
+.admin-mobile-divider {
+    height: 1px;
+    background: var(--mobile-border);
+    margin: var(--mobile-spacing-md) 0;
+}
+
+.admin-mobile-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: var(--mobile-font-sm);
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.admin-mobile-badge-success {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.admin-mobile-badge-warning {
+    background: #fffbeb;
+    color: #f59e0b;
+}
+
+.admin-mobile-badge-danger {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.admin-mobile-badge-info {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+/* ========================================
+   MOBILE RESPONSIVE HELPERS
+   ======================================== */
+
+@media (max-width: 480px) {
+    .admin-mobile-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-mobile-page {
+        padding: 12px;
+    }
+}
+

@@ -1,0 +1,111 @@
+/* ========================================
+   iOS SPECIFIC STYLES
+   ======================================== */
+
+/* iOS Safe Area Support */
+.admin-mobile-layout.ios,
+.admin-mobile-page.ios {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}
+
+/* iOS Typography - SF Pro Font Stack */
+.admin-mobile-layout.ios,
+.admin-mobile-page.ios {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* iOS Scrolling - Momentum */
+.admin-mobile-layout.ios .admin-mobile-content,
+.admin-mobile-page.ios {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+/* iOS Button Styles */
+.admin-mobile-layout.ios .admin-mobile-btn {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.admin-mobile-layout.ios .admin-mobile-btn:active {
+    opacity: 0.7;
+    transform: scale(0.97);
+}
+
+/* iOS Card Styles */
+.admin-mobile-layout.ios .admin-mobile-card,
+.admin-mobile-page.ios .admin-mobile-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+/* iOS Modal Styles */
+.admin-mobile-layout.ios .mobile-modal {
+    border-radius: 20px 20px 0 0;
+    animation: slideUpIOS 0.3s cubic-bezier(0.36, 0.66, 0.04, 1);
+}
+
+@keyframes slideUpIOS {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* iOS Input Styles */
+.admin-mobile-layout.ios input,
+.admin-mobile-layout.ios textarea,
+.admin-mobile-layout.ios select {
+    -webkit-appearance: none;
+    appearance: none;
+    font-size: 16px; /* Prevent zoom on focus */
+}
+
+/* iOS List Item Styles */
+.admin-mobile-layout.ios .admin-mobile-list-item:active {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* iOS Pull to Refresh Indicator (if needed) */
+.admin-mobile-layout.ios .pull-to-refresh {
+    position: relative;
+}
+
+/* iOS Haptic Feedback Support */
+@media (hover: none) and (pointer: coarse) {
+    .admin-mobile-layout.ios .admin-mobile-btn:active,
+    .admin-mobile-layout.ios .admin-mobile-list-item:active {
+        /* Trigger haptic feedback via JavaScript if available */
+    }
+}
+
+/* iOS Status Bar Spacing */
+.admin-mobile-layout.ios .admin-mobile-header {
+    padding-top: max(12px, env(safe-area-inset-top));
+}
+
+/* iOS Home Indicator Spacing */
+.admin-mobile-layout.ios .mobile-bottom-nav {
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+
+/* iOS Keyboard Avoidance */
+.admin-mobile-layout.ios .mobile-form {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* iOS Native-like Transitions */
+.admin-mobile-layout.ios * {
+    transition-timing-function: cubic-bezier(0.36, 0.66, 0.04, 1);
+}
+
+
+

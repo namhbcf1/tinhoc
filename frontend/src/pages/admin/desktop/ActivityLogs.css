@@ -1,0 +1,78 @@
+.activity-logs-page {
+  padding: 24px;
+  background: #f8f9fa;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.logs-table-container {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.logs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.logs-table thead {
+  background: #f8f9fa;
+}
+
+.logs-table th {
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #2c3e50;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.logs-table td {
+  padding: 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.logs-table tr:hover {
+  background: #f8f9fa;
+}
+
+.action-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.details-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #95a5a6;
+}
+
+@media (max-width: 768px) {
+  .logs-table-container {
+    overflow-x: auto;
+  }
+  
+  .logs-table {
+    min-width: 800px;
+  }
+}

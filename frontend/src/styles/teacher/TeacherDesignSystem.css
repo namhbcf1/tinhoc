@@ -1,0 +1,483 @@
+/* ============================================
+   TEACHER DASHBOARD - PREMIUM DESIGN SYSTEM
+   Modern, Clean, High-End UI
+   ============================================ */
+
+/* ============================================
+   GLOBAL RESET & BOX-SIZING
+   ============================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  /* ============================================
+     VIEWPORT HEIGHT FIX
+     ============================================ */
+  --vh: 1vh;
+
+  /* ============================================
+     COLOR PALETTE - PREMIUM
+     Primary: Brand Gradient (#4CAF50 -> #2E7D32)
+     ============================================ */
+
+  /* Brand Colors */
+  --teacher-primary: #10b981;
+  /* Emerald 500 */
+  --teacher-primary-dark: #059669;
+  /* Emerald 600 */
+  --teacher-primary-light: #34d399;
+  /* Emerald 400 */
+  --teacher-primary-lighter: #d1fae5;
+  /* Emerald 100 */
+  --teacher-primary-lightest: #ecfdf5;
+  /* Emerald 50 */
+
+  --teacher-accent: #3b82f6;
+  /* Blue 500 */
+  --teacher-accent-gradient: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+
+  /* Neutral Colors (Glassmorphism base) */
+  --teacher-bg: #ffffff;
+  --teacher-bg-secondary: #f8fafc;
+  /* Slate 50 */
+  --teacher-bg-tertiary: #f1f5f9;
+  /* Slate 100 */
+  --teacher-border: #e2e8f0;
+  /* Slate 200 */
+  --teacher-border-light: #f1f5f9;
+  /* Slate 100 */
+
+  /* Text Colors */
+  --teacher-text-primary: #0f172a;
+  /* Slate 900 */
+  --teacher-text-secondary: #475569;
+  /* Slate 600 */
+  --teacher-text-tertiary: #94a3b8;
+  /* Slate 400 */
+  --teacher-text-muted: #cbd5e1;
+  /* Slate 300 */
+  --teacher-text-inverse: #ffffff;
+
+  /* Status Colors */
+  --teacher-success: #10b981;
+  --teacher-success-bg: #ecfdf5;
+  --teacher-success-text: #065f46;
+
+  --teacher-error: #ef4444;
+  --teacher-error-bg: #fef2f2;
+  --teacher-error-text: #991b1b;
+
+  --teacher-warning: #f59e0b;
+  --teacher-warning-bg: #fffbeb;
+  --teacher-warning-text: #92400e;
+
+  --teacher-info: #3b82f6;
+  --teacher-info-bg: #eff6ff;
+  --teacher-info-text: #1e40af;
+
+  /* ============================================
+     SPACING SCALE (4px base)
+     ============================================ */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+  --spacing-3xl: 48px;
+
+  /* ============================================
+     TYPOGRAPHY - PREMIMUM (Inter)
+     ============================================ */
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --font-size-xs: 0.75rem;
+  /* 12px */
+  --font-size-sm: 0.875rem;
+  /* 14px */
+  --font-size-base: 1rem;
+  /* 16px */
+  --font-size-lg: 1.125rem;
+  /* 18px */
+  --font-size-xl: 1.25rem;
+  /* 20px */
+  --font-size-2xl: 1.5rem;
+  /* 24px */
+  --font-size-3xl: 1.875rem;
+  /* 30px */
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ============================================
+     BORDER RADIUS - Modern
+     ============================================ */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* ============================================
+     SHADOWS - Soft & Deep
+     ============================================ */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-colored: 0 10px 15px -3px rgba(16, 185, 129, 0.2);
+  /* Green glow */
+
+  /* ============================================
+     TRANSITIONS
+     ============================================ */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* ============================================
+     Z-INDEX
+     ============================================ */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+}
+
+body {
+  font-family: var(--font-family);
+  color: var(--teacher-text-primary);
+  /* Subtle mesh background */
+  background-color: #f8fafc;
+  background-image:
+    radial-gradient(at 0% 0%, hsla(142, 40%, 96%, 1) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(210, 40%, 96%, 1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(142, 40%, 96%, 1) 0, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* ============================================
+   LAYOUT BASE
+   ============================================ */
+
+.teacher-page-base {
+  padding: var(--spacing-2xl);
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.teacher-page-header {
+  margin-bottom: var(--spacing-2xl);
+  position: relative;
+}
+
+.teacher-page-header h1 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--teacher-text-primary);
+  line-height: var(--line-height-tight);
+  background: linear-gradient(135deg, var(--teacher-text-primary) 0%, var(--teacher-text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.teacher-page-header p {
+  margin: 0;
+  font-size: var(--font-size-base);
+  color: var(--teacher-text-secondary);
+  line-height: var(--line-height-normal);
+  max-width: 600px;
+}
+
+/* ============================================
+   BUTTONS - PREMIUM
+   ============================================ */
+
+.btn-teacher {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: 0.75rem 1.5rem;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+
+.btn-teacher-primary {
+  background: var(--teacher-primary);
+  background: linear-gradient(135deg, var(--teacher-primary) 0%, var(--teacher-primary-dark) 100%);
+  color: var(--teacher-text-inverse);
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1);
+}
+
+.btn-teacher-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.15);
+  filter: brightness(1.05);
+}
+
+.btn-teacher-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-teacher-secondary {
+  background: var(--teacher-bg);
+  color: var(--teacher-text-primary);
+  border: 1px solid var(--teacher-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-teacher-secondary:hover:not(:disabled) {
+  background: var(--teacher-bg-secondary);
+  border-color: var(--teacher-text-tertiary);
+  color: var(--teacher-primary-dark);
+  transform: translateY(-1px);
+}
+
+.btn-teacher:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+/* ============================================
+   CARDS - GLASSMORPHISM & DEPTH
+   ============================================ */
+
+.card-teacher {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-lg);
+  transition: transform var(--transition-slow), box-shadow var(--transition-slow);
+}
+
+.card-teacher:hover {
+  box-shadow: var(--shadow-xl);
+}
+
+.card-teacher-header {
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--teacher-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-teacher-header h2 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--teacher-text-primary);
+}
+
+/* ============================================
+   TABLES - CLEAN & SPACIOUS
+   ============================================ */
+
+.table-teacher {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: transparent;
+}
+
+.table-teacher thead tr {
+  background: transparent;
+}
+
+.table-teacher th {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--teacher-text-secondary);
+  background: var(--teacher-bg-secondary);
+  border-bottom: 1px solid var(--teacher-border);
+}
+
+/* Nested properties flattened as project uses standard PostCSS only */
+.table-teacher th:first-child {
+  border-top-left-radius: var(--radius-md);
+}
+
+.table-teacher th:last-child {
+  border-top-right-radius: var(--radius-md);
+}
+
+.table-teacher td {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  font-size: var(--font-size-sm);
+  color: var(--teacher-text-primary);
+  border-bottom: 1px solid var(--teacher-border-light);
+  background: var(--teacher-bg);
+  transition: background var(--transition-fast);
+}
+
+.table-teacher tbody tr:hover td {
+  background: var(--teacher-bg-secondary);
+}
+
+.table-teacher tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-teacher tbody tr:last-child td:first-child {
+  border-bottom-left-radius: var(--radius-md);
+}
+
+.table-teacher tbody tr:last-child td:last-child {
+  border-bottom-right-radius: var(--radius-md);
+}
+
+/* ============================================
+   BADGES - PILL SHAPED & SUBTLE
+   ============================================ */
+
+.badge-teacher {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-teacher-primary {
+  background: var(--teacher-primary-lightest);
+  color: var(--teacher-primary-dark);
+  border: 1px solid var(--teacher-primary-lighter);
+}
+
+.badge-teacher-success {
+  background: var(--teacher-success-bg);
+  color: var(--teacher-success-text);
+  border: 1px solid #bbf7d0;
+  /* Green 200 */
+}
+
+.badge-teacher-error {
+  background: var(--teacher-error-bg);
+  color: var(--teacher-error-text);
+  border: 1px solid #fecaca;
+  /* Red 200 */
+}
+
+.badge-teacher-warning {
+  background: var(--teacher-warning-bg);
+  color: var(--teacher-warning-text);
+  border: 1px solid #fde68a;
+  /* Amber 200 */
+}
+
+.badge-teacher-info {
+  background: var(--teacher-info-bg);
+  color: var(--teacher-info-text);
+  border: 1px solid #bfdbfe;
+  /* Blue 200 */
+}
+
+.badge-teacher-secondary {
+  background: var(--teacher-bg-tertiary);
+  color: var(--teacher-text-secondary);
+  border: 1px solid var(--teacher-border);
+}
+
+/* ============================================
+   FORMS - FLOATING LABELS STYLE
+   ============================================ */
+
+.form-group-teacher {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-group-teacher label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--teacher-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: 2px;
+}
+
+.form-group-teacher input,
+.form-group-teacher select,
+.form-group-teacher textarea {
+  padding: 0.75rem 1rem;
+  font-size: var(--font-size-sm);
+  background: var(--teacher-bg);
+  border: 1px solid var(--teacher-border);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+  width: 100%;
+  color: var(--teacher-text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-group-teacher input:focus,
+.form-group-teacher select:focus,
+.form-group-teacher textarea:focus {
+  outline: none;
+  border-color: var(--teacher-primary);
+  box-shadow: 0 0 0 4px var(--teacher-primary-lighter);
+  background: white;
+}
+
+/* ============================================
+   MOBILE RESPONSIVE TWEAKS
+   ============================================ */
+
+@media (max-width: 768px) {
+  .teacher-page-base {
+    padding: var(--spacing-lg);
+  }
+
+  .teacher-page-header h1 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .card-teacher {
+    padding: var(--spacing-lg);
+  }
+
+  .table-teacher th,
+  .table-teacher td {
+    padding: var(--spacing-md);
+  }
+}

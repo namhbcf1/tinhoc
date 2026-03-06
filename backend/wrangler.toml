@@ -1,0 +1,110 @@
+name = "vantrangedu-api"
+main = "src/index.js"
+compatibility_date = "2025-03-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "vantrangedu_db"
+database_id = "ae59b4c6-0c72-4e7c-856c-d2106da89004"
+
+# R2 Storage binding (để lưu file Excel)
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "vantrangedu-files"
+
+# R2 Storage binding cho VIDEO bài giảng (class replay)
+[[r2_buckets]]
+binding = "VIDEO_BUCKET"
+bucket_name = "class-videos"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "production"
+
+# MUST BE SET VIA: wrangler secret put JWT_SECRET
+# JWT_SECRET = ""
+
+# Cloudflare Account ID (required for R2 presigned URLs)
+CLOUDFLARE_ACCOUNT_ID = "5b62d10947844251d23e0eac532531dd"
+
+# ========================================
+# R2 VIDEO PRESIGNED URL CONFIGURATION
+# ========================================
+# R2 S3-compatible credentials for generating presigned URLs
+# MUST BE SET VIA: wrangler secret put R2_ACCESS_KEY_ID
+# R2_ACCESS_KEY_ID = ""
+
+# MUST BE SET VIA: wrangler secret put R2_SECRET_ACCESS_KEY
+# R2_SECRET_ACCESS_KEY = ""
+
+# R2 S3 Endpoint (for reference)
+# https://5b62d10947844251d23e0eac532531dd.r2.cloudflarestorage.com
+
+# ========================================
+# CLOUDFLARE IMAGES CONFIGURATION
+# ========================================
+# Required for CCCD/Photo uploads in student registration
+#
+# IMPORTANT: Set this using wrangler secrets for security:
+#   wrangler secret put CLOUDFLARE_IMAGES_API_TOKEN
+#
+# To create an API token:
+# 1. Go to: https://dash.cloudflare.com/profile/api-tokens
+# 2. Create Custom Token with "Cloudflare Images → Edit" permission
+# 3. Copy the token and set it using the command above
+#
+# Note: CLOUDFLARE_ACCOUNT_ID is already set above in [vars]
+
+# Google Calendar Configuration for Online Classes
+# Admin email để impersonate khi tạo Google Calendar events
+GOOGLE_ADMIN_EMAIL = "vantrang@vantrangedu.com"
+
+# Google Service Account credentials (for Google Meet auto-creation)
+# Service Account: calendar-meet-service@vantrangedu.iam.gserviceaccount.com
+# MUST BE SET VIA: wrangler secret put GOOGLE_CLIENT_EMAIL
+# GOOGLE_CLIENT_EMAIL = ""
+
+# MUST BE SET VIA: wrangler secret put GOOGLE_PRIVATE_KEY
+# GOOGLE_PRIVATE_KEY = ""
+
+
+[ai]
+binding = "AI"
+
+# ========================================
+# LOCAL DEVELOPMENT ENVIRONMENT
+# ========================================
+# Override vars for local dev so they never touch production secrets.
+# Run: wrangler dev --env development
+[env.development]
+name = "vantrangedu-api-dev"
+
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "vantrangedu_db_dev"
+database_id = "ae59b4c6-0c72-4e7c-856c-d2106da89004"
+
+[[env.development.r2_buckets]]
+binding = "R2"
+bucket_name = "vantrangedu-files-dev"
+
+[[env.development.r2_buckets]]
+binding = "VIDEO_BUCKET"
+bucket_name = "class-videos-dev"
+
+[env.development.vars]
+ENVIRONMENT = "development"
+CLOUDFLARE_ACCOUNT_ID = "5b62d10947844251d23e0eac532531dd"
+GOOGLE_ADMIN_EMAIL = "vantrang@vantrangedu.com"
+# Secrets below must still be set locally via: wrangler secret put <KEY> --env development
+JWT_SECRET = ""
+R2_ACCESS_KEY_ID = ""
+R2_SECRET_ACCESS_KEY = ""
+GOOGLE_CLIENT_EMAIL = ""
+GOOGLE_PRIVATE_KEY = ""
+
+[env.development.ai]
+binding = "AI"

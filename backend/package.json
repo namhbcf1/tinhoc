@@ -1,0 +1,40 @@
+{
+  "name": "vantrangedu-api",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker API for Student Registration System",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "npm install && wrangler deploy",
+    "deploy:quick": "wrangler deploy",
+    "db:init": "wrangler d1 execute vantrangedu_db --file=./schema.sql",
+    "add-exams": "node scripts/add-exams-cli.js",
+    "test": "vitest"
+  },
+  "keywords": [
+    "cloudflare",
+    "worker",
+    "d1",
+    "api"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^12.6.2",
+    "hono": "^4.12.3",
+    "xlsx": "^0.18.5",
+    "xlsx-js-style": "^1.2.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.5.0",
+    "@cloudflare/workers-types": "^4.20260305.0",
+    "@vitest/coverage-v8": "^2.1.9",
+    "typescript": "^5.9.3",
+    "vitest": "^2.0.0",
+    "wrangler": "^4.69.0"
+  },
+  "optionalDependencies": {
+    "@cloudflare/workerd-windows-64": "^1.20260305.0"
+  }
+}

@@ -1,0 +1,157 @@
+/* ============================================
+   MOBILE SIDEBAR - Best Practices Implementation
+   Material Design & iOS Guidelines: 80% width drawer pattern
+   ============================================ */
+
+/* Override Tailwind w-64 class on mobile with higher specificity */
+@media (max-width: 768px) {
+  /* Sidebar width: 80% of viewport (Material Design standard) */
+  /* This leaves 20% visible content, clearly indicating it's an overlay */
+  .dashboard-sidebar,
+  aside.dashboard-sidebar,
+  aside.dashboard-sidebar.w-64 {
+    width: 80vw !important; /* 80% of viewport width - standard drawer pattern */
+    max-width: 320px !important; /* Cap at 320px for larger phones */
+    min-width: 0 !important; /* Remove min-width constraint */
+  }
+
+  /* Ensure sidebar is overlay, not pushing content */
+  .dashboard-sidebar {
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  /* Compact header - maintain readability */
+  .dashboard-sidebar > div > div:first-child {
+    height: 3.75rem !important; /* 60px - comfortable touch target */
+    padding-left: 1rem !important;
+    padding-right: 0.75rem !important;
+    min-height: 60px !important;
+  }
+
+  /* Logo and branding - proportional but readable */
+  .dashboard-sidebar > div > div:first-child .text-xl {
+    font-size: 1.125rem !important; /* 18px - readable */
+    font-weight: 700 !important;
+  }
+
+  .dashboard-sidebar > div > div:first-child .w-10,
+  .dashboard-sidebar > div > div:first-child .h-10 {
+    width: 2.25rem !important; /* 36px */
+    height: 2.25rem !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+
+  /* User profile section - compact but clear */
+  .dashboard-sidebar > div > div[class*="mx-4"] {
+    margin-left: 0.875rem !important;
+    margin-right: 0.875rem !important;
+    margin-top: 1rem !important;
+    padding: 0.875rem !important;
+  }
+
+  .dashboard-sidebar > div > div[class*="mx-4"] .w-10,
+  .dashboard-sidebar > div > div[class*="mx-4"] .h-10 {
+    width: 2.5rem !important; /* 40px */
+    height: 2.5rem !important;
+  }
+
+  .dashboard-sidebar > div > div[class*="mx-4"] p {
+    font-size: 0.875rem !important; /* 14px */
+    line-height: 1.4 !important;
+  }
+
+  /* Navigation items - touch-friendly (44px minimum) */
+  .dashboard-sidebar nav {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+    padding-left: 0.875rem !important;
+    padding-right: 0.875rem !important;
+  }
+
+  .dashboard-sidebar nav li {
+    margin-bottom: 0.25rem !important;
+  }
+
+  .dashboard-sidebar nav li a {
+    padding-left: 0.875rem !important;
+    padding-right: 0.875rem !important;
+    padding-top: 0.75rem !important; /* 12px top */
+    padding-bottom: 0.75rem !important; /* 12px bottom = 24px + content = ~44px total */
+    min-height: 44px !important; /* Touch target standard */
+    font-size: 0.9375rem !important; /* 15px - readable */
+    line-height: 1.5 !important;
+    gap: 0.75rem !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .dashboard-sidebar nav li a svg {
+    width: 20px !important; /* 20px icons */
+    height: 20px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Footer logout button - touch-friendly */
+  .dashboard-sidebar > div > div:last-child {
+    padding: 1rem 0.875rem !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+  }
+
+  .dashboard-sidebar button[class*="h-12"] {
+    height: 44px !important; /* Standard touch target */
+    min-height: 44px !important;
+    font-size: 0.9375rem !important; /* 15px */
+    padding-left: 0.875rem !important;
+    padding-right: 0.875rem !important;
+  }
+
+  .dashboard-sidebar button[class*="h-12"] svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+}
+
+/* Extra small devices (320px - 480px) */
+@media (max-width: 480px) {
+  .dashboard-sidebar,
+  aside.dashboard-sidebar,
+  aside.dashboard-sidebar.w-64 {
+    width: 85vw !important; /* Slightly more on very small screens */
+    max-width: 300px !important;
+    min-width: 0 !important;
+  }
+
+  /* Slightly more compact on very small screens */
+  .dashboard-sidebar > div > div:first-child {
+    height: 3.5rem !important; /* 56px */
+    padding-left: 0.875rem !important;
+    padding-right: 0.625rem !important;
+  }
+
+  .dashboard-sidebar nav li a {
+    padding-top: 0.625rem !important;
+    padding-bottom: 0.625rem !important;
+    font-size: 0.875rem !important; /* 14px */
+  }
+}
+
+/* Very small devices (below 360px) */
+@media (max-width: 360px) {
+  .dashboard-sidebar,
+  aside.dashboard-sidebar,
+  aside.dashboard-sidebar.w-64 {
+    width: 85vw !important; /* More space on tiny screens */
+    max-width: 280px !important;
+    min-width: 0 !important;
+  }
+}
+
+/* Ensure sidebar is truly overlay - not pushing content */
+@media (max-width: 768px) {
+  .dashboard-sidebar {
+    position: fixed !important;
+    z-index: 50 !important; /* Above overlay (z-30) but below modals */
+  }
+}
+

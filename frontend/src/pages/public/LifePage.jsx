@@ -1,0 +1,113 @@
+import ModernPublicLayout from '../../components/layout/ModernPublicLayout';
+import { Card, CardContent } from '../../components/ui/Card';
+import { Music, Heart, MapPin, Camera, Trophy, Code, Calendar, ArrowRight } from 'lucide-react';
+
+const clubs = [
+  { icon: Music, iconBg: 'bg-pink-500', title: 'CLB Âm Nhạc', desc: 'Nơi thỏa mãn đam mê ca hát, nhạc cụ và sáng tác âm nhạc cùng bạn bè.', members: '120 thành viên' },
+  { icon: Heart, iconBg: 'bg-red-500', title: 'Tình Nguyện', desc: 'Các hoạt động thiện nguyện ý nghĩa, kết nối cộng đồng và lan tỏa yêu thương.', members: '85 thành viên' },
+  { icon: MapPin, iconBg: 'bg-green-500', title: 'Du Lịch & Khám Phá', desc: 'Các chuyến đi thực tế, dã ngoại khám phá vẻ đẹp thiên nhiên và văn hóa Việt Nam.', members: '97 thành viên' },
+  { icon: Camera, iconBg: 'bg-slate-600', title: 'CLB Nhiếp Ảnh', desc: 'Ghi lại những khoảnh khắc đẹp của tuổi sinh viên qua ống kính đầy sáng tạo.', members: '63 thành viên' },
+  { icon: Trophy, iconBg: 'bg-yellow-500', title: 'Thể Thao', desc: 'Rèn luyện sức khỏe, phát triển tinh thần đồng đội qua các môn thể thao đa dạng.', members: '150 thành viên' },
+  { icon: Code, iconBg: 'bg-blue-500', title: 'CLB Công Nghệ', desc: 'Nghiên cứu, học hỏi và ứng dụng công nghệ mới vào giải pháp thực tiễn cho cuộc sống.', members: '110 thành viên' },
+];
+
+const events = [
+  { date: '15/03', month: '2026', title: 'Workshop AI & Future', desc: 'Hội thảo chuyên sâu về trí tuệ nhân tạo và xu hướng công nghệ tương lai với các chuyên gia hàng đầu.', color: 'border-blue-400', badge: 'bg-blue-500' },
+  { date: '20/04', month: '2026', title: 'Văn Nghệ Cuối Năm', desc: 'Đêm gala văn nghệ hoành tráng với các tiết mục ca múa nhạc đặc sắc từ sinh viên toàn trường.', color: 'border-pink-400', badge: 'bg-pink-500' },
+  { date: '05/05', month: '2026', title: 'VanTrang Marathon', desc: 'Giải chạy bộ truyền thống thường niên, thúc đẩy tinh thần rèn luyện sức khỏe trong cộng đồng sinh viên.', color: 'border-green-400', badge: 'bg-green-500' },
+  { date: '18/06', month: '2026', title: 'Hackathon 2026', desc: 'Cuộc thi lập trình 48 giờ với giải thưởng hấp dẫn, tìm kiếm những ý tưởng công nghệ đột phá nhất.', color: 'border-orange-400', badge: 'bg-orange-500' },
+];
+
+const gallery = [
+  { label: 'Workshop AI 2025', from: 'from-blue-500', to: 'to-cyan-500' },
+  { label: 'Văn Nghệ Gala', from: 'from-pink-500', to: 'to-rose-500' },
+  { label: 'Marathon 2025', from: 'from-green-500', to: 'to-emerald-500' },
+  { label: 'Hackathon Finals', from: 'from-orange-500', to: 'to-amber-500' },
+  { label: 'CLB Âm Nhạc', from: 'from-purple-500', to: 'to-indigo-500' },
+  { label: 'Tình Nguyện Hè', from: 'from-red-500', to: 'to-pink-500' },
+];
+
+export default function LifePage() {
+  return (
+    <ModernPublicLayout>
+      <div className="bg-slate-50 min-h-screen">
+        {/* Hero */}
+        <div className="bg-gradient-to-br from-pink-500 via-rose-500 to-orange-500 py-24 text-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-black/10" />
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 border border-white/30 text-white text-sm font-semibold mb-6">
+              Năng động - Sáng tạo - Tràn đầy nhiệt huyết
+            </div>
+            <h1 className="text-5xl md:text-6xl font-black text-white mb-4 drop-shadow-lg">Đời Sống Sinh Viên</h1>
+            <p className="text-white/90 text-xl max-w-2xl mx-auto">Trải nghiệm cuộc sống sinh viên phong phú tại VanTrang Education — nơi mỗi ngày đều là một hành trình.</p>
+          </div>
+        </div>
+
+        <div className="container mx-auto px-4 py-16">
+          {/* Club Cards */}
+          <h2 className="text-3xl font-bold text-slate-800 text-center mb-10">Câu Lạc Bộ & Hoạt Động</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+            {clubs.map((club, i) => (
+              <div key={i} className="glass-card rounded-2xl p-6 hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer group">
+                <div className="flex items-start gap-4 mb-3">
+                  <div className={`${club.iconBg} w-12 h-12 rounded-xl flex items-center justify-center shrink-0`}>
+                    <club.icon className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-lg text-slate-800 group-hover:text-emerald-600 transition-colors">{club.title}</h3>
+                    <span className="text-xs text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full">{club.members}</span>
+                  </div>
+                </div>
+                <p className="text-slate-600 text-sm leading-relaxed">{club.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Events Timeline */}
+          <h2 className="text-3xl font-bold text-slate-800 text-center mb-10">Sự Kiện Nổi Bật</h2>
+          <div className="space-y-4 mb-16">
+            {events.map((ev, i) => (
+              <div key={i} className={`glass-panel rounded-2xl p-6 border-l-4 ${ev.color} flex gap-5 items-start`}>
+                <div className={`${ev.badge} text-white rounded-xl px-4 py-3 text-center shrink-0 min-w-[60px]`}>
+                  <div className="text-xl font-black leading-none">{ev.date.split('/')[0]}</div>
+                  <div className="text-xs font-semibold opacity-90">Th{ev.date.split('/')[1]}</div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-3 mb-1">
+                    <h3 className="font-bold text-lg text-slate-800">{ev.title}</h3>
+                    <span className="text-xs text-slate-500 flex items-center gap-1"><Calendar size={12} /> {ev.month}</span>
+                  </div>
+                  <p className="text-slate-600 text-sm leading-relaxed">{ev.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Photo Gallery */}
+          <h2 className="text-3xl font-bold text-slate-800 text-center mb-10">Thư Viện Ảnh</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-16">
+            {gallery.map((g, i) => (
+              <div key={i} className={`aspect-video rounded-2xl bg-gradient-to-br ${g.from} ${g.to} flex items-end p-4 cursor-pointer hover:scale-[1.02] transition-transform`}>
+                <span className="text-white text-sm font-bold drop-shadow">{g.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="bg-gradient-to-r from-pink-500 to-orange-500 rounded-3xl p-10 text-center text-white">
+            <h2 className="text-3xl font-black mb-3">Tham Gia Cộng Đồng</h2>
+            <p className="text-white/90 mb-8 max-w-lg mx-auto">Kết nối với hàng nghìn sinh viên VanTrang qua các kênh cộng đồng chính thức.</p>
+            <div className="flex justify-center gap-4 flex-wrap">
+              <button className="bg-blue-500 hover:bg-blue-400 text-white font-bold px-8 py-3 rounded-xl inline-flex items-center gap-2 transition-colors">
+                Zalo Community <ArrowRight size={16} />
+              </button>
+              <button className="bg-white/20 hover:bg-white/30 text-white font-bold px-8 py-3 rounded-xl inline-flex items-center gap-2 border border-white/30 transition-colors">
+                Facebook Group <ArrowRight size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ModernPublicLayout>
+  );
+}

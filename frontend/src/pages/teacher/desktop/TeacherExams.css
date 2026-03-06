@@ -1,0 +1,197 @@
+/* Import Design System */
+@import '../../../styles/teacher/TeacherDesignSystem.css';
+
+.teacher-exams-page {
+  padding: var(--spacing-2xl);
+  box-sizing: border-box;
+}
+
+.exams-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.exams-header h1 {
+  margin: 0;
+  font-size: 28px;
+  color: #2c3e50;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-buttons button {
+  padding: 8px 16px;
+  border: 2px solid #4CAF50;
+  border-radius: 8px;
+  background: white;
+  color: #4CAF50;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-buttons button:hover {
+  background: #f1f8f4;
+}
+
+.filter-buttons button.active {
+  background: #4CAF50;
+  color: white;
+}
+
+.exams-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.exam-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #ff9800;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.exam-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.exam-card.past {
+  opacity: 0.7;
+  border-left-color: #95a5a6;
+}
+
+.exam-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.exam-header h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #2c3e50;
+  flex: 1;
+}
+
+.badge-past {
+  background: #95a5a6;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.exam-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.exam-detail-item {
+  display: flex;
+  gap: 12px;
+}
+
+.exam-detail-item .label {
+  font-weight: 600;
+  color: #7f8c8d;
+  min-width: 100px;
+}
+
+.exam-detail-item .value {
+  color: #2c3e50;
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .teacher-exams-page {
+    padding: var(--spacing-lg) !important; /* 16px - comfortable spacing */
+    /* Safe area support */
+    padding-top: calc(var(--spacing-lg) + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(var(--spacing-lg) + env(safe-area-inset-left, 0px));
+    padding-right: calc(var(--spacing-lg) + env(safe-area-inset-right, 0px));
+  }
+
+  .exams-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: var(--spacing-md) !important;
+    margin-bottom: var(--spacing-lg) !important;
+  }
+
+  .exams-header h1 {
+    font-size: var(--font-size-2xl) !important;
+    line-height: var(--line-height-tight) !important;
+  }
+
+  .filter-buttons {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--spacing-sm) !important;
+    width: 100% !important;
+  }
+
+  .filter-buttons button {
+    padding: var(--spacing-md) var(--spacing-lg) !important;
+    font-size: var(--font-size-base) !important; /* 16px prevents iOS zoom */
+    min-height: 44px !important;
+    min-width: 44px !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  .exams-list {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  .exam-card {
+    padding: 1rem !important;
+  }
+
+  .exam-header {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    margin-bottom: 1rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+
+  .exam-header h3 {
+    font-size: 1.125rem !important;
+  }
+
+  .exam-details {
+    gap: 0.75rem !important;
+  }
+
+  .exam-detail-item {
+    flex-direction: column !important;
+    gap: var(--spacing-xs) !important;
+    font-size: var(--font-size-base) !important; /* 16px prevents iOS zoom */
+  }
+
+  .exam-detail-item .label {
+    min-width: auto !important;
+    font-size: var(--font-size-sm) !important; /* 14px - OK for labels */
+  }
+
+  .exam-detail-item .value {
+    font-size: var(--font-size-base) !important; /* 16px */
+  }
+}

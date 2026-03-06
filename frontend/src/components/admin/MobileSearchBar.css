@@ -1,0 +1,333 @@
+.mobile-search-bar {
+    margin-bottom: 12px;
+}
+
+@media (max-width: 480px) {
+    .mobile-search-bar {
+        margin-bottom: 10px;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-search-bar {
+        margin-bottom: 8px;
+    }
+}
+
+.mobile-search-form {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.mobile-search-input-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0 14px;
+    transition: all 0.2s ease;
+    min-height: 44px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+    .mobile-search-input-wrapper {
+        padding: 0 12px;
+        border-radius: 10px;
+        min-height: 42px;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-search-input-wrapper {
+        padding: 0 10px;
+        border-radius: 8px;
+        min-height: 40px;
+    }
+}
+
+.mobile-search-bar.focused .mobile-search-input-wrapper {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+.mobile-search-icon {
+    color: #64748b;
+    flex-shrink: 0;
+    margin-right: 12px;
+}
+
+.mobile-search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 16px;
+    color: #0f172a;
+    padding: 10px 0;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+    .mobile-search-input {
+        font-size: 15px;
+        padding: 8px 0;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-search-input {
+        font-size: 14px;
+        padding: 8px 0;
+    }
+}
+
+.mobile-search-input::placeholder {
+    color: #94a3b8;
+}
+
+.mobile-search-clear {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.mobile-search-clear:active {
+    background: #f1f5f9;
+    transform: scale(0.9);
+}
+
+.mobile-search-filter-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.mobile-search-filter-btn:active {
+    background: #f1f5f9;
+    transform: scale(0.95);
+}
+
+.mobile-search-filter-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    background: #dc2626;
+    color: white;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+}
+
+/* iOS specific */
+.mobile-search-bar.ios .mobile-search-input-wrapper {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Android specific */
+.mobile-search-bar.android .mobile-search-input-wrapper:focus-within {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+}
+
+
+}
+
+@media (max-width: 480px) {
+    .mobile-search-bar {
+        margin-bottom: 10px;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-search-bar {
+        margin-bottom: 8px;
+    }
+}
+
+.mobile-search-form {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.mobile-search-input-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0 14px;
+    transition: all 0.2s ease;
+    min-height: 44px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+    .mobile-search-input-wrapper {
+        padding: 0 12px;
+        border-radius: 10px;
+        min-height: 42px;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-search-input-wrapper {
+        padding: 0 10px;
+        border-radius: 8px;
+        min-height: 40px;
+    }
+}
+
+.mobile-search-bar.focused .mobile-search-input-wrapper {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+.mobile-search-icon {
+    color: #64748b;
+    flex-shrink: 0;
+    margin-right: 12px;
+}
+
+.mobile-search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 16px;
+    color: #0f172a;
+    padding: 10px 0;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+    .mobile-search-input {
+        font-size: 15px;
+        padding: 8px 0;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-search-input {
+        font-size: 14px;
+        padding: 8px 0;
+    }
+}
+
+.mobile-search-input::placeholder {
+    color: #94a3b8;
+}
+
+.mobile-search-clear {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.mobile-search-clear:active {
+    background: #f1f5f9;
+    transform: scale(0.9);
+}
+
+.mobile-search-filter-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.mobile-search-filter-btn:active {
+    background: #f1f5f9;
+    transform: scale(0.95);
+}
+
+.mobile-search-filter-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    background: #dc2626;
+    color: white;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+}
+
+/* iOS specific */
+.mobile-search-bar.ios .mobile-search-input-wrapper {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Android specific */
+.mobile-search-bar.android .mobile-search-input-wrapper:focus-within {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+}
+

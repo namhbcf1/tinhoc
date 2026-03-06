@@ -1,0 +1,433 @@
+/* Student Dashboard Layout - Tách riêng hoàn toàn */
+
+.student-dashboard-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  width: 100%;
+  /* Zoom out 20% cho cả PC và mobile */
+  transform: scale(0.8);
+  transform-origin: top left;
+  width: 125%;
+  /* Compensate for scale: 100/0.8 = 125 */
+}
+
+/* ========================================
+   TOP BAR
+   ======================================== */
+
+.student-dashboard-top-bar {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  color: white;
+  padding: 10px 0;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+}
+
+.student-dashboard-top-bar-container {
+  max-width: 100%;
+  padding-left: 32px;
+  padding-right: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.student-dashboard-top-bar-left {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+}
+
+.student-dashboard-top-bar-link {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.student-dashboard-top-bar-link:hover {
+  color: #4CAF50;
+  background: rgba(76, 175, 80, 0.1);
+  transform: translateY(-1px);
+}
+
+.student-dashboard-top-bar-link .icon {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.student-dashboard-top-bar-right {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.student-dashboard-top-bar-btn {
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.student-dashboard-top-bar-btn-outline {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.student-dashboard-top-bar-btn-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.student-dashboard-top-bar-btn-ghost {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  border: 2px solid transparent;
+}
+
+.student-dashboard-top-bar-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.student-dashboard-lang-separator {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 0 8px;
+}
+
+.student-dashboard-lang-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  min-width: 40px;
+  text-align: center;
+}
+
+.student-dashboard-lang-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.student-dashboard-lang-btn.active {
+  background: #4CAF50;
+  border-color: #4CAF50;
+  color: white;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+/* ========================================
+   NAVBAR
+   ======================================== */
+
+.student-dashboard-navbar {
+  background: #ffffff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  width: 100%;
+}
+
+.student-dashboard-navbar-container {
+  max-width: 100%;
+  padding-left: 32px;
+  padding-right: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 90px;
+}
+
+.student-dashboard-navbar-logo {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  transition: transform 0.3s ease;
+}
+
+.student-dashboard-navbar-logo:hover {
+  transform: scale(1.02);
+}
+
+.student-dashboard-navbar-menu {
+  display: flex;
+  list-style: none;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+}
+
+.student-dashboard-navbar-menu li {
+  position: relative;
+}
+
+.student-dashboard-navbar-menu li a {
+  color: #2c3e50;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  white-space: nowrap;
+  position: relative;
+}
+
+.student-dashboard-navbar-menu li a::before {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 60%;
+  height: 2px;
+  background: #4CAF50;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 2px;
+}
+
+.student-dashboard-navbar-menu li a:hover::before,
+.student-dashboard-navbar-menu li a.active::before {
+  transform: translateX(-50%) scaleX(1);
+}
+
+.student-dashboard-navbar-menu li a:hover,
+.student-dashboard-navbar-menu li a.active {
+  color: #4CAF50;
+  background: rgba(76, 175, 80, 0.08);
+  transform: translateY(-1px);
+}
+
+.student-dashboard-navbar-actions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+/* Mobile Menu Toggle */
+.student-dashboard-mobile-menu-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.student-dashboard-mobile-menu-toggle span {
+  width: 25px;
+  height: 3px;
+  background: #333;
+  border-radius: 2px;
+  transition: all 0.3s;
+}
+
+/* ========================================
+   MAIN CONTENT
+   ======================================== */
+
+.student-dashboard-main-content {
+  flex: 1;
+  background: #ffffff;
+  width: 100%;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 968px) {
+  .student-dashboard-top-bar {
+    display: block;
+    padding: 8px 0;
+  }
+
+  .student-dashboard-top-bar-container {
+    padding: 0 15px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .student-dashboard-top-bar-left {
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 11px;
+  }
+
+  .student-dashboard-top-bar-link {
+    font-size: 10px;
+    padding: 2px 4px;
+    white-space: nowrap;
+  }
+
+  .student-dashboard-top-bar-right {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .student-dashboard-top-bar-btn {
+    padding: 5px 10px;
+    font-size: 10px;
+  }
+
+  .student-dashboard-lang-separator {
+    display: none;
+  }
+
+  .student-dashboard-lang-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+    min-width: 32px;
+  }
+
+  .student-dashboard-navbar-container {
+    height: 70px;
+    padding: 0 15px;
+  }
+
+  .student-dashboard-mobile-menu-toggle {
+    display: flex;
+  }
+
+  .student-dashboard-navbar-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    flex-direction: column;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s;
+    margin: 0;
+    gap: 0;
+  }
+
+  .student-dashboard-navbar-menu.active {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .student-dashboard-navbar-menu li {
+    width: 100%;
+    border-bottom: 1px solid #eee;
+  }
+
+  .student-dashboard-navbar-menu li:last-child {
+    border-bottom: none;
+  }
+
+  .student-dashboard-navbar-menu li a {
+    padding: 15px;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .student-dashboard-navbar-actions {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .student-dashboard-top-bar-container {
+    padding: 0 10px;
+  }
+
+  .student-dashboard-top-bar-left {
+    gap: 6px;
+    font-size: 9px;
+  }
+
+  .student-dashboard-top-bar-link {
+    font-size: 9px;
+    padding: 2px 3px;
+  }
+
+  .student-dashboard-top-bar-btn {
+    padding: 4px 8px;
+    font-size: 9px;
+  }
+
+  .student-dashboard-navbar-container {
+    padding: 0 10px;
+    height: 65px;
+  }
+
+  .student-dashboard-navbar-menu {
+    padding: 12px;
+  }
+
+  .student-dashboard-navbar-menu li a {
+    padding: 12px;
+    font-size: 14px;
+  }
+}
+
+/* Mobile zoom out để nhìn toàn bộ */
+@media (max-width: 768px) {
+  .student-dashboard-layout {
+    transform: scale(0.55);
+    transform-origin: top left;
+    width: 182%;
+    /* 100/0.55 */
+  }
+}
+
+@media (max-width: 480px) {
+  .student-dashboard-layout {
+    transform: scale(0.45);
+    transform-origin: top left;
+    width: 222%;
+    /* 100/0.45 */
+  }
+}
+
+@media (max-width: 380px) {
+  .student-dashboard-layout {
+    transform: scale(0.4);
+    transform-origin: top left;
+    width: 250%;
+    /* 100/0.4 */
+  }
+}
+
+

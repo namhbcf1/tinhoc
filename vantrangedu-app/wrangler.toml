@@ -1,0 +1,23 @@
+name = "vantrangedu-app"
+compatibility_date = "2024-02-28"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "vantrangedu_db"
+database_id = "e2422202-940b-4519-9374-d5b755f563cf"
+
+# R2 Storage binding
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "vantrangedu-files"
+
+# KV Cache binding
+[[kv_namespaces]]
+binding = "KV"
+id = "f5d4f4671b314837a30f54a311f39c4c"
+
+[ai]
+binding = "AI"

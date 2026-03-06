@@ -1,0 +1,142 @@
+.mobile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.mobile-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mobile-form-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
+.mobile-form-required {
+    color: #dc2626;
+    margin-left: 2px;
+}
+
+.mobile-form-input-wrapper {
+    position: relative;
+}
+
+.mobile-form-input,
+.mobile-form-textarea,
+.mobile-form-select {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 16px;
+    font-family: inherit;
+    background: white;
+    color: #0f172a;
+    transition: all 0.2s ease;
+    min-height: 44px;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.mobile-form-input:focus,
+.mobile-form-textarea:focus,
+.mobile-form-select:focus {
+    outline: none;
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+.mobile-form-input:disabled,
+.mobile-form-textarea:disabled,
+.mobile-form-select:disabled {
+    background: #f8fafc;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.mobile-form-textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.5;
+}
+
+.mobile-form-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 12px;
+    padding-right: 40px;
+}
+
+.mobile-form-hint {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: -4px;
+}
+
+.mobile-form-error {
+    font-size: 12px;
+    color: #dc2626;
+    margin-top: -4px;
+}
+
+.mobile-form-actions {
+    display: flex;
+    gap: 12px;
+    padding-top: 8px;
+    flex-shrink: 0;
+}
+
+.mobile-form-actions button {
+    flex: 1;
+    min-height: 44px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mobile-form-actions button:active {
+    transform: scale(0.98);
+}
+
+.mobile-form-actions.sticky {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    padding: 16px 0;
+    border-top: 1px solid #e2e8f0;
+    margin-top: auto;
+}
+
+/* iOS specific */
+.mobile-form.ios .mobile-form-input,
+.mobile-form.ios .mobile-form-textarea,
+.mobile-form.ios .mobile-form-select {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* Android specific */
+.mobile-form.android .mobile-form-input:focus,
+.mobile-form.android .mobile-form-textarea:focus,
+.mobile-form.android .mobile-form-select:focus {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+}
+
+
+
+
+
+
+
+

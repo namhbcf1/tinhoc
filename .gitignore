@@ -1,0 +1,72 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Python virtual environments
+.venv_ocr/
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+
+# Build outputs (frontend dist managed separately)
+# frontend/dist/ - keep this for deployment
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build tools cache
+.cache/
+.parcel-cache/
+dist/.vite/
+
+# Large binary/data files
+*.dll
+*.pyd
+*.exe
+*.so
+*.dylib
+
+# Wrangler local state
+.wrangler/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+
+# Temp files
+*.tmp
+*.temp
+
+# Excel files (data files, not part of codebase)
+*.xlsx
+*.xls
+EXCEL/
+
+# Agents output
+agents/output/
