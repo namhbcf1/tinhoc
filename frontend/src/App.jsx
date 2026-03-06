@@ -69,6 +69,7 @@ function AppRoutes() {
       <Route path="/dashboard/exams" element={<StudentDashboard />} />
       <Route path="/dashboard/messages" element={<StudentDashboard />} />
       <Route path="/dashboard/profile" element={<StudentDashboard />} />
+      <Route path="/dashboard/attendance" element={<StudentDashboard />} />
       <Route path="/dashboard/online-classes" element={<StudentDashboard />} />
 
       {/* Main pages */}
