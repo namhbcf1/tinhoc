@@ -119,8 +119,8 @@ export default function MobileMessagesModule({ studentData }) {
         <PullToRefreshWrapper onRefresh={handleRefresh}>
         <div className="min-h-screen bg-slate-50 pb-28">
             {/* Hero Banner */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 px-5 pt-6 pb-8">
-                <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-blue-500/10 blur-3xl" />
+            <div className="relative overflow-hidden bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 px-5 pt-6 pb-8" style={{ overflow: 'clip' }}>
+                <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-blue-500/10 blur-2xl opacity-60" />
                 <div className="relative z-10">
                     <div className="flex items-center justify-between mb-5">
                         <div className="flex items-center gap-3">
@@ -154,7 +154,7 @@ export default function MobileMessagesModule({ studentData }) {
             </div>
 
             {/* Tab Bar */}
-            <div className="bg-white border-b border-slate-100 px-5 py-3 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+            <div className="bg-white border-b border-slate-100 px-5 py-3 flex items-center justify-between sticky z-10 shadow-sm" style={{ top: 'var(--mb-header-height)' }}>
                 <div className="flex gap-1 p-1 bg-slate-100 rounded-xl">
                     {[
                         { id: 'notifications', label: 'Thông báo' },

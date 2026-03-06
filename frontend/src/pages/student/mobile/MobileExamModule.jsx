@@ -181,8 +181,8 @@ export default function MobileExamModule() {
     <PullToRefreshWrapper onRefresh={handleRefresh}>
     <div className="min-h-screen bg-slate-50 pb-28">
       {/* Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 px-5 pt-6 pb-8">
-        <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-white/10 blur-3xl" />
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 px-5 pt-6 pb-8" style={{ overflow: 'clip' }}>
+        <div className="absolute top-0 right-0 w-44 h-44 rounded-full bg-white/10 blur-2xl opacity-60" />
         <div className="relative z-10 flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center">

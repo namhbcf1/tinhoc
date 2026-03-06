@@ -349,7 +349,7 @@ export default function MobileScheduleModule({ studentData }) {
         <PullToRefreshWrapper onRefresh={handleRefresh}>
         <div className="min-h-screen bg-slate-50 pb-28">
             {/* Header */}
-            <div className="bg-gradient-to-br from-teal-600 via-cyan-600 to-teal-700 px-4 pt-5 pb-6">
+            <div className="bg-gradient-to-br from-teal-600 via-cyan-600 to-teal-700 px-4 pt-5 pb-6" style={{ overflow: 'clip' }}>
                 <div className="flex items-center gap-3 mb-4">
                     <div className="p-2.5 bg-white/20 border border-white/30 rounded-2xl">
                         <Calendar size={24} className="text-white" />

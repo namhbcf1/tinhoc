@@ -7,7 +7,6 @@ import { cn } from '../../lib/utils';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getTranslation } from '../../utils/translations';
 import api from '../../services/api';
-import ThemeToggle from '../ui/ThemeToggle';
 
 export default function ModernHeader() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -56,7 +55,7 @@ export default function ModernHeader() {
     ];
 
     return (
-        <header className="sticky top-0 z-50 w-full glass-panel border-b-0 dark:bg-gray-900/90 dark:border-gray-700/50">
+        <header className="sticky top-0 z-50 w-full glass-panel border-b-0">
             {/* Top Bar */}
             <div className="bg-emerald-600 bg-gradient-to-r from-emerald-600 to-teal-500 px-4 py-2 text-white text-xs md:text-sm shadow-sm">
                 <div className="container mx-auto flex justify-between items-center">
@@ -108,8 +107,8 @@ export default function ModernHeader() {
                     className={cn(
                                 "text-[15px] font-semibold transition-colors hover:text-emerald-600 px-3 py-2 rounded-full",
                                 location.pathname === link.to
-                                    ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                    : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white"
+                                    ? "text-emerald-600 bg-emerald-50"
+                                    : "text-slate-600 hover:bg-slate-50"
                             )}
                         >
                             {link.label}
@@ -118,7 +117,6 @@ export default function ModernHeader() {
                 </nav>
 
                 <div className="hidden md:flex items-center gap-3">
-                    <ThemeToggle />
                     {isLoggedIn ? (
                         <>
                             <Link to="/dashboard">
@@ -142,11 +140,10 @@ export default function ModernHeader() {
                     )}
                 </div>
 
-                {/* Mobile actions — theme toggle + hamburger */}
+                {/* Mobile actions — hamburger */}
                 <div className="md:hidden flex items-center gap-2">
-                    <ThemeToggle />
                     <button
-                        className="p-2 text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-700 rounded-full border border-slate-200 dark:border-slate-600"
+                        className="p-2 text-slate-700 bg-slate-50 rounded-full border border-slate-200"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                         aria-expanded={isMenuOpen}
                         aria-controls="mobile-menu"
@@ -159,13 +156,13 @@ export default function ModernHeader() {
 
             {/* Mobile Menu — id for aria-controls, 100dvh for mobile browser bar (fix #2) */}
             {isMenuOpen && (
-                <div id="mobile-menu" className="md:hidden border-t border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-gray-900 shadow-lg absolute w-full left-0 top-[100%] animate-in slide-in-from-top-2 h-[calc(100dvh-112px)] overflow-y-auto">
+                <div id="mobile-menu" className="md:hidden border-t border-slate-200 p-4 bg-white shadow-lg absolute w-full left-0 top-[100%] animate-in slide-in-from-top-2 h-[calc(100dvh-112px)] overflow-y-auto">
                     <nav className="flex flex-col gap-2">
                         {navLinks.map((link) => (
                             <Link
                                 key={link.to}
                                 to={link.to}
-                                className="text-lg font-medium py-3 border-b border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-200 active:text-green-600 block"
+                                className="text-lg font-medium py-3 border-b border-slate-100 text-slate-700 active:text-green-600 block"
                                 onClick={() => setIsMenuOpen(false)}
                             >
                                 {link.label}

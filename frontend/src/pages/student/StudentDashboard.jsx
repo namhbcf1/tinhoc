@@ -117,6 +117,7 @@ export default function StudentDashboard() {
       <DashboardSidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        studentData={studentData}
       />
 
       <div className="flex-1 flex flex-col min-w-0 md:ml-[280px] h-[100dvh] overflow-hidden">

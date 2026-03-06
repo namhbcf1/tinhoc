@@ -70,3 +70,11 @@ EXCEL/
 
 # Agents output
 agents/output/
+
+# Abandoned Next.js project (not part of main app)
+vantrangedu-app/
+
+# AI agent artifacts
+.agent/
+.gemini-clipboard/
+C_/

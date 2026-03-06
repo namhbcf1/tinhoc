@@ -308,8 +308,32 @@ body {
 
 .mobile-header-actions {
     display: flex;
+    align-items: center;
     gap: var(--mb-xs);
     flex-shrink: 0;
+}
+
+.mobile-header-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--mb-radius-full);
+    overflow: hidden;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--mb-text-inverse);
+    font-weight: var(--mb-font-bold);
+    font-size: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+}
+
+.mobile-header-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 /* Notification badge */
@@ -1299,23 +1323,6 @@ body {
 .mobile-stagger > *:nth-child(7) { animation-delay: 300ms; }
 .mobile-stagger > *:nth-child(8) { animation-delay: 350ms; }
 
-/* ========================================
-   DARK MODE SUPPORT (Future)
-   ======================================== */
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        --mb-bg: #0f172a;
-        --mb-bg-dark: #1e293b;
-        --mb-card: #1e293b;
-        --mb-card-hover: #334155;
-        --mb-border: #334155;
-        --mb-border-light: #1e293b;
-        --mb-border-dark: #475569;
-        
-        --mb-text: #f1f5f9;
-        --mb-text-secondary: #cbd5e1;
-        --mb-text-muted: #94a3b8;
-        --mb-text-light: #64748b;
-    }
-}
+/* ⛔ DARK MODE BỊ CẤM HOÀN TOÀN - Chỉ dùng chế độ sáng (light-only).
+   KHÔNG được thêm lại @media (prefers-color-scheme: dark) hay bất kỳ dark mode CSS nào.
+   Quyết định này là VĨNH VIỄN. */

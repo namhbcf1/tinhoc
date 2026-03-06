@@ -63,7 +63,7 @@ export default function StudentMobileLayout({
 
     return (
         <div className={`student-mobile-layout ${platform}`}>
-            {/* Header */}
+            {/* Header - Fixed position with safe area */}
             <header className="mobile-header student">
                 <div className="mobile-header-content">
                     <button
@@ -101,7 +101,7 @@ export default function StudentMobileLayout({
                 {children}
             </main>
 
-            {/* Bottom Navigation */}
+            {/* Bottom Navigation - Fixed position */}
             <nav className="mobile-bottom-nav student">
                 {bottomItems.map((item) => {
                     const Icon = item.icon;

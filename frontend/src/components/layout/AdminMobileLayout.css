@@ -10,12 +10,55 @@
     flex-direction: column;
     background: var(--mb-bg);
     position: relative;
-    /* KHÔNG dùng overflow: hidden vì sẽ clip position: fixed bottom nav */
+    overflow-x: clip;
 }
 
 /* iOS safe area padding */
 .admin-mobile-layout.ios {
     padding-top: env(safe-area-inset-top);
+}
+
+/* Header cố định trên cùng */
+.admin-mobile-layout .mobile-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    height: var(--mb-header-height);
+}
+
+/* Content area - dùng page scroll tự nhiên, không tạo scroll container */
+.admin-mobile-layout .mobile-content {
+    flex: 1;
+    padding-top: calc(var(--mb-header-height) + var(--mb-md));
+    padding-bottom: calc(var(--mb-bottom-nav-height) + var(--mb-lg));
+    min-height: 100vh;
+    box-sizing: border-box;
+    overflow-x: clip;
+    overflow-y: unset;
+    -webkit-overflow-scrolling: unset;
+    overscroll-behavior-y: unset;
+}
+
+/* Bottom nav cố định */
+.admin-mobile-layout .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9998;
+    height: var(--mb-bottom-nav-height);
+}
+
+/* Drawer trên tất cả */
+.admin-mobile-layout .mobile-drawer {
+    z-index: 10000;
+}
+
+/* Overlay */
+.admin-mobile-layout .mobile-overlay {
+    z-index: 9999;
 }
 
 /* Admin active = blue */

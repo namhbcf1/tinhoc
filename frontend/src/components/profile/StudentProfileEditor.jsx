@@ -88,10 +88,8 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
                     console.log('Update data:', updateData);
                     console.log('Student data:', { id: studentData?.id, cccd: studentData?.cccd });
 
-                    // Call API to update student with new image ID
-                    const response = studentData?.id
-                        ? await api.updateStudent(studentData.id, updateData)
-                        : await api.updateStudentByCCCD(studentData?.cccd, updateData);
+                    // Student tự cập nhật luôn dùng update-by-cccd
+                    const response = await api.updateStudentByCCCD(studentData?.cccd, { ...updateData, cccd: studentData?.cccd });
 
                     console.log('Update response:', response);
 
@@ -159,9 +157,8 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
         try {
             console.log('Form submit data:', data);
 
-            const response = studentData.id
-                ? await api.updateStudent(studentData.id, data)
-                : await api.updateStudentByCCCD(studentData.cccd, data);
+            // Student tự cập nhật luôn dùng update-by-cccd (route /:id yêu cầu admin)
+            const response = await api.updateStudentByCCCD(studentData.cccd, { ...data, cccd: studentData.cccd });
 
             console.log('Form submit response:', response);
 

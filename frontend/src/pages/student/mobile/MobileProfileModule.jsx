@@ -286,9 +286,9 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
         <div className="min-h-screen bg-slate-50 pb-28">
             <ToastContainer toasts={toasts} removeToast={removeToast} />
             {/* Header */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 pt-5 pb-8">
-                <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-violet-500/10 blur-3xl" />
-                <div className="absolute -bottom-8 left-4 w-32 h-32 rounded-full bg-purple-500/10 blur-3xl" />
+            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 pt-5 pb-8" style={{ overflow: 'clip' }}>
+                <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-violet-500/10 blur-2xl opacity-60" />
+                <div className="absolute bottom-0 left-4 w-32 h-32 rounded-full bg-purple-500/10 blur-2xl opacity-60" />
                 <div className="relative z-10 flex gap-4 items-center">
                     <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-2xl font-black text-white shadow-lg overflow-hidden tracking-tight border-2 border-violet-400/30">
                         {avatarUrl ? (
@@ -312,7 +312,7 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-slate-200 px-4 bg-white sticky top-0 z-10 overflow-x-auto">
+            <div className="flex border-b border-slate-200 px-4 bg-white sticky z-10 overflow-x-auto" style={{ top: 'var(--mb-header-height)' }}>
                 <button
                     onClick={() => setActiveTab('info')}
                     className={`flex-1 pb-3 pt-3 font-black text-sm transition-colors border-b-2 whitespace-nowrap ${activeTab === 'info' ? 'text-violet-700 border-violet-600' : 'text-slate-500 border-transparent'}`}

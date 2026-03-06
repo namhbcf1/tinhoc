@@ -21,6 +21,7 @@ import {
     GraduationCap,
     Plus,
     RefreshCw,
+    AlertCircle,
 } from 'lucide-react';
 import api from '../../../services/api';
 import { formatDateVN } from '../../../utils/dateUtils';
@@ -403,7 +404,7 @@ const ClassDetailSheet = ({ cls, onClose }) => {
                     </div>
                 </div>
 
-                <div className="flex border-b border-slate-200 px-5 bg-white sticky top-0 z-10 overflow-x-auto ">
+                <div className="flex border-b border-slate-200 px-5 bg-white sticky top-0 z-10 overflow-x-auto">
                     <button
                         onClick={() => setActiveTab('info')}
                         className={`flex-1 pb-3 pt-3 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${activeTab === 'info' ? 'text-green-600 border-green-600' : 'text-slate-500 border-transparent'
@@ -963,7 +964,7 @@ export default function MobileClassesModule({ studentData }) {
         <PullToRefreshWrapper onRefresh={handleRefresh}>
         <div className="bg-slate-50 min-h-screen pb-28">
             {/* Tab Switcher */}
-            <div className="bg-white border-b border-slate-100 px-4 sticky top-0 z-20 -mx-4 ">
+            <div className="bg-white border-b border-slate-100 px-4 sticky z-20 -mx-4" style={{ top: 'var(--mb-header-height)' }}>
                 <div className="flex gap-1 p-1.5 bg-slate-100 rounded-xl my-3">
                     {TABS.map((tab) => {
                         const Icon = tab.icon;
@@ -988,7 +989,7 @@ export default function MobileClassesModule({ studentData }) {
             {activeTab === 'my-classes' && (
                 <>
                     {/* Stats Header */}
-                    <div className="bg-gradient-to-br from-violet-700 via-violet-600 to-purple-700 px-4 pt-5 pb-6 -mx-4">
+                    <div className="bg-gradient-to-br from-violet-700 via-violet-600 to-purple-700 px-4 pt-5 pb-6 -mx-4" style={{ overflow: 'clip' }}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="p-2.5 bg-white/20 border border-white/30 rounded-2xl">
                                 <BookOpen size={22} className="text-white" />
@@ -1015,7 +1016,7 @@ export default function MobileClassesModule({ studentData }) {
                     </div>
 
                     {/* Search & Filter */}
-                    <div className="px-4 py-3 bg-white shadow-sm border-b border-slate-100 sticky top-[60px] z-10 -mx-4 ">
+                    <div className="px-4 py-3 bg-white shadow-sm border-b border-slate-100 sticky z-10 -mx-4 " style={{ top: 'var(--mb-header-height)' }}>
                         <div className="flex gap-2 mb-2">
                             <div className="flex-1 relative">
                                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -1116,7 +1117,7 @@ export default function MobileClassesModule({ studentData }) {
             {activeTab === 'register' && (
                 <>
                     {/* Header */}
-                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 pt-4 pb-10 -mx-4 rounded-b-[2rem] shadow-lg">
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 pt-4 pb-10 -mx-4 rounded-b-[2rem] shadow-lg" style={{ overflow: 'clip' }}>
                         <div className="flex items-center justify-between mb-5">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white ">

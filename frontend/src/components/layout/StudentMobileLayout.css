@@ -10,13 +10,56 @@
     flex-direction: column;
     background: var(--mb-bg);
     position: relative;
+    /* clip thay vì hidden – ngăn tràn ngang nhưng KHÔNG tạo scroll container chặn page scroll */
+    overflow-x: clip;
 }
 
-.student-mobile-layout.ios {
-    padding-top: env(safe-area-inset-top);
+/* Header cố định trên cùng */
+.student-mobile-layout .mobile-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    height: var(--mb-header-height);
 }
 
-/* Student active = indigo */
+/* Content area - không dùng overflow-y: auto, để page scroll tự nhiên */
+.student-mobile-layout .mobile-content {
+    flex: 1;
+    padding-top: calc(var(--mb-header-height) + var(--mb-md));
+    padding-bottom: calc(var(--mb-bottom-nav-height) + var(--mb-lg));
+    min-height: 100vh;
+    box-sizing: border-box;
+    /* QUAN TRỌNG: override base overflow-y: auto
+       Dùng clip thay vì hidden/auto để ngăn blur tràn mà không tạo scroll container */
+    overflow-x: clip;
+    overflow-y: unset;
+    -webkit-overflow-scrolling: unset;
+    overscroll-behavior-y: unset;
+}
+
+/* Bottom nav cố định */
+.student-mobile-layout .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9998;
+    height: var(--mb-bottom-nav-height);
+}
+
+/* Drawer trên tất cả */
+.student-mobile-layout .mobile-drawer {
+    z-index: 10000;
+}
+
+/* Overlay */
+.student-mobile-layout .mobile-overlay {
+    z-index: 9999;
+}
+
+/* Student active = emerald */
 .student-mobile-layout .mobile-drawer-item.active {
     background: var(--mb-student-bg);
     color: var(--mb-student-dark);

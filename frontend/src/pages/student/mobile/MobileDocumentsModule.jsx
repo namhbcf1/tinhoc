@@ -108,9 +108,9 @@ export default function MobileDocumentsModule({ studentData }) {
         <PullToRefreshWrapper onRefresh={handleRefresh}>
         <div className="min-h-screen bg-slate-50 pb-28">
             {/* Hero Banner */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 px-5 pt-6 pb-8">
-                <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 blur-3xl" />
-                <div className="absolute -bottom-10 left-5 w-32 h-32 rounded-full bg-white/10 blur-3xl" />
+            <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 px-5 pt-6 pb-8" style={{ overflow: 'clip' }}>
+                <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/10 blur-2xl opacity-60" />
+                <div className="absolute bottom-0 left-5 w-32 h-32 rounded-full bg-white/10 blur-2xl opacity-60" />
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-5">
                         <div className="w-12 h-12 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center">

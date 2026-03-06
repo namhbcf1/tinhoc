@@ -773,28 +773,7 @@
     }
 }
 
-/* ========================================
-   DARK MODE SUPPORT (Future)
-   ======================================== */
-
-@media (prefers-color-scheme: dark) {
-    .admin-mobile-page {
-        background: #0f172a;
-    }
-
-    .admin-mobile-card {
-        background: #1e293b;
-        border-color: #334155;
-    }
-
-    .admin-mobile-text {
-        color: #f1f5f9;
-    }
-
-    .admin-mobile-text-muted {
-        color: #94a3b8;
-    }
-}
+/* ⛔ DARK MODE BỊ CẤM HOÀN TOÀN */
 
 /* ========================================
    UTILITY CLASSES

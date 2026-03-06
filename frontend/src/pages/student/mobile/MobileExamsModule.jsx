@@ -161,8 +161,8 @@ const ExamDetailSheet = ({ exam, onClose, onRegister, onCancel, loading }) => {
                 </div>
 
                 {/* Header */}
-                <div className={`bg-gradient-to-br ${theme.bg} px-5 pt-4 pb-5 relative overflow-hidden flex-shrink-0`}>
-                    <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+                <div className={`bg-gradient-to-br ${theme.bg} px-5 pt-4 pb-5 relative overflow-hidden flex-shrink-0`} style={{ overflow: 'clip' }}>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-xl opacity-60" />
                     <button onClick={onClose} className="absolute top-3 right-4 p-2 rounded-full bg-white/20 backdrop-blur-sm">
                         <X size={18} className="text-white" />
                     </button>
@@ -415,9 +415,9 @@ export default function MobileExamsModule({ studentData }) {
         <PullToRefreshWrapper onRefresh={handleRefresh}>
         <div className="min-h-screen bg-slate-50 pb-28">
             {/* Hero Banner */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-violet-700 via-purple-700 to-pink-700 px-5 pt-6 pb-8">
-                <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-white/10 blur-3xl" />
-                <div className="absolute -bottom-10 left-4 w-32 h-32 rounded-full bg-pink-500/10 blur-3xl" />
+            <div className="relative overflow-hidden bg-gradient-to-br from-violet-700 via-purple-700 to-pink-700 px-5 pt-6 pb-8" style={{ overflow: 'clip' }}>
+                <div className="absolute top-0 right-0 w-44 h-44 rounded-full bg-white/10 blur-2xl opacity-60" />
+                <div className="absolute bottom-0 left-4 w-32 h-32 rounded-full bg-pink-500/10 blur-2xl opacity-60" />
                 <div className="relative z-10">
                     <div className="flex items-start justify-between mb-5">
                         <div className="flex items-center gap-3">
