@@ -2,7 +2,7 @@
 
 ## Kiến trúc Test (Testing Architecture)
 
-Kiến trúc kiểm thử của hệ thống được thiết kế tối ưu cho nền tảng **Next.js 15 App Router** hoạt động kết hợp cùng sức mạnh luân chuyển của **Cloudflare Workers** và cơ sở dữ liệu **Cloudflare D1**. Hệ thống áp dụng triết lý kiến trúc 3 lớp (3-Tier Architecture) giúp việc giả lập (mocking) và kiểm thử độc lập trở nên rõ ràng và dễ bảo trì. Công cụ kiểm thử chính được sử dụng là **Vitest**.
+Kiến trúc kiểm thử của hệ thống được thiết kế tối ưu cho nền tảng **Hono (TypeScript)** hoạt động trên **Cloudflare Workers** và cơ sở dữ liệu **Cloudflare D1**. Hệ thống áp dụng triết lý kiến trúc 3 lớp (3-Tier Architecture) giúp việc giả lập (mocking) và kiểm thử độc lập trở nên rõ ràng và dễ bảo trì. Công cụ kiểm thử chính được sử dụng là **Vitest** với **@cloudflare/vitest-pool-workers**.
 
 ### Các tầng kiểm thử (Testing Layers)
 

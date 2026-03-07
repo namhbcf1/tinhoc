@@ -14,8 +14,9 @@ export function applyExportMethods(ApiClient) {
     const url = this.getExportUrl(classId);
 
     const headers = {};
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    const token = this.getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
     const response = await fetch(url, { headers });
@@ -40,8 +41,9 @@ export function applyExportMethods(ApiClient) {
     const url = `${this.baseURL}/export/exam/${examId}`;
 
     const headers = {};
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    const token = this.getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
     const response = await fetch(url, { headers });

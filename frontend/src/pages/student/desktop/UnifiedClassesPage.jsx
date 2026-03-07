@@ -812,20 +812,16 @@ export default function UnifiedClassesPage({ studentData, onRegisterSuccess }) {
         try {
             const cccd = studentData?.cccd || localStorage.getItem('student_cccd');
             if (!cccd) {
-                console.warn('[UnifiedClassesPage] No CCCD found');
                 setMyClasses([]);
                 setMyLoading(false);
                 return;
             }
-            console.log('[UnifiedClassesPage] Loading ONLINE classes for CCCD:', cccd);
             const API_URL = import.meta.env.VITE_API_URL || 'https://vantrangedu-api.bangachieu2.workers.dev';
             const response = await fetch(`${API_URL}/online-classes?status=active`, {
                 headers: { 'X-Student-CCCD': cccd }
             });
             const result = await response.json();
-            console.log('[UnifiedClassesPage] Online classes response:', result);
             if (!result?.success || !result?.data?.classes) {
-                console.log('[UnifiedClassesPage] No online classes data');
                 setMyClasses([]);
                 setMyLoading(false);
                 return;
@@ -862,7 +858,6 @@ export default function UnifiedClassesPage({ studentData, onRegisterSuccess }) {
                     is_online: true,
                 };
             });
-            console.log('[UnifiedClassesPage] Final student classes:', studentClasses.length);
             setMyClasses(studentClasses);
         } catch (err) {
             console.error('[UnifiedClassesPage] Error loading my classes:', err);
@@ -877,15 +872,12 @@ export default function UnifiedClassesPage({ studentData, onRegisterSuccess }) {
         setRegisterLoading(true);
         try {
             const cccd = studentData?.cccd || localStorage.getItem('student_cccd');
-            console.log('[UnifiedClassesPage] Loading open online classes...');
             const API_URL = import.meta.env.VITE_API_URL || 'https://vantrangedu-api.bangachieu2.workers.dev';
             const response = await fetch(`${API_URL}/online-classes?status=active`, {
                 headers: cccd ? { 'X-Student-CCCD': cccd } : {}
             });
             const result = await response.json();
-            console.log('[UnifiedClassesPage] Online classes response:', result);
             if (!result?.success || !result?.data?.classes) {
-                console.log('[UnifiedClassesPage] No online classes data');
                 setOpenClasses([]);
                 setRegisterLoading(false);
                 return;
@@ -919,7 +911,6 @@ export default function UnifiedClassesPage({ studentData, onRegisterSuccess }) {
                 status: cls.status,
                 is_online: true,
             }));
-            console.log('[UnifiedClassesPage] Valid open classes:', transformedClasses.length);
             setOpenClasses(transformedClasses);
         } catch (err) {
             console.error('[UnifiedClassesPage] Failed to load open classes:', err);
@@ -935,11 +926,9 @@ export default function UnifiedClassesPage({ studentData, onRegisterSuccess }) {
         hasFetchedRef.current = true;
 
         if (cccd) {
-            console.log('[UnifiedClassesPage] Loading classes for student:', cccd);
             loadMyClasses();
             loadOpenClasses();
         } else {
-            console.warn('[UnifiedClassesPage] No CCCD found, skipping load');
             setMyLoading(false);
             setRegisterLoading(false);
         }
@@ -962,7 +951,6 @@ export default function UnifiedClassesPage({ studentData, onRegisterSuccess }) {
                 }
             });
             const res = await response.json();
-            console.log('[UnifiedClassesPage] Enroll response:', res);
             if (res?.success) {
                 success(res.message || 'Đăng ký thành công! Admin sẽ duyệt trong vòng 24h. Bạn sẽ nhận thông báo khi được duyệt.');
                 setSelectedRegisterClass(null);

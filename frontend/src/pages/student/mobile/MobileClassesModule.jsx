@@ -741,30 +741,25 @@ export default function MobileClassesModule({ studentData }) {
         try {
             const cccd = studentData?.cccd || localStorage.getItem('student_cccd');
             if (!cccd) {
-                console.warn('[MobileClassesModule] No CCCD found');
                 setMyClasses([]);
                 setMyLoading(false);
                 return;
             }
 
-            console.log('[MobileClassesModule] Loading ONLINE classes for CCCD:', cccd);
 
             const API_URL = import.meta.env.VITE_API_URL || 'https://vantrangedu-api.bangachieu2.workers.dev';
             const response = await fetch(`${API_URL}/online-classes?status=active`, {
                 headers: { 'X-Student-CCCD': cccd }
             });
             const result = await response.json();
-            console.log('[MobileClassesModule] Online classes response:', result);
 
             if (!result?.success || !result?.data?.classes) {
-                console.log('[MobileClassesModule] No online classes data');
                 setMyClasses([]);
                 setMyLoading(false);
                 return;
             }
 
             const allClasses = result.data.classes || [];
-            console.log('[MobileClassesModule] All online classes:', allClasses.length);
 
             // Filter only ENROLLED classes
             const enrolledClasses = allClasses.filter((cls) => {
@@ -773,7 +768,6 @@ export default function MobileClassesModule({ studentData }) {
                 return isEnrolled || hasEnrollment;
             });
 
-            console.log('[MobileClassesModule] Enrolled classes:', enrolledClasses.length);
 
             // Transform to match component format
             const studentClasses = enrolledClasses.map((cls) => {
@@ -806,7 +800,6 @@ export default function MobileClassesModule({ studentData }) {
                 };
             });
 
-            console.log('[MobileClassesModule] Final student classes:', studentClasses.length);
             setMyClasses(studentClasses);
         } catch (err) {
             console.error('[MobileClassesModule] Error loading my classes:', err);
@@ -821,24 +814,20 @@ export default function MobileClassesModule({ studentData }) {
         setRegisterLoading(true);
         try {
             const cccd = studentData?.cccd || localStorage.getItem('student_cccd');
-            console.log('[MobileClassesModule] Loading open online classes...');
 
             const API_URL = import.meta.env.VITE_API_URL || 'https://vantrangedu-api.bangachieu2.workers.dev';
             const response = await fetch(`${API_URL}/online-classes?status=active`, {
                 headers: cccd ? { 'X-Student-CCCD': cccd } : {}
             });
             const result = await response.json();
-            console.log('[MobileClassesModule] Online classes response:', result);
 
             if (!result?.success || !result?.data?.classes) {
-                console.log('[MobileClassesModule] No online classes data');
                 setOpenClasses([]);
                 setRegisterLoading(false);
                 return;
             }
 
             const allClasses = result.data.classes || [];
-            console.log('[MobileClassesModule] All online classes:', allClasses.length);
 
             // Filter classes NOT enrolled yet
             const validClasses = allClasses.filter((cls) => {
@@ -872,7 +861,6 @@ export default function MobileClassesModule({ studentData }) {
                 is_online: true,
             }));
 
-            console.log('[MobileClassesModule] Valid open classes:', transformedClasses.length);
             setOpenClasses(transformedClasses);
         } catch (err) {
             console.error('[MobileClassesModule] Failed to load open classes:', err);
@@ -883,13 +871,10 @@ export default function MobileClassesModule({ studentData }) {
     };
 
     useEffect(() => {
-        console.log('[MobileClassesModule] useEffect triggered, studentData:', studentData);
         if (studentData?.cccd) {
-            console.log('[MobileClassesModule] Loading classes for student:', studentData.cccd);
             loadMyClasses();
             loadOpenClasses();
         } else {
-            console.warn('[MobileClassesModule] No studentData or CCCD, skipping load');
             setMyLoading(false);
             setRegisterLoading(false);
         }
@@ -912,7 +897,6 @@ export default function MobileClassesModule({ studentData }) {
                 }
             });
             const res = await response.json();
-            console.log('[MobileClassesModule] Enroll response:', res);
 
             if (res?.success) {
                 success(res.message || 'Đăng ký thành công! Vui lòng chờ Admin duyệt.');

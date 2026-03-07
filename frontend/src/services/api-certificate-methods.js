@@ -45,8 +45,9 @@ export function applyCertificateMethods(ApiClient) {
     if (format === 'html') {
       // Return HTML as text
       const headers = {};
-      if (this.token) {
-        headers['Authorization'] = `Bearer ${this.token}`;
+      const token = this.getToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
 
       const response = await fetch(url, { headers });

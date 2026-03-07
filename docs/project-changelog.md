@@ -1,5 +1,27 @@
 # Project Changelog
 
+## [2026-03-07]
+- **Backend TypeScript Migration** ✅
+  - Migrated entire backend from JavaScript to TypeScript (99 .js → .ts files, 109 total .ts files)
+  - Created proper `Env` interface at `src/types/env.ts` with all D1/R2/AI/secret bindings
+  - Created `JWTPayload` interface for auth token typing
+  - Entry point changed: `src/index.js` → `src/index.ts`
+  - Typed Hono app: `new Hono<{ Bindings: Env }>()`
+  - Added `resolveJsToTs()` Vite plugin in `vitest.config.ts` for .js→.ts import resolution
+  - Updated `wrangler.toml` and `package.json` main to `src/index.ts`
+  - All 9 test suites pass (78/78 tests), wrangler dry-run build succeeds
+  - Installed `@types/bcryptjs` for bcrypt type definitions
+
+- **Security: Sensitive Data Removal** ✅
+  - Removed 5 SQL dump files containing real PII (CCCD, JWT tokens, password reset tokens)
+  - Removed 3 admin scripts with hardcoded `admin12345` password
+  - Updated `.gitignore` to block SQL dumps and credential scripts
+
+- **Bug Fixes** ✅
+  - Fixed frontend auth token bugs: `api.token`/`this.token` (always null) → `api.getToken()`/`this.getToken()` in BackupPage, api-export-methods, api-certificate-methods
+  - Fixed backend test import path mismatch: added Vite plugin to resolve .js→.ts imports
+  - Cleaned up 27 debug `console.log` statements from student-facing pages
+
 ## [2026-03-04]
 - **Phase 1: Critical Security Fixes** ✅
   - Fixed JWT expiration bug: Changed from milliseconds to seconds standard (IEEE 754 compliance).

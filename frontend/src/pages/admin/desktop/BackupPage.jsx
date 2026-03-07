@@ -71,7 +71,7 @@ export default function BackupPage() {
     try {
       const response = await fetch(`${api.baseURL}/backup/export/json`, {
         headers: {
-          'Authorization': `Bearer ${api.token}`,
+          'Authorization': `Bearer ${api.getToken()}`,
         },
       });
 
@@ -98,7 +98,7 @@ export default function BackupPage() {
     try {
       const response = await fetch(`${api.baseURL}/backup/export/csv/${tableName}`, {
         headers: {
-          'Authorization': `Bearer ${api.token}`,
+          'Authorization': `Bearer ${api.getToken()}`,
         },
       });
 
