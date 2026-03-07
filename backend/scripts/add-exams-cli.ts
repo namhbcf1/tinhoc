@@ -6,45 +6,45 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { tmpdir } from 'os';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __filename: string = fileURLToPath(import.meta.url);
+const __dirname: string = dirname(__filename);
 
 const DB_NAME = 'vantrangedu_db';
 const DB_ID = '0f9e932f-c9f2-4d27-b3e2-21f74c4eb674';
 
-function execD1(command, useRemote = true) {
+function execD1(command: string, useRemote = true): string | null {
   try {
     const remoteFlag = useRemote ? '--remote' : '';
-    
+
     const escapedCommand = command.replace(/"/g, '\\"');
     const result = execSync(`wrangler d1 execute ${DB_NAME} ${remoteFlag} --command "${escapedCommand}"`, {
       encoding: 'utf-8',
       stdio: 'pipe'
     });
-    
+
     return result;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error executing: ${command.substring(0, 100)}...`);
     console.error(error.message);
     return null;
   }
 }
 
-function execD1File(filePath) {
+function execD1File(filePath: string): string | null {
   try {
     const result = execSync(`wrangler d1 execute ${DB_NAME} --file "${filePath}"`, {
       encoding: 'utf-8',
       stdio: 'pipe'
     });
     return result;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error executing file: ${filePath}`);
     console.error(error.message);
     return null;
   }
 }
 
-async function createExamTypeIfNotExists(code, name, description) {
+async function createExamTypeIfNotExists(code: string, name: string, description: string): Promise<number | null> {
   const existingId = await getExamTypeId(code);
   if (existingId) {
     return existingId;
@@ -74,16 +74,16 @@ async function createExamTypeIfNotExists(code, name, description) {
   return id;
 }
 
-async function getExamTypeId(code) {
+async function getExamTypeId(code: string): Promise<number | null> {
   const result = execD1(`SELECT id FROM exam_types WHERE code = '${code}' LIMIT 1`);
   if (!result) return null;
-  
+
   try {
     const jsonArrayMatch = result.match(/\[([\s\S]*)\]/);
     if (jsonArrayMatch) {
       const jsonStr = '[' + jsonArrayMatch[1] + ']';
       const parsed = JSON.parse(jsonStr);
-      
+
       if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].results) {
         const results = parsed[0].results;
         if (Array.isArray(results) && results.length > 0 && results[0].id !== undefined) {
@@ -91,12 +91,12 @@ async function getExamTypeId(code) {
         }
       }
     }
-    
+
     const directMatch = result.match(/"id"\s*:\s*(\d+)/);
     if (directMatch) {
       return parseInt(directMatch[1]);
     }
-  } catch (e) {
+  } catch (e: any) {
     console.error('Error parsing exam type ID:', e.message);
   }
   
@@ -115,7 +115,7 @@ async function getExamTypeId(code) {
   return null;
 }
 
-async function getAdminUserId() {
+async function getAdminUserId(): Promise<number> {
   let result = execD1(`SELECT id FROM admins LIMIT 1`);
   if (result) {
     try {
@@ -123,7 +123,7 @@ async function getAdminUserId() {
       if (jsonArrayMatch) {
         const jsonStr = '[' + jsonArrayMatch[1] + ']';
         const parsed = JSON.parse(jsonStr);
-        
+
         if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].results) {
           const results = parsed[0].results;
           if (Array.isArray(results) && results.length > 0 && results[0].id !== undefined) {
@@ -142,12 +142,12 @@ async function getAdminUserId() {
   return 1;
 }
 
-function escapeSQL(str) {
+function escapeSQL(str: any): string {
   if (!str) return 'NULL';
   return `'${String(str).replace(/'/g, "''")}'`;
 }
 
-async function createExamTest(examTypeCode, testData) {
+async function createExamTest(examTypeCode: string, testData: any): Promise<number | null> {
   let examTypeId = await getExamTypeId(examTypeCode);
   
   if (!examTypeId) {
@@ -203,17 +203,17 @@ async function createExamTest(examTypeCode, testData) {
       return parseInt(jsonMatch[1]);
     }
   } catch (e) {}
-  
+
   const match = result.match(/last_row_id[":\s]*(\d+)/);
   if (match) {
     return parseInt(match[1]);
   }
-  
+
   console.error(`  ❌ Không thể lấy ID bài thi. Kết quả:`, result.substring(0, 300));
   return null;
 }
 
-async function createSection(testId, sectionData) {
+async function createSection(testId: number, sectionData: any): Promise<number | null> {
   const sql = `INSERT INTO exam_sections (test_id, name, description, order_index, time_limit_minutes, instructions, scoring_rule) VALUES (${testId}, ${escapeSQL(sectionData.name)}, ${escapeSQL(sectionData.description)}, ${sectionData.order_index}, ${sectionData.time_limit || 'NULL'}, ${escapeSQL(sectionData.instructions)}, ${escapeSQL(sectionData.scoring_rule)});`;
 
   const result = execD1(sql);
@@ -238,7 +238,7 @@ async function createSection(testId, sectionData) {
   return null;
 }
 
-async function createQuestion(sectionId, questionData, orderIndex) {
+async function createQuestion(sectionId: number, questionData: any, orderIndex: number): Promise<boolean> {
   const optionsJson = questionData.options ? JSON.stringify(questionData.options) : null;
   const answerKey = questionData.answer_key ? (typeof questionData.answer_key === 'string' ? questionData.answer_key : JSON.stringify(questionData.answer_key)) : '';
   
@@ -248,7 +248,43 @@ async function createQuestion(sectionId, questionData, orderIndex) {
   return result !== null;
 }
 
-const examTests = [
+interface QuestionData {
+  type: string;
+  text: string;
+  options?: string[];
+  answer_key: string | string[];
+  points?: number;
+  explanation?: string;
+  question_data?: any;
+}
+
+interface SectionData {
+  name: string;
+  description: string;
+  order_index: number;
+  time_limit?: number;
+  instructions: string;
+  scoring_rule: string;
+  questions: QuestionData[];
+}
+
+interface TestData {
+  level: string;
+  title: string;
+  description: string;
+  duration: number;
+  passing: number;
+  shuffle_questions: boolean;
+  shuffle_options: boolean;
+}
+
+interface ExamEntry {
+  type: string;
+  test: TestData;
+  sections: SectionData[];
+}
+
+const examTests: ExamEntry[] = [
   // IC3 Tests
   {
     type: 'IC3',
@@ -1349,7 +1385,7 @@ const examTests = [
   }
 ];
 
-async function main() {
+async function main(): Promise<void> {
   console.log('🚀 Bắt đầu thêm bài thi vào D1 database...\n');
 
   let successCount = 0;

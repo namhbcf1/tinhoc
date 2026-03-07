@@ -9,31 +9,31 @@ const DB_NAME = 'vantrangedu_db';
 const SOURCE_TEST_ID = 47;
 const TARGET_TEST_ID = 32;
 
-function execD1(command, useRemote = true) {
+function execD1(command: string, useRemote = true): string | null {
   try {
     const remoteFlag = useRemote ? '--remote' : '';
     const tempFile = join(tmpdir(), `d1-query-${Date.now()}-${Math.random().toString(36).substring(7)}.sql`);
-    
+
     writeFileSync(tempFile, command.trim(), 'utf-8');
-    
+
     const result = execSync(`wrangler d1 execute ${DB_NAME} ${remoteFlag} --file "${tempFile}"`, {
       encoding: 'utf-8',
       stdio: 'pipe'
     });
-    
+
     try {
       unlinkSync(tempFile);
     } catch (e) {}
-    
+
     return result;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error executing: ${command.substring(0, 100)}...`);
     console.error(error.message);
     return null;
   }
 }
 
-function parseJSONResult(result) {
+function parseJSONResult(result: string | null): any[] {
   if (!result) return [];
   try {
     // Try to find JSON array in the result
@@ -52,14 +52,14 @@ function parseJSONResult(result) {
         }
       }
     }
-  } catch (e) {
+  } catch (e: any) {
     console.error('Error parsing result:', e.message);
     console.error('Result preview:', result.substring(0, 500));
   }
   return [];
 }
 
-async function main() {
+async function main(): Promise<void> {
   console.log('🔄 Bắt đầu copy questions từ test 47 sang test 32...\n');
 
   // Get sections mapping
@@ -103,7 +103,7 @@ async function main() {
 
     // Copy each question to target section
     for (const question of questions) {
-      const escapeSQL = (str) => {
+      const escapeSQL = (str: any): string => {
         if (!str) return 'NULL';
         return `'${String(str).replace(/'/g, "''")}'`;
       };
@@ -127,4 +127,3 @@ async function main() {
 }
 
 main().catch(console.error);
-
