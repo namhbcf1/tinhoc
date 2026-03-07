@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     Menu, X, Bell, User, LogOut, Home, BookOpen, Calendar,
-    CreditCard, FileText, Award, MessageCircle, ChevronRight,
+    CreditCard, ChevronRight,
     ClipboardCheck, GraduationCap, ExternalLink
 } from 'lucide-react';
 import { useDeviceType } from '../../utils/deviceDetection';
@@ -45,9 +45,6 @@ export default function StudentMobileLayout({
         { id: 'schedule', label: 'Lịch học', icon: Calendar },
         { id: 'exams', label: 'Lịch thi', icon: ClipboardCheck },
         { id: 'payment', label: 'Học phí', icon: CreditCard },
-        { id: 'documents', label: 'Tài liệu', icon: FileText },
-        { id: 'certificates', label: 'Chứng chỉ', icon: Award },
-        { id: 'messages', label: 'Tin nhắn', icon: MessageCircle },
     ];
 
     const bottomItems = [

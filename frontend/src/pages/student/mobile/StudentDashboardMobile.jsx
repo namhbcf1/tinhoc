@@ -10,10 +10,9 @@ import MobileClassesModule from './MobileClassesModule';
 import MobileScheduleModule from './MobileScheduleModule';
 import MobilePaymentModule from './MobilePaymentModule';
 import MobileProfileModule from './MobileProfileModule';
-import MobileDocumentsModule from './MobileDocumentsModule';
-import MobileCertificatesModule from './MobileCertificatesModule';
-import MobileMessagesModule from './MobileMessagesModule';
 import StudentDashboardOverview from './StudentDashboardOverview';
+
+/* ⛔ CẤM: Tài liệu, Chứng chỉ, Tin nhắn, Điểm danh — KHÔNG dùng trong student dashboard */
 
 // Đọc student_data an toàn từ storage
 function readStudentData() {
@@ -70,7 +69,7 @@ export default function StudentDashboardMobile() {
         // Hash navigation
         const updateTab = () => {
             const hash = window.location.hash.replace('#', '');
-            const validTabs = ['dashboard', 'exams', 'my-classes', 'schedule', 'payment', 'documents', 'certificates', 'messages', 'profile'];
+            const validTabs = ['dashboard', 'exams', 'my-classes', 'schedule', 'payment', 'profile'];
             if (hash && validTabs.includes(hash)) {
                 setActiveTab(hash);
             }
@@ -115,9 +114,6 @@ export default function StudentDashboardMobile() {
             case 'my-classes':  return <MobileClassesModule {...props} />;
             case 'schedule':    return <MobileScheduleModule {...props} />;
             case 'payment':     return <MobilePaymentModule {...props} />;
-            case 'documents':   return <MobileDocumentsModule {...props} />;
-            case 'certificates':return <MobileCertificatesModule {...props} />;
-            case 'messages':    return <MobileMessagesModule {...props} />;
             case 'profile':     return <MobileProfileModule studentData={studentData} onUpdate={handleProfileUpdate} />;
             default:            return <MobileExamsModule {...props} />;
         }

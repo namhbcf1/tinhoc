@@ -11,25 +11,16 @@ import StudentExams from './desktop/StudentExams';
 import UnifiedClassesPage from './desktop/UnifiedClassesPage';
 import SchedulePage from './desktop/SchedulePage';
 import Payment from './desktop/Payment';
-import Certificates from './desktop/Certificates';
-import Documents from './desktop/Documents';
-import StudentMessaging from './desktop/StudentMessaging';
-import AttendancePage from './desktop/AttendancePage';
-import PersonalInfo from './desktop/PersonalInfo';
 
 // Mobile dashboard — lazy-loaded only khi cần
 const StudentDashboardMobile = lazy(() => import('./mobile/StudentDashboardMobile'));
 
+/* ⛔ CẤM: Tài liệu, Chứng chỉ, Tin nhắn, Điểm danh — KHÔNG dùng trong student dashboard */
 const TAB_MAP = {
   exams: StudentExams,
   'my-classes': UnifiedClassesPage,
   schedule: SchedulePage,
   payment: Payment,
-  certificates: Certificates,
-  documents: Documents,
-  messages: StudentMessaging,
-  attendance: AttendancePage,
-  profile: PersonalInfo,
 };
 
 function getTabFromPath(pathname) {

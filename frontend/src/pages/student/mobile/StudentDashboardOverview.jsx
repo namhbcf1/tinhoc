@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
     ClipboardCheck, BookOpen, Calendar, CreditCard, ChevronRight,
-    Award, FileText, Bell, TrendingUp, Clock, GraduationCap
+    Clock, GraduationCap
 } from 'lucide-react';
 import api from '../../../services/api';
 import PullToRefreshWrapper from '../../../components/ui/PullToRefreshWrapper';
 
 export default function StudentDashboardOverview({ studentData, onNavigate }) {
-    const [stats, setStats] = useState({ classes: 0, exams: 0, debt: 0, certs: 0 });
+    const [stats, setStats] = useState({ classes: 0, exams: 0, debt: 0 });
     const [upcomingExams, setUpcomingExams] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -21,17 +21,15 @@ export default function StudentDashboardOverview({ studentData, onNavigate }) {
             const cccd = studentData?.cccd || localStorage.getItem('student_cccd');
             if (!cccd) return;
 
-            const [regsRes, examsRes, paymentsRes, certsRes] = await Promise.allSettled([
+            const [regsRes, examsRes, paymentsRes] = await Promise.allSettled([
                 api.request(`/registrations?student_cccd=${cccd}`, { method: 'GET' }),
                 api.request(`/exam-schedules/student?cccd=${cccd}`, { method: 'GET' }),
                 api.request(`/payments/student?cccd=${cccd}`, { method: 'GET' }),
-                api.request(`/certificates/student?cccd=${cccd}`, { method: 'GET' }),
             ]);
 
             const regs = regsRes.value?.data || [];
             const exams = examsRes.value?.data || [];
             const payments = paymentsRes.value?.data || [];
-            const certs = certsRes.value?.data || [];
 
             const activeClasses = regs.filter(r => ['approved', 'studying', 'active'].includes(r.status)).length;
             const debt = payments.filter(p => p.status === 'pending').reduce((s, p) => s + (p.amount || 0), 0);
@@ -42,7 +40,7 @@ export default function StudentDashboardOverview({ studentData, onNavigate }) {
                 .sort((a, b) => new Date(a.exam_date) - new Date(b.exam_date))
                 .slice(0, 3);
 
-            setStats({ classes: activeClasses, exams: exams.length, debt, certs: certs.length });
+            setStats({ classes: activeClasses, exams: exams.length, debt });
             setUpcomingExams(upcoming);
         } catch {
             // Fail silently
@@ -67,7 +65,6 @@ export default function StudentDashboardOverview({ studentData, onNavigate }) {
         { label: 'Lớp đang học', value: stats.classes, color: 'emerald', icon: BookOpen, tab: 'my-classes' },
         { label: 'Lịch thi', value: stats.exams, color: 'amber', icon: ClipboardCheck, tab: 'exams' },
         { label: 'Công nợ', value: stats.debt > 0 ? formatCurrencyShort(stats.debt) : '0', color: stats.debt > 0 ? 'red' : 'green', icon: CreditCard, tab: 'payment' },
-        { label: 'Chứng chỉ', value: stats.certs, color: 'purple', icon: Award, tab: 'certificates' },
     ];
 
     const quickActions = [
@@ -75,8 +72,7 @@ export default function StudentDashboardOverview({ studentData, onNavigate }) {
         { label: 'Lớp học', icon: BookOpen, tab: 'my-classes', color: '#059669' },
         { label: 'Lịch học', icon: Calendar, tab: 'schedule', color: '#06b6d4' },
         { label: 'Học phí', icon: CreditCard, tab: 'payment', color: '#f59e0b' },
-        { label: 'Tài liệu', icon: FileText, tab: 'documents', color: '#8b5cf6' },
-        { label: 'Chứng chỉ', icon: Award, tab: 'certificates', color: '#f97316' },
+        { label: 'Học tập', icon: GraduationCap, tab: 'exams', color: '#8b5cf6' },
     ];
 
     return (
