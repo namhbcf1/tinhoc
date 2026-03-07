@@ -86,7 +86,16 @@ backend/vantrangedu_export*.sql
 # Admin credential scripts (contain hardcoded passwords)
 backend/create-admins.js
 backend/create-admins-api.js
+backend/create-admins.sql
+backend/create-admin-quick.sql
 backend/CREATE_ADMINS_GUIDE.md
+
+# One-off scripts and temp SQL (keep root clean)
+backend/fix_sql*.js
+backend/test_sql*.js
+backend/r2-copy*.js
+backend/r2-copy*.sh
+backend/**/temp_*.sql
 
 # Generated build outputs
 backend/dist/
