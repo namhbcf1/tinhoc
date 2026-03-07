@@ -78,3 +78,15 @@ vantrangedu-app/
 .agent/
 .gemini-clipboard/
 C_/
+
+# SQL data dumps (contain PII/tokens - NEVER commit)
+backend/tinhoc_export*.sql
+backend/vantrangedu_export*.sql
+
+# Admin credential scripts (contain hardcoded passwords)
+backend/create-admins.js
+backend/create-admins-api.js
+backend/CREATE_ADMINS_GUIDE.md
+
+# Generated build outputs
+backend/dist/
