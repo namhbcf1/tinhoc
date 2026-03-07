@@ -5,10 +5,8 @@ import AdminLayout from '../../../components/layout/AdminLayout';
 import UnifiedClassesManagement from './UnifiedClassesManagement';
 import StudentsManagement from './StudentsManagement';
 import PaymentsManagement from './PaymentsManagement';
-import CertificatesManagement from './CertificatesManagement';
 import PostsManagement from './PostsManagement';
 import HomepageManagement from './HomepageManagement';
-import DocumentsManagement from './DocumentsManagement';
 import ReportsPage from './ReportsPage';
 import AdminManagement from './AdminManagement';
 import AdminProfile from './AdminProfile';
@@ -16,7 +14,6 @@ import ActivityLogs from './ActivityLogs';
 import ExamSchedulesPage from './ExamSchedulesPage';
 import BackupPage from './BackupPage';
 import TeachersManagement from './TeachersManagement';
-import AssignmentsManagement from './AssignmentsManagement';
 import ToastContainer, { useToast } from '../../../components/ui/ToastContainer';
 import GlobalSearch from '../../../components/admin/GlobalSearch';
 
@@ -47,9 +44,9 @@ export default function AdminDashboardDesktop() {
         }
         const validTabs = [
           'classes', 'students', 'registrations', 'payments',
-          'certificates', 'posts', 'homepage', 'settings', 'permissions',
-          'logs', 'documents', 'reports', 'teachers', 'admins', 'profile',
-          'exam-schedules', 'backup', 'assignments',
+          'posts', 'homepage', 'settings', 'permissions',
+          'logs', 'reports', 'teachers', 'admins', 'profile',
+          'exam-schedules', 'backup',
         ];
         if (validTabs.includes(baseTab)) {
           setActiveTab(baseTab);
@@ -88,16 +85,10 @@ export default function AdminDashboardDesktop() {
         return <StudentsManagement toast={toastProps} />;
       case 'payments':
         return <PaymentsManagement toast={toastProps} />;
-      case 'certificates':
-        return <CertificatesManagement toast={toastProps} />;
       case 'posts':
         return <PostsManagement toast={toastProps} />;
       case 'homepage':
         return <HomepageManagement toast={toastProps} />;
-      case 'documents':
-        return <DocumentsManagement toast={toastProps} />;
-      case 'assignments':
-        return <AssignmentsManagement toast={toastProps} />;
       case 'reports':
         return <ReportsPage />;
       case 'teachers':

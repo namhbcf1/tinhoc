@@ -11,14 +11,11 @@ import MobileClassesModule from './MobileClassesModule';
 import MobileStudentsModule from './MobileStudentsModule';
 import MobilePaymentsModule from './MobilePaymentsModule';
 import MobileTeachersModule from './MobileTeachersModule';
-import MobileDocumentsModule from './MobileDocumentsModule';
-import MobileAssignmentsModule from './MobileAssignmentsModule';
 import MobileExamSchedulesModule from './MobileExamSchedulesModule';
 import AdminProfile from '../desktop/AdminProfile';
 import {
     MobilePostsModule,
     MobileHomepageModule,
-    MobileCertificatesModule,
     MobileReportsModule,
     MobileLogsModule,
     MobileBackupModule,
@@ -78,12 +75,9 @@ export default function AdminDashboardMobile() {
                 case 'students': return <MobileStudentsModule />;
                 case 'payments': return <MobilePaymentsModule />;
                 case 'teachers': return <MobileTeachersModule />;
-                case 'documents': return <MobileDocumentsModule />;
-                case 'assignments': return <MobileAssignmentsModule />;
                 case 'reports': return <MobileReportsModule />;
                 case 'posts': return <MobilePostsModule />;
                 case 'homepage': return <MobileHomepageModule />;
-                case 'certificates': return <MobileCertificatesModule />;
                 case 'admins': return admin?.role === 'super_admin' ? <MobileAdminsModule /> : <div className="p-4 text-center"><h2 className="text-lg font-bold text-slate-800">Không có quyền truy cập</h2></div>;
                 case 'backup': return admin?.role === 'super_admin' ? <MobileBackupModule /> : <div className="p-4 text-center"><h2 className="text-lg font-bold text-slate-800">Không có quyền truy cập</h2></div>;
                 case 'logs': return <MobileLogsModule />;

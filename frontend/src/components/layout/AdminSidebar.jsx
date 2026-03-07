@@ -14,7 +14,6 @@ const menuGroups = [
             { id: 'students', label: 'Học viên', icon: Users },
             { id: 'teachers', label: 'Giáo viên', icon: GraduationCap },
             { id: 'classes', label: 'Lớp Online', icon: Video },
-            { id: 'assignments', label: 'Phân công', icon: CalendarDays },
             { id: 'exam-schedules', label: 'Lịch thi', icon: BookOpen },
         ]
     },
@@ -22,7 +21,6 @@ const menuGroups = [
         label: 'Tài chính',
         items: [
             { id: 'payments', label: 'Học phí', icon: CreditCard },
-            { id: 'certificates', label: 'Chứng chỉ', icon: Award },
         ]
     },
     {
@@ -30,7 +28,6 @@ const menuGroups = [
         items: [
             { id: 'posts', label: 'Bài viết', icon: Newspaper },
             { id: 'homepage', label: 'Trang chủ', icon: Home },
-            { id: 'documents', label: 'Tài liệu', icon: Folder },
         ]
     },
     {

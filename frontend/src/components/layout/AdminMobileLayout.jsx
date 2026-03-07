@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, Search, X, Bell, LogOut, User, ChevronRight, Home, Users, BookOpen, CreditCard, Award, FileText, Calendar, MessageSquare, Settings, ClipboardList } from 'lucide-react';
+import { Menu, Search, X, Bell, LogOut, User, ChevronRight, Home, Users, BookOpen, CreditCard, FileText, Calendar, MessageSquare, Settings } from 'lucide-react';
 import { useDeviceType } from '../../utils/deviceDetection';
 import './AdminMobileLayout.css';
 
@@ -23,10 +23,8 @@ export default function AdminMobileLayout({
             classes: 'Lớp học',
             students: 'Học viên',
             payments: 'Học phí',
-            certificates: 'Chứng chỉ',
             posts: 'Bài viết',
             homepage: 'Homepage',
-            documents: 'Tài liệu',
             reports: 'Báo cáo',
             teachers: 'Giáo viên',
             'exam-schedules': 'Lịch thi',
@@ -34,7 +32,6 @@ export default function AdminMobileLayout({
             backup: 'Sao lưu',
             profile: 'Cá nhân',
             logs: 'Nhật ký',
-            assignments: 'Bài tập'
         };
         return titles[activeTab] || 'Admin Panel';
     };
@@ -46,9 +43,6 @@ export default function AdminMobileLayout({
         { id: 'payments', label: 'Học phí', icon: CreditCard },
         { id: 'teachers', label: 'Giáo viên', icon: User },
         { id: 'exam-schedules', label: 'Lịch thi', icon: Calendar },
-        { id: 'certificates', label: 'Chứng chỉ', icon: Award },
-        { id: 'documents', label: 'Tài liệu', icon: FileText },
-        { id: 'assignments', label: 'Bài tập', icon: ClipboardList },
         { id: 'reports', label: 'Báo cáo', icon: MessageSquare },
         { id: 'posts', label: 'Bài viết', icon: FileText },
         { id: 'homepage', label: 'Homepage', icon: Settings },

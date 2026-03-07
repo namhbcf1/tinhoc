@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Users, BookOpen, CreditCard, TrendingUp, Calendar, FileText,
-    User, ChevronRight, GraduationCap, Award
+    Users, BookOpen, CreditCard, TrendingUp, Calendar,
+    User, ChevronRight, GraduationCap
 } from 'lucide-react';
 import api from '../../../services/api';
 import PullToRefreshWrapper from '../../../components/ui/PullToRefreshWrapper';
@@ -152,8 +152,6 @@ export default function MobileDashboardOverview({ onNavigate }) {
                         <QuickAction icon={CreditCard}   label="Học phí"   onClick={() => onNavigate?.('payments')}       iconBg="#ede9fe" iconColor="#8b5cf6" />
                         <QuickAction icon={Calendar}     label="Lịch thi"  onClick={() => onNavigate?.('exam-schedules')} iconBg="#fef3c7" iconColor="#f59e0b" />
                         <QuickAction icon={GraduationCap} label="GV"       onClick={() => onNavigate?.('teachers')}       iconBg="#ffedd5" iconColor="#f97316" />
-                        <QuickAction icon={Award}        label="Chứng chỉ" onClick={() => onNavigate?.('certificates')}   iconBg="#fce7f3" iconColor="#ec4899" />
-                        <QuickAction icon={FileText}     label="Tài liệu"  onClick={() => onNavigate?.('documents')}      iconBg="#f0fdf4" iconColor="#22c55e" />
                         <QuickAction icon={TrendingUp}   label="Báo cáo"   onClick={() => onNavigate?.('reports')}        iconBg="#f1f5f9" iconColor="#64748b" />
                     </div>
                 </div>
