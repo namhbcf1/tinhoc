@@ -1,41 +1,192 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../../services/api';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import ToastContainer, { useToast } from '../../../components/ui/ToastContainer';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import { showError } from '../../../utils/errorHandler';
-import { formatDateVN, formatTime } from '../../../utils/dateUtils';
+import { formatDateVN, formatTime, toVietnamDate } from '../../../utils/dateUtils';
+import { resolveImageUrl } from '../../../utils/imageUrl';
 import DateInput from '../../../components/ui/DateInput';
-import XLSX from 'xlsx-js-style';
 
 // UI Components
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '../../../components/ui/Dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Label } from '../../../components/ui/Label';
 import { Badge } from '../../../components/ui/Badge';
 import {
-  Calendar, Edit, Trash2, Search, PlusCircle, Users, Clock, MapPin, Info, MoreVertical, X, Download, UserX, FileText, Phone, Mail, CheckCircle, XCircle, User, CheckCheck
+  Calendar, Edit, Trash2, Search, PlusCircle, Users, Clock, MapPin, Info, Download, UserX, Phone, Mail, CheckCircle, XCircle, User, CheckCheck
 } from 'lucide-react';
 
 import EmptyState from '../../../components/ui/EmptyState';
 
-// Custom hook for detecting outside clicks
-const useClickOutside = (ref, handler) => {
-  useEffect(() => {
-    const listener = (event) => {
-      if (!ref.current || ref.current.contains(event.target)) {
-        return;
-      }
-      handler(event);
+let xlsxModulePromise = null;
+
+const SCHEDULE_PRESETS = [
+  {
+    id: 'weekday-evening',
+    label: '2-4-6 tối',
+    helper: 'WEEKLY:1,3,5 • 19:00-21:00',
+    rule: 'WEEKLY:1,3,5',
+    time: '19:00-21:00',
+  },
+  {
+    id: 'weekday-intensive',
+    label: '3-5-7 tối',
+    helper: 'WEEKLY:2,4,6 • 18:30-20:30',
+    rule: 'WEEKLY:2,4,6',
+    time: '18:30-20:30',
+  },
+  {
+    id: 'weekend-morning',
+    label: 'Cuối tuần sáng',
+    helper: 'WEEKLY:6,7 • 08:00-11:00',
+    rule: 'WEEKLY:6,7',
+    time: '08:00-11:00',
+  },
+];
+
+const WEEKLY_DAY_OPTIONS = [1, 2, 3, 4, 5, 6, 7];
+const WEEKLY_DAY_LABELS = {
+  0: 'CN',
+  1: 'T2',
+  2: 'T3',
+  3: 'T4',
+  4: 'T5',
+  5: 'T6',
+  6: 'T7',
+  7: 'CN',
+};
+
+const parseExamDateTime = (value) => {
+  const parsed = toVietnamDate(value);
+  return parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
+};
+
+const startOfCalendarDay = (value = new Date()) => {
+  const parsed = value instanceof Date ? new Date(value) : parseExamDateTime(value);
+  const safeDate = parsed && !Number.isNaN(parsed.getTime()) ? parsed : new Date();
+  safeDate.setHours(0, 0, 0, 0);
+  return safeDate;
+};
+
+const getExamTimestamp = (value) => parseExamDateTime(value)?.getTime() ?? 0;
+
+const formatExamDateInputValue = (value) => {
+  const date = parseExamDateTime(value);
+  if (!date) return '';
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getExamStatusMeta = (value) => {
+  const examDay = startOfCalendarDay(value);
+  const today = startOfCalendarDay();
+
+  if (examDay.getTime() === today.getTime()) {
+    return {
+      key: 'today',
+      label: 'Hôm nay',
+      accentClass: 'bg-emerald-500',
+      badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
     };
-    document.addEventListener('mousedown', listener);
-    document.addEventListener('touchstart', listener);
-    return () => {
-      document.removeEventListener('mousedown', listener);
-      document.removeEventListener('touchstart', listener);
+  }
+
+  if (examDay.getTime() < today.getTime()) {
+    return {
+      key: 'past',
+      label: 'Đã qua',
+      accentClass: 'bg-slate-300',
+      badgeClass: 'bg-slate-100 text-slate-600 border border-slate-200',
     };
-  }, [ref, handler]);
+  }
+
+  return {
+    key: 'upcoming',
+    label: 'Sắp tới',
+    accentClass: 'bg-blue-500',
+    badgeClass: 'bg-blue-50 text-blue-700 border border-blue-200',
+  };
+};
+
+const getPendingCount = (exam) => Number(exam?.pending_count || 0);
+const getApprovedCount = (exam) => Number(exam?.approved_count || 0);
+const getTotalStudentCount = (exam) => getPendingCount(exam) + getApprovedCount(exam);
+
+const getScheduleDaysFromRule = (rule) => {
+  if (!rule || !String(rule).toUpperCase().startsWith('WEEKLY:')) return [];
+  const [, rawDays] = String(rule).split(':');
+  if (!rawDays) return [];
+
+  return rawDays
+    .split(',')
+    .map((day) => Number(day))
+    .filter((day) => Number.isInteger(day) && day >= 0 && day <= 7);
+};
+
+const describeScheduleRule = (rule) => {
+  if (!rule) return 'Chưa thiết lập lịch học';
+  const normalized = String(rule).trim().toUpperCase();
+  if (normalized === 'DAILY') return 'Học hằng ngày';
+
+  const days = getScheduleDaysFromRule(normalized);
+  if (!days.length) return normalized;
+
+  return days.map((day) => WEEKLY_DAY_LABELS[day] || day).join(' • ');
+};
+
+const parseScheduleTimeRange = (value) => {
+  if (!value || !String(value).includes('-')) {
+    return { start: '', end: '' };
+  }
+
+  const [start, end] = String(value).split('-');
+  return {
+    start: start?.trim() || '',
+    end: end?.trim() || '',
+  };
+};
+
+const formatSchedulePreview = (rule, timeRange) => {
+  const scheduleLabel = describeScheduleRule(rule);
+  if (!timeRange) return scheduleLabel;
+  return `${scheduleLabel} • ${timeRange}`;
+};
+
+const composePreviewDateTime = (dateValue, timeValue) => {
+  if (!dateValue) return null;
+  const [year, month, day] = String(dateValue).split('-').map(Number);
+  if (!year || !month || !day) return null;
+
+  const [hours = 0, minutes = 0] = String(timeValue || '00:00').split(':').map(Number);
+  const result = new Date(year, month - 1, day, hours || 0, minutes || 0, 0);
+  return Number.isNaN(result.getTime()) ? null : result;
+};
+
+const matchesStudentSearch = (student, keyword) => {
+  if (!keyword) return true;
+
+  const haystack = [
+    student?.ho_ten_full,
+    student?.cccd,
+    student?.sdt,
+    student?.email,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  return haystack.includes(keyword);
+};
+
+const loadXlsxModule = async () => {
+  if (!xlsxModulePromise) {
+    xlsxModulePromise = import('xlsx-js-style').then((module) => module.default ?? module);
+  }
+  return xlsxModulePromise;
 };
 
 export default function ExamSchedulesPage() {
@@ -63,6 +214,7 @@ export default function ExamSchedulesPage() {
 
   const [filter, setFilter] = useState('upcoming');
   const [examCategoryOptions, setExamCategoryOptions] = useState([]); // từ DB chung (vantrangexam)
+  const [examTypeOptions, setExamTypeOptions] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   const [formData, setFormData] = useState({
@@ -75,7 +227,17 @@ export default function ExamSchedulesPage() {
     zoom_link: '',
     zoom_meeting_id: '',
     zoom_passcode: '',
-    exam_type: '',
+    exam_category_id: '',
+    exam_type_id: '',
+    class_seed_name: '',
+    class_seed_description: '',
+    class_seed_schedule_rule: 'WEEKLY:1,3,5',
+    class_seed_schedule_time: '19:00-21:00',
+    class_seed_timezone: 'Asia/Ho_Chi_Minh',
+    class_seed_start_date: '',
+    class_seed_end_date: '',
+    class_seed_teacher_name: '',
+    class_seed_max_students: 50,
   });
 
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false });
@@ -88,16 +250,71 @@ export default function ExamSchedulesPage() {
   const [studentListLoading, setStudentListLoading] = useState(false);
   const [studentTab, setStudentTab] = useState('approved'); // 'approved' | 'pending'
   const [approving, setApproving] = useState(null); // student_id being approved
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+
+  const formPreviewDate = useMemo(
+    () => composePreviewDateTime(formData.exam_date, formData.exam_time),
+    [formData.exam_date, formData.exam_time]
+  );
+
+  const scheduleDays = useMemo(
+    () => getScheduleDaysFromRule(formData.class_seed_schedule_rule),
+    [formData.class_seed_schedule_rule]
+  );
+
+  const scheduleTimeRange = useMemo(
+    () => parseScheduleTimeRange(formData.class_seed_schedule_time),
+    [formData.class_seed_schedule_time]
+  );
+
+  const examSummary = useMemo(() => {
+    const today = startOfCalendarDay();
+
+    return exams.reduce((summary, exam) => {
+      const examDay = startOfCalendarDay(exam.exam_date);
+      summary.total += 1;
+      summary.pending += getPendingCount(exam);
+
+      if (examDay.getTime() === today.getTime()) {
+        summary.today += 1;
+      } else if (examDay.getTime() < today.getTime()) {
+        summary.past += 1;
+      } else {
+        summary.upcoming += 1;
+      }
+
+      return summary;
+    }, {
+      total: 0,
+      today: 0,
+      upcoming: 0,
+      past: 0,
+      pending: 0,
+    });
+  }, [exams]);
+
+  const normalizedStudentSearch = studentSearchTerm.trim().toLowerCase();
+
+  const filteredApprovedStudents = useMemo(
+    () => studentList.filter((student) => matchesStudentSearch(student, normalizedStudentSearch)),
+    [studentList, normalizedStudentSearch]
+  );
+
+  const filteredPendingStudents = useMemo(
+    () => pendingStudents.filter((student) => matchesStudentSearch(student, normalizedStudentSearch)),
+    [pendingStudents, normalizedStudentSearch]
+  );
 
   useEffect(() => {
     loadExams();
     loadExamCategories();
+    loadExamTypes();
   }, []);
 
   // Load exam categories từ DB chung (teacher vantrangexam tạo → admin thấy)
   const loadExamCategories = async () => {
     try {
-      const res = await api.request('/exam-categories');
+      const res = await api.getExamCategories();
       if (res?.success && Array.isArray(res.data)) {
         setExamCategoryOptions(res.data);
       }
@@ -106,10 +323,21 @@ export default function ExamSchedulesPage() {
     }
   };
 
+  const loadExamTypes = async () => {
+    try {
+      const res = await api.getExamTypes();
+      if (res?.success && Array.isArray(res.data)) {
+        setExamTypeOptions(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to load exam types:', err);
+    }
+  };
+
   const loadExams = async () => {
     setLoading(true);
     try {
-      const response = await api.getUpcomingExams(100); // Fetch more
+      const response = await api.getAllExamSchedules(200, 0);
       if (response && response.success) {
         setExams(response.data || []);
       } else {
@@ -132,6 +360,7 @@ export default function ExamSchedulesPage() {
     setSelectedExamForList(exam);
     setShowStudentsModal(true);
     setStudentTab('approved');
+    setStudentSearchTerm('');
     setStudentList([]);
     setPendingStudents([]);
     setConflictStudentIds(new Set());
@@ -361,33 +590,101 @@ export default function ExamSchedulesPage() {
 
   const filteredExams = useMemo(() => {
     let result = [...exams];
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
+    const today = startOfCalendarDay();
 
     if (filter === 'upcoming') {
-      result = result.filter(e => {
-        const examDate = new Date(e.exam_date);
-        examDate.setHours(0, 0, 0, 0);
-        return examDate.getTime() >= now.getTime();
-      });
+      result = result.filter((exam) => startOfCalendarDay(exam.exam_date).getTime() >= today.getTime());
     } else if (filter === 'past') {
-      result = result.filter(e => {
-        const examDate = new Date(e.exam_date);
-        examDate.setHours(0, 0, 0, 0);
-        return examDate.getTime() < now.getTime();
+      result = result.filter((exam) => startOfCalendarDay(exam.exam_date).getTime() < today.getTime());
+    }
+
+    if (searchTerm.trim()) {
+      const lowerSearch = searchTerm.trim().toLowerCase();
+      result = result.filter((exam) => {
+        const haystack = [
+          exam.exam_name,
+          exam.location,
+          exam.notes,
+          exam.exam_type,
+          exam.class_seed_name,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return haystack.includes(lowerSearch);
       });
     }
 
-    if (searchTerm) {
-      const lowerSearch = searchTerm.toLowerCase();
-      result = result.filter(e =>
-        e.exam_name.toLowerCase().includes(lowerSearch) ||
-        (e.location && e.location.toLowerCase().includes(lowerSearch))
-      );
-    }
-
-    return result.sort((a, b) => new Date(a.exam_date) - new Date(b.exam_date));
+    return result.sort((a, b) => {
+      const timeA = getExamTimestamp(a.exam_date);
+      const timeB = getExamTimestamp(b.exam_date);
+      return filter === 'past' ? timeB - timeA : timeA - timeB;
+    });
   }, [exams, filter, searchTerm]);
+
+  const updateFormField = (key, value) => {
+    setFormData((current) => {
+      const next = { ...current, [key]: value };
+
+      if (
+        !editingExam &&
+        key === 'exam_name' &&
+        (!current.class_seed_name || current.class_seed_name === `${current.exam_name} - Lớp ôn tập`)
+      ) {
+        next.class_seed_name = value ? `${value} - Lớp ôn tập` : '';
+      }
+
+      if (
+        key === 'exam_date' &&
+        (!current.class_seed_start_date || current.class_seed_start_date === current.exam_date)
+      ) {
+        next.class_seed_start_date = value;
+      }
+
+      return next;
+    });
+  };
+
+  const applySchedulePreset = (preset) => {
+    setFormData((current) => ({
+      ...current,
+      class_seed_schedule_rule: preset.rule,
+      class_seed_schedule_time: preset.time,
+    }));
+  };
+
+  const toggleScheduleDay = (day) => {
+    setFormData((current) => {
+      const nextDays = new Set(getScheduleDaysFromRule(current.class_seed_schedule_rule));
+      if (nextDays.has(day)) {
+        nextDays.delete(day);
+      } else {
+        nextDays.add(day);
+      }
+
+      const orderedDays = Array.from(nextDays).sort((a, b) => a - b);
+      return {
+        ...current,
+        class_seed_schedule_rule: orderedDays.length ? `WEEKLY:${orderedDays.join(',')}` : '',
+      };
+    });
+  };
+
+  const updateScheduleTimeBoundary = (boundary, nextValue) => {
+    setFormData((current) => {
+      const currentRange = parseScheduleTimeRange(current.class_seed_schedule_time);
+      const nextRange = {
+        ...currentRange,
+        [boundary]: nextValue,
+      };
+
+      return {
+        ...current,
+        class_seed_schedule_time: `${nextRange.start || ''}-${nextRange.end || ''}`,
+      };
+    });
+  };
 
   const handleCreate = () => {
     setEditingExam(null);
@@ -401,7 +698,17 @@ export default function ExamSchedulesPage() {
       zoom_link: '',
       zoom_meeting_id: '',
       zoom_passcode: '',
-      exam_type: '',
+      exam_category_id: '',
+      exam_type_id: '',
+      class_seed_name: '',
+      class_seed_description: '',
+      class_seed_schedule_rule: 'WEEKLY:1,3,5',
+      class_seed_schedule_time: '19:00-21:00',
+      class_seed_timezone: 'Asia/Ho_Chi_Minh',
+      class_seed_start_date: '',
+      class_seed_end_date: '',
+      class_seed_teacher_name: '',
+      class_seed_max_students: 50,
     });
     setShowModal(true);
   };
@@ -426,24 +733,29 @@ export default function ExamSchedulesPage() {
 
   const handleEdit = (exam) => {
     setEditingExam(exam);
-    const dateObj = new Date(exam.exam_date);
-    // Format date as yyyy-mm-dd for native date input
-    const year = dateObj.getFullYear();
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const day = String(dateObj.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
+    const dateStr = formatExamDateInputValue(exam.exam_date);
 
     setFormData({
       exam_name: exam.exam_name,
       exam_date: dateStr,
-      exam_time: formatTime(dateObj),
+      exam_time: formatTime(exam.exam_date),
       duration_minutes: exam.duration_minutes || 120,
       location: exam.location || '',
       notes: exam.notes || '',
       zoom_link: exam.zoom_link || '',
       zoom_meeting_id: exam.zoom_meeting_id || '',
       zoom_passcode: exam.zoom_passcode || '',
-      exam_type: exam.exam_type || '',
+      exam_category_id: exam.exam_category_id ? String(exam.exam_category_id) : '',
+      exam_type_id: exam.exam_type_id ? String(exam.exam_type_id) : '',
+      class_seed_name: exam.class_seed_name || `${exam.exam_name} - Lớp ôn tập`,
+      class_seed_description: exam.class_seed_description || exam.notes || '',
+      class_seed_schedule_rule: exam.class_seed_schedule_rule || 'WEEKLY:1,3,5',
+      class_seed_schedule_time: exam.class_seed_schedule_time || '19:00-21:00',
+      class_seed_timezone: exam.class_seed_timezone || 'Asia/Ho_Chi_Minh',
+      class_seed_start_date: exam.class_seed_start_date || dateStr,
+      class_seed_end_date: exam.class_seed_end_date || '',
+      class_seed_teacher_name: exam.class_seed_teacher_name || '',
+      class_seed_max_students: exam.class_seed_max_students || 50,
     });
     setShowModal(true);
   };
@@ -462,6 +774,37 @@ export default function ExamSchedulesPage() {
     }
     if (!formData.exam_time) {
       error('Vui lòng chọn giờ bắt đầu');
+      return;
+    }
+    if (!formData.exam_category_id) {
+      error('Vui lòng chọn thể loại thi');
+      return;
+    }
+    if (!formData.class_seed_name?.trim()) {
+      error('Vui lòng nhập tên lớp học tự động');
+      return;
+    }
+    if (!formData.class_seed_schedule_rule?.trim()) {
+      error('Vui lòng nhập quy tắc lịch học');
+      return;
+    }
+    if (!formData.class_seed_schedule_time?.trim()) {
+      error('Vui lòng nhập khung giờ học');
+      return;
+    }
+    if (!/^\d{2}:\d{2}-\d{2}:\d{2}$/.test(formData.class_seed_schedule_time.trim())) {
+      error('Khung giờ học phải có định dạng HH:MM-HH:MM');
+      return;
+    }
+    if (
+      formData.class_seed_schedule_rule.trim().toUpperCase().startsWith('WEEKLY:') &&
+      getScheduleDaysFromRule(formData.class_seed_schedule_rule).length === 0
+    ) {
+      error('Vui lòng chọn ít nhất một ngày học cho lớp ôn tập');
+      return;
+    }
+    if (!formData.class_seed_start_date) {
+      error('Vui lòng chọn ngày bắt đầu lớp học');
       return;
     }
 
@@ -490,7 +833,19 @@ export default function ExamSchedulesPage() {
         zoom_link: formData.zoom_link?.trim() || null,
         zoom_meeting_id: formData.zoom_meeting_id?.trim() || null,
         zoom_passcode: formData.zoom_passcode?.trim() || null,
-        exam_type: formData.exam_type?.trim() || null,
+        exam_category_id: parseInt(formData.exam_category_id, 10),
+        exam_type_id: formData.exam_type_id ? parseInt(formData.exam_type_id, 10) : null,
+        class_seed: {
+          name: formData.class_seed_name?.trim(),
+          description: formData.class_seed_description?.trim() || null,
+          schedule_rule: formData.class_seed_schedule_rule?.trim().toUpperCase(),
+          schedule_time: formData.class_seed_schedule_time?.trim(),
+          timezone: formData.class_seed_timezone?.trim() || 'Asia/Ho_Chi_Minh',
+          start_date: formData.class_seed_start_date,
+          end_date: formData.class_seed_end_date || null,
+          teacher_name: formData.class_seed_teacher_name?.trim() || null,
+          max_students: parseInt(formData.class_seed_max_students, 10) || 50,
+        },
       };
 
       let response;
@@ -540,22 +895,7 @@ export default function ExamSchedulesPage() {
     });
   };
 
-  const getStatusProps = (dateStr) => {
-    if (!dateStr) return { label: '---', variant: 'outline', color: 'text-gray-400' };
-
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return { label: 'Lỗi', variant: 'destructive', color: 'text-red-500' };
-
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const examDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
-    if (examDate < today) return { label: 'Đã qua', variant: 'outline', color: 'text-gray-500' };
-    if (examDate.getTime() === today.getTime()) return { label: 'Hôm nay', variant: 'default', color: 'bg-blue-500 text-white' };
-    return { label: 'Sắp tới', variant: 'default', color: 'bg-green-500 text-white' };
-  };
-
-  const exportStudentListToExcel = () => {
+  const exportStudentListToExcel = async () => {
     if (!studentList.length) {
       error("Không có dữ liệu để xuất.");
       return;
@@ -563,9 +903,9 @@ export default function ExamSchedulesPage() {
     // Dispatch theo exam_type: VSTEP dùng format riêng, còn lại dùng format PTIT/Tin học
     const examType = (selectedExamForList?.exam_type || '').toLowerCase();
     if (examType === 'vstep') {
-      exportVstepFormat();
+      await exportVstepFormat();
     } else {
-      exportPtitFormat();
+      await exportPtitFormat();
     }
   };
 
@@ -576,8 +916,9 @@ export default function ExamSchedulesPage() {
   //   Row 3: Đại diện | SĐT (E3) | Phần dành cho trung tâm (Q3)
   //   Row 4: 20 headers (A–T) — A–P vàng nhạt, Q–T đỏ nhạt
   //   Row 5+: data thí sinh
-  const exportVstepFormat = () => {
-    const examDate = selectedExamForList?.exam_date ? new Date(selectedExamForList.exam_date) : new Date();
+  const exportVstepFormat = async () => {
+    const XLSX = await loadXlsxModule();
+    const examDate = parseExamDateTime(selectedExamForList?.exam_date) || new Date();
 
     const splitName = (fullName) => {
       if (!fullName) return { ho: '', ten: '' };
@@ -668,7 +1009,7 @@ export default function ExamSchedulesPage() {
 
     sorted.forEach((s, idx) => {
       const { ho, ten } = splitName(s.ho_ten_full);
-      const dob = s.ngay_sinh ? new Date(s.ngay_sinh) : null;
+      const dob = s.ngay_sinh ? parseExamDateTime(s.ngay_sinh) || new Date(s.ngay_sinh) : null;
       const row = 5 + idx;
       const dc = dataStyle('center');
       const dl = dataStyle('left');
@@ -749,8 +1090,9 @@ export default function ExamSchedulesPage() {
 
   // ── PTIT / TIN HỌC FORMAT ────────────────────────────────────────────────
   // Format gốc: CHỨNG CHỈ ỨNG DỤNG CNTT — THEO THÔNG TƯ 03/2014
-  const exportPtitFormat = () => {
-    const examDate = selectedExamForList?.exam_date ? new Date(selectedExamForList.exam_date) : new Date();
+  const exportPtitFormat = async () => {
+    const XLSX = await loadXlsxModule();
+    const examDate = parseExamDateTime(selectedExamForList?.exam_date) || new Date();
     const examDateStr = `Thời gian: ngày ${String(examDate.getDate()).padStart(2, '0')} tháng ${String(examDate.getMonth() + 1).padStart(2, '0')} năm ${examDate.getFullYear()}`;
 
     // Split ho_ten_full into ho and ten
@@ -1012,162 +1354,295 @@ export default function ExamSchedulesPage() {
     <div className="admin-page">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-      {/* Page Header */}
-      <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20, marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 12, color: '#1e293b' }}>
-            <Calendar size={32} className="text-blue-600" /> Quản lý Lịch thi
-          </h1>
-          <p style={{ color: '#64748b', marginTop: 4, marginLeft: 44 }}>Tạo, quản lý và theo dõi các kỳ thi của trung tâm</p>
-        </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <Button onClick={handleOpenConflicts} variant="outline" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Info size={18} /> Kiểm tra trùng đăng ký
-          </Button>
-          <Button onClick={handleCreate} className="admin-btn admin-btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <PlusCircle size={18} /> Tạo Lịch Thi Mới
-          </Button>
-        </div>
-      </div>
-
-      {/* Unified Main Content Card */}
-      <div className="admin-card" style={{ marginTop: 20, padding: 0, overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)' }}>
-
-        {/* 1. Stats Section */}
-        <div className="admin-stats-unified">
-          <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 0 }}>
-            <div className="admin-stat-item" style={{ display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer' }} onClick={() => setFilter('all')}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={24} /></div>
-              <div><div style={{ fontSize: 24, fontWeight: 700, color: '#0f172a' }}>{exams.length}</div><div style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Tổng số kỳ thi</div></div>
+      <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-100 bg-[linear-gradient(180deg,rgba(248,250,252,0.95)_0%,rgba(255,255,255,1)_100%)] p-6">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
+                  <Calendar size={24} />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-black tracking-tight text-slate-900">Lịch thi</h1>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Điều phối toàn bộ kỳ thi, linked class và luồng duyệt thí sinh trên một màn duy nhất.
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="admin-stat-item" style={{ display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer' }} onClick={() => setFilter('upcoming')}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Clock size={24} /></div>
-              <div><div style={{ fontSize: 24, fontWeight: 700, color: '#0f172a' }}>{exams.filter(e => {
-                const examDate = new Date(e.exam_date);
-                examDate.setHours(0, 0, 0, 0);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                return examDate.getTime() >= today.getTime();
-              }).length}</div><div style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Sắp diễn ra</div></div>
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button onClick={handleOpenConflicts} variant="outline" className="h-11 gap-2 rounded-xl border-slate-200 bg-white px-4">
+                <Info size={16} />
+                Kiểm tra trùng đăng ký
+              </Button>
+              <Button onClick={handleCreate} className="h-11 gap-2 rounded-xl bg-slate-900 px-4 text-white hover:bg-slate-800">
+                <PlusCircle size={16} />
+                Tạo lịch thi
+              </Button>
             </div>
-            <div className="admin-stat-item" style={{ display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer' }} onClick={() => setFilter('past')}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(100, 116, 139, 0.1)', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={24} /></div>
-              <div><div style={{ fontSize: 24, fontWeight: 700, color: '#0f172a' }}>{exams.filter(e => {
-                const examDate = new Date(e.exam_date);
-                examDate.setHours(0, 0, 0, 0);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                return examDate.getTime() < today.getTime();
-              }).length}</div><div style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Đã kết thúc</div></div>
+          </div>
+
+          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <button
+              type="button"
+              onClick={() => setFilter('all')}
+              className="rounded-[24px] border border-slate-200 bg-white p-4 text-left transition hover:border-slate-300 hover:shadow-md"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                  <Calendar size={18} />
+                </div>
+                <div>
+                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Tổng lịch</div>
+                  <div className="mt-1 text-2xl font-black leading-none text-slate-900">{examSummary.total}</div>
+                </div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilter('upcoming')}
+              className="rounded-[24px] border border-slate-200 bg-white p-4 text-left transition hover:border-slate-300 hover:shadow-md"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                  <Clock size={18} />
+                </div>
+                <div>
+                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Sắp tới</div>
+                  <div className="mt-1 text-2xl font-black leading-none text-slate-900">{examSummary.today + examSummary.upcoming}</div>
+                </div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilter('all')}
+              className="rounded-[24px] border border-slate-200 bg-white p-4 text-left transition hover:border-slate-300 hover:shadow-md"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                  <Info size={18} />
+                </div>
+                <div>
+                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Hôm nay</div>
+                  <div className="mt-1 text-2xl font-black leading-none text-slate-900">{examSummary.today}</div>
+                </div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilter('all')}
+              className="rounded-[24px] border border-slate-200 bg-white p-4 text-left transition hover:border-slate-300 hover:shadow-md"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                  <Users size={18} />
+                </div>
+                <div>
+                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Chờ duyệt</div>
+                  <div className="mt-1 text-2xl font-black leading-none text-slate-900">{examSummary.pending}</div>
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex w-full flex-col gap-3 xl:flex-row xl:items-center">
+              <div className="relative w-full xl:max-w-md">
+                <Label htmlFor="exam-search" className="sr-only">Tìm kiếm lịch thi</Label>
+                <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input
+                  id="exam-search"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Tìm theo tên kỳ thi, loại đề, linked class hoặc địa điểm..."
+                  className="h-11 rounded-xl border-slate-200 bg-white pl-10 pr-10"
+                />
+                {searchTerm ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 transition hover:text-slate-700"
+                  >
+                    Xóa
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { key: 'upcoming', label: 'Sắp tới', count: examSummary.today + examSummary.upcoming },
+                  { key: 'past', label: 'Đã qua', count: examSummary.past },
+                  { key: 'all', label: 'Tất cả', count: examSummary.total },
+                ].map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setFilter(item.key)}
+                    className={`rounded-full border px-3 py-2 text-xs font-black uppercase tracking-[0.14em] transition ${
+                      filter === item.key
+                        ? 'border-slate-900 bg-slate-900 text-white shadow-md shadow-slate-200'
+                        : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700'
+                    }`}
+                  >
+                    {item.label}
+                    <span className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] ${filter === item.key ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                      {item.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="text-sm text-slate-500">
+              Hiển thị <span className="font-semibold text-slate-900">{filteredExams.length}</span> / {examSummary.total} lịch thi
             </div>
           </div>
         </div>
 
-        {/* 2. Toolbar */}
-        <div className="admin-toolbar-unified">
-          <div style={{ flex: 1, minWidth: 300, display: 'flex', gap: 12, background: '#f8fafc', borderRadius: 12, padding: '12px 16px', border: '1px solid #e2e8f0', transition: 'all 0.2s' }}>
-            <Search size={20} color="#94a3b8" />
-            <input
-              type="text"
-              placeholder="Tìm kiếm theo tên, địa điểm..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, background: 'transparent' }}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', borderRadius: 10, padding: 4 }}>
-            {['upcoming', 'past', 'all'].map(filterName => (
-              <button
-                key={filterName}
-                onClick={() => setFilter(filterName)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${filter === filterName
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'bg-transparent text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                {filterName === 'upcoming' && 'Sắp tới'}
-                {filterName === 'past' && 'Đã qua'}
-                {filterName === 'all' && 'Tất cả'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 3. Content */}
-        <div style={{ padding: 32, background: '#fcfcfc' }}>
+        <div className="bg-slate-50/60 p-6">
           {loading ? (
-            <div className="admin-loading" style={{ padding: 60, display: 'flex', justifyContent: 'center' }}><LoadingSpinner /></div>
+            <div className="flex justify-center py-20"><LoadingSpinner /></div>
           ) : filteredExams.length === 0 ? (
-            <div className="admin-empty-state" style={{ padding: 60, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#94a3b8' }}><Calendar size={48} style={{ marginBottom: 16 }} /><p>Không tìm thấy lịch thi nào.</p></div>
+            <EmptyState
+              icon={<Calendar size={48} className="text-slate-300" />}
+              title="Không tìm thấy lịch thi"
+              message="Thử đổi bộ lọc, xóa từ khóa tìm kiếm hoặc tạo lịch thi mới để bắt đầu."
+            />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+            <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
               {filteredExams.map((exam) => {
-                const status = getStatusProps(exam.exam_date);
-                const dateObj = new Date(exam.exam_date);
+                const status = getExamStatusMeta(exam.exam_date);
+                const examDate = parseExamDateTime(exam.exam_date);
+                const totalStudents = getTotalStudentCount(exam);
+                const approvedCount = getApprovedCount(exam);
+                const pendingCount = getPendingCount(exam);
+                const schedulePreview = formatSchedulePreview(exam.class_seed_schedule_rule, exam.class_seed_schedule_time);
 
                 return (
-                  <div key={exam.id} className="group relative bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col">
-                    {/* Decorative Top Line */}
-                    <div className={`h-1.5 w-full ${status.color.includes('green') ? 'bg-green-500' : status.color.includes('blue') ? 'bg-blue-500' : 'bg-slate-400'}`}></div>
+                  <article
+                    key={exam.id}
+                    className="group relative flex h-full flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_30px_rgba(15,23,42,0.05)] transition duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_24px_48px_rgba(15,23,42,0.10)]"
+                  >
+                    <span className={`absolute inset-x-0 top-0 h-1.5 ${status.accentClass}`} />
 
-                    <div className="p-6 flex-grow flex flex-col gap-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex flex-col">
-                          <span className="text-3xl font-bold text-slate-800 tracking-tight">{dateObj.getDate().toString().padStart(2, '0')}</span>
-                          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tháng {dateObj.getMonth() + 1}</span>
+                    <div className="flex flex-1 flex-col gap-4 p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-[84px] flex-col items-center rounded-[24px] bg-slate-950 px-3 py-3 text-white shadow-lg shadow-slate-200">
+                          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/60">
+                            {examDate ? examDate.toLocaleDateString('vi-VN', { weekday: 'short' }) : '---'}
+                          </p>
+                          <p className="mt-1 text-[32px] font-black leading-none">{examDate ? String(examDate.getDate()).padStart(2, '0') : '--'}</p>
+                          <p className="mt-1 text-[11px] font-semibold text-white/75">
+                            Thg {examDate ? examDate.getMonth() + 1 : '--'}
+                          </p>
                         </div>
-                        <Badge variant={status.variant} className={`${status.color} px-3 py-1 rounded-full text-xs font-bold shadow-sm`}>{status.label}</Badge>
+
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${status.badgeClass}`}>
+                            {status.label}
+                          </span>
+                          {pendingCount > 0 ? (
+                            <span className="rounded-full bg-amber-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-700">
+                              {pendingCount} chờ duyệt
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
 
                       <div>
-                        <h3 className="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors line-clamp-2 leading-tight" title={exam.exam_name}>
+                        <h3 className="line-clamp-2 text-[20px] font-black leading-tight tracking-tight text-slate-900">
                           {exam.exam_name}
                         </h3>
-                        {exam.exam_type && (
-                          <Badge variant="outline" className="mt-1.5 text-xs font-semibold text-indigo-600 border-indigo-200 bg-indigo-50">
-                            {exam.exam_type}
-                          </Badge>
-                        )}
-                        <div className="mt-3 space-y-2.5">
-                          <div className="flex items-center gap-2.5 text-sm text-slate-600">
-                            <Clock size={16} className="text-slate-400 shrink-0" />
-                            <span>{formatTime(dateObj)} <span className="text-slate-400 mx-1">•</span> {exam.duration_minutes} phút</span>
-                          </div>
-                          <div className="flex items-center gap-2.5 text-sm text-slate-600">
-                            <MapPin size={16} className="text-slate-400 shrink-0" />
-                            <span className="line-clamp-1">{exam.location || 'Chưa cập nhật địa điểm'}</span>
-                          </div>
-                          {exam.notes && (
-                            <div className="flex items-center gap-2.5 text-sm text-slate-500 italic">
-                              <Info size={16} className="text-slate-300 shrink-0" />
-                              <span className="line-clamp-1">{exam.notes}</span>
-                            </div>
-                          )}
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {exam.exam_type ? (
+                            <Badge variant="outline" className="rounded-full border-indigo-200 bg-indigo-50 px-3 py-1 text-[11px] font-semibold text-indigo-700">
+                              {exam.exam_type}
+                            </Badge>
+                          ) : null}
+                          {exam.class_seed_name ? (
+                            <Badge variant="outline" className="rounded-full border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">
+                              Có linked class
+                            </Badge>
+                          ) : null}
                         </div>
                       </div>
+
+                      <div className="grid gap-2 text-sm text-slate-600">
+                        <div className="flex items-center gap-2">
+                          <Clock size={15} className="shrink-0 text-slate-400" />
+                          <span>{formatDateVN(exam.exam_date)} • {formatTime(exam.exam_date)} • {exam.duration_minutes || 120} phút</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin size={15} className="shrink-0 text-slate-400" />
+                          <span className="line-clamp-1">{exam.location || 'Chưa cập nhật địa điểm'}</span>
+                        </div>
+                        {exam.notes ? (
+                          <div className="flex items-start gap-2 text-slate-500">
+                            <Info size={15} className="mt-0.5 shrink-0 text-slate-300" />
+                            <span className="line-clamp-2">{exam.notes}</span>
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-[22px] bg-slate-50 px-3 py-3">
+                          <div className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Tổng thí sinh</div>
+                          <div className="mt-1 text-2xl font-black leading-none text-slate-900">{totalStudents}</div>
+                        </div>
+                        <div className="rounded-[22px] bg-slate-50 px-3 py-3">
+                          <div className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Đã duyệt</div>
+                          <div className="mt-1 text-2xl font-black leading-none text-slate-900">{approvedCount}</div>
+                        </div>
+                      </div>
+
+                      {exam.class_seed_name ? (
+                        <div className="rounded-[22px] border border-emerald-100 bg-emerald-50/70 p-3">
+                          <div className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-600">Linked class</div>
+                          <div className="mt-1 text-sm font-semibold text-slate-900">{exam.class_seed_name}</div>
+                          <div className="mt-1 text-sm text-slate-600">{schedulePreview}</div>
+                        </div>
+                      ) : null}
                     </div>
 
-                    {/* Action Footer */}
-                    <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between group-hover:bg-slate-100 transition-colors">
+                    <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-5 py-4">
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-blue-600 hover:text-blue-700 hover:bg-white font-medium pl-0"
+                        className="h-10 rounded-xl px-3 text-blue-700 hover:bg-white hover:text-blue-800"
                         onClick={() => handleViewStudents(exam)}
                       >
-                        <Users size={16} className="mr-2" /> Danh sách thi
+                        <Users size={16} className="mr-2" />
+                        Quản lý thí sinh
                       </Button>
 
-                      <div className="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white hover:text-blue-600" onClick={() => handleEdit(exam)}>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Chỉnh sửa lịch thi ${exam.exam_name}`}
+                          title="Chỉnh sửa lịch thi"
+                          className="h-9 w-9 rounded-xl hover:bg-white hover:text-blue-600"
+                          onClick={() => handleEdit(exam)}
+                        >
                           <Edit size={16} />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white hover:text-red-500" onClick={() => handleDelete(exam)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Xóa lịch thi ${exam.exam_name}`}
+                          title="Xóa lịch thi"
+                          className="h-9 w-9 rounded-xl hover:bg-white hover:text-red-500"
+                          onClick={() => handleDelete(exam)}
+                        >
                           <Trash2 size={16} />
                         </Button>
                       </div>
                     </div>
-                  </div>
+                  </article>
                 );
               })}
             </div>
@@ -1187,13 +1662,35 @@ export default function ExamSchedulesPage() {
           </div>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
             <div className="space-y-5" style={{ overflowY: 'auto', flex: 1, padding: '24px 28px' }}>
-              {/* Tên kỳ thi */}
+              <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-4">
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-500">Xem nhanh trước khi lưu</div>
+                <h4 className="mt-2 text-xl font-black tracking-tight text-slate-900">
+                  {formData.exam_name || 'Tên kỳ thi sẽ xuất hiện ở đây'}
+                </h4>
+                <p className="mt-2 text-sm text-slate-600">
+                  {formPreviewDate ? `${formatDateVN(formPreviewDate, true)} • ${formData.duration_minutes || 120} phút` : 'Chọn ngày thi và giờ bắt đầu để xem preview'}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                  {formData.location ? (
+                    <span className="rounded-full bg-white px-3 py-1.5 font-semibold text-slate-600 shadow-sm">{formData.location}</span>
+                  ) : null}
+                  {formData.class_seed_name ? (
+                    <span className="rounded-full bg-emerald-100 px-3 py-1.5 font-semibold text-emerald-700">Linked: {formData.class_seed_name}</span>
+                  ) : null}
+                  {formData.class_seed_schedule_time ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1.5 font-semibold text-slate-600">
+                      {formatSchedulePreview(formData.class_seed_schedule_rule, formData.class_seed_schedule_time)}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+
               <div>
                 <Label htmlFor="exam_name" className="text-sm font-medium text-gray-700">Tên kỳ thi <span className="text-red-500">*</span></Label>
                 <Input
                   id="exam_name"
                   value={formData.exam_name}
-                  onChange={e => setFormData({ ...formData, exam_name: e.target.value })}
+                  onChange={e => updateFormField('exam_name', e.target.value)}
                   placeholder="Ví dụ: Thi Tin học Quốc tế đợt 1..."
                   className="mt-1.5"
                   disabled={submitting}
@@ -1201,31 +1698,46 @@ export default function ExamSchedulesPage() {
                 />
               </div>
 
-              {/* Thể loại thi — chỉ chọn từ danh sách do teacher vantrangexam tạo */}
-              <div>
-                <Label htmlFor="exam_type" className="text-sm font-medium text-gray-700">Thể loại thi</Label>
-                <select
-                  id="exam_type"
-                  value={formData.exam_type}
-                  onChange={e => setFormData({ ...formData, exam_type: e.target.value })}
-                  disabled={submitting}
-                  className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
-                >
-                  <option value="">-- Chọn thể loại thi --</option>
-                  {examCategoryOptions.map(cat => (
-                    <option key={cat.id} value={cat.name}>{cat.name}</option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="exam_category_id" className="text-sm font-medium text-gray-700">Thể loại thi <span className="text-red-500">*</span></Label>
+                  <select
+                    id="exam_category_id"
+                    value={formData.exam_category_id}
+                    onChange={e => updateFormField('exam_category_id', e.target.value)}
+                    disabled={submitting}
+                    className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
+                  >
+                    <option value="">-- Chọn thể loại thi --</option>
+                    {examCategoryOptions.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="exam_type_id" className="text-sm font-medium text-gray-700">Loại đề thi</Label>
+                  <select
+                    id="exam_type_id"
+                    value={formData.exam_type_id}
+                    onChange={e => updateFormField('exam_type_id', e.target.value)}
+                    disabled={submitting}
+                    className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
+                  >
+                    <option value="">-- Tuỳ chọn --</option>
+                    {examTypeOptions.map(type => (
+                      <option key={type.id} value={type.id}>{type.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              {/* Ngày thi & Giờ bắt đầu */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="exam_date" className="text-sm font-medium text-gray-700">Ngày thi <span className="text-red-500">*</span></Label>
                   <DateInput
                     id="exam_date"
                     value={formData.exam_date}
-                    onChange={val => setFormData({ ...formData, exam_date: val })}
+                    onChange={(val) => updateFormField('exam_date', val)}
                     className="mt-1.5"
                     disabled={submitting}
                   />
@@ -1236,14 +1748,13 @@ export default function ExamSchedulesPage() {
                     id="exam_time"
                     type="time"
                     value={formData.exam_time}
-                    onChange={e => setFormData({ ...formData, exam_time: e.target.value })}
+                    onChange={e => updateFormField('exam_time', e.target.value)}
                     className="mt-1.5"
                     disabled={submitting}
                   />
                 </div>
               </div>
 
-              {/* Thời lượng & Địa điểm */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="duration_minutes" className="text-sm font-medium text-gray-700">Thời lượng (phút)</Label>
@@ -1251,7 +1762,7 @@ export default function ExamSchedulesPage() {
                     id="duration_minutes"
                     type="number"
                     value={formData.duration_minutes}
-                    onChange={e => setFormData({ ...formData, duration_minutes: e.target.value })}
+                    onChange={e => updateFormField('duration_minutes', e.target.value)}
                     min="15"
                     step="15"
                     className="mt-1.5"
@@ -1263,7 +1774,7 @@ export default function ExamSchedulesPage() {
                   <Input
                     id="location"
                     value={formData.location}
-                    onChange={e => setFormData({ ...formData, location: e.target.value })}
+                    onChange={e => updateFormField('location', e.target.value)}
                     placeholder="Phòng 101, Online..."
                     className="mt-1.5"
                     disabled={submitting}
@@ -1271,13 +1782,12 @@ export default function ExamSchedulesPage() {
                 </div>
               </div>
 
-              {/* Ghi chú */}
               <div>
                 <Label htmlFor="notes" className="text-sm font-medium text-gray-700">Ghi chú</Label>
                 <textarea
                   id="notes"
                   value={formData.notes}
-                  onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                  onChange={e => updateFormField('notes', e.target.value)}
                   placeholder="Nội dung chi tiết, dặn dò..."
                   rows={3}
                   disabled={submitting}
@@ -1285,9 +1795,193 @@ export default function ExamSchedulesPage() {
                 />
               </div>
 
-              {/* Zoom Meeting */}
-              <div className="border border-blue-100 rounded-xl p-4 bg-blue-50/50 space-y-3">
-                <div className="flex items-center gap-2 text-blue-700 font-semibold text-sm mb-1">
+              <div className="space-y-4 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
+                <div>
+                  <p className="text-sm font-semibold text-emerald-800">Lớp linked cho teacher workspace</p>
+                  <p className="mt-1 text-xs text-emerald-700/80">
+                    Sau khi lưu lịch thi, hệ thống sẽ đồng bộ sang lớp online linked để giáo viên dùng chung tài liệu và bài tập ôn tập.
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="class_seed_name" className="text-sm font-medium text-gray-700">Tên lớp học <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="class_seed_name"
+                    value={formData.class_seed_name}
+                    onChange={e => updateFormField('class_seed_name', e.target.value)}
+                    placeholder="Ví dụ: VSTEP B1 - Lớp ôn 31.03"
+                    className="mt-1.5"
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="class_seed_description" className="text-sm font-medium text-gray-700">Mô tả lớp</Label>
+                  <textarea
+                    id="class_seed_description"
+                    value={formData.class_seed_description}
+                    onChange={e => updateFormField('class_seed_description', e.target.value)}
+                    placeholder="Mô tả ngắn về lớp học, mục tiêu ôn tập, đối tượng..."
+                    rows={3}
+                    disabled={submitting}
+                    className="mt-1.5 flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-gray-700">Preset lịch học</div>
+                  <div className="flex flex-wrap gap-2">
+                    {SCHEDULE_PRESETS.map((preset) => {
+                      const active = formData.class_seed_schedule_rule === preset.rule && formData.class_seed_schedule_time === preset.time;
+                      return (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => applySchedulePreset(preset)}
+                          className={`rounded-2xl border px-3 py-2 text-left transition ${
+                            active
+                              ? 'border-emerald-500 bg-emerald-500 text-white shadow-lg shadow-emerald-100'
+                              : 'border-emerald-200 bg-white text-slate-700 hover:border-emerald-300'
+                          }`}
+                        >
+                          <div className="text-sm font-bold">{preset.label}</div>
+                          <div className={`text-[11px] ${active ? 'text-white/85' : 'text-slate-500'}`}>{preset.helper}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-gray-700">Ngày học trong tuần <span className="text-red-500">*</span></div>
+                  <div className="flex flex-wrap gap-2">
+                    {WEEKLY_DAY_OPTIONS.map((day) => {
+                      const active = scheduleDays.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => toggleScheduleDay(day)}
+                          className={`h-10 min-w-12 rounded-xl border px-3 text-sm font-bold transition ${
+                            active
+                              ? 'border-emerald-500 bg-emerald-500 text-white'
+                              : 'border-emerald-200 bg-white text-slate-600 hover:border-emerald-300'
+                          }`}
+                        >
+                          {WEEKLY_DAY_LABELS[day]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Hệ thống đang lưu dưới dạng <span className="font-semibold">{formData.class_seed_schedule_rule || 'chưa có'}</span>
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="class_seed_schedule_start" className="text-sm font-medium text-gray-700">Giờ bắt đầu học <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="class_seed_schedule_start"
+                      type="time"
+                      value={scheduleTimeRange.start}
+                      onChange={(e) => updateScheduleTimeBoundary('start', e.target.value)}
+                      className="mt-1.5"
+                      disabled={submitting}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="class_seed_schedule_end" className="text-sm font-medium text-gray-700">Giờ kết thúc học <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="class_seed_schedule_end"
+                      type="time"
+                      value={scheduleTimeRange.end}
+                      onChange={(e) => updateScheduleTimeBoundary('end', e.target.value)}
+                      className="mt-1.5"
+                      disabled={submitting}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="class_seed_schedule_rule" className="text-sm font-medium text-gray-700">Quy tắc nâng cao</Label>
+                  <Input
+                    id="class_seed_schedule_rule"
+                    value={formData.class_seed_schedule_rule}
+                    onChange={e => updateFormField('class_seed_schedule_rule', e.target.value.toUpperCase())}
+                    placeholder="WEEKLY:1,3,5 hoặc DAILY"
+                    className="mt-1.5"
+                    disabled={submitting}
+                  />
+                  <p className="mt-1 text-xs text-slate-500">
+                    Chỉ sửa thủ công khi cần cú pháp đặc biệt. Lịch hiện tại: <span className="font-semibold">{formatSchedulePreview(formData.class_seed_schedule_rule, formData.class_seed_schedule_time)}</span>
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="class_seed_start_date" className="text-sm font-medium text-gray-700">Ngày bắt đầu lớp <span className="text-red-500">*</span></Label>
+                    <DateInput
+                      id="class_seed_start_date"
+                      value={formData.class_seed_start_date}
+                      onChange={val => updateFormField('class_seed_start_date', val)}
+                      className="mt-1.5"
+                      disabled={submitting}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="class_seed_end_date" className="text-sm font-medium text-gray-700">Ngày kết thúc lớp</Label>
+                    <DateInput
+                      id="class_seed_end_date"
+                      value={formData.class_seed_end_date}
+                      onChange={val => updateFormField('class_seed_end_date', val)}
+                      className="mt-1.5"
+                      disabled={submitting}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="class_seed_teacher_name" className="text-sm font-medium text-gray-700">Giáo viên phụ trách</Label>
+                    <Input
+                      id="class_seed_teacher_name"
+                      value={formData.class_seed_teacher_name}
+                      onChange={e => updateFormField('class_seed_teacher_name', e.target.value)}
+                      placeholder="Tên giáo viên"
+                      className="mt-1.5"
+                      disabled={submitting}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="class_seed_max_students" className="text-sm font-medium text-gray-700">Sĩ số tối đa</Label>
+                    <Input
+                      id="class_seed_max_students"
+                      type="number"
+                      min="1"
+                      value={formData.class_seed_max_students}
+                      onChange={e => updateFormField('class_seed_max_students', e.target.value)}
+                      className="mt-1.5"
+                      disabled={submitting}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="class_seed_timezone" className="text-sm font-medium text-gray-700">Múi giờ</Label>
+                  <Input
+                    id="class_seed_timezone"
+                    value={formData.class_seed_timezone}
+                    onChange={e => updateFormField('class_seed_timezone', e.target.value)}
+                    placeholder="Asia/Ho_Chi_Minh"
+                    className="mt-1.5"
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-blue-700">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" /></svg>
                   Zoom Meeting (tuỳ chọn)
                 </div>
@@ -1296,7 +1990,7 @@ export default function ExamSchedulesPage() {
                   <Input
                     id="zoom_link"
                     value={formData.zoom_link}
-                    onChange={e => setFormData({ ...formData, zoom_link: e.target.value })}
+                    onChange={e => updateFormField('zoom_link', e.target.value)}
                     placeholder="https://us06web.zoom.us/j/..."
                     className="mt-1.5"
                     disabled={submitting}
@@ -1308,7 +2002,7 @@ export default function ExamSchedulesPage() {
                     <Input
                       id="zoom_meeting_id"
                       value={formData.zoom_meeting_id}
-                      onChange={e => setFormData({ ...formData, zoom_meeting_id: e.target.value })}
+                      onChange={e => updateFormField('zoom_meeting_id', e.target.value)}
                       placeholder="813 8780 6613"
                       className="mt-1.5"
                       disabled={submitting}
@@ -1319,7 +2013,7 @@ export default function ExamSchedulesPage() {
                     <Input
                       id="zoom_passcode"
                       value={formData.zoom_passcode}
-                      onChange={e => setFormData({ ...formData, zoom_passcode: e.target.value })}
+                      onChange={e => updateFormField('zoom_passcode', e.target.value)}
                       placeholder="767013"
                       className="mt-1.5"
                       disabled={submitting}
@@ -1330,9 +2024,7 @@ export default function ExamSchedulesPage() {
             </div>
 
             <DialogFooter className="pt-4 border-t mt-4" style={{ flexShrink: 0, padding: '16px 28px', borderTop: '1px solid #e2e8f0', background: '#fff' }}>
-              <DialogClose asChild>
-                <Button type="button" variant="outline" disabled={submitting}>Hủy</Button>
-              </DialogClose>
+              <Button type="button" variant="outline" disabled={submitting} onClick={() => setShowModal(false)}>Hủy</Button>
               <Button type="submit" disabled={submitting} className="min-w-[120px]">
                 {submitting ? (
                   <span className="flex items-center gap-2">
@@ -1389,50 +2081,74 @@ export default function ExamSchedulesPage() {
           </div>
 
           {/* Toolbar */}
-          <div className="px-5 py-3 border-b bg-gray-50 flex items-center justify-between gap-4 flex-wrap">
-            <div className="text-sm text-gray-600">
-              {studentTab === 'approved' ? (
-                <span>Hiển thị <strong>{studentList.length}</strong> thí sinh đã được duyệt</span>
-              ) : (
-                <span>Có <strong>{pendingStudents.length}</strong> thí sinh đang chờ duyệt</span>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={openAddStudentsModal}
-                variant="outline"
-                size="sm"
-                disabled={!selectedExamForList?.id}
-              >
-                <PlusCircle size={16} className="mr-1" />
-                Thêm thí sinh
-              </Button>
-              {studentTab === 'pending' && pendingStudents.length > 0 && (
-                <Button
-                  onClick={handleApproveAll}
-                  size="sm"
-                  disabled={approving === 'all'}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  {approving === 'all' ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                      Đang duyệt...
-                    </span>
-                  ) : (
-                    <>
-                      <CheckCheck size={16} className="mr-1" />
-                      Duyệt tất cả
-                    </>
+          <div className="border-b bg-gray-50 px-5 py-3">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="text-sm text-gray-600">
+                {studentTab === 'approved' ? (
+                  <span>Hiển thị <strong>{filteredApprovedStudents.length}</strong> / {studentList.length} thí sinh đã được duyệt</span>
+                ) : (
+                  <span>Hiển thị <strong>{filteredPendingStudents.length}</strong> / {pendingStudents.length} thí sinh đang chờ duyệt</span>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <div className="relative w-full lg:w-80">
+                  <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    value={studentSearchTerm}
+                    onChange={(event) => setStudentSearchTerm(event.target.value)}
+                    placeholder="Tìm theo tên, CCCD, SĐT, email..."
+                    className="h-10 rounded-xl border-slate-200 bg-white pl-9 pr-9"
+                  />
+                  {studentSearchTerm ? (
+                    <button
+                      type="button"
+                      onClick={() => setStudentSearchTerm('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 transition hover:text-slate-700"
+                    >
+                      Xóa
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="flex gap-2 flex-wrap justify-end">
+                  <Button
+                    onClick={openAddStudentsModal}
+                    variant="outline"
+                    size="sm"
+                    disabled={!selectedExamForList?.id}
+                  >
+                    <PlusCircle size={16} className="mr-1" />
+                    Thêm thí sinh
+                  </Button>
+                  {studentTab === 'pending' && pendingStudents.length > 0 && (
+                    <Button
+                      onClick={handleApproveAll}
+                      size="sm"
+                      disabled={approving === 'all'}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      {approving === 'all' ? (
+                        <span className="flex items-center gap-2">
+                          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                          Đang duyệt...
+                        </span>
+                      ) : (
+                        <>
+                          <CheckCheck size={16} className="mr-1" />
+                          Duyệt tất cả
+                        </>
+                      )}
+                    </Button>
                   )}
-                </Button>
-              )}
-              {studentTab === 'approved' && (
-                <Button onClick={exportStudentListToExcel} variant="outline" size="sm" disabled={studentList.length === 0}>
-                  <Download size={16} className="mr-1" />
-                  Xuất Excel
-                </Button>
-              )}
+                  {studentTab === 'approved' && (
+                    <Button onClick={exportStudentListToExcel} variant="outline" size="sm" disabled={studentList.length === 0}>
+                      <Download size={16} className="mr-1" />
+                      Xuất Excel
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1442,21 +2158,21 @@ export default function ExamSchedulesPage() {
               <div className="flex justify-center py-20"><LoadingSpinner /></div>
             ) : studentTab === 'approved' ? (
               /* Approved Students */
-              studentList.length === 0 ? (
+              filteredApprovedStudents.length === 0 ? (
                 <EmptyState
                   icon={<CheckCircle size={48} className="text-gray-300" />}
-                  title="Chưa có thí sinh được duyệt"
-                  message="Các thí sinh sau khi được duyệt sẽ hiển thị ở đây."
+                  title={studentSearchTerm ? 'Không tìm thấy thí sinh phù hợp' : 'Chưa có thí sinh được duyệt'}
+                  message={studentSearchTerm ? 'Thử đổi từ khóa tìm kiếm hoặc xóa bộ lọc.' : 'Các thí sinh sau khi được duyệt sẽ hiển thị ở đây.'}
                 />
               ) : (
                 <div className="grid gap-3">
-                  {studentList.map((student) => (
+                  {filteredApprovedStudents.map((student) => (
                     <div key={student.student_id} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition-shadow">
                       {/* Photo */}
                       <div className="flex-shrink-0">
                         {student.image_3x4 ? (
                           <img
-                            src={student.image_3x4}
+                            src={resolveImageUrl(student.image_3x4)}
                             alt={student.ho_ten_full}
                             className="w-16 h-20 object-cover rounded-lg border-2 border-gray-200"
                           />
@@ -1519,21 +2235,21 @@ export default function ExamSchedulesPage() {
               )
             ) : (
               /* Pending Students */
-              pendingStudents.length === 0 ? (
+              filteredPendingStudents.length === 0 ? (
                 <EmptyState
                   icon={<Clock size={48} className="text-gray-300" />}
-                  title="Không có thí sinh chờ duyệt"
-                  message="Tất cả thí sinh đã được xử lý."
+                  title={studentSearchTerm ? 'Không tìm thấy thí sinh phù hợp' : 'Không có thí sinh chờ duyệt'}
+                  message={studentSearchTerm ? 'Thử đổi từ khóa tìm kiếm hoặc xóa bộ lọc.' : 'Tất cả thí sinh đã được xử lý.'}
                 />
               ) : (
                 <div className="grid gap-3">
-                  {pendingStudents.map((student) => (
+                  {filteredPendingStudents.map((student) => (
                     <div key={student.student_id} className="bg-white border-2 border-orange-200 rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition-shadow">
                       {/* Photo */}
                       <div className="flex-shrink-0">
                         {student.image_3x4 ? (
                           <img
-                            src={student.image_3x4}
+                            src={resolveImageUrl(student.image_3x4)}
                             alt={student.ho_ten_full}
                             className="w-16 h-20 object-cover rounded-lg border-2 border-orange-200"
                           />
@@ -1578,7 +2294,7 @@ export default function ExamSchedulesPage() {
                           </div>
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
-                          Đăng ký: {student.registration_date ? new Date(student.registration_date).toLocaleString('vi-VN') : '---'}
+                          Đăng ký: {student.registration_date ? formatDateVN(student.registration_date, true) : '---'}
                         </div>
                       </div>
 
@@ -1619,9 +2335,7 @@ export default function ExamSchedulesPage() {
 
           {/* Footer */}
           <div className="px-5 py-4 bg-gray-100 border-t flex justify-end">
-            <DialogClose asChild>
-              <Button variant="outline">Đóng</Button>
-            </DialogClose>
+            <Button variant="outline" onClick={() => setShowStudentsModal(false)}>Đóng</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -1677,7 +2391,7 @@ export default function ExamSchedulesPage() {
                           <div className="text-sm text-slate-600 flex flex-wrap gap-x-3 gap-y-1 mt-1">
                             <span>ID: {r.exam_id}</span>
                             <span>Trạng thái: {r.registration_status}</span>
-                            <span>Ngày thi: {r.exam_date ? new Date(r.exam_date).toLocaleString('vi-VN') : '---'}</span>
+                            <span>Ngày thi: {r.exam_date ? formatDateVN(r.exam_date, true) : '---'}</span>
                           </div>
                         </div>
                       ))}
@@ -1689,9 +2403,7 @@ export default function ExamSchedulesPage() {
           </div>
 
           <div className="px-5 py-4 bg-gray-100 border-t flex justify-end">
-            <DialogClose asChild>
-              <Button variant="outline">Đóng</Button>
-            </DialogClose>
+            <Button variant="outline" onClick={() => setShowConflictsModal(false)}>Đóng</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -1735,8 +2447,8 @@ export default function ExamSchedulesPage() {
                       </Badge>
                     </div>
                     <div className="text-sm text-slate-600 flex flex-wrap gap-x-3 gap-y-1 mt-2">
-                      <span>Ngày thi: {r.exam_date ? new Date(r.exam_date).toLocaleString('vi-VN') : '---'}</span>
-                      <span>Đăng ký lúc: {r.registration_created_at ? new Date(r.registration_created_at).toLocaleString('vi-VN') : '---'}</span>
+                      <span>Ngày thi: {r.exam_date ? formatDateVN(r.exam_date, true) : '---'}</span>
+                      <span>Đăng ký lúc: {r.registration_created_at ? formatDateVN(r.registration_created_at, true) : '---'}</span>
                     </div>
                   </div>
                 ))}
@@ -1745,9 +2457,7 @@ export default function ExamSchedulesPage() {
           </div>
 
           <div className="px-5 py-4 bg-gray-100 border-t flex justify-end">
-            <DialogClose asChild>
-              <Button variant="outline">Đóng</Button>
-            </DialogClose>
+            <Button variant="outline" onClick={() => setShowHistoryModal(false)}>Đóng</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -1818,9 +2528,7 @@ export default function ExamSchedulesPage() {
           </div>
 
           <div className="px-5 py-4 bg-gray-100 border-t flex justify-end gap-2">
-            <DialogClose asChild>
-              <Button variant="outline" disabled={addingStudents}>Đóng</Button>
-            </DialogClose>
+            <Button variant="outline" disabled={addingStudents} onClick={() => setShowAddStudentsModal(false)}>Đóng</Button>
             <Button
               onClick={() => handleAddSelectedStudents(false)}
               disabled={addingStudents}
