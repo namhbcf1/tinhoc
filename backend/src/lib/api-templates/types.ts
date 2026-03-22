@@ -25,6 +25,7 @@ export interface GetEndpointConfig<
 > {
   params?: ParamsSchema;
   query?: QuerySchema;
+  cacheControl?: string;
   handler: (
     c: Context,
     input: {

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Download, Eye, Trash2, Check, X, UserPlus, Search, Loader } from 'lucide-react';
 import api from '../../../services/api';
 import { formatDateVN } from '../../../utils/dateUtils';
+import { resolveImageUrl } from '../../../utils/imageUrl';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
@@ -202,7 +203,7 @@ export default function ClassRegistrations({ classId }) {
                                         <div className="flex items-center gap-3">
                                             {reg.image_3x4 ? (
                                                 <img
-                                                    src={reg.image_3x4}
+                                                    src={resolveImageUrl(reg.image_3x4)}
                                                     alt={reg.ho_ten_full}
                                                     className="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-sm"
                                                     onError={(e) => {
@@ -349,7 +350,7 @@ export default function ClassRegistrations({ classId }) {
                                             <div className="flex items-center gap-4">
                                                 {student.image_3x4 ? (
                                                     <img
-                                                        src={student.image_3x4}
+                                                        src={resolveImageUrl(student.image_3x4)}
                                                         alt={student.ho_ten_full}
                                                         className="w-12 h-12 rounded-full object-cover bg-slate-100"
                                                     />

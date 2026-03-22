@@ -98,10 +98,11 @@
 .camera-overlay-template {
     position: absolute !important;
     left: 50% !important;
-    top: 50% !important;
+    top: var(--overlay-top, 50%) !important;
     transform: translate(-50%, -50%) !important;
-    width: 85% !important;
+    width: var(--overlay-width, 85%) !important;
     max-width: 600px;
+    max-height: var(--overlay-max-height, 72vh) !important;
     /* aspect-ratio sẽ được set động từ inline style trong JSX */
     border: 3px solid rgba(255, 255, 255, 0.95) !important;
     border-radius: 8px;
@@ -340,7 +341,8 @@
         cursor: pointer !important;
         position: absolute !important;
         left: 50% !important;
-        top: calc(35% + 25vh) !important;
+        top: auto !important;
+        bottom: max(24px, env(safe-area-inset-bottom, 24px)) !important;
         transform: translate(-50%, 0) !important;
         z-index: 1000 !important;
         visibility: visible !important;
@@ -399,13 +401,13 @@
     }
 
     .camera-overlay-template {
-        width: 98% !important;
+        width: var(--overlay-width, 90%) !important;
         max-width: none !important;
         min-width: 0 !important;
         /* aspect-ratio sẽ được set động từ inline style trong JSX */
         border-width: 5px !important;
         left: 50% !important;
-        top: 35% !important;
+        top: var(--overlay-top, 38%) !important;
         transform: translate(-50%, -50%) !important;
         margin: 0 !important;
         padding: 0 !important;

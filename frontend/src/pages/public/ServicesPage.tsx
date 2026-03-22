@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/Button';
 import { Monitor, CreditCard, FileText, BarChart, Clock, ShieldCheck, ArrowRight, Laptop } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { TOTAL_STUDENTS, SATISFACTION_RATE } from '../../constants/site-stats';
+import SEO from '../../components/common/SEO';
 
 const services = [
   { icon: <Monitor size={40} className="text-green-600" />, title: 'Đăng ký thi trực tuyến', description: 'Hệ thống đăng ký thi hiện đại, hoạt động 24/7. Sinh viên có thể đăng ký tham gia các kỳ thi mọi lúc mọi nơi chỉ với vài thao tác đơn giản.', link: '/register' },
@@ -29,8 +30,35 @@ const testimonials = [
 ];
 
 export default function ServicesPage() {
+  const structuredData = [
+    {
+      '@type': 'Service',
+      name: 'Dich vu va tien ich hoc tap',
+      provider: {
+        '@type': 'Organization',
+        name: 'Van Trang Education',
+        url: 'https://vantrangedu.com'
+      },
+      areaServed: 'VN',
+      url: 'https://vantrangedu.com/services'
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Trang chu', item: 'https://vantrangedu.com/' },
+        { '@type': 'ListItem', position: 2, name: 'Dich vu va tien ich', item: 'https://vantrangedu.com/services' }
+      ]
+    }
+  ];
+
   return (
     <ModernPublicLayout>
+      <SEO
+        title="Dich vu va tien ich"
+        description="He sinh thai dang ky, thanh toan, tai lieu, bao cao va ho tro hoc tap so cho hoc vien cua Van Trang Education."
+        url="/services"
+        structuredData={structuredData}
+      />
       <div className="bg-slate-50 min-h-screen">
         {/* Hero */}
         <div className="bg-slate-900 py-20 text-center relative overflow-hidden">
@@ -59,11 +87,9 @@ export default function ServicesPage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="text-slate-600 text-base mb-6">{service.description}</CardDescription>
-                  {service.link !== '#' && (
-                    <Link to={service.link} className="inline-flex items-center text-green-600 font-bold hover:gap-2 transition-all">
-                      Trải nghiệm ngay <ArrowRight size={16} className="ml-1" />
-                    </Link>
-                  )}
+                  <Link to={service.link === '#' ? '/contact' : service.link} className="inline-flex items-center text-green-600 font-bold hover:gap-2 transition-all">
+                    Trải nghiệm ngay <ArrowRight size={16} className="ml-1" />
+                  </Link>
                 </CardContent>
               </Card>
             ))}

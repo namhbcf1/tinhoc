@@ -7,35 +7,41 @@ export function applyPaymentMethods(ApiClient) {
   // Get payments with optional filters
   ApiClient.prototype.getPayments = async function(params = {}) {
     const query = new URLSearchParams(params).toString();
-    return this.request(`/payments?${query}`);
+    return this.cachedRequest(`/payments?${query}`, {}, { ttlMs: 3 * 60 * 1000 });
   };
 
   // Get payment statistics summary
   ApiClient.prototype.getPaymentStats = async function() {
-    return this.request('/payments/stats');
+    return this.cachedRequest('/payments/stats', {}, { ttlMs: 5 * 60 * 1000 });
   };
 
   // Confirm (approve) a payment
   ApiClient.prototype.confirmPayment = async function(paymentId) {
-    return this.request(`/payments/${paymentId}/confirm`, {
+    const response = await this.request(`/payments/${paymentId}/confirm`, {
       method: 'PUT',
     });
+    this.invalidateCache(['/payments', '/reports/payments', '/reports/summary']);
+    return response;
   };
 
   // Reject a payment with a reason
   ApiClient.prototype.rejectPayment = async function(paymentId, reason) {
-    return this.request(`/payments/${paymentId}/reject`, {
+    const response = await this.request(`/payments/${paymentId}/reject`, {
       method: 'PUT',
       body: JSON.stringify({ reason }),
     });
+    this.invalidateCache(['/payments', '/reports/payments', '/reports/summary']);
+    return response;
   };
 
   // Create a new payment record
   ApiClient.prototype.createPayment = async function(data) {
-    return this.request('/payments', {
+    const response = await this.request('/payments', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    this.invalidateCache(['/payments', '/reports/payments', '/reports/summary']);
+    return response;
   };
 
   // Get payments linked to a specific registration (student-only endpoint)

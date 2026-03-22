@@ -131,17 +131,23 @@ assignments.post('/', authMiddleware, adminOnly, async (c) => {
         return errorResponse('Thiếu title hoặc class_id', 400);
     }
 
-    // Verify class exists
-    const classExists = await db.prepare('SELECT id FROM online_classes WHERE id = ?')
-        .bind(class_id).first();
+    const classRow = await db.prepare(`
+      SELECT id, organizer_uuid, program_uuid, level_uuid, custom_field_payload, override_payload
+      FROM online_classes
+      WHERE id = ?
+      LIMIT 1
+    `).bind(class_id).first<any>();
 
-    if (!classExists) {
+    if (!classRow) {
         return errorResponse('Lớp học không tồn tại', 404);
     }
 
     const result = await db.prepare(`
-    INSERT INTO assignments (title, description, class_id, due_date, max_file_size, allowed_types, max_attempts, created_by)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO assignments (
+      title, description, class_id, due_date, max_file_size, allowed_types, max_attempts, created_by,
+      organizer_uuid, program_uuid, level_uuid, custom_field_payload, override_payload
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
         title,
         description || null,
@@ -150,7 +156,12 @@ assignments.post('/', authMiddleware, adminOnly, async (c) => {
         max_file_size,
         allowed_types,
         max_attempts,
-        user.id
+        user.id,
+        classRow.organizer_uuid || null,
+        classRow.program_uuid || null,
+        classRow.level_uuid || null,
+        classRow.custom_field_payload || null,
+        classRow.override_payload || null
     ).run();
 
     const newAssignment = await db.prepare('SELECT * FROM assignments WHERE id = ?')

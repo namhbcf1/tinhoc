@@ -5,7 +5,14 @@ import MobileDataCard from '../../src/components/admin/MobileDataCard';
 describe('MobileDataCard Component', () => {
     it('renders data correctly when props provided', () => {
         const mockData = { id: 1, title: 'Total Revenue', value: '45.000.000 VND' };
-        render(<MobileDataCard data={mockData} />);
+        render(
+            <MobileDataCard
+                data={mockData}
+                primaryField="title"
+                secondaryFields={[{ key: 'value', label: 'Value' }]}
+                swipeActions={false}
+            />
+        );
         
         expect(screen.getByText('Total Revenue')).toBeInTheDocument();
         expect(screen.getByText('45.000.000 VND')).toBeInTheDocument();

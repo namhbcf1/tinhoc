@@ -37,6 +37,8 @@ reports.get('/payments', async (c) => {
       data: result.results || [],
       year,
       month,
+    }, 200, {
+      'Cache-Control': 'private, max-age=300, stale-while-revalidate=60',
     });
   } catch (error: any) {
     return errorResponse('Lỗi lấy báo cáo học phí: ' + error.message, 500);
@@ -69,6 +71,8 @@ reports.get('/registrations', async (c) => {
         data: result.results || [],
         year,
         groupBy: 'month',
+      }, 200, {
+        'Cache-Control': 'private, max-age=300, stale-while-revalidate=60',
       });
     } else if (groupBy === 'class') {
       const query = `
@@ -90,6 +94,8 @@ reports.get('/registrations', async (c) => {
         data: result.results || [],
         year,
         groupBy: 'class',
+      }, 200, {
+        'Cache-Control': 'private, max-age=300, stale-while-revalidate=60',
       });
     }
 
@@ -126,6 +132,8 @@ reports.get('/certificates', async (c) => {
         data: result.results || [],
         year,
         groupBy: 'month',
+      }, 200, {
+        'Cache-Control': 'private, max-age=300, stale-while-revalidate=60',
       });
     } else if (groupBy === 'class') {
       const query = `
@@ -148,6 +156,8 @@ reports.get('/certificates', async (c) => {
         data: result.results || [],
         year,
         groupBy: 'class',
+      }, 200, {
+        'Cache-Control': 'private, max-age=300, stale-while-revalidate=60',
       });
     }
 
@@ -190,6 +200,8 @@ reports.get('/students-by-class', async (c) => {
     return jsonResponse({
       success: true,
       data: result.results || [],
+    }, 200, {
+      'Cache-Control': 'private, max-age=300, stale-while-revalidate=60',
     });
   } catch (error: any) {
     return errorResponse('Lỗi lấy báo cáo học viên: ' + error.message, 500);
@@ -241,6 +253,8 @@ reports.get('/summary', async (c) => {
         totalCertificates: (certificatesResult as any)?.count || 0,
         year,
       },
+    }, 200, {
+      'Cache-Control': 'private, max-age=300, stale-while-revalidate=60',
     });
   } catch (error: any) {
     return errorResponse('Lỗi lấy tổng hợp: ' + error.message, 500);

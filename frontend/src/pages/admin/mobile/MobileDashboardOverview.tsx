@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
     Users, BookOpen, CreditCard, TrendingUp, Calendar,
-    User, ChevronRight, GraduationCap
+    ChevronRight, Newspaper, Home
 } from 'lucide-react';
 import api from '../../../services/api';
+import { formatDateVN } from '../../../utils/dateUtils';
 import PullToRefreshWrapper from '../../../components/ui/PullToRefreshWrapper';
+import { ADMIN_CACHE_KEYS, ADMIN_CACHE_TTL, clearAdminCache, getAdminCache, setAdminCache } from '../shared/admin-cache';
+import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 const BLUE = '#3b82f6';
@@ -60,7 +63,7 @@ const StudentRow = ({ student, onClick }) => (
             <p className="text-xs text-slate-400 truncate">{student.email || student.cccd || '—'}</p>
         </div>
         <span className="text-xs text-slate-400 flex-shrink-0">
-            {student.created_at ? new Date(student.created_at).toLocaleDateString('vi-VN') : ''}
+            {student.created_at ? formatDateVN(student.created_at, true) : ''}
         </span>
         <ChevronRight size={14} className="text-slate-300 flex-shrink-0" />
     </button>
@@ -68,11 +71,20 @@ const StudentRow = ({ student, onClick }) => (
 
 // ── Main Component ───────────────────────────────────────────────────────────
 export default function MobileDashboardOverview({ onNavigate }) {
-    const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [recentStudents, setRecentStudents] = useState([]);
+    const cachedOverview = getAdminCache(ADMIN_CACHE_KEYS.mobileDashboardOverview, ADMIN_CACHE_TTL.dashboardOverview);
+    const [stats, setStats] = useState(() => cachedOverview?.stats ?? null);
+    const [loading, setLoading] = useState(() => cachedOverview === null);
+    const [recentStudents, setRecentStudents] = useState(() => cachedOverview?.recentStudents ?? []);
 
-    const load = async () => {
+    const load = async (force = false) => {
+        const cached = force ? null : getAdminCache(ADMIN_CACHE_KEYS.mobileDashboardOverview, ADMIN_CACHE_TTL.dashboardOverview);
+        if (cached) {
+            setStats(cached.stats ?? null);
+            setRecentStudents(cached.recentStudents ?? []);
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         try {
             const [students, classes, paymentStats, recentRes] = await Promise.allSettled([
@@ -92,6 +104,10 @@ export default function MobileDashboardOverview({ onNavigate }) {
 
             setStats({ studentCount, classCount, revenue });
             setRecentStudents(recent);
+            setAdminCache(ADMIN_CACHE_KEYS.mobileDashboardOverview, {
+                stats: { studentCount, classCount, revenue },
+                recentStudents: recent,
+            });
         } catch (err) {
             console.error('Failed to load dashboard stats', err);
         } finally {
@@ -100,9 +116,13 @@ export default function MobileDashboardOverview({ onNavigate }) {
     };
 
     useEffect(() => { load(); }, []);
+    useAdminAutoRefresh(() => load(true), { minIntervalMs: 10000 });
 
     return (
-        <PullToRefreshWrapper onRefresh={load}>
+        <PullToRefreshWrapper onRefresh={() => {
+            clearAdminCache(ADMIN_CACHE_KEYS.mobileDashboardOverview);
+            return load(true);
+        }}>
             <div style={{ paddingBottom: 'calc(var(--mb-bottom-nav-height, 70px) + 16px)' }}>
 
                 {/* ── Hero Banner ── */}
@@ -115,14 +135,11 @@ export default function MobileDashboardOverview({ onNavigate }) {
                     <div className="absolute bottom-0 left-20 w-20 h-20 rounded-full bg-white/5"
                         style={{ transform: 'translate(0,40%)' }} />
                     <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1 relative">
-                        Bảng điều khiển
-                    </p>
-                    <h2 className="text-xl font-extrabold text-white leading-tight relative">
-                        Tổng quan hệ thống
-                    </h2>
-                    <p className="text-blue-200 text-sm mt-1 relative">
                         {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
+                    <h2 className="text-xl font-extrabold text-white leading-tight relative">
+                        Tổng quan
+                    </h2>
                 </div>
 
                 {/* ── Stats Grid ── */}
@@ -144,15 +161,14 @@ export default function MobileDashboardOverview({ onNavigate }) {
                 {/* ── Quick Actions ── */}
                 <div className="px-4 mb-5">
                     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5 ml-1">
-                        Thao tác nhanh
+                        Truy cập nhanh
                     </h3>
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                         <QuickAction icon={Users}        label="Học viên"  onClick={() => onNavigate?.('students')}       iconBg="#dbeafe" iconColor="#3b82f6" />
-                        <QuickAction icon={BookOpen}     label="Lớp học"   onClick={() => onNavigate?.('classes')}        iconBg="#d1fae5" iconColor="#10b981" />
                         <QuickAction icon={CreditCard}   label="Học phí"   onClick={() => onNavigate?.('payments')}       iconBg="#ede9fe" iconColor="#8b5cf6" />
                         <QuickAction icon={Calendar}     label="Lịch thi"  onClick={() => onNavigate?.('exam-schedules')} iconBg="#fef3c7" iconColor="#f59e0b" />
-                        <QuickAction icon={GraduationCap} label="GV"       onClick={() => onNavigate?.('teachers')}       iconBg="#ffedd5" iconColor="#f97316" />
-                        <QuickAction icon={TrendingUp}   label="Báo cáo"   onClick={() => onNavigate?.('reports')}        iconBg="#f1f5f9" iconColor="#64748b" />
+                        <QuickAction icon={Newspaper}    label="Bài viết"  onClick={() => onNavigate?.('posts')}          iconBg="#e0f2fe" iconColor="#0284c7" />
+                        <QuickAction icon={Home}         label="Trang chủ" onClick={() => onNavigate?.('homepage')}       iconBg="#dcfce7" iconColor="#16a34a" />
                     </div>
                 </div>
 
@@ -160,7 +176,7 @@ export default function MobileDashboardOverview({ onNavigate }) {
                 <div className="px-4">
                     <div className="flex items-center justify-between mb-2.5">
                         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
-                            Học viên mới đăng ký
+                            Mới đăng ký
                         </h3>
                         <button
                             onClick={() => onNavigate?.('students')}

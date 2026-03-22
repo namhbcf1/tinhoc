@@ -4,13 +4,14 @@ import { Menu, LogOut } from 'lucide-react';
 
 import DashboardSidebar from '../../components/layout/DashboardSidebar';
 import StudentBottomNav from '../../components/student/StudentBottomNav';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import api from '../../services/api';
+import { getStorageValue, removeStorageValue } from '../../utils/browser-storage.js';
 import { isMobileDevice } from '../../utils/deviceDetection';
+import { loadStudentData, STUDENT_SESSION_UPDATED_EVENT } from '../../utils/studentDataLoader';
 
-import StudentExams from './desktop/StudentExams';
-import UnifiedClassesPage from './desktop/UnifiedClassesPage';
-import SchedulePage from './desktop/SchedulePage';
-import Payment from './desktop/Payment';
+const StudentExams = lazy(() => import('./desktop/StudentExams'));
+const PersonalInfo = lazy(() => import('./desktop/PersonalInfo'));
 
 // Mobile dashboard — lazy-loaded only khi cần
 const StudentDashboardMobile = lazy(() => import('./mobile/StudentDashboardMobile'));
@@ -18,12 +19,18 @@ const StudentDashboardMobile = lazy(() => import('./mobile/StudentDashboardMobil
 /* ⛔ CẤM: Tài liệu, Chứng chỉ, Tin nhắn, Điểm danh — KHÔNG dùng trong student dashboard */
 const TAB_MAP = {
   exams: StudentExams,
-  'my-classes': UnifiedClassesPage,
-  schedule: SchedulePage,
-  payment: Payment,
+  profile: PersonalInfo,
 };
 
 function getTabFromPath(pathname) {
+  if (pathname.includes('/schedule') || pathname.includes('/payment')) {
+    return null;
+  }
+
+  if (pathname.includes('/profile')) {
+    return 'profile';
+  }
+
   for (const key of Object.keys(TAB_MAP)) {
     if (pathname.includes(key)) return key;
   }
@@ -33,18 +40,16 @@ function getTabFromPath(pathname) {
 // Đọc student_data từ cả localStorage và sessionStorage
 function readStudentData() {
   try {
-    const raw = localStorage.getItem('student_data') || sessionStorage.getItem('student_data');
+    const raw = getStorageValue('student_data');
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (typeof parsed !== 'object' || parsed === null) {
-      localStorage.removeItem('student_data');
-      sessionStorage.removeItem('student_data');
+      removeStorageValue('student_data');
       return null;
     }
     return parsed;
   } catch {
-    localStorage.removeItem('student_data');
-    sessionStorage.removeItem('student_data');
+    removeStorageValue('student_data');
     return null;
   }
 }
@@ -73,26 +78,50 @@ export default function StudentDashboard() {
 
   // Nếu student_data chưa có → thử fetch từ API bằng cccd đã lưu
   useEffect(() => {
-    if (studentData) return;
-    const cccd = localStorage.getItem('student_cccd') || sessionStorage.getItem('student_cccd');
+    const cccd = getStorageValue('student_cccd');
     if (!cccd) {
       navigate('/login', { replace: true });
       return;
     }
+
+    let cancelled = false;
     setFetchingProfile(true);
-    api.getStudentByCCCD(cccd)
-      .then((res) => {
-        if (res?.success && res?.data) {
-          const merged = { ...res.data, cccd };
-          localStorage.setItem('student_data', JSON.stringify(merged));
+    loadStudentData(cccd)
+      .then((merged) => {
+        if (cancelled) return;
+        if (merged) {
           setStudentData(merged);
-        } else {
+        } else if (!studentData) {
           navigate('/login', { replace: true });
         }
       })
-      .catch(() => navigate('/login', { replace: true }))
-      .finally(() => setFetchingProfile(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+      .catch(() => {
+        if (!cancelled && !studentData) {
+          navigate('/login', { replace: true });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setFetchingProfile(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const handleSessionUpdated = (event) => {
+      const nextStudent = event?.detail;
+      if (nextStudent && typeof nextStudent === 'object') {
+        setStudentData(nextStudent);
+      }
+    };
+
+    window.addEventListener(STUDENT_SESSION_UPDATED_EVENT, handleSessionUpdated);
+    return () => window.removeEventListener(STUDENT_SESSION_UPDATED_EVENT, handleSessionUpdated);
+  }, []);
 
   const tab = getTabFromPath(location.pathname);
 
@@ -100,7 +129,7 @@ export default function StudentDashboard() {
     return <Navigate to="/dashboard/exams" replace />;
   }
 
-  if (fetchingProfile) {
+  if (fetchingProfile && !studentData) {
     return (
       <div className="min-h-[100dvh] bg-[#F8FAFC] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -149,8 +178,10 @@ export default function StudentDashboard() {
           </button>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-[78px] md:pb-6 w-full">
-          <ActiveModule studentData={studentData} />
+        <main className="flex-1 overflow-y-auto pb-[78px] md:pb-6 w-full" data-tour="student-desktop-main">
+          <Suspense fallback={<LoadingSpinner />}>
+            <ActiveModule studentData={studentData} />
+          </Suspense>
         </main>
       </div>
 

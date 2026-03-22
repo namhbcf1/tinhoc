@@ -13,6 +13,16 @@
     overflow-x: clip;
 }
 
+@media (max-width: 768px) {
+    .admin-mobile-layout {
+        --mb-space-scale: 0.42;
+        --mb-font-scale: 0.56;
+        --mb-touch-scale: 0.68;
+        --mb-radius-scale: 0.64;
+        --mb-layout-scale: 0.58;
+    }
+}
+
 /* iOS safe area padding */
 .admin-mobile-layout.ios {
     padding-top: env(safe-area-inset-top);
@@ -49,6 +59,18 @@
     right: 0;
     z-index: 9998;
     height: var(--mb-bottom-nav-height);
+}
+
+.admin-mobile-layout .mobile-bottom-nav-item {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 4px;
+}
+
+.admin-mobile-layout .mobile-bottom-nav-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Drawer trên tất cả */

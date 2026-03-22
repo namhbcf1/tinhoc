@@ -9,6 +9,7 @@ import { Input } from '../../components/ui/Input';
 import { Search, User, Calendar, MapPin, Mail, Phone, BookOpen, Clock, AlertCircle, FileText, Download, UserCheck } from 'lucide-react';
 import { useGSAP } from '@gsap/react';
 import { gsap } from 'gsap';
+import SEO from '../../components/common/SEO';
 
 export default function StudentLookup() {
   const [cccd, setCccd] = useState('');
@@ -16,6 +17,12 @@ export default function StudentLookup() {
   const [studentData, setStudentData] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [error, setError] = useState('');
+  const structuredData = {
+    '@type': 'WebPage',
+    name: 'Tra cuu hoc vien',
+    description: 'Cong cu tra cuu ho so hoc vien va tai lieu ca nhan.',
+    url: 'https://vantrangedu.com/student-lookup'
+  };
 
   const container = useRef();
 
@@ -66,6 +73,13 @@ export default function StudentLookup() {
 
   return (
     <ModernPublicLayout>
+      <SEO
+        title="Tra cuu hoc vien"
+        description="Cong cu tra cuu ho so hoc vien va tai lieu ca nhan theo CCCD."
+        url="/student-lookup"
+        structuredData={structuredData}
+        noindex
+      />
       <div ref={container} className="min-h-screen bg-slate-50 py-24 relative overflow-hidden">
         {/* Abstract Backgrounds */}
         <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-blue-100/40 rounded-full blur-[100px] opacity-60 pointer-events-none -translate-y-1/2 -translate-x-1/3"></div>
@@ -254,4 +268,3 @@ export default function StudentLookup() {
     </ModernPublicLayout>
   );
 }
-

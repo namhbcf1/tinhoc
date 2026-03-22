@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { X, Upload, Camera, Info } from 'lucide-react';
+import BirthPlaceField from '../forms/BirthPlaceField';
 import './CCCDImportModal.css';
 
 export default function CCCDImportModal({ isOpen, onClose, onSubmit, studentData = null }) {
@@ -258,45 +259,27 @@ export default function CCCDImportModal({ isOpen, onClose, onSubmit, studentData
                             <p className="form-hint">Ghi chú: Chọn Không (for-Non Vietnamese) nếu là người nước ngoài</p>
 
                             <div className="form-row">
-                                <label>5. Nơi sinh:</label>
-                                <div className="radio-group">
-                                    <label className="radio-label">
-                                        <input
-                                            type="radio"
-                                            name="noi_sinh_type"
-                                            value="trong_nuoc"
-                                            checked={formData.noi_sinh_type === 'trong_nuoc'}
-                                            onChange={e => setFormData({ ...formData, noi_sinh_type: e.target.value })}
-                                        />
-                                        <span className="radio-text">Trong nước</span>
-                                    </label>
-                                    <label className="radio-label">
-                                        <input
-                                            type="radio"
-                                            name="noi_sinh_type"
-                                            value="nuoc_ngoai"
-                                            checked={formData.noi_sinh_type === 'nuoc_ngoai'}
-                                            onChange={e => setFormData({ ...formData, noi_sinh_type: e.target.value })}
-                                        />
-                                        <span className="radio-text">Nước ngoài</span>
-                                    </label>
+                                <div className="full" style={{ width: '100%' }}>
+                                    <BirthPlaceField
+                                        label="5. Nơi sinh:"
+                                        value={formData.noi_sinh}
+                                        onChange={(nextValue) => setFormData({ ...formData, noi_sinh: nextValue })}
+                                        hint="Ghi chú: Ghi theo VNeID cấp độ 2"
+                                        wrapperClassName="w-full"
+                                        labelClassName="block mb-2"
+                                        toggleWrapperClassName=""
+                                        radioGroupClassName="radio-group"
+                                        radioOptionClassName="radio-label"
+                                        domesticTextClassName="radio-text"
+                                        foreignTextClassName="radio-text"
+                                        inputClassName="bordered-input full"
+                                        selectClassName="bordered-input full"
+                                        hintClassName="form-hint"
+                                        selectPlaceholder="Vui lòng chọn"
+                                        inputPlaceholder="Vui lòng nhập nơi sinh ở nước ngoài"
+                                    />
                                 </div>
                             </div>
-                            <div className="form-row">
-                                <select
-                                    className="bordered-input full"
-                                    value={formData.noi_sinh}
-                                    onChange={e => setFormData({ ...formData, noi_sinh: e.target.value })}
-                                >
-                                    <option value="">Vui lòng chọn</option>
-                                    <option value="Hà Nội">Hà Nội</option>
-                                    <option value="TP. Hồ Chí Minh">TP. Hồ Chí Minh</option>
-                                    <option value="Đà Nẵng">Đà Nẵng</option>
-                                    <option value="Hải Phòng">Hải Phòng</option>
-                                    <option value="Khác">Khác</option>
-                                </select>
-                            </div>
-                            <p className="form-hint">Ghi chú: Ghi theo VNeID cấp độ 2</p>
 
                             <div className="form-row">
                                 <label>6. Giới tính:</label>

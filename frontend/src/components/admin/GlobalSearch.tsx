@@ -1,15 +1,59 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Users, BookOpen, X, ArrowUp, ArrowDown, CornerDownLeft } from 'lucide-react';
+import {
+  Search, Users, BookOpen, Newspaper,
+  CreditCard, Calendar, Home, History, Shield, UserCircle,
+  LayoutDashboard, Database, FileText, ClipboardList, FileBox,
+  X, ArrowUp, ArrowDown, CornerDownLeft,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import api from '../../services/api';
+import { getAdminTabsForTarget, type AdminTabId } from '../../pages/admin/adminTabs';
+import { getStoredAdmin } from '../../utils/adminSession';
 
 // ─── Category icon + label map ──────────────────────────────────────────────────
-const CATEGORIES = {
-  students: { label: 'Học viên',  icon: Users,    color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  classes:  { label: 'Lớp học',   icon: BookOpen, color: 'text-blue-600',    bg: 'bg-blue-50'    },
+interface CategoryMeta {
+  label: string;
+  icon: LucideIcon;
+  color: string;
+  bg: string;
+}
+
+const CATEGORIES: Record<string, CategoryMeta> = {
+  students:  { label: 'Học viên',   icon: Users,           color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  classes:   { label: 'Lớp học',    icon: BookOpen,        color: 'text-blue-600',    bg: 'bg-blue-50'    },
+  posts:     { label: 'Bài viết',   icon: Newspaper,       color: 'text-sky-600',     bg: 'bg-sky-50'     },
+  navigate:  { label: 'Chuyển đến', icon: LayoutDashboard, color: 'text-purple-600',  bg: 'bg-purple-50'  },
 };
 
+// ─── Tab navigation items for quick nav ──────────────────────────────────────────
+const TAB_ICON_MAP: Record<string, LucideIcon> = {
+  'dashboard':      LayoutDashboard,
+  'classes':        BookOpen,
+  'students':       Users,
+  'payments':       CreditCard,
+  'exam-schedules': Calendar,
+  'posts':          Newspaper,
+  'homepage':       Home,
+  'admins':         Shield,
+  'backup':         Database,
+  'logs':           History,
+  'profile':        UserCircle,
+  'documents':      FileBox,
+  'assignments':    ClipboardList,
+};
+
+// ─── Result item interface ──────────────────────────────────────────────────────
+interface SearchResultItem {
+  id: string;
+  category: string;
+  title: string;
+  subtitle?: string;
+  displayIcon?: LucideIcon;
+  action: () => void;
+}
+
 // ─── Highlight matched text ─────────────────────────────────────────────────────
-function Highlight({ text, query }) {
+function Highlight({ text, query }: { text: string; query: string }) {
   if (!query || !text) return <>{text}</>;
   const idx = String(text).toLowerCase().indexOf(query.toLowerCase());
   if (idx === -1) return <>{text}</>;
@@ -25,9 +69,15 @@ function Highlight({ text, query }) {
 }
 
 // ─── Result row ─────────────────────────────────────────────────────────────────
-function ResultRow({ item, query, isActive, onSelect, onMouseEnter }) {
-  const cat   = CATEGORIES[item.category];
-  const Icon  = cat.icon;
+function ResultRow({ item, query, isActive, onSelect, onMouseEnter }: {
+  item: SearchResultItem;
+  query: string;
+  isActive: boolean;
+  onSelect: () => void;
+  onMouseEnter: () => void;
+}) {
+  const cat   = CATEGORIES[item.category] || CATEGORIES.navigate;
+  const Icon  = item.displayIcon || cat.icon;
   return (
     <button
       onMouseDown={onSelect}
@@ -56,15 +106,15 @@ function ResultRow({ item, query, isActive, onSelect, onMouseEnter }) {
 }
 
 // ─── Main GlobalSearch component ────────────────────────────────────────────────
-export default function GlobalSearch({ onNavigate }) {
+export default function GlobalSearch({ onNavigate }: { onNavigate?: (tabId: string) => void }) {
   const [open,    setOpen]    = useState(false);
   const [query,   setQuery]   = useState('');
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState<SearchResultItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [cursor,  setCursor]  = useState(0);       // keyboard cursor index
+  const [cursor,  setCursor]  = useState(0);
 
-  const inputRef    = useRef(null);
-  const debounceRef = useRef(null);
+  const inputRef    = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Open / close ──────────────────────────────────────────────────────────
   const openSearch  = useCallback(() => { setOpen(true);  setQuery(''); setResults([]); setCursor(0); }, []);
@@ -72,7 +122,7 @@ export default function GlobalSearch({ onNavigate }) {
 
   // ── Global Ctrl+K shortcut ────────────────────────────────────────────────
   useEffect(() => {
-    const onKey = (e) => {
+    const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         open ? closeSearch() : openSearch();
@@ -91,31 +141,48 @@ export default function GlobalSearch({ onNavigate }) {
   // ── Debounced search ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!query.trim()) { setResults([]); setLoading(false); return; }
-    clearTimeout(debounceRef.current);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     setLoading(true);
     debounceRef.current = setTimeout(() => runSearch(query.trim()), 280);
-    return () => clearTimeout(debounceRef.current);
-  }, [query]);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Search across students + classes in parallel ──────────────────────────
-  const runSearch = async (q) => {
+  // ── Search across students + classes + tabs in parallel ───────────────────
+  const runSearch = async (q: string) => {
     try {
       const [studentsRes, classesRes] = await Promise.allSettled([
-        api.searchStudents(q),
-        api.getClasses(),
+        (api as any).searchStudents(q),
+        (api as any).getClasses(),
       ]);
 
-      const items = [];
+      const items: SearchResultItem[] = [];
+      const ql = q.toLowerCase();
+
+      // Tab navigation results (instant, no API needed)
+      const adminData = getStoredAdmin();
+      getAdminTabsForTarget(adminData?.role, 'desktop', adminData).forEach((tab) => {
+        const matches = tab.label.toLowerCase().includes(ql) || tab.title.toLowerCase().includes(ql) || tab.id.toLowerCase().includes(ql);
+        if (matches) {
+          items.push({
+            id:          `nav-${tab.id}`,
+            category:    'navigate',
+            title:       tab.label,
+            subtitle:    tab.title,
+            displayIcon: TAB_ICON_MAP[tab.id] || LayoutDashboard,
+            action:      () => onNavigate?.(tab.id),
+          });
+        }
+      });
 
       // Students
       if (studentsRes.status === 'fulfilled') {
-        const data = Array.isArray(studentsRes.value?.data) ? studentsRes.value.data : [];
-        data.slice(0, 8).forEach(s => {
+        const data = Array.isArray((studentsRes.value as any)?.data) ? (studentsRes.value as any).data : [];
+        data.slice(0, 6).forEach((s: any) => {
           items.push({
             id:       `student-${s.id}`,
             category: 'students',
-            title:    s.ho_ten_full || `${s.ho} ${s.ten_dem} ${s.ten}`.trim(),
-            subtitle: `CCCD: ${s.cccd}${s.sdt ? ' · ' + s.sdt : ''}`,
+            title:    s.ho_ten_full || `${s.ho || ''} ${s.ten_dem || ''} ${s.ten || ''}`.trim(),
+            subtitle: s.cccd || s.sdt || '',
             action:   () => onNavigate?.('students'),
           });
         });
@@ -123,17 +190,17 @@ export default function GlobalSearch({ onNavigate }) {
 
       // Classes — filter locally
       if (classesRes.status === 'fulfilled') {
-        const data = Array.isArray(classesRes.value?.data) ? classesRes.value.data : [];
-        const ql = q.toLowerCase();
+        const raw = classesRes.value as any;
+        const data = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
         data
-          .filter(c => c.ten_lop?.toLowerCase().includes(ql))
+          .filter((c: any) => c.ten_lop?.toLowerCase().includes(ql) || c.ma_lop?.toLowerCase().includes(ql))
           .slice(0, 5)
-          .forEach(c => {
+          .forEach((c: any) => {
             items.push({
               id:       `class-${c.id}`,
               category: 'classes',
               title:    c.ten_lop,
-              subtitle: `Ngày thi: ${c.ngay_thi || 'N/A'} · ${c.status || ''}`,
+              subtitle: c.ma_lop || c.status || '',
               action:   () => onNavigate?.('classes'),
             });
           });
@@ -150,7 +217,7 @@ export default function GlobalSearch({ onNavigate }) {
   };
 
   // ── Keyboard navigation (↑↓ Enter) ───────────────────────────────────────
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!results.length) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -164,7 +231,7 @@ export default function GlobalSearch({ onNavigate }) {
     }
   };
 
-  const selectResult = (item) => {
+  const selectResult = (item?: SearchResultItem) => {
     item?.action?.();
     closeSearch();
   };
@@ -178,7 +245,6 @@ export default function GlobalSearch({ onNavigate }) {
       >
         <Search size={16} />
         <span className="hidden md:inline text-slate-400">Tìm kiếm...</span>
-        <kbd className="hidden md:inline text-xs bg-white border border-slate-200 text-slate-400 px-1.5 py-0.5 rounded font-mono">Ctrl K</kbd>
       </button>
     );
   }
@@ -192,7 +258,7 @@ export default function GlobalSearch({ onNavigate }) {
       {/* Palette panel */}
       <div
         className="relative w-full max-w-2xl mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden animate-[fadeIn_0.15s_ease-out]"
-        onMouseDown={e => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Input row */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
@@ -204,9 +270,9 @@ export default function GlobalSearch({ onNavigate }) {
             ref={inputRef}
             type="text"
             value={query}
-            onChange={e => setQuery(e.target.value)}
+            onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Tìm học viên (tên, CCCD), lớp học..."
+            placeholder="Tìm kiếm..."
             className="flex-1 bg-transparent border-none outline-none text-slate-900 text-base placeholder:text-slate-400"
           />
           <button onClick={closeSearch} className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
@@ -234,7 +300,7 @@ export default function GlobalSearch({ onNavigate }) {
         {query.trim() && !loading && results.length === 0 && (
           <div className="px-5 py-10 text-center text-slate-400">
             <Search size={32} className="mx-auto mb-2 opacity-30" />
-            <p className="text-sm font-medium">Không tìm thấy kết quả cho "<span className="text-slate-600">{query}</span>"</p>
+            <p className="text-sm">Không tìm thấy &quot;{query}&quot;</p>
           </div>
         )}
 

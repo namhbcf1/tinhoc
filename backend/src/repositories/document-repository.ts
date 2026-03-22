@@ -2,12 +2,15 @@ export async function createDocument(db: any, data: any) {
   const result = await db.prepare(`
     INSERT INTO documents (
       title, description, file_url, file_name, file_size, file_type,
-      status, valid_until, uploaded_by, folder_id, visibility
-    ) VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)
+      status, valid_until, uploaded_by, folder_id, visibility,
+      organizer_uuid, program_uuid, level_uuid, custom_field_payload, override_payload
+    ) VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     data.title, data.description || null, data.r2_key, data.file_name,
     data.file_size, data.file_type, data.valid_until || null,
-    data.uploaded_by || null, data.folder_id || null, data.visibility || 'internal'
+    data.uploaded_by || null, data.folder_id || null, data.visibility || 'internal',
+    data.organizer_uuid || null, data.program_uuid || null, data.level_uuid || null,
+    data.custom_field_payload || null, data.override_payload || null
   ).run();
   
   if (!result.success) throw new Error(result.error);

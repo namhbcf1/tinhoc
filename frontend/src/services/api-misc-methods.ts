@@ -4,32 +4,57 @@
 // ========================================
 
 export function applyMiscMethods(ApiClient) {
+  ApiClient.prototype.downloadAssignmentSubmission = async function(submissionId, fileName = `submission-${submissionId}`) {
+    const token = this.getToken('admin');
+    const response = await fetch(`${this.baseURL}/assignments/submissions/${submissionId}/file`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!response.ok) {
+      throw new Error('Lỗi tải file bài nộp');
+    }
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  };
+
   // ---- Homepage Settings ----
 
   // Get all homepage settings
   ApiClient.prototype.getHomepageSettings = async function() {
-    return this.request('/homepage/settings');
+    return this.cachedRequest('/homepage/settings', {}, { ttlMs: 5 * 60 * 1000 });
   };
 
   // Get a single homepage setting by key
   ApiClient.prototype.getHomepageSetting = async function(key) {
-    return this.request(`/homepage/settings/${key}`);
+    return this.cachedRequest(`/homepage/settings/${key}`, {}, { ttlMs: 5 * 60 * 1000 });
   };
 
   // Bulk update homepage settings
   ApiClient.prototype.updateHomepageSettings = async function(settings) {
-    return this.request('/homepage/settings', {
+    const response = await this.request('/homepage/settings', {
       method: 'POST',
       body: JSON.stringify(settings),
     });
+    this.invalidateCache(['/homepage/settings']);
+    return response;
   };
 
   // Update a single homepage setting by key
   ApiClient.prototype.setHomepageSetting = async function(key, value) {
-    return this.request(`/homepage/settings/${key}`, {
+    const response = await this.request(`/homepage/settings/${key}`, {
       method: 'PUT',
       body: JSON.stringify({ value }),
     });
+    this.invalidateCache(['/homepage/settings']);
+    return response;
   };
 
   // ---- Notifications ----
@@ -80,7 +105,11 @@ export function applyMiscMethods(ApiClient) {
   ApiClient.prototype.getPaymentReports = async function(year, month = null) {
     const params = new URLSearchParams({ year: String(year) });
     if (month) params.append('month', String(month));
-    return this.request(`/reports/payments?${params.toString()}`);
+    return this.cachedRequest(
+      `/reports/payments?${params.toString()}`,
+      {},
+      { ttlMs: 5 * 60 * 1000 }
+    );
   };
 
   // Get registration reports grouped by month or other dimension
@@ -89,7 +118,11 @@ export function applyMiscMethods(ApiClient) {
       year: String(year),
       group_by: groupBy,
     });
-    return this.request(`/reports/registrations?${params.toString()}`);
+    return this.cachedRequest(
+      `/reports/registrations?${params.toString()}`,
+      {},
+      { ttlMs: 5 * 60 * 1000 }
+    );
   };
 
   // Get certificate reports grouped by month or other dimension
@@ -98,18 +131,26 @@ export function applyMiscMethods(ApiClient) {
       year: String(year),
       group_by: groupBy,
     });
-    return this.request(`/reports/certificates?${params.toString()}`);
+    return this.cachedRequest(
+      `/reports/certificates?${params.toString()}`,
+      {},
+      { ttlMs: 5 * 60 * 1000 }
+    );
   };
 
   // Get student count per class report, optionally filtered by class
   ApiClient.prototype.getStudentsByClassReport = async function(classId = null) {
     const params = classId ? `?class_id=${classId}` : '';
-    return this.request(`/reports/students-by-class${params}`);
+    return this.cachedRequest(
+      `/reports/students-by-class${params}`,
+      {},
+      { ttlMs: 5 * 60 * 1000 }
+    );
   };
 
   // Get summary report for a year
   ApiClient.prototype.getReportSummary = async function(year) {
-    return this.request(`/reports/summary?year=${year}`);
+    return this.cachedRequest(`/reports/summary?year=${year}`, {}, { ttlMs: 5 * 60 * 1000 });
   };
 
   // ---- AI ----

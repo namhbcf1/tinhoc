@@ -7,6 +7,7 @@ import { cn } from '../../lib/utils';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getTranslation } from '../../utils/translations';
 import api from '../../services/api';
+import { getStorageValue } from '../../utils/browser-storage.js';
 
 export default function ModernHeader() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -29,9 +30,7 @@ export default function ModernHeader() {
 
     useEffect(() => {
         const checkLogin = () => {
-            // Check for student token first, then fallback to cccd
-            const token = localStorage.getItem('student_token') || localStorage.getItem('student_cccd');
-            setIsLoggedIn(!!token);
+            setIsLoggedIn(!!getStorageValue('student_token'));
         };
 
         checkLogin();
@@ -60,14 +59,14 @@ export default function ModernHeader() {
             <div className="bg-emerald-600 bg-gradient-to-r from-emerald-600 to-teal-500 px-4 py-2 text-white text-xs md:text-sm shadow-sm">
                 <div className="container mx-auto flex justify-between items-center">
                     <div className="flex gap-4">
-                        <a href="tel:0962445963" className="flex items-center gap-1 hover:text-emerald-100">
+                        <a href="tel:0962445963" className="flex items-center gap-1 hover:text-emerald-100" data-tour="public-hotline">
                             <Phone size={14} /> <span>096 244 5963</span>
                         </a>
                         <a href="mailto:info@vantrangedu.edu.vn" className="flex items-center gap-1 hover:text-emerald-100 hidden sm:flex">
                             <Mail size={14} /> <span>info@vantrangedu.edu.vn</span>
                         </a>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2" data-tour="public-language">
                         <button
                             onClick={() => setLanguage('vi')}
                             className={cn("px-2 py-0.5 rounded transition-colors", language === 'vi' ? "bg-white/20 font-bold" : "hover:bg-white/10")}
@@ -98,7 +97,7 @@ export default function ModernHeader() {
                 </Link>
 
                 {/* Desktop Nav */}
-                <nav className="hidden md:flex items-center gap-1 lg:gap-6">
+                <nav className="hidden md:flex items-center gap-1 lg:gap-6" data-tour="public-desktop-nav">
                     {navLinks.map((link) => (
                         <Link
                             key={link.to}
@@ -119,21 +118,27 @@ export default function ModernHeader() {
                 <div className="hidden md:flex items-center gap-3">
                     {isLoggedIn ? (
                         <>
-                            <Link to="/dashboard">
+                            <Link to="/dashboard" data-tour="public-login">
                                 <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold gap-2 shadow-sm rounded-full px-5 h-10">
                                     <User size={16} /> Dashboard
                                 </Button>
                             </Link>
-                            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-full h-10 w-10 p-0">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleLogout}
+                                className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-full h-10 w-10 p-0"
+                                data-tour="public-logout"
+                            >
                                 <LogOut size={16} />
                             </Button>
                         </>
                     ) : (
                         <>
-                            <Link to="/login">
+                            <Link to="/login" data-tour="public-login">
                                 <Button variant="ghost" size="sm" className="font-semibold text-slate-700 hover:text-emerald-600 hover:bg-emerald-50 rounded-full px-5 h-10">{t('login')}</Button>
                             </Link>
-                            <Link to="/register">
+                            <Link to="/register" data-tour="public-register">
                                 <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold shadow-md shadow-emerald-200/50 rounded-full px-6 h-10">{t('register')}</Button>
                             </Link>
                         </>
@@ -148,6 +153,7 @@ export default function ModernHeader() {
                         aria-expanded={isMenuOpen}
                         aria-controls="mobile-menu"
                         aria-label={isMenuOpen ? "Đóng menu" : "Mở menu"}
+                        data-tour="public-mobile-menu"
                     >
                         {isMenuOpen ? <X /> : <Menu />}
                     </button>
@@ -156,7 +162,7 @@ export default function ModernHeader() {
 
             {/* Mobile Menu — id for aria-controls, 100dvh for mobile browser bar (fix #2) */}
             {isMenuOpen && (
-                <div id="mobile-menu" className="md:hidden border-t border-slate-200 p-4 bg-white shadow-lg absolute w-full left-0 top-[100%] animate-in slide-in-from-top-2 h-[calc(100dvh-112px)] overflow-y-auto">
+                <div id="mobile-menu" className="md:hidden border-t border-slate-200 p-4 bg-white shadow-lg absolute w-full left-0 top-[100%] animate-in slide-in-from-top-2 h-[calc(100dvh-112px)] overflow-y-auto" data-tour="public-mobile-menu-panel">
                     <nav className="flex flex-col gap-2">
                         {navLinks.map((link) => (
                             <Link
@@ -171,21 +177,26 @@ export default function ModernHeader() {
                         <div className="flex flex-col gap-3 mt-6">
                             {isLoggedIn ? (
                                 <>
-                                    <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                                    <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} data-tour="public-mobile-login">
                                         <Button className="w-full justify-center font-bold bg-green-600 text-white h-12 text-lg">
                                             <User className="mr-2" /> Dashboard
                                         </Button>
                                     </Link>
-                                    <Button variant="outline" onClick={() => { handleLogout(); setIsMenuOpen(false) }} className="w-full justify-center text-red-500 border-red-200 h-11">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => { handleLogout(); setIsMenuOpen(false) }}
+                                        className="w-full justify-center text-red-500 border-red-200 h-11"
+                                        data-tour="public-mobile-logout"
+                                    >
                                         Đăng xuất
                                     </Button>
                                 </>
                             ) : (
                                 <>
-                                    <Link to="/login" onClick={() => setIsMenuOpen(false)} className="w-full">
+                                    <Link to="/login" onClick={() => setIsMenuOpen(false)} className="w-full" data-tour="public-mobile-login">
                                         <Button variant="outline" className="w-full justify-center font-bold border-green-600 text-green-700 h-11 text-lg">Đăng nhập</Button>
                                     </Link>
-                                    <Link to="/register" onClick={() => setIsMenuOpen(false)} className="w-full">
+                                    <Link to="/register" onClick={() => setIsMenuOpen(false)} className="w-full" data-tour="public-mobile-register">
                                         <Button className="w-full justify-center font-bold bg-green-600 text-white h-12 text-lg">Đăng ký ngay</Button>
                                     </Link>
                                 </>

@@ -2,6 +2,13 @@
 // ATTENDANCE QUERIES
 // ========================================
 
+const buildTestStudentFilter = (alias = 's') => `
+  NOT (
+    LOWER(COALESCE(${alias}.ho_ten_full, '')) LIKE 'test hoc vien%'
+    OR LOWER(COALESCE(${alias}.cccd, '')) LIKE 'test%'
+  )
+`;
+
 export async function markAttendance(db: D1Database, registrationId: number, classId: number, attendanceDate: string, status: string, notes: string | null = null, markedBy: number | null = null, markedByType = 'admin') {
   try {
     // Validate inputs
@@ -9,8 +16,8 @@ export async function markAttendance(db: D1Database, registrationId: number, cla
       throw new Error(`Invalid parameters: registrationId=${registrationId}, classId=${classId}, attendanceDate=${attendanceDate}, status=${status}`);
     }
 
-    // Ensure markedByType is valid
-    const validRole = markedByType === 'teacher' ? 'teacher' : 'admin';
+    // All staff are admin now — always use 'admin' as role
+    const validRole = 'admin';
 
     const result = await db.prepare(`
       INSERT OR REPLACE INTO attendance (registration_id, class_id, attendance_date, status, notes, marked_by, marked_by_role)
@@ -113,11 +120,115 @@ export async function getAttendanceStats(db: D1Database, classId: number) {
 // EXAM SCHEDULE QUERIES
 // ========================================
 
-export async function createExamSchedule(db: D1Database, classId: number, examName: string, examDate: string, durationMinutes = 120, location: string | null = null, notes: string | null = null, templateId: number | null = null) {
+export async function createExamSchedule(
+  db: D1Database,
+  classId: number | null,
+  examName: string,
+  examDate: string,
+  durationMinutes: number | null = 120,
+  location: string | null = null,
+  notes: string | null = null,
+  templateId: number | null = null,
+  metadata: Record<string, unknown> = {}
+) {
+  const {
+    zoom_link,
+    zoom_link_backup,
+    zoom_meeting_id,
+    zoom_passcode,
+    exam_type,
+    exam_level,
+    exam_category_id,
+    exam_type_id,
+    organizer_uuid,
+    program_uuid,
+    level_uuid,
+    custom_field_payload,
+    override_payload,
+    updated_by,
+    source_site,
+    last_event_uuid,
+    class_seed_name,
+    class_seed_description,
+    class_seed_schedule_rule,
+    class_seed_schedule_time,
+    class_seed_timezone,
+    class_seed_start_date,
+    class_seed_end_date,
+    class_seed_teacher_name,
+    class_seed_max_students,
+  } = metadata;
+
   const result = await db.prepare(`
-    INSERT INTO exam_schedules (class_id, exam_name, exam_date, duration_minutes, location, notes, template_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).bind(classId, examName, examDate, durationMinutes, location, notes, templateId).run();
+    INSERT INTO exam_schedules (
+      class_id,
+      exam_name,
+      exam_date,
+      duration_minutes,
+      location,
+      notes,
+      template_id,
+      zoom_link,
+      zoom_link_backup,
+      zoom_meeting_id,
+      zoom_passcode,
+      exam_type,
+      exam_level,
+      exam_category_id,
+      exam_type_id,
+      organizer_uuid,
+      program_uuid,
+      level_uuid,
+      custom_field_payload,
+      override_payload,
+      updated_by,
+      source_site,
+      last_event_uuid,
+      class_seed_name,
+      class_seed_description,
+      class_seed_schedule_rule,
+      class_seed_schedule_time,
+      class_seed_timezone,
+      class_seed_start_date,
+      class_seed_end_date,
+      class_seed_teacher_name,
+      class_seed_max_students
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    classId,
+    examName,
+    examDate,
+    durationMinutes,
+    location,
+    notes,
+    templateId,
+    zoom_link ?? null,
+    zoom_link_backup ?? null,
+    zoom_meeting_id ?? null,
+    zoom_passcode ?? null,
+    exam_type ?? null,
+    exam_level ?? null,
+    exam_category_id ?? null,
+    exam_type_id ?? null,
+    organizer_uuid ?? null,
+    program_uuid ?? null,
+    level_uuid ?? null,
+    custom_field_payload ?? null,
+    override_payload ?? null,
+    updated_by ?? null,
+    source_site ?? 'edu',
+    last_event_uuid ?? null,
+    class_seed_name ?? null,
+    class_seed_description ?? null,
+    class_seed_schedule_rule ?? null,
+    class_seed_schedule_time ?? null,
+    class_seed_timezone ?? null,
+    class_seed_start_date ?? null,
+    class_seed_end_date ?? null,
+    class_seed_teacher_name ?? null,
+    class_seed_max_students ?? null
+  ).run();
   return result;
 }
 
@@ -137,8 +248,22 @@ export async function getUpcomingExams(db: D1Database, limit = 20) {
   const result = await db.prepare(`
     SELECT e.*,
            c.ten_lop as class_name,
-           (SELECT COUNT(*) FROM exam_registrations er WHERE er.exam_id = e.id AND er.status = 'pending') as pending_count,
-           (SELECT COUNT(*) FROM exam_registrations er WHERE er.exam_id = e.id AND er.status IN ('approved', 'registered')) as approved_count
+           (
+             SELECT COUNT(*)
+             FROM exam_registrations er
+             JOIN students s ON s.id = er.student_id
+             WHERE er.exam_id = e.id
+               AND er.status = 'pending'
+               AND ${buildTestStudentFilter('s')}
+           ) as pending_count,
+           (
+             SELECT COUNT(*)
+             FROM exam_registrations er
+             JOIN students s ON s.id = er.student_id
+             WHERE er.exam_id = e.id
+               AND er.status IN ('approved', 'registered')
+               AND ${buildTestStudentFilter('s')}
+           ) as approved_count
     FROM exam_schedules e
     LEFT JOIN classes c ON e.class_id = c.id
     WHERE e.exam_date >= date('now', '-7 days') AND e.deleted_at IS NULL
@@ -149,10 +274,47 @@ export async function getUpcomingExams(db: D1Database, limit = 20) {
 }
 
 export async function updateExamSchedule(db: D1Database, examId: number, data: Record<string, unknown>) {
-  const { exam_name, exam_date, duration_minutes, location, notes, zoom_link, zoom_meeting_id, zoom_passcode, exam_type } = data;
+  const {
+    class_id,
+    exam_name,
+    exam_date,
+    duration_minutes,
+    location,
+    notes,
+    template_id,
+    zoom_link,
+    zoom_link_backup,
+    zoom_meeting_id,
+    zoom_passcode,
+    exam_type,
+    exam_level,
+    exam_category_id,
+    exam_type_id,
+    organizer_uuid,
+    program_uuid,
+    level_uuid,
+    custom_field_payload,
+    override_payload,
+    updated_by,
+    source_site,
+    last_event_uuid,
+    class_seed_name,
+    class_seed_description,
+    class_seed_schedule_rule,
+    class_seed_schedule_time,
+    class_seed_timezone,
+    class_seed_start_date,
+    class_seed_end_date,
+    class_seed_teacher_name,
+    class_seed_max_students,
+  } = data;
   const updates: string[] = [];
   const values: unknown[] = [];
 
+  if (class_id !== undefined) {
+    updates.push('class_id = ?');
+    values.push(class_id);
+  }
   if (exam_name !== undefined) {
     updates.push('exam_name = ?');
     values.push(exam_name);
@@ -173,9 +335,17 @@ export async function updateExamSchedule(db: D1Database, examId: number, data: R
     updates.push('notes = ?');
     values.push(notes);
   }
+  if (template_id !== undefined) {
+    updates.push('template_id = ?');
+    values.push(template_id);
+  }
   if (zoom_link !== undefined) {
     updates.push('zoom_link = ?');
     values.push(zoom_link || null);
+  }
+  if (zoom_link_backup !== undefined) {
+    updates.push('zoom_link_backup = ?');
+    values.push(zoom_link_backup || null);
   }
   if (zoom_meeting_id !== undefined) {
     updates.push('zoom_meeting_id = ?');
@@ -190,7 +360,90 @@ export async function updateExamSchedule(db: D1Database, examId: number, data: R
     updates.push('exam_type = ?');
     values.push(exam_type ? (exam_type as string).trim() : null);
   }
+  if (exam_level !== undefined) {
+    updates.push('exam_level = ?');
+    values.push(exam_level ? (exam_level as string).trim().toUpperCase() : null);
+  }
+  if (exam_category_id !== undefined) {
+    updates.push('exam_category_id = ?');
+    values.push(exam_category_id || null);
+  }
+  if (exam_type_id !== undefined) {
+    updates.push('exam_type_id = ?');
+    values.push(exam_type_id || null);
+  }
+  if (organizer_uuid !== undefined) {
+    updates.push('organizer_uuid = ?');
+    values.push(organizer_uuid || null);
+  }
+  if (program_uuid !== undefined) {
+    updates.push('program_uuid = ?');
+    values.push(program_uuid || null);
+  }
+  if (level_uuid !== undefined) {
+    updates.push('level_uuid = ?');
+    values.push(level_uuid || null);
+  }
+  if (custom_field_payload !== undefined) {
+    updates.push('custom_field_payload = ?');
+    values.push(custom_field_payload || null);
+  }
+  if (override_payload !== undefined) {
+    updates.push('override_payload = ?');
+    values.push(override_payload || null);
+  }
+  if (updated_by !== undefined) {
+    updates.push('updated_by = ?');
+    values.push(updated_by || null);
+  }
+  if (source_site !== undefined) {
+    updates.push('source_site = ?');
+    values.push(source_site || 'edu');
+  }
+  if (last_event_uuid !== undefined) {
+    updates.push('last_event_uuid = ?');
+    values.push(last_event_uuid || null);
+  }
+  if (class_seed_name !== undefined) {
+    updates.push('class_seed_name = ?');
+    values.push(class_seed_name || null);
+  }
+  if (class_seed_description !== undefined) {
+    updates.push('class_seed_description = ?');
+    values.push(class_seed_description || null);
+  }
+  if (class_seed_schedule_rule !== undefined) {
+    updates.push('class_seed_schedule_rule = ?');
+    values.push(class_seed_schedule_rule || null);
+  }
+  if (class_seed_schedule_time !== undefined) {
+    updates.push('class_seed_schedule_time = ?');
+    values.push(class_seed_schedule_time || null);
+  }
+  if (class_seed_timezone !== undefined) {
+    updates.push('class_seed_timezone = ?');
+    values.push(class_seed_timezone || null);
+  }
+  if (class_seed_start_date !== undefined) {
+    updates.push('class_seed_start_date = ?');
+    values.push(class_seed_start_date || null);
+  }
+  if (class_seed_end_date !== undefined) {
+    updates.push('class_seed_end_date = ?');
+    values.push(class_seed_end_date || null);
+  }
+  if (class_seed_teacher_name !== undefined) {
+    updates.push('class_seed_teacher_name = ?');
+    values.push(class_seed_teacher_name || null);
+  }
+  if (class_seed_max_students !== undefined) {
+    updates.push('class_seed_max_students = ?');
+    values.push(class_seed_max_students || null);
+  }
 
+  if (updates.length === 0) {
+    return { meta: { changes: 0 } } as any;
+  }
   values.push(examId);
 
   const result = await db.prepare(`
@@ -249,6 +502,89 @@ export async function cleanupOldDeletedExams(db: D1Database) {
   return result;
 }
 
+type ExamRegistrationBucket = 'english' | 'informatics' | 'unknown';
+
+const ENGLISH_BUCKET_TOKENS = [
+  'vstep',
+  'vept',
+  'english',
+  'ngoai ngu',
+  'ngoai_ngu',
+  'toeic',
+  'toefl',
+  'ielts',
+];
+
+const INFORMATICS_BUCKET_TOKENS = [
+  'tin hoc',
+  'tinhoc',
+  'ptit',
+  'ic3',
+  'mos',
+  'cntt',
+  'computer',
+];
+
+function normalizeBucketText(value: unknown) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function textContainsToken(text: string, token: string) {
+  if (!text || !token) return false;
+  const normalizedToken = normalizeBucketText(token);
+  if (!normalizedToken) return false;
+  return (` ${text} `).includes(` ${normalizedToken} `);
+}
+
+function containsAnyToken(text: string, tokens: string[]) {
+  return tokens.some((token) => textContainsToken(text, token));
+}
+
+function resolveExamRegistrationBucket(exam: Record<string, any>): ExamRegistrationBucket {
+  const combined = [
+    exam?.exam_type,
+    exam?.program_uuid,
+    exam?.organizer_uuid,
+    exam?.exam_name,
+  ]
+    .map((value) => normalizeBucketText(value))
+    .filter(Boolean)
+    .join(' ');
+
+  if (!combined) {
+    return 'unknown';
+  }
+
+  if (containsAnyToken(combined, ENGLISH_BUCKET_TOKENS)) {
+    return 'english';
+  }
+
+  if (containsAnyToken(combined, INFORMATICS_BUCKET_TOKENS)) {
+    return 'informatics';
+  }
+
+  return 'unknown';
+}
+
+function bucketConflicts(left: ExamRegistrationBucket, right: ExamRegistrationBucket) {
+  if (left === 'unknown' || right === 'unknown') {
+    // Unknown bucket keeps conservative behavior: conflict with everything.
+    return true;
+  }
+  return left === right;
+}
+
+function getBucketMessageLabel(bucket: ExamRegistrationBucket) {
+  if (bucket === 'english') return 'tiếng Anh (VSTEP/VEPT)';
+  if (bucket === 'informatics') return 'tin học (PTIT...)';
+  return 'nhóm kỳ thi này';
+}
+
 
 export async function getStudentExams(db: D1Database, studentId: number) {
   const result = await db.prepare(`
@@ -270,53 +606,206 @@ export async function getStudentExams(db: D1Database, studentId: number) {
       )
     ORDER BY e.exam_date ASC
   `).bind(studentId, studentId).all();
-  return result.results || [];
+  const exams = (result.results || []) as any[];
+  const examBucketMap = new Map<number, ExamRegistrationBucket>();
+  for (const exam of exams) {
+    examBucketMap.set(Number(exam.id), resolveExamRegistrationBucket(exam));
+  }
+
+  const activeRegistrations = exams.filter((exam) =>
+    ACTIVE_EXAM_REGISTRATION_STATUSES.has(exam.registration_status || '')
+    && isUpcomingExamRegistrationWindow(exam)
+  );
+
+  return exams.map((exam) => {
+    const examBucket = examBucketMap.get(Number(exam.id)) || 'unknown';
+    const conflicts = activeRegistrations.filter((otherExam) => {
+      if (otherExam.id === exam.id) return false;
+      const otherBucket = examBucketMap.get(Number(otherExam.id)) || 'unknown';
+      return bucketConflicts(examBucket, otherBucket);
+    });
+    const firstConflict = conflicts[0];
+    const bucketLabel = getBucketMessageLabel(examBucket);
+    const shouldFlagConflict =
+      !ACTIVE_EXAM_REGISTRATION_STATUSES.has(exam.registration_status || '')
+      && isUpcomingExamRegistrationWindow(exam)
+      && conflicts.length > 0;
+
+    return {
+      ...exam,
+      has_time_conflict: shouldFlagConflict,
+      conflicting_exam_id: shouldFlagConflict ? firstConflict?.id ?? null : null,
+      conflicting_exam_name: shouldFlagConflict ? firstConflict?.exam_name ?? null : null,
+      conflicting_exam_date: shouldFlagConflict ? firstConflict?.exam_date ?? null : null,
+      conflict_bucket: shouldFlagConflict ? examBucket : null,
+      conflict_message: shouldFlagConflict
+        ? `Bạn đã đăng ký ${firstConflict?.exam_name || 'một kỳ thi khác'} thuộc nhóm ${bucketLabel}. Mỗi học viên chỉ được giữ tối đa 1 lịch tiếng Anh (VSTEP/VEPT) và 1 lịch tin học (PTIT...).`
+        : null,
+    };
+  });
 }
 
-// Student tu dang ky thi -> status = 'pending'
-// Toi da 2 dang ky active cung luc
-export async function registerStudentForExam(db: D1Database, examId: number, studentId: number, createdBy: any = null) {
+const ACTIVE_EXAM_REGISTRATION_STATUSES = new Set(['pending', 'approved', 'registered']);
+const VIETNAM_TIME_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+function getCurrentVietnamDateTimeKey() {
+  return new Date(Date.now() + VIETNAM_TIME_OFFSET_MS)
+    .toISOString()
+    .slice(0, 19)
+    .replace('T', ' ');
+}
+
+function getExamDateTimeKey(examDate: string | null | undefined) {
+  if (!examDate) {
+    return null;
+  }
+
+  const normalized = String(examDate).trim().replace('T', ' ').slice(0, 19);
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(normalized)) {
+    return normalized;
+  }
+
+  const parsed = new Date(String(examDate));
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return new Date(parsed.getTime() + VIETNAM_TIME_OFFSET_MS)
+    .toISOString()
+    .slice(0, 19)
+    .replace('T', ' ');
+}
+
+export function isUpcomingExamRegistrationWindow(exam: { exam_date?: string | null }) {
+  const examDateKey = getExamDateTimeKey(exam.exam_date);
+  return examDateKey != null && examDateKey >= getCurrentVietnamDateTimeKey();
+}
+
+function getExamWindow(exam: { exam_date?: string | null; duration_minutes?: number | null }) {
+  const start = exam.exam_date ? new Date(exam.exam_date).getTime() : Number.NaN;
+  if (Number.isNaN(start)) {
+    return null;
+  }
+
+  const durationMinutes =
+    typeof exam.duration_minutes === 'number' && exam.duration_minutes > 0
+      ? exam.duration_minutes
+      : null;
+
+  return {
+    start,
+    end: durationMinutes ? start + durationMinutes * 60 * 1000 : null,
+  };
+}
+
+export function examsOverlapInTime(
+  leftExam: { exam_date?: string | null; duration_minutes?: number | null },
+  rightExam: { exam_date?: string | null; duration_minutes?: number | null },
+) {
+  const leftWindow = getExamWindow(leftExam);
+  const rightWindow = getExamWindow(rightExam);
+
+  if (!leftWindow || !rightWindow) {
+    return false;
+  }
+
+  if (leftWindow.end != null && rightWindow.end != null) {
+    return leftWindow.start < rightWindow.end && rightWindow.start < leftWindow.end;
+  }
+
+  if (leftWindow.end != null) {
+    return rightWindow.start >= leftWindow.start && rightWindow.start < leftWindow.end;
+  }
+
+  if (rightWindow.end != null) {
+    return leftWindow.start >= rightWindow.start && leftWindow.start < rightWindow.end;
+  }
+
+  return leftWindow.start === rightWindow.start;
+}
+
+// Student tự đăng ký thi -> status = 'pending'
+// Chỉ được giữ 1 đăng ký active trong đợt thi đang mở
+export async function registerStudentForExam(
+  db: D1Database,
+  examId: number,
+  studentId: number,
+  createdBy: number | { adminId?: number | null; force?: boolean } | null = null
+) {
   const options = typeof createdBy === 'object' && createdBy !== null ? createdBy : {};
-  const adminId = typeof createdBy === 'number' ? createdBy : null;
+  const adminId =
+    typeof createdBy === 'number'
+      ? createdBy
+      : typeof options.adminId === 'number'
+      ? options.adminId
+        : null;
   const force = !!options.force;
   const status = adminId ? 'approved' : 'pending';
-  const MAX_ACTIVE = 2;
 
-  // Lay tat ca dang ky active cho cac ky thi KHAC
+  const targetExam = await db.prepare(`
+    SELECT es.id, es.exam_name, es.exam_date, es.duration_minutes,
+           es.exam_type, es.exam_category_id, es.exam_type_id, es.program_uuid, es.organizer_uuid
+    FROM exam_schedules es
+    WHERE es.id = ?
+      AND es.deleted_at IS NULL
+    LIMIT 1
+  `).bind(examId).first<any>();
+
+  if (!targetExam) {
+    const err: any = new Error('EXAM_SCHEDULE_NOT_FOUND');
+    err.code = 'EXAM_SCHEDULE_NOT_FOUND';
+    throw err;
+  }
+
+  const targetBucket = resolveExamRegistrationBucket(targetExam);
+  const targetBucketLabel = getBucketMessageLabel(targetBucket);
+
   const existingActives = await db.prepare(`
     SELECT er.id, er.exam_id, er.status, er.created_at,
-           es.exam_name, es.exam_date
+           es.exam_name, es.exam_date, es.duration_minutes,
+           es.exam_type, es.exam_category_id, es.exam_type_id, es.program_uuid, es.organizer_uuid
     FROM exam_registrations er
-    LEFT JOIN exam_schedules es ON es.id = er.exam_id
+    JOIN exam_schedules es ON es.id = er.exam_id
     WHERE er.student_id = ?
       AND er.status IN ('pending','approved','registered')
       AND er.exam_id != ?
+      AND es.deleted_at IS NULL
     ORDER BY datetime(er.created_at) ASC, er.id ASC
   `).bind(studentId, examId).all();
 
-  const actives: any[] = existingActives.results || [];
+  const conflictingActives = isUpcomingExamRegistrationWindow(targetExam)
+    ? ((existingActives.results || []) as any[]).filter((existingExam) =>
+        isUpcomingExamRegistrationWindow(existingExam)
+        && bucketConflicts(targetBucket, resolveExamRegistrationBucket(existingExam))
+      )
+    : [];
 
-  if (actives.length >= MAX_ACTIVE) {
-    if (!adminId && !force) {
-      const newest = actives[actives.length - 1];
+  if (conflictingActives.length > 0) {
+    if (!force) {
+      const firstConflict = conflictingActives[0];
       const err: any = new Error('STUDENT_ALREADY_HAS_ACTIVE_EXAM_REGISTRATION');
       err.code = 'STUDENT_ALREADY_HAS_ACTIVE_EXAM_REGISTRATION';
       err.details = {
-        existing_exam_id: newest.exam_id,
-        existing_exam_name: newest.exam_name,
-        existing_exam_date: newest.exam_date,
-        existing_status: newest.status,
-        count: actives.length,
-        max: MAX_ACTIVE,
+        existing_exam_id: firstConflict.exam_id,
+        existing_exam_name: firstConflict.exam_name,
+        existing_exam_date: firstConflict.exam_date,
+        existing_status: firstConflict.status,
+        registration_bucket: targetBucket,
+        registration_bucket_label: targetBucketLabel,
+        active_exam_ids: conflictingActives.map((item) => item.exam_id),
+        active_count: conflictingActives.length,
       };
       throw err;
     }
 
-    // force hoac admin: huy dang ky cu nhat de nhuong cho
-    const oldest = actives[0];
-    await db.prepare(`
-      UPDATE exam_registrations SET status = 'cancelled' WHERE id = ?
-    `).bind(oldest.id).run();
+    // Force mode: replace existing registrations in the same bucket.
+    for (const conflict of conflictingActives) {
+      await db.prepare(`
+        UPDATE exam_registrations
+        SET status = 'cancelled'
+        WHERE id = ?
+      `).bind(conflict.id).run();
+    }
   }
 
   // Upsert: neu da co (ke ca cancelled) thi update lai status
@@ -350,6 +839,7 @@ export async function getExamRegistrations(db: D1Database, examId: number) {
            r.created_by,
            r.approved_at,
            r.approved_by,
+           a.full_name as approved_by_name,
            s.id as student_id,
            s.ho_ten_full,
            s.ngay_sinh,
@@ -360,10 +850,13 @@ export async function getExamRegistrations(db: D1Database, examId: number) {
            s.dia_chi,
            s.noi_sinh,
            s.image_3x4,
+           s.photo_3x4_image_id,
            s.created_at as student_created_at
     FROM exam_registrations r
     JOIN students s ON r.student_id = s.id
+    LEFT JOIN admins a ON r.approved_by = a.id
     WHERE r.exam_id = ? AND r.status IN ('approved', 'registered')
+      AND ${buildTestStudentFilter('s')}
     ORDER BY r.created_at DESC
   `).bind(examId).all();
   return result.results || [];
@@ -385,10 +878,12 @@ export async function getPendingExamRegistrations(db: D1Database, examId: number
            s.email,
            s.dia_chi,
            s.noi_sinh,
-           s.image_3x4
+           s.image_3x4,
+           s.photo_3x4_image_id
     FROM exam_registrations r
     JOIN students s ON r.student_id = s.id
     WHERE r.exam_id = ? AND r.status = 'pending'
+      AND ${buildTestStudentFilter('s')}
     ORDER BY r.created_at DESC
   `).bind(examId).all();
   return result.results || [];

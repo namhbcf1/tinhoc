@@ -2,6 +2,8 @@ import ModernPublicLayout from '../../components/layout/ModernPublicLayout';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Sparkles, Bot, Library, MonitorSmartphone, FlaskConical, BarChart3, Cloud, ArrowRight, Users, Activity, Layers } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import SEO from '../../components/common/SEO';
 
 const features = [
   { icon: Bot, color: 'text-green-400', border: 'hover:border-green-500/50', title: 'AI Chatbot', desc: 'Trợ lý ảo hỗ trợ học tập 24/7, giải đáp thắc mắc và tư vấn lộ trình học tập cá nhân hóa.', link: 'Khám phá' },
@@ -21,8 +23,30 @@ const stats = [
 ];
 
 export default function Hub4Page() {
+  const structuredData = [
+    {
+      '@type': 'WebPage',
+      name: 'Hub 4.0',
+      description: 'Trung tam doi moi sang tao va chuyen doi so cua Van Trang Education.',
+      url: 'https://vantrangedu.com/hub4'
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Trang chu', item: 'https://vantrangedu.com/' },
+        { '@type': 'ListItem', position: 2, name: 'Hub 4.0', item: 'https://vantrangedu.com/hub4' }
+      ]
+    }
+  ];
+
   return (
     <ModernPublicLayout>
+      <SEO
+        title="Hub 4.0"
+        description="Gioi thieu he sinh thai AI, thu vien so, virtual lab va learning hub trong trung tam doi moi sang tao HUB 4.0."
+        url="/hub4"
+        structuredData={structuredData}
+      />
       <div className="bg-slate-950 min-h-screen">
         {/* Hero */}
         <div className="py-28 relative overflow-hidden text-center">
@@ -38,9 +62,11 @@ export default function Hub4Page() {
             <p className="text-lg text-slate-400 max-w-2xl mx-auto mb-10">
               Trung tâm đổi mới sáng tạo và chuyển đổi số. Nơi trải nghiệm các công nghệ giáo dục tiên tiến nhất dành cho sinh viên VanTrang.
             </p>
+            <Link to="/contact">
             <Button className="bg-green-600 hover:bg-green-500 text-white font-bold h-12 px-10 rounded-xl inline-flex items-center gap-2 shadow-lg shadow-green-900/30">
               Khám phá ngay <ArrowRight size={16} />
             </Button>
+            </Link>
           </div>
         </div>
 
@@ -54,9 +80,9 @@ export default function Hub4Page() {
                   <f.icon className={`h-10 w-10 ${f.color} mb-5`} />
                   <h3 className="text-xl font-bold text-white mb-2">{f.title}</h3>
                   <p className="text-slate-400 text-sm mb-5 leading-relaxed">{f.desc}</p>
-                  <button className={`text-sm font-semibold ${f.color} inline-flex items-center gap-1 hover:gap-2 transition-all`}>
+                  <Link to="/contact" className={`text-sm font-semibold ${f.color} inline-flex items-center gap-1 hover:gap-2 transition-all`}>
                     {f.link} <ArrowRight size={14} />
-                  </button>
+                  </Link>
                 </CardContent>
               </Card>
             ))}
@@ -89,9 +115,11 @@ export default function Hub4Page() {
           <div className="rounded-2xl bg-gradient-to-r from-green-700 to-emerald-600 p-10 text-center">
             <h2 className="text-3xl font-black text-white mb-3">Bắt đầu ngay hôm nay</h2>
             <p className="text-green-100 mb-7 max-w-lg mx-auto">Tham gia HUB 4.0 và trải nghiệm tương lai của giáo dục công nghệ cao.</p>
+            <Link to="/register">
             <Button className="bg-white text-green-700 hover:bg-green-50 font-bold h-12 px-10 rounded-xl inline-flex items-center gap-2">
               Đăng ký miễn phí <ArrowRight size={16} />
             </Button>
+            </Link>
           </div>
         </div>
       </div>

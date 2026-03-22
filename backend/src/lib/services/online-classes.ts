@@ -9,6 +9,7 @@ import {
   listClasses, findClassById, insertClass,
   updateClass, updateClassMeetLink, updateClassCalendarInfo,
   updateClassCalendarSync, deleteClass,
+  findClassBySourceExamSchedule,
   countActiveEnrollments, getPendingCountsByClass,
   findEnrollment, findEnrollmentById,
   createEnrollment, reEnroll,
@@ -224,7 +225,10 @@ export async function createClass(db: D1Database, env: Env, body: any, createdBy
   const {
     class_name, description, schedule_rule, schedule_time,
     timezone = 'Asia/Ho_Chi_Minh', start_date, end_date,
-    teacher_name, max_students = 50
+    teacher_name, max_students = 50, source_exam_schedule_id = null,
+    source_kind = 'exam_schedule', exam_category_id = null, exam_type_id = null,
+    organizer_uuid = null, program_uuid = null, level_uuid = null,
+    custom_field_payload = null, override_payload = null
   } = body;
 
   // Validation
@@ -254,7 +258,9 @@ export async function createClass(db: D1Database, env: Env, body: any, createdBy
     start_date, end_date,
     meet_link: calendarResult?.meetLink ?? null,
     calendar_event_id: calendarResult?.eventId ?? null,
-    teacher_name, max_students, created_by: createdBy
+    teacher_name, max_students, created_by: createdBy,
+    source_exam_schedule_id, source_kind, exam_category_id, exam_type_id
+    , organizer_uuid, program_uuid, level_uuid, custom_field_payload, override_payload
   });
 
   // If event created but Meet link not ready yet, retry up to 3 times
@@ -287,7 +293,9 @@ export async function updateClassById(db: D1Database, env: Env, id: number | str
 
   const {
     class_name, description, schedule_rule, schedule_time,
-    timezone, start_date, end_date, teacher_name, max_students, status
+    timezone, start_date, end_date, teacher_name, max_students, status,
+    source_exam_schedule_id, source_kind, exam_category_id, exam_type_id,
+    organizer_uuid, program_uuid, level_uuid, custom_field_payload, override_payload
   } = body;
 
   // Validate schedule_time if provided
@@ -306,6 +314,15 @@ export async function updateClassById(db: D1Database, env: Env, id: number | str
   if (timezone !== undefined)       fields.timezone = timezone || 'Asia/Ho_Chi_Minh';
   if (start_date !== undefined)     fields.start_date = start_date;
   if (end_date !== undefined)       fields.end_date = end_date || null;
+  if (source_exam_schedule_id !== undefined) fields.source_exam_schedule_id = source_exam_schedule_id;
+  if (source_kind !== undefined) fields.source_kind = source_kind;
+  if (exam_category_id !== undefined) fields.exam_category_id = exam_category_id;
+  if (exam_type_id !== undefined) fields.exam_type_id = exam_type_id;
+  if (organizer_uuid !== undefined) fields.organizer_uuid = organizer_uuid;
+  if (program_uuid !== undefined) fields.program_uuid = program_uuid;
+  if (level_uuid !== undefined) fields.level_uuid = level_uuid;
+  if (custom_field_payload !== undefined) fields.custom_field_payload = custom_field_payload;
+  if (override_payload !== undefined) fields.override_payload = override_payload;
 
   if (Object.keys(fields).length === 0) {
     throw Object.assign(new Error('Không có thông tin cần cập nhật'), { statusCode: 400 });
@@ -544,5 +561,7 @@ export async function getAvailableStudents(db: D1Database, classId: number | str
 
 // ─── Enrollment List Helpers ─────────────────────────────────────────────────
 
+export { activateEnrollmentDirect, cancelEnrollment, findEnrollment, reactivateEnrollment };
 export { listEnrolledStudents, listActiveEnrollmentsWithStudents, listPendingEnrollmentsWithStudents };
 export { findClassById as getClassForName }; // used for class_name in responses
+export { findClassBySourceExamSchedule };

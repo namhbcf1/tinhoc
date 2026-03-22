@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Award, Download, QrCode, Share2, X, CheckCircle, Star } from 'lucide-react';
 import api from '../../../services/api';
 import PullToRefreshWrapper from '../../../components/ui/PullToRefreshWrapper';
+import { getStorageValue } from '../../../utils/browser-storage.js';
 
 const formatDate = (date) => {
     if (!date) return '';
     try { return new Date(date).toLocaleDateString('vi-VN'); } catch { return date; }
 };
 
-const CertificateCard = ({ certificate, onClick, index }) => {
+const CertificateCard = ({ certificate, onClick, onDownload, onShare, index }) => {
     const name = certificate.certificate_name || certificate.ten_chung_chi || 'Chứng chỉ';
     const issueDate = certificate.issue_date || certificate.ngay_cap || '';
     const level = certificate.level || certificate.cap_do || '';
@@ -48,10 +49,22 @@ const CertificateCard = ({ certificate, onClick, index }) => {
                     {issueDate && <p className="text-xs text-slate-400 font-semibold mt-1.5">Ngày cấp: {formatDate(issueDate)}</p>}
                 </div>
                 <div className="flex gap-2">
-                    <button className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center active:scale-90 transition-transform">
+                    <button
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            onDownload(certificate);
+                        }}
+                        className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center active:scale-90 transition-transform"
+                    >
                         <Download size={16} />
                     </button>
-                    <button className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center active:scale-90 transition-transform">
+                    <button
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            onShare(certificate);
+                        }}
+                        className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center active:scale-90 transition-transform"
+                    >
                         <Share2 size={16} />
                     </button>
                 </div>
@@ -60,7 +73,7 @@ const CertificateCard = ({ certificate, onClick, index }) => {
     );
 };
 
-const CertificateDetailSheet = ({ certificate, onClose }) => {
+const CertificateDetailSheet = ({ certificate, onClose, onDownload, onShare }) => {
     const name = certificate.certificate_name || certificate.ten_chung_chi || 'Chứng chỉ';
     const issuer = certificate.issuer || certificate.don_vi_cap || 'VanTrangEdu';
     const issueDate = certificate.issue_date || certificate.ngay_cap || '';
@@ -105,10 +118,16 @@ const CertificateDetailSheet = ({ certificate, onClose }) => {
                         <p className="text-amber-700 text-sm font-semibold text-center">Quét mã để xác thực chứng chỉ</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                        <button className="flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl font-bold text-sm active:scale-95 transition-transform">
+                        <button
+                            onClick={() => onDownload(certificate)}
+                            className="flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl font-bold text-sm active:scale-95 transition-transform"
+                        >
                             <Download size={16} /> Tải xuống
                         </button>
-                        <button className="flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl font-bold text-sm active:scale-95 transition-transform">
+                        <button
+                            onClick={() => onShare(certificate)}
+                            className="flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl font-bold text-sm active:scale-95 transition-transform"
+                        >
                             <Share2 size={16} /> Chia sẻ
                         </button>
                     </div>
@@ -123,7 +142,7 @@ export default function MobileCertificatesModule({ studentData }) {
     const [loading, setLoading] = useState(true);
     const [selectedCertificate, setSelectedCertificate] = useState(null);
 
-    useEffect(() => { fetchCertificates(); }, []);
+    useEffect(() => { fetchCertificates(); }, [studentData?.cccd]);
 
     // Pull-to-refresh callback
     const handleRefresh = async () => {
@@ -133,8 +152,13 @@ export default function MobileCertificatesModule({ studentData }) {
     const fetchCertificates = async () => {
         setLoading(true);
         try {
-            const cccd = studentData?.cccd || studentData?.so_cccd;
-            const res = await api.request(`/students/${cccd}/certificates`);
+            const cccd = studentData?.cccd || studentData?.so_cccd || getStorageValue('student_cccd');
+            if (!cccd) {
+                setCertificates([]);
+                return;
+            }
+
+            const res = await api.lookupCertificate(cccd, null);
             const certList = Array.isArray(res) ? res : (res?.data || res?.certificates || []);
             setCertificates(certList);
         } catch (error) {
@@ -142,6 +166,46 @@ export default function MobileCertificatesModule({ studentData }) {
             setCertificates([]);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const buildLookupUrl = (certificate) => {
+        const params = new URLSearchParams();
+        const certificateNumber = certificate?.certificate_number || certificate?.so_chung_chi;
+        const cccd = certificate?.cccd || studentData?.cccd || getStorageValue('student_cccd');
+        if (certificateNumber) params.set('certificate_number', certificateNumber);
+        if (cccd) params.set('cccd', cccd);
+        return `${window.location.origin}/certificate/lookup?${params.toString()}`;
+    };
+
+    const handleDownloadCertificate = async (certificate) => {
+        if (!certificate?.id) return;
+        try {
+            const html = await api.downloadCertificate(certificate.id, 'html');
+            const popup = window.open('', '_blank', 'noopener,noreferrer');
+            if (!popup) return;
+            popup.document.open();
+            popup.document.write(html);
+            popup.document.close();
+        } catch (downloadError) {
+            console.error('Failed to download certificate', downloadError);
+        }
+    };
+
+    const handleShareCertificate = async (certificate) => {
+        const shareUrl = buildLookupUrl(certificate);
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: certificate?.certificate_number || 'Chứng chỉ',
+                    text: 'Tra cứu chứng chỉ',
+                    url: shareUrl,
+                });
+                return;
+            }
+            await navigator.clipboard.writeText(shareUrl);
+        } catch (shareError) {
+            console.error('Failed to share certificate', shareError);
         }
     };
 
@@ -206,7 +270,14 @@ export default function MobileCertificatesModule({ studentData }) {
                 ) : certificates.length > 0 ? (
                     <div className="space-y-3">
                         {certificates.map((cert, i) => (
-                            <CertificateCard key={cert.id || i} certificate={cert} onClick={setSelectedCertificate} index={i} />
+                            <CertificateCard
+                                key={cert.id || i}
+                                certificate={cert}
+                                onClick={setSelectedCertificate}
+                                onDownload={handleDownloadCertificate}
+                                onShare={handleShareCertificate}
+                                index={i}
+                            />
                         ))}
                     </div>
                 ) : (
@@ -226,7 +297,12 @@ export default function MobileCertificatesModule({ studentData }) {
             </div>
 
             {selectedCertificate && (
-                <CertificateDetailSheet certificate={selectedCertificate} onClose={() => setSelectedCertificate(null)} />
+                <CertificateDetailSheet
+                    certificate={selectedCertificate}
+                    onClose={() => setSelectedCertificate(null)}
+                    onDownload={handleDownloadCertificate}
+                    onShare={handleShareCertificate}
+                />
             )}
         </div>
         </PullToRefreshWrapper>

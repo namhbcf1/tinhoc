@@ -111,62 +111,166 @@ function findCorners(edges, width, height) {
 /**
  * Find document corners using edge detection and corner detection
  */
-function findDocumentCorners(corners, width, height) {
+function distance(a, b) {
+    return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+}
+
+function orderCorners(points) {
+    if (!points || points.length !== 4) return null;
+
+    const sums = points.map(p => p.x + p.y);
+    const diffs = points.map(p => p.x - p.y);
+
+    const topLeft = points[sums.indexOf(Math.min(...sums))];
+    const bottomRight = points[sums.indexOf(Math.max(...sums))];
+    const topRight = points[diffs.indexOf(Math.max(...diffs))];
+    const bottomLeft = points[diffs.indexOf(Math.min(...diffs))];
+
+    const unique = new Set([topLeft, topRight, bottomRight, bottomLeft]);
+    if (unique.size !== 4) return null;
+
+    return [topLeft, topRight, bottomRight, bottomLeft];
+}
+
+function polygonArea(points) {
+    let area = 0;
+    for (let i = 0; i < points.length; i += 1) {
+        const current = points[i];
+        const next = points[(i + 1) % points.length];
+        area += current.x * next.y - next.x * current.y;
+    }
+    return Math.abs(area) / 2;
+}
+
+function angleAt(prev, current, next) {
+    const v1x = prev.x - current.x;
+    const v1y = prev.y - current.y;
+    const v2x = next.x - current.x;
+    const v2y = next.y - current.y;
+
+    const dot = v1x * v2x + v1y * v2y;
+    const mag1 = Math.sqrt(v1x * v1x + v1y * v1y);
+    const mag2 = Math.sqrt(v2x * v2x + v2y * v2y);
+    if (!mag1 || !mag2) return 0;
+
+    const cos = Math.max(-1, Math.min(1, dot / (mag1 * mag2)));
+    return Math.acos(cos) * 180 / Math.PI;
+}
+
+function scoreQuad(points, width, height, overlayRect) {
+    const ordered = orderCorners(points);
+    if (!ordered) return null;
+
+    const [tl, tr, br, bl] = ordered;
+    const topWidth = distance(tl, tr);
+    const bottomWidth = distance(bl, br);
+    const leftHeight = distance(tl, bl);
+    const rightHeight = distance(tr, br);
+
+    const minSide = Math.min(topWidth, bottomWidth, leftHeight, rightHeight);
+    if (minSide < Math.min(width, height) * 0.08) {
+        return null;
+    }
+
+    const avgWidth = (topWidth + bottomWidth) / 2;
+    const avgHeight = (leftHeight + rightHeight) / 2;
+    if (!avgWidth || !avgHeight) {
+        return null;
+    }
+
+    const expectedAspect = overlayRect?.width && overlayRect?.height
+        ? overlayRect.width / overlayRect.height
+        : 1.585;
+    const aspect = avgWidth / avgHeight;
+    const aspectError = Math.abs(aspect - expectedAspect) / expectedAspect;
+    if (aspectError > 0.45) {
+        return null;
+    }
+
+    const area = polygonArea(ordered);
+    const areaRatio = area / (width * height);
+    if (areaRatio < 0.02 || areaRatio > 0.9) {
+        return null;
+    }
+
+    const centerX = (tl.x + tr.x + br.x + bl.x) / 4;
+    const centerY = (tl.y + tr.y + br.y + bl.y) / 4;
+    const targetCenterX = overlayRect?.x !== undefined
+        ? overlayRect.x + overlayRect.width / 2
+        : width / 2;
+    const targetCenterY = overlayRect?.y !== undefined
+        ? overlayRect.y + overlayRect.height / 2
+        : height / 2;
+    const centerDistance = Math.sqrt((centerX - targetCenterX) ** 2 + (centerY - targetCenterY) ** 2);
+    const maxCenterDistance = Math.sqrt(width ** 2 + height ** 2) * 0.42;
+    if (centerDistance > maxCenterDistance) {
+        return null;
+    }
+
+    const diag1 = distance(tl, br);
+    const diag2 = distance(tr, bl);
+    const sideBalance = 1 - Math.min(
+        1,
+        ((Math.abs(topWidth - bottomWidth) / avgWidth) + (Math.abs(leftHeight - rightHeight) / avgHeight)) / 0.7
+    );
+    const diagBalance = 1 - Math.min(1, Math.abs(diag1 - diag2) / Math.max(diag1, diag2, 1) / 0.35);
+
+    const angles = [
+        angleAt(bl, tl, tr),
+        angleAt(tl, tr, br),
+        angleAt(tr, br, bl),
+        angleAt(br, bl, tl)
+    ];
+    const anglePenalty = angles.reduce((sum, angle) => sum + Math.abs(90 - angle), 0) / angles.length;
+    const angleScore = 1 - Math.min(1, anglePenalty / 35);
+
+    const aspectScore = 1 - Math.min(1, aspectError / 0.28);
+    const centerScore = 1 - Math.min(1, centerDistance / maxCenterDistance);
+    const areaScore = Math.min(1, areaRatio / 0.2);
+
+    const score =
+        aspectScore * 0.30 +
+        angleScore * 0.24 +
+        sideBalance * 0.16 +
+        diagBalance * 0.12 +
+        centerScore * 0.10 +
+        areaScore * 0.08;
+
+    if (score < 0.52) {
+        return null;
+    }
+
+    return { ordered, score };
+}
+
+function findDocumentCorners(corners, width, height, overlayRect) {
     if (corners.length < 4) return null;
 
-    // Find corners near the edges (likely document corners)
-    const edgeThreshold = Math.min(width, height) * 0.1;
-    const documentCorners = [];
+    const candidates = corners.slice(0, Math.min(corners.length, 18));
+    let best = null;
+    let bestScore = 0;
 
-    // Top-left
-    let minDist = Infinity;
-    let topLeft = null;
-    for (const corner of corners) {
-        const dist = Math.sqrt(corner.x * corner.x + corner.y * corner.y);
-        if (dist < minDist && corner.x < width * 0.3 && corner.y < height * 0.3) {
-            minDist = dist;
-            topLeft = corner;
+    for (let a = 0; a < candidates.length - 3; a += 1) {
+        for (let b = a + 1; b < candidates.length - 2; b += 1) {
+            for (let c = b + 1; c < candidates.length - 1; c += 1) {
+                for (let d = c + 1; d < candidates.length; d += 1) {
+                    const scored = scoreQuad(
+                        [candidates[a], candidates[b], candidates[c], candidates[d]],
+                        width,
+                        height,
+                        overlayRect
+                    );
+
+                    if (scored && scored.score > bestScore) {
+                        best = scored.ordered;
+                        bestScore = scored.score;
+                    }
+                }
+            }
         }
     }
 
-    // Top-right
-    minDist = Infinity;
-    let topRight = null;
-    for (const corner of corners) {
-        const dist = Math.sqrt((width - corner.x) ** 2 + corner.y ** 2);
-        if (dist < minDist && corner.x > width * 0.7 && corner.y < height * 0.3) {
-            minDist = dist;
-            topRight = corner;
-        }
-    }
-
-    // Bottom-left
-    minDist = Infinity;
-    let bottomLeft = null;
-    for (const corner of corners) {
-        const dist = Math.sqrt(corner.x ** 2 + (height - corner.y) ** 2);
-        if (dist < minDist && corner.x < width * 0.3 && corner.y > height * 0.7) {
-            minDist = dist;
-            bottomLeft = corner;
-        }
-    }
-
-    // Bottom-right
-    minDist = Infinity;
-    let bottomRight = null;
-    for (const corner of corners) {
-        const dist = Math.sqrt((width - corner.x) ** 2 + (height - corner.y) ** 2);
-        if (dist < minDist && corner.x > width * 0.7 && corner.y > height * 0.7) {
-            minDist = dist;
-            bottomRight = corner;
-        }
-    }
-
-    if (topLeft && topRight && bottomLeft && bottomRight) {
-        return [topLeft, topRight, bottomRight, bottomLeft];
-    }
-
-    return null;
+    return best;
 }
 
 /**
@@ -246,7 +350,7 @@ export function detectDocumentFromImageData(imageData, overlayRect) {
         const corners = findCorners(edges, width, height);
 
         // Find document corners
-        const documentCorners = findDocumentCorners(corners, width, height);
+        const documentCorners = findDocumentCorners(corners, width, height, overlayRect);
 
         if (!documentCorners) {
             return { detected: false, confidence: 0, corners: null, angle: 0 };
@@ -359,4 +463,3 @@ export function getDocumentQuality(canvas, corners) {
 
     return { score: Math.max(0, score), issues };
 }
-

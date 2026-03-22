@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Calendar, Users, Clock, Search, MoreHorizontal, XCircle, ArrowLeft, MapPin, CreditCard, Info, CheckCircle, AlertCircle, UserPlus } from 'lucide-react';
+import { Plus, Edit, Trash2, Calendar, Users, Clock, Search, MoreHorizontal, XCircle, ArrowLeft, MapPin, CreditCard, Info, CheckCircle, AlertCircle } from 'lucide-react';
 import api from '../../../services/api';
 import { formatDateVN } from '../../../utils/dateUtils';
 import { Button } from '../../../components/ui/Button';
@@ -13,7 +13,6 @@ import { useToast } from '../../../components/ui/ToastContainer';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import ClassRegistrations from './components/ClassRegistrations';
 import ClassSchedules from './components/ClassSchedules';
-import ClassTeachers from './components/ClassTeachers';
 
 export default function ClassesManagement() {
   const { toast } = useToast();
@@ -722,12 +721,6 @@ function ClassDetailView({ classId, classData, onBack }) {
             <Badge className="ml-1 bg-slate-100 text-slate-700 hover:bg-slate-200 border-none h-5 px-1.5 min-w-[1.25rem]">{current}</Badge>
           </button>
           <button
-            onClick={() => setActiveTab('teachers')}
-            className={`px-6 py-4 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${activeTab === 'teachers' ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
-          >
-            <UserPlus size={18} /> GIÁO VIÊN
-          </button>
-          <button
             onClick={() => setActiveTab('schedules')}
             className={`px-6 py-4 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${activeTab === 'schedules' ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
           >
@@ -801,12 +794,6 @@ function ClassDetailView({ classId, classData, onBack }) {
           {activeTab === 'schedules' && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
               <ClassSchedules classId={classId} className={classData.ten_lop} maLop={classData.ma_lop} />
-            </div>
-          )}
-
-          {activeTab === 'teachers' && (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-300 p-6">
-              <ClassTeachers classId={classId} />
             </div>
           )}
         </div>

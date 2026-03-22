@@ -7,6 +7,7 @@ import {
 import { useToast } from '../../../components/ui/ToastContainer';
 import { useAssignmentsManagement } from '../shared/hooks/useAssignmentsManagement';
 import { formatDateVN } from '../../../utils/dateUtils';
+import AdminLoadingState from '../../../components/admin/AdminLoadingState';
 
 // ============= BOTTOM SHEET =============
 const BottomSheet = ({ isOpen, onClose, title, children, height = 'auto' }) => {
@@ -55,6 +56,7 @@ const BottomSheet = ({ isOpen, onClose, title, children, height = 'auto' }) => {
 const getStatusConfig = (status) => {
     const config = {
         draft: { label: 'Nháp', color: 'bg-slate-100 text-slate-700', icon: FileText },
+        open: { label: 'Đang mở', color: 'bg-green-100 text-green-700', icon: CheckCircle },
         active: { label: 'Đang mở', color: 'bg-green-100 text-green-700', icon: CheckCircle },
         closed: { label: 'Đã đóng', color: 'bg-red-100 text-red-700', icon: XCircle },
     };
@@ -135,7 +137,7 @@ const AssignmentFormSheet = ({ isOpen, onClose, editingItem, classes, onSuccess 
     const { createAssignment, updateAssignment } = useAssignmentsManagement();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        title: '', description: '', class_id: '', due_date: '', max_score: 100, status: 'active'
+        title: '', description: '', class_id: '', due_date: '', max_attempts: 1, max_file_size: 10, status: 'open'
     });
 
     useEffect(() => {
@@ -145,11 +147,12 @@ const AssignmentFormSheet = ({ isOpen, onClose, editingItem, classes, onSuccess 
                 description: editingItem.description || '',
                 class_id: editingItem.class_id || '',
                 due_date: editingItem.due_date ? formatDateVN(editingItem.due_date) : '',
-                max_score: editingItem.max_score || 100,
-                status: editingItem.status || 'active'
+                max_attempts: editingItem.max_attempts || 1,
+                max_file_size: Math.round((editingItem.max_file_size || 10485760) / 1024 / 1024),
+                status: editingItem.status || 'open'
             });
         } else {
-            setFormData({ title: '', description: '', class_id: '', due_date: '', max_score: 100, status: 'active' });
+            setFormData({ title: '', description: '', class_id: '', due_date: '', max_attempts: 1, max_file_size: 10, status: 'open' });
         }
     }, [editingItem, isOpen]);
 
@@ -175,7 +178,8 @@ const AssignmentFormSheet = ({ isOpen, onClose, editingItem, classes, onSuccess 
             const submitData = {
                 ...formData,
                 due_date: parseVNDate(formData.due_date),
-                max_score: parseInt(formData.max_score) || 100
+                max_attempts: parseInt(formData.max_attempts) || 1,
+                max_file_size: (parseInt(formData.max_file_size) || 10) * 1024 * 1024
             };
 
             if (editingItem) {
@@ -227,7 +231,7 @@ const AssignmentFormSheet = ({ isOpen, onClose, editingItem, classes, onSuccess 
                     >
                         <option value="">-- Chọn lớp --</option>
                         {classes.map(c => (
-                            <option key={c.id} value={c.id}>{c.ten_lop}</option>
+                            <option key={c.id} value={c.id}>{c.ten_lop || c.class_name || `Lớp #${c.id}`}</option>
                         ))}
                     </select>
                 </div>
@@ -244,28 +248,28 @@ const AssignmentFormSheet = ({ isOpen, onClose, editingItem, classes, onSuccess 
                         />
                     </div>
                     <div>
-                        <label className="text-sm font-medium text-slate-600 mb-1.5 block">Điểm tối đa</label>
+                        <label className="text-sm font-medium text-slate-600 mb-1.5 block">Số lần nộp</label>
                         <input
                             type="number"
-                            value={formData.max_score}
-                            onChange={(e) => setFormData({ ...formData, max_score: e.target.value })}
+                            min="1"
+                            value={formData.max_attempts}
+                            onChange={(e) => setFormData({ ...formData, max_attempts: e.target.value })}
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            placeholder="100"
+                            placeholder="1"
                         />
                     </div>
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium text-slate-600 mb-1.5 block">Trạng thái</label>
-                    <select
-                        value={formData.status}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    <label className="text-sm font-medium text-slate-600 mb-1.5 block">Dung lượng tối đa (MB)</label>
+                    <input
+                        type="number"
+                        min="1"
+                        value={formData.max_file_size}
+                        onChange={(e) => setFormData({ ...formData, max_file_size: e.target.value })}
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    >
-                        <option value="draft">Nháp</option>
-                        <option value="active">Đang mở</option>
-                        <option value="closed">Đã đóng</option>
-                    </select>
+                        placeholder="10"
+                    />
                 </div>
 
                 <div className="pt-4 sticky bottom-0 bg-white">
@@ -327,9 +331,9 @@ const SubmissionsSheet = ({ isOpen, onClose, assignment }) => {
                             <div key={sub.id} className="bg-white p-4 rounded-xl border border-slate-100">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="font-medium text-slate-800">{sub.student_name || 'Học viên'}</span>
-                                    {sub.score !== null && (
+                                    {sub.grade !== null && sub.grade !== undefined && (
                                         <span className="flex items-center gap-1 text-amber-600 font-bold">
-                                            <Star size={14} /> {sub.score}/{assignment.max_score || 100}
+                                            <Star size={14} /> {sub.grade}
                                         </span>
                                     )}
                                 </div>
@@ -409,7 +413,7 @@ export default function MobileAssignmentsModule() {
 
     const getClassName = (classId) => {
         const cls = classes.find(c => c.id === classId);
-        return cls?.ten_lop || 'Lớp học';
+        return cls?.ten_lop || cls?.class_name || 'Lớp học';
     };
 
     const filteredAssignments = useMemo(() => {
@@ -430,7 +434,7 @@ export default function MobileAssignmentsModule() {
 
     // Pull-to-refresh callback
     const handleRefresh = async () => {
-        await loadSubmissions();
+        await loadAssignments({ force: true });
     };
 
     return (
@@ -507,10 +511,12 @@ export default function MobileAssignmentsModule() {
             {/* List */}
             <div className="p-4 pb-24">
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4">
-                        <RefreshCw size={32} className="animate-spin text-indigo-600" />
-                        <p className="text-slate-500">Đang tải dữ liệu...</p>
-                    </div>
+                    <AdminLoadingState
+                        title="Đang tải danh sách bài tập"
+                        hint="Bài tập được giữ cache ngắn hạn để quay lại tab nhanh nhưng vẫn dễ làm mới thủ công."
+                        variant="mobile-list"
+                        accent="violet"
+                    />
                 ) : filteredAssignments.length > 0 ? (
                     <div className="space-y-3">
                         {filteredAssignments.map((item) => (
@@ -546,7 +552,9 @@ export default function MobileAssignmentsModule() {
                 onClose={() => { setShowForm(false); setEditingItem(null); }}
                 editingItem={editingItem}
                 classes={classes}
-                onSuccess={loadAssignments}
+                onSuccess={async () => {
+                    await loadAssignments({ force: true });
+                }}
             />
 
             <SubmissionsSheet

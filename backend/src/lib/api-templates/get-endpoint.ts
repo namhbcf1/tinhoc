@@ -52,6 +52,9 @@ export function createGetEndpoint<
 
       if (response && typeof response === 'object' && 'success' in response) {
         const status = response.success ? 200 : (response.error?.code === 'NOT_FOUND' ? 404 : 400);
+        if (config.cacheControl && status === 200) {
+          c.header('Cache-Control', config.cacheControl);
+        }
         return c.json(response, status);
       }
 
@@ -66,6 +69,9 @@ export function createGetEndpoint<
         payload = { success: true, data: response };
       }
 
+      if (config.cacheControl) {
+        c.header('Cache-Control', config.cacheControl);
+      }
       return c.json(payload, 200);
     } catch (error: any) {
       console.error('[GET Endpoint Error]', error);

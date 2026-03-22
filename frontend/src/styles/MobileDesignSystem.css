@@ -8,31 +8,40 @@
 
 :root {
     /* ========================================
+       GLOBAL MOBILE DENSITY SCALE
+       ======================================== */
+    --mb-space-scale: 1;
+    --mb-font-scale: 1;
+    --mb-touch-scale: 1;
+    --mb-radius-scale: 1;
+    --mb-layout-scale: 1;
+
+    /* ========================================
        SPACING - 4px base system
        ======================================== */
-    --mb-xs: 4px;
-    --mb-sm: 8px;
-    --mb-md: 16px;
-    --mb-lg: 24px;
-    --mb-xl: 32px;
-    --mb-2xl: 48px;
+    --mb-xs: calc(4px * var(--mb-space-scale));
+    --mb-sm: calc(8px * var(--mb-space-scale));
+    --mb-md: calc(16px * var(--mb-space-scale));
+    --mb-lg: calc(24px * var(--mb-space-scale));
+    --mb-xl: calc(32px * var(--mb-space-scale));
+    --mb-2xl: calc(48px * var(--mb-space-scale));
     
-    /* Touch targets - iOS/Android minimum 44px */
-    --mb-touch: 44px;
-    --mb-touch-lg: 52px;
+    /* Touch targets - still kept usable after compaction */
+    --mb-touch: calc(44px * var(--mb-touch-scale));
+    --mb-touch-lg: calc(52px * var(--mb-touch-scale));
     
     /* ========================================
        TYPOGRAPHY
        ======================================== */
-    --mb-font-xs: 11px;
-    --mb-font-sm: 13px;
-    --mb-font: 15px;
-    --mb-font-base: 16px;
-    --mb-font-lg: 17px;
-    --mb-font-xl: 20px;
-    --mb-font-2xl: 24px;
-    --mb-font-3xl: 28px;
-    --mb-font-4xl: 32px;
+    --mb-font-xs: calc(11px * var(--mb-font-scale));
+    --mb-font-sm: calc(13px * var(--mb-font-scale));
+    --mb-font: calc(15px * var(--mb-font-scale));
+    --mb-font-base: calc(16px * var(--mb-font-scale));
+    --mb-font-lg: calc(17px * var(--mb-font-scale));
+    --mb-font-xl: calc(20px * var(--mb-font-scale));
+    --mb-font-2xl: calc(24px * var(--mb-font-scale));
+    --mb-font-3xl: calc(28px * var(--mb-font-scale));
+    --mb-font-4xl: calc(32px * var(--mb-font-scale));
     
     /* Font weights */
     --mb-font-normal: 400;
@@ -141,11 +150,11 @@
     /* ========================================
        BORDER RADIUS
        ======================================== */
-    --mb-radius-sm: 8px;
-    --mb-radius: 12px;
-    --mb-radius-lg: 16px;
-    --mb-radius-xl: 24px;
-    --mb-radius-2xl: 32px;
+    --mb-radius-sm: calc(8px * var(--mb-radius-scale));
+    --mb-radius: calc(12px * var(--mb-radius-scale));
+    --mb-radius-lg: calc(16px * var(--mb-radius-scale));
+    --mb-radius-xl: calc(24px * var(--mb-radius-scale));
+    --mb-radius-2xl: calc(32px * var(--mb-radius-scale));
     --mb-radius-full: 9999px;
     
     /* ========================================
@@ -170,10 +179,21 @@
     /* ========================================
        LAYOUT
        ======================================== */
-    --mb-header-height: 56px;
-    --mb-bottom-nav-height: 70px;
+    --mb-header-height: calc(56px * var(--mb-layout-scale));
+    --mb-bottom-nav-height: calc(70px * var(--mb-layout-scale));
     --mb-drawer-width: 300px;
     --mb-drawer-max-width: 85vw;
+}
+
+@media (max-width: 768px) {
+    :root {
+        /* Strong mobile compaction without collapsing tap usability */
+        --mb-space-scale: 0.72;
+        --mb-font-scale: 0.8;
+        --mb-touch-scale: 0.9;
+        --mb-radius-scale: 0.88;
+        --mb-layout-scale: 0.82;
+    }
 }
 
 /* ========================================
@@ -185,7 +205,7 @@
 }
 
 html {
-    font-size: 16px;
+    font-size: var(--vt-mobile-root-font-size, 16px);
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -197,6 +217,7 @@ body {
     -moz-osx-font-smoothing: grayscale;
     background: var(--mb-bg);
     color: var(--mb-text);
+    font-size: 1rem;
     line-height: 1.5;
 }
 

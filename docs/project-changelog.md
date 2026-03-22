@@ -1,6 +1,18 @@
 # Project Changelog
 
 ## [2026-03-07]
+- **Đăng ký dự thi: OCR CCCD tự điền biểu mẫu** ✅
+  - Thêm endpoint backend đọc ảnh CCCD đã upload bằng Cloudflare Workers AI
+  - Tự điền các trường đọc được trên trang đăng ký: họ tên, số CCCD, ngày sinh, giới tính, dân tộc, quê quán, nơi thường trú, ngày cấp
+  - Tận dụng lại luồng crop/auto-fit ảnh hiện có, không thay đổi flow submit cuối
+  - Ưu tiên model vision nhỏ để giảm chi phí, fallback sang model vision lớn hơn khi cần
+
+- **Tách hẳn VSTEP khỏi VanTrangEdu** ✅
+  - Xóa toàn bộ student/admin VSTEP routes trong frontend
+  - Xóa folder `frontend/src/pages/admin/vstep`
+  - Xóa backend route `/vstep` và phần backup dữ liệu VSTEP
+  - Chuẩn hóa quy ước: trang thi chạy riêng tại `https://vantrangexam.pages.dev/#/login`
+
 - **Full TypeScript Codebase Migration** ✅
   - **Backend:** Migrated from JavaScript to TypeScript (99 .js → .ts files, 109 total .ts files)
     - Created proper `Env` interface at `src/types/env.ts` with all D1/R2/AI/secret bindings

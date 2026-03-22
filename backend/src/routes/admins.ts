@@ -9,6 +9,7 @@ import {
   updateAdmin,
   deleteAdmin,
   findAdminByUsername,
+  promoteLegacyTeacherAdmins,
 } from '../db/admin-queries.js';
 import { hashPassword } from '../utils/helpers.js';
 import { createActivityLog } from '../db/admin-queries.js';
@@ -30,6 +31,7 @@ admins.get('/', async (c) => {
     const limit = parseInt(c.req.query('limit') as string) || 100;
     const offset = parseInt(c.req.query('offset') as string) || 0;
 
+    await promoteLegacyTeacherAdmins(c.env.DB);
     const adminsList = await getAllAdmins(c.env.DB, limit, offset);
     const count = await getAdminCount(c.env.DB);
 
@@ -152,7 +154,7 @@ admins.post('/', async (c) => {
         id: result.meta.last_row_id,
         username,
         full_name,
-        role: role || 'admin',
+        role: role === 'super_admin' ? 'super_admin' : 'admin',
       },
     }, 201);
   } catch (error: any) {

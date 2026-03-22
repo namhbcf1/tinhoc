@@ -2,6 +2,7 @@ import ModernPublicLayout from '../../components/layout/ModernPublicLayout';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Microscope, Atom, ArrowRight, BookOpen, FlaskConical } from 'lucide-react';
+import SEO from '../../components/common/SEO';
 
 const projects = [
   {
@@ -51,8 +52,30 @@ const publications = [
 ];
 
 export default function ResearchPage() {
+  const structuredData = [
+    {
+      '@type': 'WebPage',
+      name: 'Nghien cuu khoa hoc',
+      description: 'Hoat dong nghien cuu, cong bo va ung dung cong nghe giao duc tai Van Trang Education.',
+      url: 'https://vantrangedu.com/research'
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Trang chu', item: 'https://vantrangedu.com/' },
+        { '@type': 'ListItem', position: 2, name: 'Nghien cuu khoa hoc', item: 'https://vantrangedu.com/research' }
+      ]
+    }
+  ];
+
   return (
     <ModernPublicLayout>
+      <SEO
+        title="Nghien cuu khoa hoc"
+        description="Tong hop de tai, cong bo va huong nghien cuu ve AI giao duc, EdTech va doi moi sang tao cua Van Trang Education."
+        url="/research"
+        structuredData={structuredData}
+      />
       <div className="bg-slate-50 min-h-screen">
         {/* Hero */}
         <div className="bg-white border-b py-16">

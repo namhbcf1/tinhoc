@@ -44,4 +44,32 @@ export function applyAdminMethods(ApiClient) {
       : `/activity-logs?limit=${limit}&offset=${offset}`;
     return this.request(url);
   };
+
+  // Get all submissions for a specific assignment
+  ApiClient.prototype.getAssignmentSubmissions = async function(assignmentId) {
+    return this.request(`/assignments/${assignmentId}/submissions`);
+  };
+
+  // Create a new assignment
+  ApiClient.prototype.createAssignment = async function(data) {
+    return this.request('/assignments', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  };
+
+  // Update an existing assignment
+  ApiClient.prototype.updateAssignment = async function(id, data) {
+    return this.request(`/assignments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  };
+
+  // Delete an assignment
+  ApiClient.prototype.deleteAssignment = async function(id) {
+    return this.request(`/assignments/${id}`, {
+      method: 'DELETE',
+    });
+  };
 }

@@ -1,57 +1,90 @@
-import { useState, useEffect } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Loader2, Save, X } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Label } from '../ui/Label';
 import api from '../../services/api';
+import { getStorageValue } from '../../utils/browser-storage.js';
 import { formatDateVN } from '../../utils/dateUtils';
-import CCCDUploader from '../upload/CCCDUploader';
+import { persistStudentData } from '../../utils/studentDataLoader';
+import { buildStudentSelfServicePayload, STUDENT_PROFILE_SELF_SERVICE_NOTE } from '../../utils/studentProfilePolicy';
+import BirthPlaceField from '../forms/BirthPlaceField';
+
+const fieldWrapperClassName = 'space-y-2';
+const inputClassName = 'h-11 rounded-xl border-slate-200 bg-white shadow-sm transition focus-visible:ring-emerald-500/30';
+const selectClassName = 'flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-50';
+const CCCDUploader = lazy(() => import('../upload/CCCDUploader'));
+
+function normalizeProfileGender(value) {
+    if (value === 'male' || value === 'Male' || value === 'Nam' || value === 'nam') return 'Nam';
+    if (value === 'female' || value === 'Female' || value === 'Nữ' || value === 'nữ' || value === 'nu') return 'Nữ';
+    return '';
+}
+
+function SectionCard({ accentClassName, title, description, children }) {
+    const uploaderFallback = (
+        <div className="flex min-h-[180px] items-center justify-center rounded-[22px] border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
+            Äang táº£i trÃ¬nh upload...
+        </div>
+    );
+
+    return (
+        <section className="rounded-[26px] border border-slate-200/80 bg-white p-4 shadow-[0_20px_45px_-30px_rgba(15,23,42,0.45)] sm:p-5 lg:p-6">
+            <div className="mb-5 flex items-start gap-4">
+                <span className={`mt-1 h-11 w-1.5 shrink-0 rounded-full ${accentClassName}`}></span>
+                <div className="min-w-0">
+                    <h3 className="text-base font-semibold tracking-tight text-slate-900 sm:text-lg">{title}</h3>
+                    {description ? (
+                        <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
+                    ) : null}
+                </div>
+            </div>
+            {children}
+        </section>
+    );
+}
+
+function FieldGroup({ label, className = '', children }) {
+    return (
+        <div className={`${fieldWrapperClassName} ${className}`.trim()}>
+            <Label className="text-[13px] font-medium text-slate-700">{label}</Label>
+            {children}
+        </div>
+    );
+}
 
 export default function StudentProfileEditor({ studentData, isOpen, onClose, onUpdateSuccess }) {
-    const { register, handleSubmit, reset, setValue } = useForm();
+    const { register, handleSubmit, reset, setValue, watch } = useForm();
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [imageFront, setImageFront] = useState(studentData?.image_cccd_front || '');
     const [imageBack, setImageBack] = useState(studentData?.image_cccd_back || '');
     const [imagePortrait, setImagePortrait] = useState(studentData?.image_3x4 || '');
+    const watchedBirthPlace = watch('noi_sinh');
 
     useEffect(() => {
         if (studentData) {
-            // Update image URLs for preview
             setImageFront(studentData.image_cccd_front || '');
             setImageBack(studentData.image_cccd_back || '');
             setImagePortrait(studentData.image_3x4 || '');
 
-            // Map database fields to form fields
             const formData = {
-                // Name fields
                 ho: studentData.ho || '',
                 ten_dem: studentData.ten_dem || '',
                 ten: studentData.ten || '',
-                // Personal info
                 ngay_sinh: formatDateVN(studentData.ngay_sinh) || '',
-                // Map gender values: 'male'/'female' -> 'Nam'/'Nữ', or keep as is if already 'Nam'/'Nữ'
-                gioi_tinh: studentData.gioi_tinh === 'male' || studentData.gioi_tinh === 'Male' ? 'Nam' :
-                    studentData.gioi_tinh === 'female' || studentData.gioi_tinh === 'Female' ? 'Nữ' :
-                        studentData.gioi_tinh === 'Nữ' || studentData.gioi_tinh === 'nữ' ? 'Nữ' :
-                            studentData.gioi_tinh === 'Nam' || studentData.gioi_tinh === 'nam' ? 'Nam' :
-                                studentData.gioi_tinh || 'Nam',
+                gioi_tinh: normalizeProfileGender(studentData.gioi_tinh),
                 noi_sinh: studentData.noi_sinh || '',
                 dan_toc: studentData.dan_toc || '',
                 quoc_tich: studentData.quoc_tich || '',
-                // Contact
                 sdt: studentData.sdt || '',
                 email: studentData.email || '',
-                // Address 
                 dia_chi: studentData.dia_chi || '',
-                // ID
                 cccd: studentData.cccd || '',
-                // New Fields
                 ngay_cap_cccd: formatDateVN(studentData.ngay_cap_cccd) || '',
                 don_vi_cong_tac: studentData.don_vi_cong_tac || '',
-                // Image IDs for Cloudflare Images
                 cccd_front_image_id: studentData.cccd_front_image_id || '',
                 cccd_back_image_id: studentData.cccd_back_image_id || '',
                 photo_3x4_image_id: studentData.photo_3x4_image_id || '',
@@ -60,91 +93,60 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
         }
     }, [studentData, reset]);
 
-    // Handle image upload success from CCCDUploader
     const handleImageUploadSuccess = (field) => (result) => {
-        console.log('Image upload success:', { field, result });
-
-        // Map field to form field name for image ID
         const imageIdField = field === 'front' ? 'cccd_front_image_id' :
             field === 'back' ? 'cccd_back_image_id' : 'photo_3x4_image_id';
 
-        // Set image ID for Cloudflare Images (backend will generate URL)
         if (result && result.imageId) {
-            console.log('Setting image ID:', imageIdField, result.imageId);
             setValue(imageIdField, result.imageId);
 
-            // Auto-save immediately after upload
             const saveToDatabase = async () => {
                 try {
-                    console.log('Starting auto-save to database...');
                     setLoading(true);
                     setError('');
 
-                    // Update only the image field
-                    const updateData = {
-                        [imageIdField]: result.imageId
-                    };
-
-                    console.log('Update data:', updateData);
-                    console.log('Student data:', { id: studentData?.id, cccd: studentData?.cccd });
-
-                    // Student tự cập nhật luôn dùng update-by-cccd
-                    const response = await api.updateStudentByCCCD(studentData?.cccd, { ...updateData, cccd: studentData?.cccd });
-
-                    console.log('Update response:', response);
+                    const response = await api.updateStudentByCCCD(studentData?.cccd, {
+                        [imageIdField]: result.imageId,
+                        cccd: studentData?.cccd,
+                    });
 
                     if (response && (response.success || response.data)) {
-                        console.log('Auto-save successful!');
-                        console.log('Response data:', response.data);
-
-                        // Update local state to reflect new image URL from response
-                        // Backend now returns full student data with image URLs
-                        const studentData = response.data || {};
-                        const imageUrl = studentData[field === 'front' ? 'image_cccd_front' :
+                        const updatedStudentData = response.data || {};
+                        const imageUrl = updatedStudentData[field === 'front' ? 'image_cccd_front' :
                             field === 'back' ? 'image_cccd_back' : 'image_3x4'];
 
-                        console.log('Image URL from response:', imageUrl);
-
-                        if (field === 'front' && imageUrl) {
-                            console.log('Updating front image:', imageUrl);
-                            setImageFront(imageUrl);
-                        } else if (field === 'back' && imageUrl) {
-                            console.log('Updating back image:', imageUrl);
-                            setImageBack(imageUrl);
-                        } else if (field === 'portrait' && imageUrl) {
-                            console.log('Updating portrait image:', imageUrl);
-                            setImagePortrait(imageUrl);
-                        } else {
-                            console.warn('No image URL in response for field:', field);
+                        try {
+                            const existing = JSON.parse(getStorageValue('student_data') || '{}');
+                            persistStudentData({ ...existing, ...updatedStudentData }, studentData?.cccd);
+                        } catch (_) {
+                            // Ignore localStorage parse errors.
                         }
 
-                        // Show success message briefly
+                        if (field === 'front' && imageUrl) {
+                            setImageFront(imageUrl);
+                        } else if (field === 'back' && imageUrl) {
+                            setImageBack(imageUrl);
+                        } else if (field === 'portrait' && imageUrl) {
+                            setImagePortrait(imageUrl);
+                        }
+
                         const originalError = error;
                         setError('');
                         setTimeout(() => {
                             if (!error) setError(originalError);
                         }, 2000);
                     } else {
-                        const errorMsg = response?.message || 'Lưu ảnh thất bại';
-                        console.error('Auto-save failed:', errorMsg);
-                        setError(errorMsg);
+                        setError(response?.message || 'Lưu ảnh thất bại');
                     }
                 } catch (err) {
-                    console.error('Auto-save error:', err);
                     setError(err.message || 'Lỗi khi tự động lưu ảnh');
                 } finally {
                     setLoading(false);
                 }
             };
 
-            // Execute immediately
             saveToDatabase();
-        } else {
-            console.warn('No imageId in result:', result);
         }
-
-        // Note: Preview is handled by CCCDUploader component itself
-        // Backend will generate signed URLs when fetching student data
     };
 
     const handleImageUploadError = (err) => {
@@ -154,16 +156,13 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
     const onSubmit = async (data) => {
         setLoading(true);
         setError('');
+
         try {
-            console.log('Form submit data:', data);
-
-            // Student tự cập nhật luôn dùng update-by-cccd (route /:id yêu cầu admin)
-            const response = await api.updateStudentByCCCD(studentData.cccd, { ...data, cccd: studentData.cccd });
-
-            console.log('Form submit response:', response);
+            const response = await api.updateStudentByCCCD(studentData.cccd, {
+                ...buildStudentSelfServicePayload(data),
+            });
 
             if (response.success || response.data) {
-                // Update local image states from response if available
                 if (response.data) {
                     if (response.data.image_cccd_front) {
                         setImageFront(response.data.image_cccd_front);
@@ -175,213 +174,302 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
                         setImagePortrait(response.data.image_3x4);
                     }
 
-                    // Cập nhật student_data trong localStorage để sidebar hiện ảnh 3x4 ngay
                     try {
-                        const existing = JSON.parse(localStorage.getItem('student_data') || '{}');
+                        const existing = JSON.parse(getStorageValue('student_data') || '{}');
                         const updated = { ...existing, ...response.data };
-                        localStorage.setItem('student_data', JSON.stringify(updated));
-                    } catch (_) { /* ignore */ }
+                        persistStudentData(updated, studentData?.cccd);
+                    } catch (_) {
+                        // Ignore localStorage parse errors.
+                    }
                 }
 
-                // Gọi onUpdateSuccess để sidebar refresh localData từ localStorage
-                if (typeof onUpdateSuccess === 'function') onUpdateSuccess();
+                if (typeof onUpdateSuccess === 'function') onUpdateSuccess(response.data || null);
                 onClose();
             } else {
                 setError(response.message || 'Cập nhật thất bại');
             }
         } catch (err) {
-            console.error('Form submit error:', err);
             setError(err.message || 'Lỗi server');
         } finally {
             setLoading(false);
         }
     };
 
-
     if (!isOpen) return null;
 
+    const uploaderFallback = (
+        <div className="flex min-h-[180px] items-center justify-center rounded-[22px] border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
+            Dang tai trinh upload...
+        </div>
+    );
+
+    const studentName = [studentData?.ho, studentData?.ten_dem, studentData?.ten]
+        .filter(Boolean)
+        .join(' ')
+        .trim() || 'Hồ sơ sinh viên';
+
+    const studentCode = studentData?.cccd
+        ? `CCCD •••• ${String(studentData.cccd).slice(-4)}`
+        : 'Cập nhật thông tin hồ sơ';
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in">
-            <div className="bg-white rounded-none sm:rounded-2xl w-full max-w-7xl h-full sm:h-auto sm:max-h-[85vh] shadow-2xl flex flex-col transition-all duration-300">
-                <div className="p-4 sm:p-5 border-b flex justify-between items-center bg-green-50 rounded-t-none sm:rounded-t-2xl flex-shrink-0">
-                    <div>
-                        <h2 className="text-xl font-bold text-green-800">Chỉnh sửa hồ sơ sinh viên</h2>
-                        <p className="text-xs text-green-600">Cập nhật toàn bộ thông tin trong cơ sở dữ liệu</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-0 backdrop-blur-sm sm:p-5">
+            <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-slate-50 sm:h-auto sm:max-h-[92vh] sm:max-w-6xl sm:rounded-[30px] sm:border sm:border-white/60 sm:shadow-[0_40px_100px_-30px_rgba(15,23,42,0.45)]">
+                <div className="border-b border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-slate-50 px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0 space-y-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                                    Hồ sơ sinh viên
+                                </span>
+                                <span className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-500 shadow-sm ring-1 ring-slate-200/70">
+                                    {studentCode}
+                                </span>
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                                    Chỉnh sửa hồ sơ sinh viên
+                                </h2>
+                                <p className="mt-1 text-sm leading-6 text-slate-500">
+                                    {STUDENT_PROFILE_SELF_SERVICE_NOTE}
+                                </p>
+                            </div>
+                            <div className="rounded-2xl border border-white/80 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
+                                <p className="text-sm font-semibold text-slate-900">{studentName}</p>
+                                <p className="mt-1 text-sm text-slate-500">
+                                    Ảnh hồ sơ có thể cập nhật riêng. Các trường thông tin sẽ được lưu một lần ở cuối biểu mẫu.
+                                </p>
+                            </div>
+                        </div>
+
+                        <Button
+                            variant="ghost"
+                            onClick={onClose}
+                            size="icon"
+                            className="h-10 w-10 rounded-2xl border border-white/80 bg-white/90 text-slate-500 shadow-sm hover:bg-white"
+                        >
+                            <X size={20} />
+                        </Button>
                     </div>
-                    <Button variant="ghost" onClick={onClose} size="icon" className="h-8 w-8 hover:bg-green-100/50">
-                        <X size={20} />
-                    </Button>
                 </div>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="p-5 space-y-6 flex-1 overflow-y-auto min-h-0">
-                    {error && (
-                        <div className="bg-red-50 text-red-600 p-3 rounded-lg border border-red-100 text-sm">
-                            {error}
+                <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
+                    <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
+                        <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.95fr)] xl:gap-6">
+                            <div className="order-2 space-y-5 xl:order-1">
+                                {error ? (
+                                    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
+                                        {error}
+                                    </div>
+                                ) : null}
+
+                                <SectionCard
+                                    accentClassName="bg-emerald-500"
+                                    title="Thông tin cá nhân"
+                                    description="Các trường cơ bản được chia đều theo nhịp 2 đến 3 cột để nhìn thoáng hơn."
+                                >
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
+                                        <FieldGroup label="Họ" className="xl:col-span-4">
+                                            <Input {...register('ho')} className={inputClassName} />
+                                        </FieldGroup>
+                                        <FieldGroup label="Tên đệm" className="xl:col-span-4">
+                                            <Input {...register('ten_dem')} className={inputClassName} />
+                                        </FieldGroup>
+                                        <FieldGroup label="Tên" className="xl:col-span-4">
+                                            <Input {...register('ten')} className={`${inputClassName} font-semibold`} />
+                                        </FieldGroup>
+
+                                        <FieldGroup label="Ngày sinh" className="xl:col-span-4">
+                                            <Input
+                                                type="text"
+                                                placeholder="DD/MM/YYYY"
+                                                {...register('ngay_sinh')}
+                                                className={inputClassName}
+                                            />
+                                        </FieldGroup>
+                                        <FieldGroup label="Giới tính" className="xl:col-span-4">
+                                            <select {...register('gioi_tinh')} className={selectClassName}>
+                                                <option value="">Chọn giới tính</option>
+                                                <option value="Nam">Nam</option>
+                                                <option value="Nữ">Nữ</option>
+                                            </select>
+                                        </FieldGroup>
+                                        <FieldGroup label="Nơi sinh" className="xl:col-span-4">
+                                            <input type="hidden" {...register('noi_sinh')} />
+                                            <BirthPlaceField
+                                                label=""
+                                                value={watchedBirthPlace || ''}
+                                                onChange={(nextValue) => setValue('noi_sinh', nextValue, { shouldDirty: true })}
+                                                hint="Luồng trong nước dùng danh sách 34 tỉnh/thành sau sáp nhập."
+                                                labelClassName="hidden"
+                                                toggleWrapperClassName=""
+                                                radioGroupClassName="flex flex-wrap gap-4 text-sm"
+                                                radioOptionClassName="inline-flex items-center gap-2 text-sm text-slate-700"
+                                                inputClassName={inputClassName}
+                                                selectClassName={selectClassName}
+                                                hintClassName="text-xs text-slate-500"
+                                            />
+                                        </FieldGroup>
+
+                                        <FieldGroup label="Dân tộc" className="xl:col-span-4">
+                                            <Input {...register('dan_toc')} className={inputClassName} />
+                                        </FieldGroup>
+                                        <FieldGroup label="Quốc tịch" className="xl:col-span-4">
+                                            <Input {...register('quoc_tich')} className={inputClassName} />
+                                        </FieldGroup>
+                                        <FieldGroup label="Đơn vị công tác" className="xl:col-span-4">
+                                            <Input
+                                                {...register('don_vi_cong_tac')}
+                                                placeholder="Trường học, cơ quan..."
+                                                className={inputClassName}
+                                            />
+                                        </FieldGroup>
+                                    </div>
+                                </SectionCard>
+
+                                <SectionCard
+                                    accentClassName="bg-sky-500"
+                                    title="Liên hệ và cư trú"
+                                    description="Thông tin liên hệ chính được ưu tiên chiều rộng rộng hơn để đọc dễ và hạn chế tràn dòng."
+                                >
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
+                                        <FieldGroup label="Số điện thoại" className="xl:col-span-4">
+                                            <Input {...register('sdt')} className={inputClassName} />
+                                        </FieldGroup>
+                                        <FieldGroup label="Email" className="xl:col-span-8">
+                                            <Input {...register('email')} type="email" className={inputClassName} />
+                                        </FieldGroup>
+                                        <FieldGroup label="Địa chỉ hiện tại" className="md:col-span-2 xl:col-span-12">
+                                            <Input
+                                                {...register('dia_chi')}
+                                                placeholder="Số nhà, đường, phường, quận, tỉnh..."
+                                                className={inputClassName}
+                                            />
+                                        </FieldGroup>
+                                    </div>
+                                </SectionCard>
+
+                                <SectionCard
+                                    accentClassName="bg-slate-500"
+                                    title="Giấy tờ tùy thân"
+                                    description="Số CCCD, ngày cấp và ảnh giấy tờ đều có thể cập nhật trực tiếp nếu hồ sơ của bạn thay đổi."
+                                >
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
+                                        <FieldGroup label="Số CCCD/CMND" className="xl:col-span-7">
+                                            <Input
+                                                {...register('cccd')}
+                                                className={`${inputClassName} font-mono`}
+                                            />
+                                        </FieldGroup>
+                                        <FieldGroup label="Ngày cấp CCCD" className="xl:col-span-5">
+                                            <Input
+                                                type="text"
+                                                placeholder="DD/MM/YYYY"
+                                                {...register('ngay_cap_cccd')}
+                                                className={inputClassName}
+                                            />
+                                        </FieldGroup>
+                                    </div>
+
+                                    <input type="hidden" {...register('cccd_front_image_id')} />
+                                    <input type="hidden" {...register('cccd_back_image_id')} />
+                                    <input type="hidden" {...register('photo_3x4_image_id')} />
+                                </SectionCard>
+                            </div>
+
+                            <aside className="order-1 xl:order-2">
+                                <div className="space-y-5 xl:sticky xl:top-6">
+                                    <SectionCard
+                                        accentClassName="bg-indigo-500"
+                                        title="Ảnh hồ sơ"
+                                        description="Khối ảnh được gom riêng để dễ kiểm tra trước khi lưu, đồng thời không làm form bị dài trên mobile."
+                                    >
+                                        <div className="space-y-5">
+                                            <div className="rounded-[22px] border border-indigo-100 bg-gradient-to-b from-indigo-50 to-white p-3 sm:p-4">
+                                                <Label className="mb-3 block text-center text-[13px] font-semibold text-indigo-700">
+                                                    Ảnh thẻ 3x4
+                                                </Label>
+                                                <Suspense fallback={uploaderFallback}>
+                                                    <CCCDUploader
+                                                        type="photo_3x4"
+                                                        onUploadSuccess={handleImageUploadSuccess('portrait')}
+                                                        onUploadError={handleImageUploadError}
+                                                        existingImageUrl={imagePortrait}
+                                                    />
+                                                </Suspense>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-2">
+                                                <div className="rounded-[22px] border border-slate-200 bg-slate-50/70 p-3 sm:p-4">
+                                                    <Label className="mb-3 block text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                                        CCCD mặt trước
+                                                    </Label>
+                                                    <Suspense fallback={uploaderFallback}>
+                                                        <CCCDUploader
+                                                            type="cccd_front"
+                                                            onUploadSuccess={handleImageUploadSuccess('front')}
+                                                            onUploadError={handleImageUploadError}
+                                                            existingImageUrl={imageFront}
+                                                        />
+                                                    </Suspense>
+                                                </div>
+
+                                                <div className="rounded-[22px] border border-slate-200 bg-slate-50/70 p-3 sm:p-4">
+                                                    <Label className="mb-3 block text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                                        CCCD mặt sau
+                                                    </Label>
+                                                    <Suspense fallback={uploaderFallback}>
+                                                        <CCCDUploader
+                                                            type="cccd_back"
+                                                            onUploadSuccess={handleImageUploadSuccess('back')}
+                                                            onUploadError={handleImageUploadError}
+                                                            existingImageUrl={imageBack}
+                                                        />
+                                                    </Suspense>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </SectionCard>
+
+                                    <div className="rounded-[26px] border border-slate-200/80 bg-white px-5 py-4 shadow-[0_20px_45px_-30px_rgba(15,23,42,0.45)]">
+                                        <p className="text-sm font-semibold text-slate-900">Gợi ý bố cục</p>
+                                        <p className="mt-2 text-sm leading-6 text-slate-500">
+                                            Trên điện thoại, khối ảnh nằm trước để kiểm tra nhanh. Trên màn hình lớn, panel này ghim bên phải để thao tác không bị lệch nhịp.
+                                        </p>
+                                    </div>
+                                </div>
+                            </aside>
                         </div>
-                    )}
+                    </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                        {/* Left Column: Information (8 cols) */}
-                        <div className="lg:col-span-8 space-y-5">
-                            {/* Personal Info Section */}
-                            <div className="space-y-3">
-                                <h3 className="font-bold text-slate-800 border-b pb-1.5 flex items-center gap-2 text-sm uppercase tracking-wide">
-                                    <span className="w-1.5 h-6 bg-green-500 rounded-full"></span>
-                                    Thông tin cá nhân
-                                </h3>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                                    <div className="sm:col-span-4 space-y-1.5">
-                                        <Label className="text-xs">Họ</Label>
-                                        <Input {...register('ho')} className="h-9 focus:border-green-500" />
-                                    </div>
-                                    <div className="sm:col-span-4 space-y-1.5">
-                                        <Label className="text-xs">Tên đệm</Label>
-                                        <Input {...register('ten_dem')} className="h-9 focus:border-green-500" />
-                                    </div>
-                                    <div className="sm:col-span-4 space-y-1.5">
-                                        <Label className="text-xs">Tên</Label>
-                                        <Input {...register('ten')} className="h-9 focus:border-green-500 bg-green-50/50 font-medium" />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                                    <div className="sm:col-span-4 space-y-1.5">
-                                        <Label className="text-xs">Ngày sinh</Label>
-                                        <Input type="text" placeholder="DD/MM/YYYY" {...register('ngay_sinh')} className="h-9" />
-                                    </div>
-                                    <div className="sm:col-span-4 space-y-1.5">
-                                        <Label className="text-xs">Giới tính</Label>
-                                        <select {...register('gioi_tinh')} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                                            <option value="Nam">Nam</option>
-                                            <option value="Nữ">Nữ</option>
-                                            <option value="Khác">Khác</option>
-                                        </select>
-                                    </div>
-                                    <div className="sm:col-span-4 space-y-1.5">
-                                        <Label className="text-xs">Nơi sinh</Label>
-                                        <Input {...register('noi_sinh')} className="h-9" />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                                    <div className="sm:col-span-4 space-y-1.5">
-                                        <Label className="text-xs">Dân tộc</Label>
-                                        <Input {...register('dan_toc')} className="h-9" />
-                                    </div>
-                                    <div className="sm:col-span-4 space-y-1.5">
-                                        <Label className="text-xs">Quốc tịch</Label>
-                                        <Input {...register('quoc_tich')} className="h-9" />
-                                    </div>
-                                    <div className="sm:col-span-4 space-y-1.5">
-                                        <Label className="text-xs">Đơn vị công tác</Label>
-                                        <Input {...register('don_vi_cong_tac')} placeholder="Trường học, cơ quan..." className="h-9" />
-                                    </div>
-                                </div>
+                    <div className="border-t border-slate-200 bg-white/90 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
+                        <div className="mx-auto flex max-w-[1400px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="text-sm text-slate-500">
+                                Tất cả thông tin hồ sơ và ảnh giấy tờ trên màn này đều có thể chỉnh sửa và lưu trực tiếp.
                             </div>
 
-                            {/* Contact Section */}
-                            <div className="space-y-3 pt-1">
-                                <h3 className="font-bold text-slate-800 border-b pb-1.5 flex items-center gap-2 text-sm uppercase tracking-wide">
-                                    <span className="w-1.5 h-6 bg-blue-500 rounded-full"></span>
-                                    Liên hệ & Cư trú
-                                </h3>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                                    <div className="sm:col-span-4 space-y-1.5">
-                                        <Label className="text-xs">Số điện thoại</Label>
-                                        <Input {...register('sdt')} className="h-9 focus:border-blue-500" />
-                                    </div>
-                                    <div className="sm:col-span-8 space-y-1.5">
-                                        <Label className="text-xs">Email</Label>
-                                        <Input {...register('email')} type="email" className="h-9 focus:border-blue-500" />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <Label className="text-xs">Địa chỉ hiện tại</Label>
-                                    <Input {...register('dia_chi')} placeholder="Số nhà, đường, phường, quận, tỉnh..." className="h-9 focus:border-blue-500" />
-                                </div>
-                            </div>
-
-                            {/* ID Section */}
-                            <div className="space-y-3 pt-1">
-                                <h3 className="font-bold text-slate-800 border-b pb-1.5 flex items-center gap-2 text-sm uppercase tracking-wide">
-                                    <span className="w-1.5 h-6 bg-slate-500 rounded-full"></span>
-                                    Giấy tờ tùy thân
-                                </h3>
-                                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                                    <div className="sm:col-span-6 space-y-1.5">
-                                        <Label className="text-xs">Số CCCD/CMND</Label>
-                                        <Input {...register('cccd')} className="h-9 bg-slate-50 font-mono" readOnly />
-                                    </div>
-                                    <div className="sm:col-span-6 space-y-1.5">
-                                        <Label className="text-xs">Ngày cấp CCCD</Label>
-                                        <Input type="text" placeholder="DD/MM/YYYY" {...register('ngay_cap_cccd')} className="h-9" />
-                                    </div>
-                                </div>
-
-                                {/* Hidden fields for image IDs to ensure they're sent on form submit */}
-                                <input type="hidden" {...register('cccd_front_image_id')} />
-                                <input type="hidden" {...register('cccd_back_image_id')} />
-                                <input type="hidden" {...register('photo_3x4_image_id')} />
-                            </div>
-                        </div>
-
-                        {/* Right Column: Images (4 cols) - Sticky */}
-                        <div className="lg:col-span-4 space-y-4">
-                            <h3 className="font-bold text-slate-800 border-b pb-1.5 flex items-center gap-2 text-sm uppercase tracking-wide">
-                                <span className="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
-                                Ảnh hồ sơ
-                            </h3>
-
-                            <div className="space-y-4 sticky top-20">
-                                {/* Ảnh 3x4 */}
-                                <div className="space-y-1.5">
-                                    <Label className="text-center block w-full text-indigo-700 text-xs">Ảnh thẻ 3x4</Label>
-                                    <CCCDUploader
-                                        type="photo_3x4"
-                                        onUploadSuccess={handleImageUploadSuccess('portrait')}
-                                        onUploadError={handleImageUploadError}
-                                        existingImageUrl={imagePortrait}
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    {/* CCCD Mặt trước */}
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[10px] text-center block w-full text-slate-500 uppercase">CCCD Mặt trước</Label>
-                                        <CCCDUploader
-                                            type="cccd_front"
-                                            onUploadSuccess={handleImageUploadSuccess('front')}
-                                            onUploadError={handleImageUploadError}
-                                            existingImageUrl={imageFront}
-                                        />
-                                    </div>
-
-                                    {/* CCCD Mặt sau */}
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[10px] text-center block w-full text-slate-500 uppercase">CCCD Mặt sau</Label>
-                                        <CCCDUploader
-                                            type="cccd_back"
-                                            onUploadSuccess={handleImageUploadSuccess('back')}
-                                            onUploadError={handleImageUploadError}
-                                            existingImageUrl={imageBack}
-                                        />
-                                    </div>
-                                </div>
+                            <div className="flex flex-col gap-3 sm:flex-row">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={onClose}
+                                    disabled={loading}
+                                    className="h-11 rounded-xl border-slate-200 px-5"
+                                >
+                                    Hủy bỏ
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    className="h-11 rounded-xl bg-emerald-600 px-6 shadow-lg shadow-emerald-100 hover:bg-emerald-700"
+                                    disabled={loading}
+                                >
+                                    {loading ? <Loader2 className="mr-2 animate-spin" /> : <Save className="mr-2" />}
+                                    Lưu thay đổi
+                                </Button>
                             </div>
                         </div>
                     </div>
                 </form>
-
-                <div className="p-4 border-t bg-slate-50 flex flex-col sm:flex-row justify-end gap-3 rounded-b-none sm:rounded-b-2xl flex-shrink-0">
-                    <Button variant="outline" onClick={onClose} disabled={loading} className="w-full sm:w-auto order-2 sm:order-1 h-10">Hủy bỏ</Button>
-                    <Button onClick={handleSubmit(onSubmit)} className="bg-green-600 hover:bg-green-700 w-full sm:w-40 order-1 sm:order-2 shadow-lg shadow-green-100 h-10" disabled={loading}>
-                        {loading ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2" />}
-                        Lưu thay đổi
-                    </Button>
-                </div>
             </div>
         </div>
     );

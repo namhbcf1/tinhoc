@@ -20,6 +20,8 @@ homepage.get('/settings', async (c) => {
     return jsonResponse({
       success: true,
       data: settings
+    }, 200, {
+      'Cache-Control': 'private, max-age=300, stale-while-revalidate=60',
     });
   } catch (error: any) {
     console.error('Error fetching homepage settings:', error);
@@ -42,6 +44,8 @@ homepage.get('/settings/:key', async (c) => {
     return jsonResponse({
       success: true,
       data: setting
+    }, 200, {
+      'Cache-Control': 'private, max-age=300, stale-while-revalidate=60',
     });
   } catch (error: any) {
     console.error('Error fetching setting:', error);

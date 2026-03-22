@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../../services/api';
 import ToastContainer, { useToast } from '../../../components/ui/ToastContainer';
+import { persistAdminSession } from '../../../utils/adminSession';
 import './AdminProfile.css';
 
 export default function AdminProfile({ admin, onUpdate }) {
@@ -41,8 +42,8 @@ export default function AdminProfile({ admin, onUpdate }) {
         // Reload admin data
         const adminResponse = await api.request(`/admins/${admin.id}`, { method: 'GET' });
         if (adminResponse.success) {
-          localStorage.setItem('admin', JSON.stringify(adminResponse.data));
-          onUpdate();
+          persistAdminSession({ admin: adminResponse.data });
+          onUpdate?.(adminResponse.data);
         }
       }
     } catch (err) {
@@ -150,6 +151,16 @@ export default function AdminProfile({ admin, onUpdate }) {
         <div className="profile-section">
           <h2>Đổi mật khẩu</h2>
           <form onSubmit={handleChangePassword}>
+            <input
+              type="text"
+              name="username"
+              autoComplete="username"
+              value={admin?.username || ''}
+              readOnly
+              className="sr-only"
+              tabIndex={-1}
+              aria-hidden="true"
+            />
             <div className="form-group">
               <label>Mật khẩu hiện tại *</label>
               <input
@@ -157,6 +168,7 @@ export default function AdminProfile({ admin, onUpdate }) {
                 value={passwordData.currentPassword}
                 onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
                 required
+                autoComplete="current-password"
               />
             </div>
 
@@ -180,6 +192,7 @@ export default function AdminProfile({ admin, onUpdate }) {
                 onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
                 required
                 minLength={6}
+                autoComplete="new-password"
               />
             </div>
 

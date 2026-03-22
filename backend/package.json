@@ -8,6 +8,10 @@
     "deploy": "npm install && wrangler deploy",
     "deploy:quick": "wrangler deploy",
     "db:init": "wrangler d1 execute vantrangedu_db --file=./schema.sql",
+    "db:migrate:0023": "wrangler d1 execute vantrangedu_db --remote --file=./migrations/0023_program_platform.sql",
+    "db:migrate:0024": "wrangler d1 execute vantrangedu_db --remote --file=./migrations/0024_auth_sessions_sso.sql",
+    "db:migrate:0025": "wrangler d1 execute vantrangedu_db --remote --file=./migrations/0025_program_capabilities_and_class_sessions.sql",
+    "db:migrate:0026": "wrangler d1 execute vantrangedu_db --remote --file=./migrations/0026_merge_teachers_into_admins.sql",
     "add-exams": "node scripts/add-exams-cli.ts",
     "test": "vitest"
   },
@@ -21,10 +25,9 @@
   "license": "MIT",
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^12.6.2",
     "hono": "^4.12.3",
-    "xlsx": "^0.18.5",
-    "xlsx-js-style": "^1.2.0"
+    "xlsx-js-style": "^1.2.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.5.0",

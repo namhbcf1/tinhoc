@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   BookOpen, Search, Plus, Edit2, Trash2, X, ChevronRight, Calendar, Clock,
   Users, MapPin, CreditCard, CheckCircle, AlertCircle, Filter, RefreshCw,
-  ArrowLeft, UserPlus, Info
+  ArrowLeft, Info
 } from 'lucide-react';
 import { formatDateVN } from '../../../utils/dateUtils';
 import { useToast } from '../../../components/ui/ToastContainer';
 import { useClassesManagement, useClassForm } from '../shared/hooks/useClassesManagement';
 import api from '../../../services/api';
 import PullToRefreshWrapper from '../../../components/ui/PullToRefreshWrapper';
+import AdminLoadingState from '../../../components/admin/AdminLoadingState';
 
 const BottomSheet = ({ isOpen, onClose, title, children, height = 'auto' }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -150,14 +151,12 @@ const ClassDetailSheet = ({ cls, isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('info');
   const [registrations, setRegistrations] = useState([]);
   const [schedules, setSchedules] = useState([]);
-  const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen && cls?.id) {
       if (activeTab === 'students') loadRegistrations();
       if (activeTab === 'schedules') loadSchedules();
-      if (activeTab === 'teachers') loadTeachers();
     }
   }, [isOpen, cls?.id, activeTab]);
 
@@ -184,20 +183,6 @@ const ClassDetailSheet = ({ cls, isOpen, onClose }) => {
       setSchedules(Array.isArray(data) ? data : []);
     } catch (error) {
       setSchedules([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadTeachers = async () => {
-    if (!cls?.id) return;
-    setLoading(true);
-    try {
-      const res = await api.get(`/classes/${cls.id}/teachers`);
-      const data = res?.data || res || [];
-      setTeachers(Array.isArray(data) ? data : []);
-    } catch (error) {
-      setTeachers([]);
     } finally {
       setLoading(false);
     }
@@ -248,7 +233,6 @@ const ClassDetailSheet = ({ cls, isOpen, onClose }) => {
           { id: 'info', label: 'Thông tin', icon: Info },
           { id: 'students', label: 'Học viên', icon: Users, count: registrations.length },
           { id: 'schedules', label: 'Lịch trình', icon: Clock },
-          { id: 'teachers', label: 'Giáo viên', icon: UserPlus, count: teachers.length },
         ].map(tab => (
           <button
             key={tab.id}
@@ -400,37 +384,13 @@ const ClassDetailSheet = ({ cls, isOpen, onClose }) => {
           </div>
         )}
 
-        {activeTab === 'teachers' && (
-          <div className="space-y-3">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <RefreshCw size={24} className="animate-spin text-blue-600" />
-              </div>
-            ) : teachers.length === 0 ? (
-              <div className="text-center py-12 text-slate-400">
-                <UserPlus size={48} className="mx-auto mb-3 opacity-50" />
-                <p>Chưa có giáo viên nào</p>
-              </div>
-            ) : (
-              teachers.map((teacher) => (
-                <div key={teacher.id} className="bg-white p-3 rounded-xl border border-slate-100">
-                  <p className="font-medium text-slate-800">{teacher.ho_ten_full || teacher.name || 'Giáo viên'}</p>
-                  {teacher.teacher_code && (
-                    <p className="text-xs text-slate-500 mt-1">Mã: {teacher.teacher_code}</p>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-        )}
       </div>
     </BottomSheet>
   );
 };
 
-const ClassFormSheet = ({ isOpen, onClose, editingClass, onSuccess }) => {
+const ClassFormSheet = ({ isOpen, onClose, editingClass, onSuccess, createClass, updateClass }) => {
   const { success, error } = useToast();
-  const { createClass, updateClass } = useClassesManagement();
   const { formData, updateField, resetForm, handleDateInput, handleDateTimeInput, toggleScheduleDay } = useClassForm(editingClass);
   const [loading, setLoading] = useState(false);
 
@@ -456,7 +416,7 @@ const ClassFormSheet = ({ isOpen, onClose, editingClass, onSuccess }) => {
         await createClass(formData);
         success('Tạo lớp học thành công!');
       }
-      onSuccess?.();
+      await onSuccess?.();
       onClose();
     } catch (err) {
       error('Lỗi: ' + err.message);
@@ -697,9 +657,8 @@ const ClassFormSheet = ({ isOpen, onClose, editingClass, onSuccess }) => {
   );
 };
 
-const ConfirmDeleteSheet = ({ isOpen, onClose, cls, onConfirm }) => {
+const ConfirmDeleteSheet = ({ isOpen, onClose, cls, onConfirm, deleteClass }) => {
   const { success, error } = useToast();
-  const { deleteClass } = useClassesManagement();
   const [loading, setLoading] = useState(false);
 
   const handleConfirm = async () => {
@@ -707,7 +666,7 @@ const ConfirmDeleteSheet = ({ isOpen, onClose, cls, onConfirm }) => {
     try {
       await deleteClass(cls.id);
       success('Đã xóa lớp học thành công');
-      onConfirm?.();
+      await onConfirm?.();
       onClose();
     } catch (err) {
       error('Lỗi khi xóa: ' + err.message);
@@ -749,7 +708,7 @@ const ConfirmDeleteSheet = ({ isOpen, onClose, cls, onConfirm }) => {
 };
 
 export default function MobileClassesModule() {
-  const { classes, loading, filterClasses, getStats } = useClassesManagement();
+  const { classes, loading, filterClasses, getStats, loadClasses, createClass, updateClass, deleteClass } = useClassesManagement();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
@@ -774,7 +733,7 @@ export default function MobileClassesModule() {
 
   // Pull-to-refresh callback
   const handleRefresh = async () => {
-      await loadRegistrations();
+      await loadClasses({ force: true });
   };
 
   return (
@@ -856,10 +815,12 @@ export default function MobileClassesModule() {
 
       <div className="p-4 pb-24">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <RefreshCw size={32} className="animate-spin text-blue-600" />
-            <p className="text-slate-500">Đang tải dữ liệu...</p>
-          </div>
+          <AdminLoadingState
+            title="Đang tải danh sách lớp"
+            hint="Các lớp học được phục hồi từ bộ đệm trước để không phải tải lại toàn bộ khi đổi tab."
+            variant="mobile-list"
+            accent="blue"
+          />
         ) : filteredClasses.length > 0 ? (
           <div className="space-y-3">
             {filteredClasses.map((cls) => (
@@ -900,14 +861,24 @@ export default function MobileClassesModule() {
           setEditingClass(null);
         }}
         editingClass={editingClass}
-        onSuccess={() => {}}
+        onSuccess={async () => {
+          await loadClasses({ force: true });
+          setSelectedClass(null);
+        }}
+        createClass={createClass}
+        updateClass={updateClass}
       />
 
       <ConfirmDeleteSheet
         isOpen={!!classToDelete}
         onClose={() => setClassToDelete(null)}
         cls={classToDelete}
-        onConfirm={() => {}}
+        onConfirm={async () => {
+          await loadClasses({ force: true });
+          setSelectedClass(null);
+          setClassToDelete(null);
+        }}
+        deleteClass={deleteClass}
       />
     </div>
   </PullToRefreshWrapper>

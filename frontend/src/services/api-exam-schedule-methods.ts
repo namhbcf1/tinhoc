@@ -16,31 +16,44 @@ function triggerBlobDownload(blob, filename) {
 }
 
 export function applyExamScheduleMethods(ApiClient) {
+  const invalidateExamCache = (client) => {
+    client.invalidateCache([
+      '/exam-schedules',
+      '/exam-categories',
+      '/exam-types',
+      '/program-organizers',
+      '/programs',
+      '/program-levels',
+      '/field-definitions',
+      '/field-options',
+    ]);
+  };
   // Get all exam schedules with pagination (admin)
   ApiClient.prototype.getAllExamSchedules = async function(limit = 100, offset = 0) {
-    return this.request(`/exam-schedules?limit=${limit}&offset=${offset}`, {
+    return this.cachedRequest(`/exam-schedules?limit=${limit}&offset=${offset}`, {
       tokenType: 'admin',
-    });
+    }, { ttlMs: 3 * 60 * 1000 });
   };
 
   // Get upcoming exams (admin)
   ApiClient.prototype.getUpcomingExams = async function(limit = 10) {
-    return this.request(`/exam-schedules/upcoming?limit=${limit}`, {
+    return this.cachedRequest(`/exam-schedules/upcoming?limit=${limit}`, {
       tokenType: 'admin',
-    });
+    }, { ttlMs: 3 * 60 * 1000 });
   };
 
-  // Get exams for the currently logged-in student (teacher fallback if no student token)
+  // Get exams for the currently logged-in student (admin teaching-staff fallback if no student token)
   ApiClient.prototype.getStudentExams = async function() {
     const studentToken = this.getToken('student');
     if (!studentToken) {
-      // Fall back to teacher view or return empty to avoid 401 spam
-      const teacherToken = this.getToken('teacher');
-      if (teacherToken) return this.request('/teachers/my-exams', { tokenType: 'teacher' });
+      const adminToken = this.getToken('admin');
+      if (adminToken) {
+        return this.cachedRequest('/teachers/my-exams', { tokenType: 'admin' }, { ttlMs: 3 * 60 * 1000 });
+      }
       return { success: true, data: [] };
     }
     try {
-      return await this.request('/exam-schedules/my-exams', { tokenType: 'student' });
+      return await this.cachedRequest('/exam-schedules/my-exams', { tokenType: 'student' }, { ttlMs: 3 * 60 * 1000 });
     } catch (err) {
       if (err?.status === 401 || err?.status === 403) {
         this.setToken(null, 'student');
@@ -50,20 +63,187 @@ export function applyExamScheduleMethods(ApiClient) {
     }
   };
 
+  ApiClient.prototype.getExamCategories = async function() {
+    return this.cachedRequest('/exam-categories', {}, { ttlMs: 10 * 60 * 1000 });
+  };
+
+  ApiClient.prototype.getExamTypes = async function() {
+    return this.cachedRequest('/exam-types', {}, { ttlMs: 10 * 60 * 1000 });
+  };
+
+  ApiClient.prototype.getProgramOrganizers = async function(params = {}) {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.set(key, String(value));
+      }
+    });
+    const query = searchParams.toString();
+    return this.cachedRequest(`/program-organizers${query ? `?${query}` : ''}`, { tokenType: 'admin' }, { ttlMs: 5 * 60 * 1000 });
+  };
+
+  ApiClient.prototype.createProgramOrganizer = async function(data) {
+    const res = await this.request('/program-organizers', {
+      method: 'POST',
+      tokenType: 'admin',
+      body: JSON.stringify(data),
+    });
+    invalidateExamCache(this);
+    return res;
+  };
+
+  ApiClient.prototype.updateProgramOrganizer = async function(uuid, data) {
+    const res = await this.request(`/program-organizers/${uuid}`, {
+      method: 'PUT',
+      tokenType: 'admin',
+      body: JSON.stringify(data),
+    });
+    invalidateExamCache(this);
+    return res;
+  };
+
+  ApiClient.prototype.getPrograms = async function(params = {}) {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.set(key, String(value));
+      }
+    });
+    const query = searchParams.toString();
+    return this.cachedRequest(`/programs${query ? `?${query}` : ''}`, { tokenType: 'admin' }, { ttlMs: 5 * 60 * 1000 });
+  };
+
+  ApiClient.prototype.createProgram = async function(data) {
+    const res = await this.request('/programs', {
+      method: 'POST',
+      tokenType: 'admin',
+      body: JSON.stringify(data),
+    });
+    invalidateExamCache(this);
+    return res;
+  };
+
+  ApiClient.prototype.updateProgram = async function(uuid, data) {
+    const res = await this.request(`/programs/${uuid}`, {
+      method: 'PUT',
+      tokenType: 'admin',
+      body: JSON.stringify(data),
+    });
+    invalidateExamCache(this);
+    return res;
+  };
+
+  ApiClient.prototype.getProgramLevels = async function(params = {}) {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.set(key, String(value));
+      }
+    });
+    const query = searchParams.toString();
+    return this.cachedRequest(`/program-levels${query ? `?${query}` : ''}`, { tokenType: 'admin' }, { ttlMs: 5 * 60 * 1000 });
+  };
+
+  ApiClient.prototype.createProgramLevel = async function(data) {
+    const res = await this.request('/program-levels', {
+      method: 'POST',
+      tokenType: 'admin',
+      body: JSON.stringify(data),
+    });
+    invalidateExamCache(this);
+    return res;
+  };
+
+  ApiClient.prototype.updateProgramLevel = async function(uuid, data) {
+    const res = await this.request(`/program-levels/${uuid}`, {
+      method: 'PUT',
+      tokenType: 'admin',
+      body: JSON.stringify(data),
+    });
+    invalidateExamCache(this);
+    return res;
+  };
+
+  ApiClient.prototype.getFieldDefinitions = async function(params = {}) {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.set(key, String(value));
+      }
+    });
+    const query = searchParams.toString();
+    return this.cachedRequest(`/field-definitions${query ? `?${query}` : ''}`, { tokenType: 'admin' }, { ttlMs: 5 * 60 * 1000 });
+  };
+
+  ApiClient.prototype.createFieldDefinition = async function(data) {
+    const res = await this.request('/field-definitions', {
+      method: 'POST',
+      tokenType: 'admin',
+      body: JSON.stringify(data),
+    });
+    invalidateExamCache(this);
+    return res;
+  };
+
+  ApiClient.prototype.updateFieldDefinition = async function(uuid, data) {
+    const res = await this.request(`/field-definitions/${uuid}`, {
+      method: 'PUT',
+      tokenType: 'admin',
+      body: JSON.stringify(data),
+    });
+    invalidateExamCache(this);
+    return res;
+  };
+
+  ApiClient.prototype.getFieldOptions = async function(params = {}) {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.set(key, String(value));
+      }
+    });
+    const query = searchParams.toString();
+    return this.cachedRequest(`/field-options${query ? `?${query}` : ''}`, { tokenType: 'admin' }, { ttlMs: 5 * 60 * 1000 });
+  };
+
+  ApiClient.prototype.createFieldOption = async function(data) {
+    const res = await this.request('/field-options', {
+      method: 'POST',
+      tokenType: 'admin',
+      body: JSON.stringify(data),
+    });
+    invalidateExamCache(this);
+    return res;
+  };
+
+  ApiClient.prototype.updateFieldOption = async function(uuid, data) {
+    const res = await this.request(`/field-options/${uuid}`, {
+      method: 'PUT',
+      tokenType: 'admin',
+      body: JSON.stringify(data),
+    });
+    invalidateExamCache(this);
+    return res;
+  };
+
   // Register student for an exam schedule
   ApiClient.prototype.registerExam = async function(examId) {
-    return this.request(`/exam-schedules/${examId}/register`, {
+    const res = await this.request(`/exam-schedules/${examId}/register`, {
       method: 'POST',
       tokenType: 'student'
     });
+    invalidateExamCache(this);
+    return res;
   };
 
   // Cancel student's exam registration
   ApiClient.prototype.cancelExam = async function(examId) {
-    return this.request(`/exam-schedules/${examId}/cancel`, {
+    const res = await this.request(`/exam-schedules/${examId}/cancel`, {
       method: 'POST',
       tokenType: 'student'
     });
+    invalidateExamCache(this);
+    return res;
   };
 
   // Get list of students registered for an exam
@@ -73,9 +253,11 @@ export function applyExamScheduleMethods(ApiClient) {
 
   // Remove a student from an exam
   ApiClient.prototype.removeStudentFromExam = async function(examId, studentId) {
-    return this.request(`/exam-schedules/${examId}/students/${studentId}`, {
+    const res = await this.request(`/exam-schedules/${examId}/students/${studentId}`, {
       method: 'DELETE',
     });
+    invalidateExamCache(this);
+    return res;
   };
 
   // Get exam schedules associated with a class
@@ -101,25 +283,31 @@ export function applyExamScheduleMethods(ApiClient) {
 
   // Create a new exam schedule
   ApiClient.prototype.createExamSchedule = async function(data) {
-    return this.request('/exam-schedules', {
+    const res = await this.request('/exam-schedules', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    invalidateExamCache(this);
+    return res;
   };
 
   // Update an existing exam schedule
   ApiClient.prototype.updateExamSchedule = async function(id, data) {
-    return this.request(`/exam-schedules/${id}`, {
+    const res = await this.request(`/exam-schedules/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
+    invalidateExamCache(this);
+    return res;
   };
 
   // Soft-delete an exam schedule
   ApiClient.prototype.deleteExamSchedule = async function(id) {
-    return this.request(`/exam-schedules/${id}`, {
+    const res = await this.request(`/exam-schedules/${id}`, {
       method: 'DELETE',
     });
+    invalidateExamCache(this);
+    return res;
   };
 
   // Download exam participant list as Excel file
@@ -139,16 +327,20 @@ export function applyExamScheduleMethods(ApiClient) {
 
   // Approve a single student's exam registration
   ApiClient.prototype.approveExamStudent = async function(examId, studentId) {
-    return this.request(`/exam-schedules/${examId}/approve/${studentId}`, {
+    const res = await this.request(`/exam-schedules/${examId}/approve/${studentId}`, {
       method: 'POST',
     });
+    invalidateExamCache(this);
+    return res;
   };
 
   // Approve all pending students for an exam at once
   ApiClient.prototype.approveAllExamStudents = async function(examId) {
-    return this.request(`/exam-schedules/${examId}/approve-all`, {
+    const res = await this.request(`/exam-schedules/${examId}/approve-all`, {
       method: 'POST',
     });
+    invalidateExamCache(this);
+    return res;
   };
 
   // Get registration conflicts across exam schedules (admin)

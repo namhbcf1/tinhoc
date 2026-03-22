@@ -16,9 +16,14 @@ export async function searchStudents(db: any, keyword: string) {
   const result = await db.prepare(`
     SELECT id, cccd, ho_ten_full, ho_ten_normalized, sdt, email, gioi_tinh, ngay_sinh, created_at, cccd_front_image_id, cccd_back_image_id, photo_3x4_image_id
     FROM students
-    WHERE ho_ten_normalized LIKE ? OR cccd LIKE ? OR sdt LIKE ?
+    WHERE (ho_ten_normalized LIKE ? OR cccd LIKE ? OR sdt LIKE ? OR LOWER(COALESCE(email, '')) LIKE LOWER(?))
+      AND NOT (
+        LOWER(COALESCE(ho_ten_full, '')) LIKE 'test hoc vien%'
+        OR LOWER(COALESCE(email, '')) LIKE '%@student.local'
+        OR LOWER(COALESCE(cccd, '')) LIKE 'test%'
+      )
     ORDER BY created_at DESC LIMIT 100
-  `).bind(searchTerm, searchTerm, searchTerm).all();
+  `).bind(searchTerm, searchTerm, searchTerm, searchTerm).all();
   return result.results || [];
 }
 
@@ -33,6 +38,35 @@ export async function getAllStudents(db: any, limit: number, offset: number) {
 export async function countAllStudents(db: any): Promise<number> {
   const result = await db.prepare('SELECT COUNT(*) as count FROM students').first();
   return result?.count || 0;
+}
+
+export async function getStudentSummaryStats(db: any) {
+  const [totalStudentsResult, activePendingResult, certifiedResult] = await db.batch([
+    db.prepare('SELECT COUNT(*) AS total_students FROM students'),
+    db.prepare(`
+      WITH all_regs AS (
+        SELECT student_id, status FROM registrations
+        UNION ALL
+        SELECT student_id, status FROM exam_registrations
+      )
+      SELECT
+        COUNT(DISTINCT CASE WHEN status IN ('studying', 'active', 'approved') THEN student_id END) AS active_students,
+        COUNT(DISTINCT CASE WHEN status = 'pending' THEN student_id END) AS pending_students
+      FROM all_regs
+    `),
+    db.prepare(`
+      SELECT COUNT(DISTINCT student_id) AS certified_students
+      FROM certificates
+      WHERE status = 'issued'
+    `),
+  ]);
+
+  return {
+    totalStudents: totalStudentsResult?.results?.[0]?.total_students || 0,
+    activeStudents: activePendingResult?.results?.[0]?.active_students || 0,
+    pendingStudents: activePendingResult?.results?.[0]?.pending_students || 0,
+    certifiedStudents: certifiedResult?.results?.[0]?.certified_students || 0,
+  };
 }
 
 export async function createStudent(db: any, data: any) {
@@ -100,9 +134,11 @@ export async function logStudentEditHistory(db: any, data: any) {
 export async function getStudentRegistrations(db: any, studentId: number) {
   const studyQuery = db.prepare(`
     SELECT r.id as registration_id, r.class_id, r.status as status, r.created_at as registration_created_at,
+      r.updated_at as registration_updated_at,
       COALESCE(p.status, 'unpaid') as payment_status,
       COALESCE(p.paid_amount, 0) as paid_amount,
-      c.id as class_id, c.ten_lop, c.ma_lop, c.ngay_bat_dau, c.ngay_ket_thuc, c.ngay_thi, c.gio_thi, c.dia_diem, c.hoc_phi, c.open_at, c.close_at, c.status as class_status, c.class_type, c.max_students, c.current_students, c.created_at as class_created_at, c.updated_at as class_updated_at
+      c.id as class_id, c.ten_lop, c.ma_lop, c.ngay_bat_dau, c.ngay_ket_thuc, c.ngay_thi, c.gio_thi, c.dia_diem, c.hoc_phi, c.open_at, c.close_at, c.status as class_status, c.class_type, c.max_students, c.current_students, c.created_at as class_created_at, c.updated_at as class_updated_at,
+      NULL as approved_at, NULL as approved_by, NULL as approved_by_name, NULL as created_by_name
     FROM registrations r
     JOIN classes c ON r.class_id = c.id
     LEFT JOIN (
@@ -116,9 +152,16 @@ export async function getStudentRegistrations(db: any, studentId: number) {
 
   const examQuery = db.prepare(`
     SELECT er.id as registration_id, er.exam_id as class_id, er.status as status, er.created_at as registration_created_at,
+      er.approved_at, er.approved_by,
+      a_approved.full_name as approved_by_name,
+      a_created.full_name as created_by_name,
       'approved' as payment_status, 0 as paid_amount,
       es.id as exam_id, es.exam_name as ten_lop, 'EXAM-' || es.id as ma_lop, es.exam_date as ngay_thi, es.exam_date as ngay_bat_dau, es.location as dia_diem, es.duration_minutes, 'thi' as class_type
-    FROM exam_registrations er JOIN exam_schedules es ON er.exam_id = es.id WHERE er.student_id = ?
+    FROM exam_registrations er
+    JOIN exam_schedules es ON er.exam_id = es.id
+    LEFT JOIN admins a_approved ON er.approved_by = a_approved.id
+    LEFT JOIN admins a_created ON er.created_by = a_created.id
+    WHERE er.student_id = ?
   `).bind(studentId);
 
   const [studyResult, examResult] = await db.batch([studyQuery, examQuery]);

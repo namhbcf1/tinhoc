@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Calendar, Users, Clock, Search, FileText, Eye, CheckCircle, XCircle, AlertCircle, Download, Star } from 'lucide-react';
+import api from '../../../services/api';
 import { formatDateVN, parseVNDate } from '../../../utils/dateUtils';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -11,20 +12,34 @@ import { Select } from '../../../components/ui/Select';
 import { useToast } from '../../../components/ui/ToastContainer';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import DateInput from '../../../components/ui/DateInput';
+import AdminLoadingState from '../../../components/admin/AdminLoadingState';
+import { getApiBaseUrl } from '../../../utils/api-base-url.js';
+import { getStorageValue } from '../../../utils/browser-storage.js';
+import {
+    ADMIN_CACHE_KEYS,
+    ADMIN_CACHE_TTL,
+    clearAdminCachePrefix,
+    getAdminCache,
+    setAdminCache,
+} from '../shared/admin-cache';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
+const API_URL = getApiBaseUrl();
 
 export default function AssignmentsManagement() {
     const { toast } = useToast();
-    const [assignments, setAssignments] = useState([]);
-    const [classes, setClasses] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [filterClassId, setFilterClassId] = useState('');
+    const assignmentCacheKey = `${ADMIN_CACHE_KEYS.assignments}:${filterClassId || 'all'}`;
+    const cachedAssignments = getAdminCache(assignmentCacheKey, ADMIN_CACHE_TTL.assignments) || [];
+    const cachedClasses = getAdminCache(ADMIN_CACHE_KEYS.assignmentClasses, ADMIN_CACHE_TTL.classes) || [];
+
+    const [assignments, setAssignments] = useState(cachedAssignments);
+    const [classes, setClasses] = useState(cachedClasses);
+    const [loading, setLoading] = useState(cachedAssignments.length === 0);
     const [showModal, setShowModal] = useState(false);
     const [editingAssignment, setEditingAssignment] = useState(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [toDelete, setToDelete] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterClassId, setFilterClassId] = useState('');
 
     // Submissions view
     const [viewingSubmissions, setViewingSubmissions] = useState(null);
@@ -41,30 +56,52 @@ export default function AssignmentsManagement() {
         max_file_size: 10
     });
 
+    const getAdminToken = () => getStorageValue('admin_token');
+
     useEffect(() => {
         loadClasses();
         loadAssignments();
     }, [filterClassId]);
 
-    const loadClasses = async () => {
+    const loadClasses = async ({ force = false } = {}) => {
+        if (!force) {
+            const cached = getAdminCache(ADMIN_CACHE_KEYS.assignmentClasses, ADMIN_CACHE_TTL.classes);
+            if (cached) {
+                setClasses(cached);
+                return;
+            }
+        }
+
         try {
-            const token = localStorage.getItem('admin_token');
+            const token = getAdminToken();
             const response = await fetch(`${API_URL}/online-classes?status=active`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
             if (data.success) {
-                setClasses(data.data.classes || []);
+                const nextClasses = data.data.classes || [];
+                setClasses(nextClasses);
+                setAdminCache(ADMIN_CACHE_KEYS.assignmentClasses, nextClasses);
             }
         } catch (error) {
             console.error('Error loading classes:', error);
         }
     };
 
-    const loadAssignments = async () => {
+    const loadAssignments = async ({ force = false } = {}) => {
+        const currentCacheKey = `${ADMIN_CACHE_KEYS.assignments}:${filterClassId || 'all'}`;
+        if (!force) {
+            const cached = getAdminCache(currentCacheKey, ADMIN_CACHE_TTL.assignments);
+            if (cached) {
+                setAssignments(cached);
+                setLoading(false);
+                return;
+            }
+        }
+
         setLoading(true);
         try {
-            const token = localStorage.getItem('admin_token');
+            const token = getAdminToken();
             let url = `${API_URL}/assignments?status=`;
             if (filterClassId) url += `&class_id=${filterClassId}`;
 
@@ -73,7 +110,9 @@ export default function AssignmentsManagement() {
             });
             const data = await response.json();
             if (data.success) {
-                setAssignments(data.data.assignments || []);
+                const nextAssignments = data.data.assignments || [];
+                setAssignments(nextAssignments);
+                setAdminCache(currentCacheKey, nextAssignments);
             }
         } catch (error) {
             console.error('Error loading assignments:', error);
@@ -114,7 +153,7 @@ export default function AssignmentsManagement() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const token = localStorage.getItem('admin_token');
+        const token = getAdminToken();
 
         // Convert date
         let due_date = null;
@@ -151,7 +190,8 @@ export default function AssignmentsManagement() {
             if (data.success) {
                 toast?.success(editingAssignment ? 'Cập nhật thành công!' : 'Tạo bài tập thành công!');
                 setShowModal(false);
-                loadAssignments();
+                clearAdminCachePrefix(ADMIN_CACHE_KEYS.assignments);
+                loadAssignments({ force: true });
             } else {
                 toast?.error(data.message || 'Lỗi');
             }
@@ -162,7 +202,7 @@ export default function AssignmentsManagement() {
 
     const handleDelete = async () => {
         if (!toDelete) return;
-        const token = localStorage.getItem('admin_token');
+        const token = getAdminToken();
 
         try {
             const response = await fetch(`${API_URL}/assignments/${toDelete.id}`, {
@@ -173,7 +213,8 @@ export default function AssignmentsManagement() {
             const data = await response.json();
             if (data.success) {
                 toast?.success('Xóa thành công');
-                loadAssignments();
+                clearAdminCachePrefix(ADMIN_CACHE_KEYS.assignments);
+                loadAssignments({ force: true });
             } else {
                 toast?.error(data.message);
             }
@@ -187,7 +228,7 @@ export default function AssignmentsManagement() {
 
     // Load submissions for an assignment
     const loadSubmissions = async (assignmentId) => {
-        const token = localStorage.getItem('admin_token');
+        const token = getAdminToken();
         try {
             const response = await fetch(`${API_URL}/assignments/${assignmentId}/submissions`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -208,7 +249,7 @@ export default function AssignmentsManagement() {
 
     const handleGrade = async () => {
         if (!gradingSubmission) return;
-        const token = localStorage.getItem('admin_token');
+        const token = getAdminToken();
 
         try {
             const response = await fetch(`${API_URL}/assignments/submissions/${gradingSubmission.id}/grade`, {
@@ -233,9 +274,12 @@ export default function AssignmentsManagement() {
         }
     };
 
-    const downloadSubmission = (subId) => {
-        const token = localStorage.getItem('admin_token');
-        window.open(`${API_URL}/assignments/submissions/${subId}/file`, '_blank');
+    const downloadSubmission = async (subId, fileName) => {
+        try {
+            await api.downloadAssignmentSubmission(subId, fileName);
+        } catch (error) {
+            toast?.error('Lỗi tải file: ' + error.message);
+        }
     };
 
     const getClassName = (classId) => {
@@ -279,7 +323,7 @@ export default function AssignmentsManagement() {
                                             <Badge className="bg-yellow-100 text-yellow-700">Chờ chấm</Badge>
                                         )}
 
-                                        <Button size="sm" variant="outline" onClick={() => downloadSubmission(sub.id)}>
+                                        <Button size="sm" variant="outline" onClick={() => downloadSubmission(sub.id, sub.file_name)}>
                                             <Download size={14} className="mr-1" /> Tải file
                                         </Button>
 
@@ -367,7 +411,12 @@ export default function AssignmentsManagement() {
 
             {/* List */}
             {loading ? (
-                <div className="text-center py-12 text-slate-500">Đang tải...</div>
+                <AdminLoadingState
+                    title="Đang tải danh sách bài tập"
+                    hint="Bài tập và danh sách lớp sẽ được giữ tạm để quay lại tab nhanh hơn."
+                    variant="desktop-list"
+                    accent="violet"
+                />
             ) : filteredAssignments.length === 0 ? (
                 <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed">
                     <FileText className="mx-auto text-slate-300 mb-4" size={48} />

@@ -8,6 +8,21 @@ import {
     calculateExpiryDatetime,
     generateSignedImageURL
 } from '../utils/cloudflare-images.js';
+import { extractRegistrationPrefillFromImage } from '../services/cccd-ocr-service.js';
+
+function buildEmptyOCRPrefill() {
+    return {
+        cccd: '',
+        fullName: '',
+        dateOfBirth: '',
+        gender: '',
+        ethnicity: '',
+        nationality: '',
+        placeOfOrigin: '',
+        placeOfResidence: '',
+        issueDate: '',
+    };
+}
 
 const app = new Hono<{ Bindings: Env; Variables: { user: JWTPayload; teacher: JWTPayload } }>();
 
@@ -208,6 +223,63 @@ app.post('/', async (c) => {
             success: false,
             error: error.message || 'Upload failed'
         }, 500);
+    }
+});
+
+/**
+ * POST /api/cccd-upload/extract
+ * Extract OCR fields from an uploaded CCCD image and return safe prefill data.
+ * Public endpoint because registration happens before auth exists.
+ */
+app.post('/extract', async (c) => {
+    try {
+        const body = await c.req.json().catch(() => null) as { imageId?: string; type?: string } | null;
+        const imageId = body?.imageId?.trim();
+        const type = body?.type;
+
+        if (!imageId || !type) {
+            return c.json({ success: false, error: 'Thiếu imageId hoặc type' }, 400);
+        }
+
+        if (type !== 'cccd_front' && type !== 'cccd_back') {
+            return c.json({ success: false, error: 'Chỉ hỗ trợ OCR cho ảnh CCCD mặt trước hoặc mặt sau' }, 400);
+        }
+
+        const { prefill, model, debug } = await extractRegistrationPrefillFromImage(c.env, imageId, type);
+
+        console.log('[OCR] Result — model:', model, 'prefill:', JSON.stringify(prefill));
+
+        const hasUsefulData = Boolean(
+            prefill.cccd || prefill.fullName || prefill.dateOfBirth ||
+            prefill.gender || prefill.ethnicity || prefill.issueDate ||
+            prefill.placeOfOrigin || prefill.placeOfResidence
+        );
+
+        if (!hasUsefulData) {
+            return c.json({
+                success: true,
+                warning: `OCR không trích xuất được trường nào. Status: ${debug.ocrSpaceStatus}`,
+                data: { prefill, model, type, hasUsefulData: false, debug }
+            });
+        }
+
+        return c.json({
+            success: true,
+            data: { prefill, model, type, hasUsefulData, debug }
+        });
+    } catch (error: any) {
+        const errorMsg = error?.message || String(error);
+        console.error('[OCR] Extract error:', errorMsg);
+        return c.json({
+            success: true,
+            warning: `OCR thất bại: ${errorMsg.slice(0, 120)}`,
+            data: {
+                prefill: buildEmptyOCRPrefill(),
+                model: 'unavailable',
+                type: null,
+                hasUsefulData: false,
+            }
+        });
     }
 });
 

@@ -3,6 +3,8 @@
  * Centralized error logging system with context and backend integration
  */
 
+import { buildApiUrl } from './api-base-url.js';
+
 const ERROR_STORAGE_KEY = 'error_logs';
 const MAX_STORED_ERRORS = 50;
 const BATCH_SIZE = 10;
@@ -55,14 +57,14 @@ function storeErrors(errors) {
  * @param {Array} errors - Array of error logs
  */
 async function sendErrorsToBackend(errors) {
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://vantrangedu-api.bangachieu2.workers.dev';
+    const apiUrl = buildApiUrl('/errors/log');
 
     try {
         // Send in batches
         for (let i = 0; i < errors.length; i += BATCH_SIZE) {
             const batch = errors.slice(i, i + BATCH_SIZE);
 
-            await fetch(`${apiUrl}/errors/log`, {
+            await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -237,4 +239,3 @@ function initAutoFlush() {
         });
     });
 }
-

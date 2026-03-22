@@ -6,22 +6,10 @@
     width: 100%;
 }
 
-/* ---- Type hint ---- */
-.upload-type-hint {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    color: #6b7280;
-    margin: 0 0 8px 2px;
-    font-style: italic;
-}
-
 /* ---- Container states ---- */
 .upload-container {
     position: relative;
     width: 100%;
-    min-height: 190px;
     border-radius: 12px;
     overflow: hidden;
     transition: all 0.25s ease;
@@ -50,7 +38,6 @@
     background: #fef2f2;
 }
 
-/* Drag & Drop active */
 .upload-container.drag-active {
     border: 2px solid #f97316 !important;
     background: #fff7ed !important;
@@ -58,7 +45,7 @@
     box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.18);
 }
 
-/* ---- Upload trigger (click area) ---- */
+/* ---- Upload trigger ---- */
 .upload-trigger {
     display: block;
     width: 100%;
@@ -80,71 +67,160 @@
     align-items: center;
     justify-content: center;
     padding: 36px 20px 28px;
-    min-height: 190px;
+    min-height: 160px;
     gap: 4px;
 }
 
-.icon-large {
-    color: #d4a574;
-    margin-bottom: 10px;
+.upload-placeholder-loading {
+    min-height: 120px;
 }
 
-.icon-error {
-    color: #dc2626;
-}
+.icon-large { color: #d4a574; margin-bottom: 10px; }
+.icon-error { color: #dc2626; }
+.upload-text { font-size: 15px; font-weight: 600; color: #374151; margin: 0; }
+.upload-text-error { color: #dc2626; }
+.upload-hint { font-size: 12px; color: #9ca3af; margin: 2px 0 0; text-align: center; }
+.upload-hint-retry { color: #f97316; font-weight: 600; font-size: 12px; margin-top: 4px; }
 
-.upload-text {
-    font-size: 15px;
-    font-weight: 600;
-    color: #374151;
-    margin: 0;
-}
-
-.upload-text-error {
-    color: #dc2626;
-}
-
-.upload-hint {
-    font-size: 12px;
-    color: #9ca3af;
-    margin: 2px 0 0;
+/* ===========================
+   IDLE STATE: Template Guide (vertical centered layout)
+   =========================== */
+.upload-idle-guide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 16px 18px;
+    position: relative;
     text-align: center;
 }
 
-.upload-hint-small {
-    font-size: 11px;
-    color: #bec3cc;
-    margin-top: 6px;
+.upload-template-preview {
+    position: relative;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: #f9fafb;
 }
 
-.upload-hint-drag {
-    margin-top: 10px;
-    font-size: 14px;
-    font-weight: 700;
+.cccd-type .upload-template-preview {
+    width: 180px;
+    height: 114px;
+}
+
+.photo-type .upload-template-preview {
+    width: 90px;
+    height: 120px;
+}
+
+.template-preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0.75;
+    transition: opacity 0.2s;
+}
+
+.upload-trigger:hover .template-preview-img {
+    opacity: 0.55;
+}
+
+.template-upload-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(249, 115, 22, 0.08);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.upload-trigger:hover .template-upload-overlay {
+    opacity: 1;
+}
+
+.template-upload-overlay svg {
     color: #f97316;
+}
+
+.upload-idle-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.upload-idle-desc {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0 0 8px;
+    line-height: 1.4;
+}
+
+.upload-idle-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 16px;
+    background: #f97316;
+    color: white;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+
+.upload-idle-action:hover {
+    background: #ea580c;
+}
+
+.upload-idle-action.camera-action {
+    background: #2563eb;
+}
+
+.upload-idle-action.camera-action:hover {
+    background: #1d4ed8;
+}
+
+.upload-idle-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.upload-trigger:hover .upload-idle-action {
+    background: #ea580c;
+}
+
+.upload-trigger:hover .upload-idle-action.camera-action {
+    background: #1d4ed8;
+}
+
+/* Drag overlay */
+.upload-drag-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(249, 115, 22, 0.12);
+    color: #f97316;
+    font-size: 15px;
+    font-weight: 700;
+    z-index: 5;
     animation: pulse 0.8s ease-in-out infinite alternate;
 }
 
 @keyframes pulse {
     from { opacity: 0.7; }
     to { opacity: 1; }
-}
-
-.upload-hint-tip {
-    margin-top: 10px;
-    padding: 7px 14px;
-    background: #fef3c7;
-    border-radius: 8px;
-    color: #92400e;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.upload-hint-retry {
-    color: #f97316;
-    font-weight: 600;
-    font-size: 12px;
-    margin-top: 4px;
 }
 
 /* ---- Progress bar ---- */
@@ -179,12 +255,25 @@
 .preview-container {
     position: relative;
     width: 100%;
-    min-height: 190px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
 }
 
-.preview-container img {
+.preview-container.cccd-type img {
     width: 100%;
-    max-height: 280px;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: #f9fafb;
+    display: block;
+}
+
+.preview-container.photo-type img {
+    width: auto;
+    max-width: 140px;
+    max-height: 190px;
     object-fit: contain;
     border-radius: 8px;
     background: #f9fafb;
@@ -193,8 +282,8 @@
 
 .preview-overlay {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 14px;
+    right: 14px;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -204,10 +293,10 @@
 .status-badge {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 13px;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 12px;
     font-weight: 600;
     backdrop-filter: blur(8px);
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
@@ -217,113 +306,50 @@
 .status-badge.error   { background: rgba(220,38,38,0.95);  color: white; }
 .status-badge.uploading { background: rgba(249,115,22,0.95); color: white; }
 
-.btn-view-image {
-    background: rgba(255,255,255,0.2);
-    border: 1px solid rgba(255,255,255,0.4);
-    color: white;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    backdrop-filter: blur(4px);
-    transition: all 0.2s;
-}
-
-.btn-view-image:hover {
-    background: rgba(255,255,255,0.35);
-    transform: scale(1.08);
-}
-
-/* Change / retake button */
-.btn-change {
+.preview-bottom-actions {
     position: absolute;
-    bottom: 10px;
+    bottom: 14px;
     left: 50%;
     transform: translateX(-50%);
-    padding: 8px 20px;
-    background: white;
-    color: #374151;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    transition: all 0.2s;
-    white-space: nowrap;
-}
-
-.btn-change:hover {
-    background: #f9fafb;
-    transform: translateX(-50%) translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.13);
-}
-
-/* ---- Action buttons row ---- */
-.uploader-actions {
     display: flex;
     gap: 8px;
-    margin-top: 10px;
 }
 
-.btn-upload-file {
-    flex: 1;
+.btn-preview-view,
+.btn-preview-change {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 11px 16px;
-    background: #f97316;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
+    border: none;
     transition: all 0.2s;
-    box-shadow: 0 2px 6px rgba(249,115,22,0.2);
-    min-height: 44px;
-}
-
-.btn-upload-file:hover:not(:disabled) {
-    background: #ea580c;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(249,115,22,0.3);
-}
-
-.btn-upload-file:disabled {
-    background: #d1d5db;
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-.btn-step-guide {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    padding: 11px 14px;
-    background: #f3f4f6;
-    color: #374151;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    min-height: 44px;
     white-space: nowrap;
 }
 
-.btn-step-guide:hover {
-    background: #e5e7eb;
-    border-color: #d1d5db;
+.btn-preview-view {
+    background: rgba(255,255,255,0.92);
+    color: #374151;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.btn-preview-view:hover {
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.btn-preview-change {
+    background: rgba(255,255,255,0.92);
+    color: #f97316;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.btn-preview-change:hover {
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 /* ---- Error message ---- */
@@ -369,9 +395,7 @@
     align-self: flex-start;
 }
 
-.btn-retry-upload:hover {
-    background: #fee2e2;
-}
+.btn-retry-upload:hover { background: #fee2e2; }
 
 /* ---- Quality warning banner ---- */
 .quality-warning-banner {
@@ -399,20 +423,9 @@
     color: #78350f;
 }
 
-.quality-warning-body strong {
-    display: block;
-    margin-bottom: 4px;
-    font-weight: 700;
-}
-
-.quality-warning-body ul {
-    margin: 0;
-    padding-left: 16px;
-}
-
-.quality-warning-body ul li {
-    margin-bottom: 3px;
-}
+.quality-warning-body strong { display: block; margin-bottom: 4px; font-weight: 700; }
+.quality-warning-body ul { margin: 0; padding-left: 16px; }
+.quality-warning-body ul li { margin-bottom: 3px; }
 
 .quality-warning-actions {
     display: flex;
@@ -465,115 +478,6 @@
 }
 
 /* ===========================
-   STEP GUIDE MODAL
-   =========================== */
-.step-guide-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.55);
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    z-index: 999990;
-    padding: 16px;
-    animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
-
-.step-guide-content {
-    background: white;
-    border-radius: 16px 16px 16px 16px;
-    width: 100%;
-    max-width: 440px;
-    padding: 20px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
-    animation: slideUp 0.25s ease;
-}
-
-@keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
-}
-
-.step-guide-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 16px;
-}
-
-.step-guide-header h4 {
-    flex: 1;
-    margin: 0;
-    font-size: 16px;
-    font-weight: 700;
-    color: #1f2937;
-}
-
-.step-guide-close {
-    background: #f3f4f6;
-    border: none;
-    border-radius: 6px;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: #6b7280;
-    transition: all 0.2s;
-}
-
-.step-guide-close:hover { background: #e5e7eb; color: #1f2937; }
-
-.step-guide-list {
-    list-style: none;
-    margin: 0 0 18px;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.step-guide-list li {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    background: #f9fafb;
-    border-radius: 10px;
-    font-size: 14px;
-    color: #374151;
-    font-weight: 500;
-}
-
-.step-icon {
-    font-size: 20px;
-    flex-shrink: 0;
-    width: 28px;
-    text-align: center;
-}
-
-.step-guide-ok {
-    width: 100%;
-    padding: 12px;
-    background: #f97316;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.step-guide-ok:hover { background: #ea580c; }
-
-/* ===========================
    FULL PREVIEW MODAL
    =========================== */
 .full-preview-overlay {
@@ -588,6 +492,11 @@
     animation: fadeIn 0.2s ease;
 }
 
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
 .full-preview-content {
     background: white;
     border-radius: 14px;
@@ -597,6 +506,11 @@
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0,0,0,0.4);
     animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
 }
 
 .full-preview-header {
@@ -638,20 +552,8 @@
     border-top: 1px solid #f3f4f6;
 }
 
-.checklist-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: #374151;
-    margin: 0 0 8px;
-}
-
-.full-preview-checklist ul {
-    margin: 0;
-    padding-left: 18px;
-    color: #4b5563;
-    font-size: 13px;
-}
-
+.checklist-title { font-size: 13px; font-weight: 700; color: #374151; margin: 0 0 8px; }
+.full-preview-checklist ul { margin: 0; padding-left: 18px; color: #4b5563; font-size: 13px; }
 .full-preview-checklist ul li { margin-bottom: 5px; }
 
 .full-preview-actions {
@@ -685,11 +587,7 @@
 
 .btn-preview-retake:hover { background: #e5e7eb; }
 
-.btn-preview-ok {
-    background: #16a34a;
-    color: white;
-}
-
+.btn-preview-ok { background: #16a34a; color: white; }
 .btn-preview-ok:hover { background: #15803d; }
 
 /* ===========================
@@ -708,52 +606,35 @@
    RESPONSIVE
    =========================== */
 @media (max-width: 768px) {
-    .upload-placeholder {
-        padding: 28px 16px 22px;
-        min-height: 170px;
+    .upload-idle-guide {
+        gap: 10px;
+        padding: 16px 12px 14px;
     }
 
-    .upload-container {
-        min-height: 170px;
+    .cccd-type .upload-template-preview {
+        width: 150px;
+        height: 95px;
     }
 
-    .preview-container img {
-        max-height: 240px;
+    .photo-type .upload-template-preview {
+        width: 76px;
+        height: 100px;
     }
 
-    .status-badge {
-        padding: 5px 10px;
-        font-size: 12px;
-    }
+    .upload-idle-desc { font-size: 11px; margin-bottom: 6px; }
+    .upload-idle-action { font-size: 11px; padding: 6px 14px; }
 
-    .btn-upload-file {
-        font-size: 14px;
-        min-height: 48px;
-    }
+    .preview-container.cccd-type img { max-height: 160px; }
+    .preview-container.photo-type img { max-width: 110px; max-height: 150px; }
 
-    .step-guide-overlay {
-        align-items: flex-end;
-        padding: 0;
-    }
+    .status-badge { padding: 3px 8px; font-size: 11px; }
 
-    .step-guide-content {
-        border-radius: 20px 20px 0 0;
-        max-width: 100%;
-    }
+    .quality-warning-actions { flex-direction: row; align-items: center; }
 
+    .full-preview-overlay { align-items: flex-end; padding: 0; }
     .full-preview-content {
         max-width: 100%;
         border-radius: 14px 14px 0 0;
         margin: auto 0 0;
-    }
-
-    .quality-warning-actions {
-        flex-direction: row;
-        align-items: center;
-    }
-
-    .full-preview-overlay {
-        align-items: flex-end;
-        padding: 0;
     }
 }

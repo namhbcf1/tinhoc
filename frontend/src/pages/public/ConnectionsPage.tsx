@@ -2,6 +2,8 @@ import ModernPublicLayout from '../../components/layout/ModernPublicLayout';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Handshake, Globe2, Building, Users2, ArrowRight, CheckCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import SEO from '../../components/common/SEO';
 
 const stats = [
   { value: '50+', label: 'Đối tác chiến lược' },
@@ -48,8 +50,30 @@ const partners = [
 ];
 
 export default function ConnectionsPage() {
+  const structuredData = [
+    {
+      '@type': 'WebPage',
+      name: 'Ket noi va hop tac',
+      description: 'Thong tin doi tac quoc te, doanh nghiep va cong dong cua Van Trang Education.',
+      url: 'https://vantrangedu.com/connections'
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Trang chu', item: 'https://vantrangedu.com/' },
+        { '@type': 'ListItem', position: 2, name: 'Ket noi va hop tac', item: 'https://vantrangedu.com/connections' }
+      ]
+    }
+  ];
+
   return (
     <ModernPublicLayout>
+      <SEO
+        title="Ket noi va hop tac"
+        description="Mo rong mang luoi doi tac quoc te, doanh nghiep va cuu hoc vien de tao co hoi hoc tap va viec lam thuc te."
+        url="/connections"
+        structuredData={structuredData}
+      />
       <div className="bg-slate-50 min-h-screen">
         {/* Hero */}
         <div className="bg-slate-900 py-24 relative overflow-hidden text-white text-center">
@@ -125,9 +149,11 @@ export default function ConnectionsPage() {
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-white mb-3">Trở Thành Đối Tác</h2>
             <p className="text-slate-400 mb-8 max-w-xl mx-auto">Cùng chúng tôi xây dựng thế hệ nhân tài tương lai. Liên hệ ngay để khám phá cơ hội hợp tác.</p>
+            <Link to="/contact">
             <Button className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-12 px-10 rounded-xl inline-flex items-center gap-2">
               Liên hệ hợp tác <ArrowRight size={16} />
             </Button>
+            </Link>
           </div>
         </div>
       </div>

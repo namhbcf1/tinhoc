@@ -1,6 +1,10 @@
 /* Mobile-only ImageEditor - Completely separate from desktop */
 
 .image-editor-mobile-wrapper {
+    --editor-header-height: calc(64px + env(safe-area-inset-top, 0px));
+    --editor-actions-height: calc(92px + env(safe-area-inset-bottom, 0px));
+    --editor-controls-height: 84px;
+    --editor-status-height: 62px;
     position: fixed;
     top: 0;
     left: 0;
@@ -13,6 +17,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    overscroll-behavior: contain;
 }
 
 .image-editor-mobile-header {
@@ -68,9 +73,12 @@
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
-    margin-top: 60px; /* Space for fixed header */
-    margin-bottom: 200px; /* Space for fixed controls and actions */
+    margin-top: var(--editor-header-height);
+    margin-bottom: calc(var(--editor-actions-height) + var(--editor-controls-height) + var(--editor-status-height));
     padding: 0;
+    background:
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 38%),
+        #000;
 }
 
 .image-editor-mobile-canvas-element {
@@ -81,7 +89,7 @@
 
 .image-editor-mobile-controls {
     position: fixed;
-    bottom: 80px;
+    bottom: var(--editor-actions-height);
     left: 0;
     right: 0;
     z-index: 100;
@@ -95,6 +103,60 @@
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+}
+
+.image-editor-mobile-status {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(var(--editor-actions-height) + var(--editor-controls-height) + 8px);
+    z-index: 101;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(10, 10, 10, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(12px);
+    color: #f8fafc;
+}
+
+.image-editor-mobile-status p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.35;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.image-editor-mobile-status-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 72px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.image-editor-mobile-status.status-detected .image-editor-mobile-status-badge {
+    background: rgba(16, 185, 129, 0.22);
+    color: #d1fae5;
+}
+
+.image-editor-mobile-status.status-checking .image-editor-mobile-status-badge {
+    background: rgba(59, 130, 246, 0.22);
+    color: #dbeafe;
+}
+
+.image-editor-mobile-status.status-manual .image-editor-mobile-status-badge {
+    background: rgba(249, 115, 22, 0.22);
+    color: #ffedd5;
 }
 
 .image-editor-mobile-controls::-webkit-scrollbar {
@@ -185,3 +247,48 @@
     transform: translateY(-1px);
 }
 
+@media (max-width: 480px) {
+    .image-editor-mobile-header {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .image-editor-mobile-header h3 {
+        font-size: 16px;
+    }
+
+    .image-editor-mobile-controls {
+        gap: 8px;
+        padding: 12px 14px;
+    }
+
+    .image-editor-mobile-btn {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        min-height: 48px;
+        border-radius: 11px;
+    }
+
+    .image-editor-mobile-status {
+        left: 10px;
+        right: 10px;
+        padding: 9px 11px;
+    }
+
+    .image-editor-mobile-status p {
+        font-size: 12px;
+    }
+
+    .image-editor-mobile-status-badge {
+        min-width: 64px;
+        padding: 6px 9px;
+        font-size: 10px;
+    }
+
+    .image-editor-mobile-action-cancel,
+    .image-editor-mobile-action-confirm {
+        padding: 15px 18px;
+        font-size: 15px;
+    }
+}

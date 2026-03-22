@@ -6,6 +6,7 @@ import {
 import { useToast } from '../../../components/ui/ToastContainer';
 import { usePaymentsManagement } from '../shared/hooks/usePaymentsManagement';
 import { formatDateVN } from '../../../utils/dateUtils';
+import AdminLoadingState from '../../../components/admin/AdminLoadingState';
 
 // ============= BOTTOM SHEET =============
 const BottomSheet = ({ isOpen, onClose, title, children, height = 'auto' }) => {
@@ -85,7 +86,7 @@ const PaymentCard = ({ payment, onView, onConfirm, onReject }) => {
             <div className="flex items-center justify-between mb-3">
                 <span className="text-2xl font-bold text-blue-600">{formatCurrency(payment.amount)}</span>
                 <span className="text-xs text-slate-400 flex items-center gap-1">
-                    <Calendar size={12} /> {formatDateVN(payment.payment_date || payment.created_at)}
+                    <Calendar size={12} /> {formatDateVN(payment.payment_date || payment.created_at, true)}
                 </span>
             </div>
 
@@ -148,7 +149,7 @@ const PaymentDetailSheet = ({ isOpen, onClose, payment }) => {
                     </div>
                     <div className="flex justify-between">
                         <span className="text-slate-500">Ngày thanh toán</span>
-                        <span className="font-medium text-slate-800">{formatDateVN(payment.payment_date || payment.created_at)}</span>
+                        <span className="font-medium text-slate-800">{formatDateVN(payment.payment_date || payment.created_at, true)}</span>
                     </div>
                     {payment.notes && (
                         <div className="pt-2 border-t border-slate-200">
@@ -202,7 +203,7 @@ export default function MobilePaymentsModule() {
             <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-4 pt-4 pb-6 safe-area-inset-top">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold text-white">Quản lý Thanh toán</h2>
-                    <button onClick={loadPayments} className="p-2 bg-white/20 rounded-xl text-white">
+                    <button onClick={() => loadPayments({ force: true })} className="p-2 bg-white/20 rounded-xl text-white">
                         <RefreshCw size={20} />
                     </button>
                 </div>
@@ -269,10 +270,12 @@ export default function MobilePaymentsModule() {
             {/* List */}
             <div className="p-4 pb-24">
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4">
-                        <RefreshCw size={32} className="animate-spin text-amber-600" />
-                        <p className="text-slate-500">Đang tải dữ liệu...</p>
-                    </div>
+                    <AdminLoadingState
+                        title="Đang tải thanh toán"
+                        hint="Khoản thanh toán dùng cache ngắn để mở nhanh nhưng vẫn giữ dữ liệu mới tương đối sát."
+                        variant="mobile-list"
+                        accent="amber"
+                    />
                 ) : filteredPayments.length > 0 ? (
                     <div className="space-y-3">
                         {filteredPayments.map((payment) => (

@@ -6,6 +6,7 @@ import {
 import api from '../../../services/api';
 import { formatDateVN } from '../../../utils/dateUtils';
 import '../../../styles/admin/AdminModern.css';
+import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
 
 export default function ActivityLogs({ toast }) {
   const [logs, setLogs] = useState([]);
@@ -15,10 +16,11 @@ export default function ActivityLogs({ toast }) {
   const pageSize = 20;
 
   useEffect(() => { loadLogs(); }, []);
+  useAdminAutoRefresh(() => loadLogs(), { minIntervalMs: 15000 });
 
   const loadLogs = async () => {
     setLoading(true);
-    try { const response = await api.getActivityLogs(500, 0); setLogs(Array.isArray(response.data) ? response.data : []); } catch { setLogs([]); } finally { setLoading(false); }
+    try { const response = await api.getActivityLogs(null, 500, 0); setLogs(Array.isArray(response.data) ? response.data : []); } catch { setLogs([]); } finally { setLoading(false); }
   };
 
   const getActionInfo = (action) => {

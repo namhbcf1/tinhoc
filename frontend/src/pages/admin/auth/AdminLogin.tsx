@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -9,6 +9,8 @@ import { Input } from '../../../components/ui/Input';
 import { Label } from '../../../components/ui/Label';
 import { Card, CardContent } from '../../../components/ui/Card';
 import api from '../../../services/api';
+import { getStorageValue } from '../../../utils/browser-storage.js';
+import { persistAdminSession } from '../../../utils/adminSession';
 import '../../../styles/admin/AdminLogin.css';
 
 const adminSchema = z.object({
@@ -16,8 +18,22 @@ const adminSchema = z.object({
     password: z.string().min(1, 'Vui lòng nhập password'),
 });
 
+function normalizeInternalPath(value) {
+    if (!value) return null;
+    try {
+        const parsed = new URL(value, window.location.origin);
+        if (parsed.origin !== window.location.origin) {
+            return null;
+        }
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    } catch {
+        return null;
+    }
+}
+
 export default function AdminLogin() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -29,15 +45,47 @@ export default function AdminLogin() {
         },
     });
 
+    const nextPath = useMemo(() => {
+        const explicitNext = normalizeInternalPath(searchParams.get('next'));
+        if (explicitNext) {
+            return explicitNext;
+        }
+
+        const adminDashboardUrl = new URL('/admin/dashboard', window.location.origin);
+        const requestedTab = searchParams.get('tab');
+        const returnTo = searchParams.get('return_to');
+
+        if (requestedTab) {
+            adminDashboardUrl.searchParams.set('tab', requestedTab);
+        }
+        if (returnTo) {
+            adminDashboardUrl.searchParams.set('return_to', returnTo);
+        }
+
+        return `${adminDashboardUrl.pathname}${adminDashboardUrl.search}${adminDashboardUrl.hash}`;
+    }, [searchParams]);
+
+    const finishAdminLogin = (token, admin, scope = 'local') => {
+        persistAdminSession({ token, admin, scope });
+        navigate(nextPath, { replace: true });
+    };
+
+    useEffect(() => {
+        const adminToken = getStorageValue('admin_token');
+        const adminData = getStorageValue('admin');
+
+        if (adminToken && adminData) {
+            navigate(nextPath, { replace: true });
+        }
+    }, [navigate, nextPath]);
+
     const handleLogin = async (data) => {
         setIsLoading(true);
         setError('');
         try {
             const response = await api.login(data.username, data.password);
             if (response.success) {
-                if (response.token) api.setToken(response.token);
-                localStorage.setItem('admin', JSON.stringify(response.admin));
-                navigate('/admin/dashboard');
+                finishAdminLogin(response.token, response.admin, 'local');
             } else {
                 setError(response.message || 'Đăng nhập thất bại');
             }
@@ -47,6 +95,49 @@ export default function AdminLogin() {
             setIsLoading(false);
         }
     };
+
+    useEffect(() => {
+        const ticket = searchParams.get('ticket');
+        if (!ticket) {
+            return;
+        }
+
+        let cancelled = false;
+
+        const exchangeTicket = async () => {
+            setIsLoading(true);
+            setError('');
+
+            try {
+                const response = await api.exchangeSsoTicket(ticket, 'edu');
+                if (cancelled) {
+                    return;
+                }
+
+                if (response?.user?.type !== 'admin') {
+                    throw new Error('SSO ticket hiện tại không có quyền quản trị');
+                }
+
+                finishAdminLogin(response.token, {
+                    id: response.user.id,
+                    username: response.user.username || response.user.name || 'admin',
+                    full_name: response.user.name || response.user.username || 'Admin',
+                    role: response.user.role || 'admin',
+                }, 'session');
+            } catch (err) {
+                if (!cancelled) {
+                    setError(err.message || 'Không thể hoàn tất đăng nhập một lần');
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        void exchangeTicket();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [navigate, nextPath, searchParams]);
 
     return (
         <div className="admin-login-page">

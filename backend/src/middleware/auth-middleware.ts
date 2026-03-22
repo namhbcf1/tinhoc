@@ -1,12 +1,14 @@
 import { type MiddlewareHandler, type Next } from 'hono';
 import { verifyJWT, errorResponse } from '../utils/helpers.js';
 import type { Env, JWTPayload } from '../types/env.js';
+import { getActiveSessionBySid, touchSession } from '../lib/auth/session-broker.js';
 
 // ========================================
 // SHARED AUTH MIDDLEWARE
 // ========================================
 // All routes MUST use these shared middlewares instead of copy-pasting inline auth.
 // JWT exp is stored in SECONDS (JWT standard). Correct check: Math.floor(Date.now() / 1000) > payload.exp
+// NOTE: Teaching staff is modeled as admin with teacher_code.
 
 type AuthContext = { Bindings: Env; Variables: { user: JWTPayload; teacher: JWTPayload } };
 
@@ -16,12 +18,13 @@ type AuthContext = { Bindings: Env; Variables: { user: JWTPayload; teacher: JWTP
  */
 export const authMiddleware: MiddlewareHandler<AuthContext> = async (c, next: Next) => {
   const authHeader = c.req.header('Authorization');
+  const cookieToken = c.req.header('Cookie')?.match(/(?:^|;\s*)token=([^;]+)/)?.[1];
 
-  if (!authHeader) {
+  if (!authHeader && !cookieToken) {
     return errorResponse('Thiếu token xác thực', 401) as Response;
   }
 
-  const token = authHeader.replace('Bearer ', '');
+  const token = authHeader ? authHeader.replace('Bearer ', '') : cookieToken || '';
   const raw = await verifyJWT(token, c.env.JWT_SECRET);
   const payload = raw as JWTPayload | null;
 
@@ -34,57 +37,60 @@ export const authMiddleware: MiddlewareHandler<AuthContext> = async (c, next: Ne
     return errorResponse('Token đã hết hạn', 401) as Response;
   }
 
+  if (payload.sid) {
+    const session = await getActiveSessionBySid(c.env.DB, payload.sid);
+    if (!session) {
+      return errorResponse('Session đã bị thu hồi hoặc không còn hiệu lực', 401) as Response;
+    }
+    await touchSession(c.env.DB, session.sid);
+  }
+
   c.set('user', payload);
   await next();
 };
 
 /**
- * Require admin or super_admin role.
+ * Require admin-level access.
+ * Legacy `teacher` sessions are still accepted for backward compatibility.
  */
 export const requireAdmin: MiddlewareHandler<AuthContext> = async (c, next: Next) => {
-  await authMiddleware(c, (async () => {
+  return authMiddleware(c, (async () => {
     const user = c.get('user');
-    if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+    if (!user || (user.role !== 'admin' && user.role !== 'super_admin' && user.role !== 'teacher')) {
       return errorResponse('Không có quyền truy cập. Yêu cầu quyền admin.', 403);
     }
-    await next();
-  }) as Next);
-};
-
-/**
- * Require admin, super_admin, or teacher role.
- */
-export const requireAdminOrTeacher: MiddlewareHandler<AuthContext> = async (c, next: Next) => {
-  await authMiddleware(c, (async () => {
-    const user = c.get('user');
-    if (
-      !user ||
-      (user.role !== 'admin' && user.role !== 'super_admin' && user.role !== 'teacher')
-    ) {
-      return errorResponse('Không có quyền truy cập. Yêu cầu quyền admin hoặc giáo viên.', 403);
+    if (user.teacher_code || user.teacherCode || user.role === 'teacher') {
+      c.set('teacher', user);
     }
     await next();
   }) as Next);
 };
 
 /**
- * Require teacher role only.
+ * Alias for requireAdmin — teacher is admin now.
+ * @deprecated Use requireAdmin instead
+ */
+export const requireAdminOrTeacher = requireAdmin;
+
+/**
+ * Require teaching-staff access.
+ * Accepts admin sessions that carry teacher_code, plus legacy teacher sessions.
  */
 export const requireTeacher: MiddlewareHandler<AuthContext> = async (c, next: Next) => {
-  await authMiddleware(c, (async () => {
+  return authMiddleware(c, (async () => {
     const user = c.get('user');
-    if (!user || user.role !== 'teacher') {
+    const hasTeacherAccess = Boolean(user && (user.teacher_code || user.teacherCode || user.role === 'teacher'));
+    if (!hasTeacherAccess) {
       return errorResponse('Không có quyền truy cập. Yêu cầu quyền giáo viên.', 403);
     }
-    // Some routes use c.get('teacher') — keep compatible
     c.set('teacher', user);
     await next();
   }) as Next);
 };
 
 /**
- * Require authenticated user of any role (admin, teacher, or student).
+ * Require authenticated user of any role.
  */
 export const requireAuth: MiddlewareHandler<AuthContext> = async (c, next: Next) => {
-  await authMiddleware(c, next);
+  return authMiddleware(c, next);
 };

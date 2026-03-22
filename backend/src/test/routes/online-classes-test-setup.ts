@@ -30,6 +30,15 @@ export async function setupDatabase() {
       max_students INTEGER DEFAULT 50,
       status TEXT NOT NULL DEFAULT 'active',
       created_by INTEGER,
+      source_exam_schedule_id INTEGER,
+      source_kind TEXT DEFAULT 'exam_schedule',
+      exam_category_id INTEGER,
+      exam_type_id INTEGER,
+      organizer_uuid TEXT,
+      program_uuid TEXT,
+      level_uuid TEXT,
+      custom_field_payload TEXT,
+      override_payload TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     )

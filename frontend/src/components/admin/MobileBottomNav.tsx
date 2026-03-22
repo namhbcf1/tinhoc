@@ -8,8 +8,6 @@ import {
     Newspaper,
     Home,
     Folder,
-    BarChart3,
-    GraduationCap,
     CalendarDays,
     UserCircle,
     History
@@ -34,8 +32,6 @@ export default function MobileBottomNav({ activeTab, setActiveTab, admin }) {
         { id: 'posts', label: 'Bài viết', icon: Newspaper },
         { id: 'homepage', label: 'Homepage', icon: Home },
         { id: 'documents', label: 'Tài liệu', icon: Folder },
-        { id: 'reports', label: 'Báo cáo', icon: BarChart3 },
-        { id: 'teachers', label: 'Giáo viên', icon: GraduationCap },
         { id: 'exam-schedules', label: 'Lịch thi', icon: CalendarDays },
         { id: 'profile', label: 'Cá nhân', icon: UserCircle },
         { id: 'logs', label: 'Nhật ký', icon: History }
@@ -96,4 +92,3 @@ export default function MobileBottomNav({ activeTab, setActiveTab, admin }) {
         </>
     );
 }
-

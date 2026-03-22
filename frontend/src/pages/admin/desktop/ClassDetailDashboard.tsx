@@ -1158,7 +1158,6 @@ export default function ClassDetailDashboard({ classData, onBack, onUpdate, onRe
                             </Badge>
                         </h1>
                         <p className="text-sm text-slate-500 flex items-center gap-4 mt-0.5">
-                            <span className="flex items-center gap-1"><Users size={14} /> {classData.teacher_name || 'Chưa có GV'}</span>
                             <span className="flex items-center gap-1"><Clock size={14} /> {classData.schedule_time}</span>
                         </p>
                     </div>

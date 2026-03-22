@@ -3,21 +3,27 @@
 // ========================================
 
 const CACHE_PREFIX = 'app_cache_';
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+export const DEFAULT_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+function parseCacheEntry(rawValue) {
+  if (!rawValue) return null;
+  const parsed = JSON.parse(rawValue);
+  if (!parsed || typeof parsed !== 'object') return null;
+  return parsed;
+}
 
 /**
  * Get cached data
  */
-export function getCache(key) {
+export function getCache(key, ttlMs = DEFAULT_CACHE_DURATION) {
   try {
-    const cached = localStorage.getItem(CACHE_PREFIX + key);
-    if (!cached) return null;
-
-    const { data, timestamp } = JSON.parse(cached);
+    const entry = parseCacheEntry(localStorage.getItem(CACHE_PREFIX + key));
+    if (!entry) return null;
+    const { data, timestamp } = entry;
     const now = Date.now();
 
     // Check if cache is expired
-    if (now - timestamp > CACHE_DURATION) {
+    if (now - timestamp > ttlMs) {
       localStorage.removeItem(CACHE_PREFIX + key);
       return null;
     }
@@ -33,8 +39,9 @@ export function getCache(key) {
  * Set cache data
  */
 export function setCache(key, data) {
+  let cacheData;
   try {
-    const cacheData = {
+    cacheData = {
       data,
       timestamp: Date.now(),
     };
@@ -58,6 +65,19 @@ export function setCache(key, data) {
  */
 export function clearCache(key) {
   localStorage.removeItem(CACHE_PREFIX + key);
+}
+
+/**
+ * Clear all cache entries whose logical key starts with a prefix
+ */
+export function clearCacheByPrefix(prefix) {
+  const targetPrefix = CACHE_PREFIX + prefix;
+  const keys = Object.keys(localStorage);
+  keys.forEach(key => {
+    if (key.startsWith(targetPrefix)) {
+      localStorage.removeItem(key);
+    }
+  });
 }
 
 /**
@@ -85,7 +105,7 @@ function clearOldCache() {
         const cached = localStorage.getItem(key);
         if (cached) {
           const { timestamp } = JSON.parse(cached);
-          if (now - timestamp > CACHE_DURATION) {
+          if (now - timestamp > DEFAULT_CACHE_DURATION) {
             localStorage.removeItem(key);
           }
         }
@@ -100,10 +120,20 @@ function clearOldCache() {
 /**
  * Cache API response
  */
-export async function cachedFetch(key, fetchFn, useCache = true) {
+export async function cachedFetch(key, fetchFn, options = true) {
+  const config = typeof options === 'object'
+    ? {
+      enabled: options.enabled !== false,
+      ttlMs: options.ttlMs || DEFAULT_CACHE_DURATION,
+    }
+    : {
+      enabled: options !== false,
+      ttlMs: DEFAULT_CACHE_DURATION,
+    };
+
   // Try to get from cache first
-  if (useCache) {
-    const cached = getCache(key);
+  if (config.enabled) {
+    const cached = getCache(key, config.ttlMs);
     if (cached !== null) {
       return cached;
     }
@@ -112,17 +142,17 @@ export async function cachedFetch(key, fetchFn, useCache = true) {
   // Fetch fresh data
   try {
     const data = await fetchFn();
-    
+
     // Cache the result
-    if (useCache) {
+    if (config.enabled) {
       setCache(key, data);
     }
     
     return data;
   } catch (error) {
     // On error, try to return cached data if available
-    if (useCache) {
-      const cached = getCache(key);
+    if (config.enabled) {
+      const cached = getCache(key, config.ttlMs);
       if (cached !== null) {
         console.warn('Using cached data due to fetch error:', error);
         return cached;

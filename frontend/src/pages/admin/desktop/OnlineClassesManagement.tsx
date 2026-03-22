@@ -13,6 +13,8 @@ import { useToast } from '../../../components/ui/ToastContainer';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import DateInput from '../../../components/ui/DateInput';
 import ClassDetailDashboard from './ClassDetailDashboard';
+import { getApiBaseUrl } from '../../../utils/api-base-url.js';
+import { getStorageValue } from '../../../utils/browser-storage.js';
 
 // ========================================
 // STATUS BADGE COMPONENT
@@ -39,6 +41,7 @@ function StatusBadge({ status }) {
 // MAIN COMPONENT
 // ========================================
 export default function OnlineClassesManagement() {
+    const API_URL = getApiBaseUrl();
     const { toast } = useToast();
     const [classes, setClasses] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -50,8 +53,6 @@ export default function OnlineClassesManagement() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('active');
     const [regenLoadingId, setRegenLoadingId] = useState(null);
-    const [teachers, setTeachers] = useState([]);
-    const [loadingTeachers, setLoadingTeachers] = useState(false);
 
     const [formData, setFormData] = useState({
         class_name: '',
@@ -61,23 +62,23 @@ export default function OnlineClassesManagement() {
         timezone: 'Asia/Ho_Chi_Minh',
         start_date: '',
         end_date: '',
-        teacher_name: '',
         max_students: 50
     });
+
+    const getAdminToken = () => getStorageValue('admin_token');
 
     // Schedule days for form
     const [scheduleDays, setScheduleDays] = useState([1, 3, 5]); // Default: Mon, Wed, Fri
 
     useEffect(() => {
         loadClasses();
-        loadTeachers();
     }, [statusFilter]);
 
     const loadClasses = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('admin_token');
-            const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/online-classes?status=${statusFilter}`, {
+            const token = getAdminToken();
+            const response = await fetch(`${API_URL}/online-classes?status=${statusFilter}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -103,29 +104,6 @@ export default function OnlineClassesManagement() {
         }
     };
 
-    const loadTeachers = async () => {
-        setLoadingTeachers(true);
-        try {
-            const data = await api.getAllTeachers(100, 0);
-            if (data.success) {
-                // Handle different response formats
-                const teachersList = Array.isArray(data.data) 
-                    ? data.data 
-                    : (Array.isArray(data.data?.teachers) ? data.data.teachers : []);
-                setTeachers(teachersList);
-            } else {
-                console.warn('Failed to load teachers:', data.message);
-                setTeachers([]);
-            }
-        } catch (error) {
-            console.error('Error loading teachers:', error);
-            toast?.error('Lỗi tải danh sách giáo viên: ' + (error.message || 'Unknown error'));
-            setTeachers([]); // Reset to empty array on error
-        } finally {
-            setLoadingTeachers(false);
-        }
-    };
-
     const resetForm = () => {
         setEditingClass(null);
         setFormData({
@@ -136,7 +114,6 @@ export default function OnlineClassesManagement() {
             timezone: 'Asia/Ho_Chi_Minh',
             start_date: '',
             end_date: '',
-            teacher_name: '',
             max_students: 50
         });
         setScheduleDays([1, 3, 5]);
@@ -165,7 +142,6 @@ export default function OnlineClassesManagement() {
             timezone: cls.timezone || 'Asia/Ho_Chi_Minh',
             start_date: cls.start_date ? formatDateVN(cls.start_date) : '',
             end_date: cls.end_date ? formatDateVN(cls.end_date) : '',
-            teacher_name: cls.teacher_name || '',
             max_students: cls.max_students || 50
         });
         setShowClassModal(true);
@@ -180,8 +156,8 @@ export default function OnlineClassesManagement() {
     const handleConfirmDelete = async () => {
         if (!classToDelete) return;
         try {
-            const token = localStorage.getItem('admin_token');
-            const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/online-classes/${classToDelete.id}`, {
+            const token = getAdminToken();
+            const response = await fetch(`${API_URL}/online-classes/${classToDelete.id}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -236,10 +212,10 @@ export default function OnlineClassesManagement() {
         };
 
         try {
-            const token = localStorage.getItem('admin_token');
+            const token = getAdminToken();
             const url = editingClass
-                ? `${import.meta.env.VITE_API_URL || ''}/online-classes/${editingClass.id}`
-                : `${import.meta.env.VITE_API_URL || ''}/online-classes`;
+                ? `${API_URL}/online-classes/${editingClass.id}`
+                : `${API_URL}/online-classes`;
 
             const response = await fetch(url, {
                 method: editingClass ? 'PUT' : 'POST',
@@ -297,8 +273,8 @@ export default function OnlineClassesManagement() {
         try {
             if (regenLoadingId) return;
             setRegenLoadingId(classId);
-            const token = localStorage.getItem('admin_token');
-            const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/online-classes/${classId}/regenerate-meet`, {
+            const token = getAdminToken();
+            const response = await fetch(`${API_URL}/online-classes/${classId}/regenerate-meet`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -329,8 +305,7 @@ export default function OnlineClassesManagement() {
     };
 
     const filteredClasses = classes.filter(cls =>
-        cls.class_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cls.teacher_name?.toLowerCase().includes(searchTerm.toLowerCase())
+        cls.class_name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const dayLabels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
@@ -372,7 +347,7 @@ export default function OnlineClassesManagement() {
                     <div className="relative w-full md:w-96">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <Input
-                            placeholder="Tìm kiếm lớp học hoặc giáo viên..."
+                            placeholder="Tìm kiếm lớp học..."
                             className="pl-10 h-11 bg-white border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-100"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -460,11 +435,8 @@ export default function OnlineClassesManagement() {
                                         <CardTitle className="text-lg font-bold text-slate-800 line-clamp-2 leading-tight group-hover:text-purple-700 transition-colors">
                                             {cls.class_name}
                                         </CardTitle>
-                                        <CardDescription className="flex items-center gap-2 mt-2">
-                                            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-bold">
-                                                {cls.teacher_name ? cls.teacher_name.charAt(0) : 'G'}
-                                            </div>
-                                            <span className="truncate text-slate-600 text-sm">{cls.teacher_name || 'Chưa có GV'}</span>
+                                        <CardDescription className="mt-2 text-slate-500">
+                                            {cls.description || 'Lớp học online'}
                                         </CardDescription>
                                     </CardHeader>
 
@@ -531,7 +503,7 @@ export default function OnlineClassesManagement() {
                                 <DialogTitle className="text-2xl font-bold text-slate-800">
                                     {editingClass ? 'Cập nhật Lớp học' : 'Tạo lớp học mới'}
                                 </DialogTitle>
-                                <p className="text-slate-500 mt-1">Thiết lập thông tin, lịch học và giảng viên phụ trách</p>
+                                <p className="text-slate-500 mt-1">Thiết lập thông tin và lịch học của lớp online</p>
                             </div>
                         </div>
                         <DialogClose className="absolute right-6 top-6 rounded-full p-2 bg-slate-100 hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors">
@@ -572,39 +544,19 @@ export default function OnlineClassesManagement() {
                                         />
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label>Giáo viên phụ trách</Label>
-                                            <Select
-                                                value={formData.teacher_name}
-                                                onChange={(e) => setFormData({ ...formData, teacher_name: e.target.value })}
-                                                disabled={loadingTeachers}
-                                                className="h-10"
-                                            >
-                                                <option value="">-- Chọn giáo viên --</option>
-                                                {teachers.map((teacher) => {
-                                                    const teacherName = teacher.ho_ten_full ||
-                                                        `${teacher.ho || ''} ${teacher.ten_dem || ''} ${teacher.ten || ''}`.trim() ||
-                                                        `GV-${teacher.id}`;
-                                                    return <option key={teacher.id} value={teacherName}>{teacherName}</option>;
-                                                })}
-                                            </Select>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label>Sĩ số tối đa</Label>
-                                            <div className="relative">
-                                                <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                                <Input
-                                                    type="number"
-                                                    value={formData.max_students}
-                                                    onChange={(e) => setFormData({ ...formData, max_students: e.target.value })}
-                                                    placeholder="50"
-                                                    min="1"
-                                                    max="200"
-                                                    className="pl-10 h-10"
-                                                />
-                                            </div>
+                                    <div className="space-y-2">
+                                        <Label>Sĩ số tối đa</Label>
+                                        <div className="relative">
+                                            <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <Input
+                                                type="number"
+                                                value={formData.max_students}
+                                                onChange={(e) => setFormData({ ...formData, max_students: e.target.value })}
+                                                placeholder="50"
+                                                min="1"
+                                                max="200"
+                                                className="pl-10 h-10"
+                                            />
                                         </div>
                                     </div>
                                 </section>

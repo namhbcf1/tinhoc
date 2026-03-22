@@ -1,12 +1,65 @@
 import { useState, useEffect } from 'react';
 import api from '../../../../services/api';
+import {
+  ADMIN_CACHE_KEYS,
+  ADMIN_CACHE_TTL,
+  getAdminCache,
+  invalidateAdminData,
+  setAdminCache,
+} from '../admin-cache';
+import { useAdminAutoRefresh } from '../useAdminAutoRefresh';
+
+const defaultClassFormState = {
+  ten_lop: '',
+  ma_lop: '',
+  ngay_bat_dau: '',
+  ngay_ket_thuc: '',
+  lich_hoc: '',
+  dia_diem: '',
+  so_luong_hoc_vien_toi_da: '',
+  hoc_phi: '',
+  loai_lop: '',
+  mo_ta: '',
+  class_type: 'hoc',
+  max_students: '',
+  notes: '',
+  open_at: '',
+  close_at: '',
+  status: 'open',
+  isFreeContact: false,
+  schedule_days: [],
+  schedule_start_time: '',
+  schedule_end_time: '',
+  schedule_location: '',
+};
 
 export function useClassesManagement() {
-  const [classes, setClasses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedClasses = getAdminCache(ADMIN_CACHE_KEYS.classes, ADMIN_CACHE_TTL.classes);
+  const [classes, setClasses] = useState(() => cachedClasses ?? []);
+  const [loading, setLoading] = useState(() => cachedClasses === null);
   const [error, setError] = useState(null);
 
-  const loadClasses = async () => {
+  const invalidateClassCaches = () => {
+    invalidateAdminData({
+      keys: [
+        ADMIN_CACHE_KEYS.classes,
+        ADMIN_CACHE_KEYS.paymentClasses,
+        ADMIN_CACHE_KEYS.documentTargets,
+        ADMIN_CACHE_KEYS.dashboardOverview,
+        ADMIN_CACHE_KEYS.mobileDashboardOverview,
+      ],
+      source: 'classes-management',
+    });
+  };
+
+  const loadClasses = async ({ force = false } = {}) => {
+    const cached = force ? null : getAdminCache(ADMIN_CACHE_KEYS.classes, ADMIN_CACHE_TTL.classes);
+    if (cached !== null) {
+      setClasses(cached);
+      setLoading(false);
+      return cached;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -22,6 +75,8 @@ export function useClassesManagement() {
         data = [];
       }
       setClasses(data);
+      setAdminCache(ADMIN_CACHE_KEYS.classes, data);
+      return data;
     } catch (err) {
       console.error('Error loading classes:', err);
       setError(err.message);
@@ -33,14 +88,17 @@ export function useClassesManagement() {
   };
 
   useEffect(() => {
-    loadClasses();
+    void loadClasses();
   }, []);
+
+  useAdminAutoRefresh(() => loadClasses({ force: true }), { minIntervalMs: 12000 });
 
   const createClass = async (classData) => {
     try {
       const response = await api.createClass(classData);
       if (response?.success || response?.id) {
-        await loadClasses();
+        invalidateClassCaches();
+        await loadClasses({ force: true });
         return response;
       }
       throw new Error(response?.message || 'Tạo lớp thất bại');
@@ -54,7 +112,8 @@ export function useClassesManagement() {
     try {
       const response = await api.updateClass(id, classData);
       if (response?.success || response?.id) {
-        await loadClasses();
+        invalidateClassCaches();
+        await loadClasses({ force: true });
         return response;
       }
       throw new Error(response?.message || 'Cập nhật lớp thất bại');
@@ -68,7 +127,8 @@ export function useClassesManagement() {
     try {
       const response = await api.deleteClass(id);
       if (response?.success !== false) {
-        await loadClasses();
+        invalidateClassCaches();
+        await loadClasses({ force: true });
         return response;
       }
       throw new Error(response?.message || 'Xóa lớp thất bại');
@@ -118,26 +178,16 @@ export function useClassesManagement() {
 
 export function useClassForm(initialData = null) {
   const [formData, setFormData] = useState({
-    ten_lop: '',
-    ma_lop: '',
-    ngay_bat_dau: '',
-    ngay_ket_thuc: '',
-    lich_hoc: '',
-    dia_diem: '',
-    so_luong_hoc_vien_toi_da: '',
-    hoc_phi: '',
-    loai_lop: '',
-    mo_ta: '',
-    schedule_days: [],
-    schedule_start_time: '',
-    schedule_end_time: '',
-    schedule_location: '',
+    ...defaultClassFormState,
     ...initialData,
   });
 
   useEffect(() => {
     if (initialData) {
-      setFormData({ ...formData, ...initialData });
+      setFormData({
+        ...defaultClassFormState,
+        ...initialData,
+      });
     }
   }, [initialData]);
 
@@ -146,30 +196,15 @@ export function useClassForm(initialData = null) {
   };
 
   const resetForm = () => {
-    setFormData({
-      ten_lop: '',
-      ma_lop: '',
-      ngay_bat_dau: '',
-      ngay_ket_thuc: '',
-      lich_hoc: '',
-      dia_diem: '',
-      so_luong_hoc_vien_toi_da: '',
-      hoc_phi: '',
-      loai_lop: '',
-      mo_ta: '',
-      schedule_days: [],
-      schedule_start_time: '',
-      schedule_end_time: '',
-      schedule_location: '',
-    });
+    setFormData(defaultClassFormState);
   };
 
-  const handleDateInput = (field, value) => {
-    updateField(field, value);
+  const handleDateInput = (field) => (e) => {
+    updateField(field, e.target.value);
   };
 
-  const handleDateTimeInput = (field, value) => {
-    updateField(field, value);
+  const handleDateTimeInput = (field) => (e) => {
+    updateField(field, e.target.value);
   };
 
   const toggleScheduleDay = (day) => {

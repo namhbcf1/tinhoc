@@ -6,51 +6,95 @@ import {
 } from 'lucide-react';
 import api from '../../../services/api';
 import { formatDateVN } from '../../../utils/dateUtils';
+import AdminLoadingState from '../../../components/admin/AdminLoadingState';
+import {
+  ADMIN_CACHE_KEYS,
+  ADMIN_CACHE_TTL,
+  clearAdminCache,
+  getAdminCache,
+  setAdminCache,
+} from '../shared/admin-cache';
 import '../../../styles/admin/AdminModern.css';
 
+const EMPTY_PAYMENT_STATS = { total: 0, confirmed: 0, pending: 0, rejected: 0, revenue: 0 };
+
+function buildPaymentStats(data) {
+  const confirmed = data.filter((payment) => payment.status === 'confirmed' || payment.status === 'paid');
+  const pending = data.filter((payment) => payment.status === 'pending');
+  const rejected = data.filter((payment) => payment.status === 'rejected');
+
+  return {
+    total: data.length,
+    confirmed: confirmed.length,
+    pending: pending.length,
+    rejected: rejected.length,
+    revenue: confirmed.reduce((sum, payment) => sum + (payment.amount || 0), 0),
+  };
+}
+
 export default function PaymentsManagement({ toast }) {
-  const [payments, setPayments] = useState([]);
-  const [classes, setClasses] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const cachedPayments = getAdminCache(ADMIN_CACHE_KEYS.payments, ADMIN_CACHE_TTL.payments) || [];
+  const cachedClasses = getAdminCache(ADMIN_CACHE_KEYS.paymentClasses, ADMIN_CACHE_TTL.classes) || [];
+
+  const [payments, setPayments] = useState(cachedPayments);
+  const [classes, setClasses] = useState(cachedClasses);
+  const [loading, setLoading] = useState(cachedPayments.length === 0);
   const [filterClass, setFilterClass] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [paymentSearch, setPaymentSearch] = useState('');
   const [showDetailModal, setShowDetailModal] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [stats, setStats] = useState({ total: 0, confirmed: 0, pending: 0, rejected: 0, revenue: 0 });
+  const [stats, setStats] = useState(cachedPayments.length ? buildPaymentStats(cachedPayments) : EMPTY_PAYMENT_STATS);
 
   useEffect(() => { loadPayments(); loadClasses(); }, []);
 
-  const loadPayments = async () => {
+  const loadPayments = async ({ force = false } = {}) => {
+    if (!force) {
+      const cached = getAdminCache(ADMIN_CACHE_KEYS.payments, ADMIN_CACHE_TTL.payments);
+      if (cached) {
+        setPayments(cached);
+        setStats(buildPaymentStats(cached));
+        setLoading(false);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const response = await api.getPayments(1000, 0);
       const data = Array.isArray(response.data) ? response.data : [];
       setPayments(data);
-
-      // Calculate stats
-      const confirmed = data.filter(p => p.status === 'confirmed' || p.status === 'paid');
-      const pending = data.filter(p => p.status === 'pending');
-      const rejected = data.filter(p => p.status === 'rejected');
-      setStats({
-        total: data.length,
-        confirmed: confirmed.length,
-        pending: pending.length,
-        rejected: rejected.length,
-        revenue: confirmed.reduce((sum, p) => sum + (p.amount || 0), 0)
-      });
-    } catch { setPayments([]); } finally { setLoading(false); }
+      setStats(buildPaymentStats(data));
+      setAdminCache(ADMIN_CACHE_KEYS.payments, data);
+    } catch {
+      setPayments([]);
+      setStats(EMPTY_PAYMENT_STATS);
+    } finally { setLoading(false); }
   };
 
-  const loadClasses = async () => {
-    try { const response = await api.getClasses(); setClasses(response.data || []); } catch { }
+  const loadClasses = async ({ force = false } = {}) => {
+    if (!force) {
+      const cached = getAdminCache(ADMIN_CACHE_KEYS.paymentClasses, ADMIN_CACHE_TTL.classes);
+      if (cached) {
+        setClasses(cached);
+        return;
+      }
+    }
+
+    try {
+      const response = await api.getClasses();
+      const nextClasses = response.data || [];
+      setClasses(nextClasses);
+      setAdminCache(ADMIN_CACHE_KEYS.paymentClasses, nextClasses);
+    } catch { }
   };
 
   const handleConfirm = async (paymentId) => {
     try {
       await api.confirmPayment(paymentId);
       toast?.success('Xác nhận thanh toán thành công!');
-      loadPayments();
+      clearAdminCache(ADMIN_CACHE_KEYS.payments);
+      loadPayments({ force: true });
     } catch (error) { toast?.error('Lỗi: ' + error.message); }
   };
 
@@ -59,7 +103,8 @@ export default function PaymentsManagement({ toast }) {
     try {
       await api.rejectPayment(paymentId);
       toast?.success('Đã từ chối thanh toán');
-      loadPayments();
+      clearAdminCache(ADMIN_CACHE_KEYS.payments);
+      loadPayments({ force: true });
     } catch (error) { toast?.error('Lỗi: ' + error.message); }
   };
 
@@ -105,7 +150,16 @@ export default function PaymentsManagement({ toast }) {
           <h1><CreditCard size={32} /> Quản lý Thanh toán</h1>
           <p>Xác nhận và theo dõi các khoản thanh toán học phí</p>
         </div>
-        <button onClick={loadPayments} className="admin-btn admin-btn-outline" style={{ padding: '10px 16px' }}>
+        <button
+          onClick={() => {
+            clearAdminCache(ADMIN_CACHE_KEYS.payments);
+            clearAdminCache(ADMIN_CACHE_KEYS.paymentClasses);
+            loadPayments({ force: true });
+            loadClasses({ force: true });
+          }}
+          className="admin-btn admin-btn-outline"
+          style={{ padding: '10px 16px' }}
+        >
           <RefreshCw size={18} /> Làm mới
         </button>
       </div>
@@ -190,7 +244,12 @@ export default function PaymentsManagement({ toast }) {
           <span style={{ color: '#64748b', fontSize: 14 }}>{filteredPayments.length} khoản</span>
         </div>
         {loading ? (
-          <div className="admin-loading"><div className="admin-loading-spinner"></div><span>Đang tải...</span></div>
+          <AdminLoadingState
+            title="Đang tải thanh toán"
+            hint="Giữ lại dữ liệu đã cache để quay lại tab này gần như tức thì."
+            variant="desktop-list"
+            accent="emerald"
+          />
         ) : filteredPayments.length === 0 ? (
           <div className="admin-empty-state"><CreditCard size={48} /><p>Chưa có thanh toán nào</p></div>
         ) : (

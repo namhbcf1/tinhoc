@@ -4,8 +4,6 @@
 // Imported and used exclusively by api-client-core.js
 // ========================================
 
-import { setCache } from '../utils/cache.js';
-
 /** Public endpoints that never require an Authorization header */
 const PUBLIC_ENDPOINTS = [
   '/students/register',
@@ -15,7 +13,14 @@ const PUBLIC_ENDPOINTS = [
   '/documents/cccd/',
   '/documents/download',
   '/auth/login',
+  '/sso/exchange',
   '/teachers/login',
+  '/exam-categories',
+  '/exam-types',
+  '/program-organizers',
+  '/programs',
+  '/program-levels',
+  '/templates',
 ];
 
 /** Protected path prefixes that warrant a console warning when token missing */
@@ -34,10 +39,9 @@ export function validateTokenRole(token, expected) {
     const payload = JSON.parse(atob(token.split('.')[1] || ''));
     const role = payload?.role;
     if (!role) return token; // Legacy token without role claim — keep it
-    const validForAdmin = expected === 'admin' && (role === 'admin' || role === 'super_admin');
+    const validForAdmin = expected === 'admin' && (role === 'admin' || role === 'super_admin' || role === 'teacher');
     if (
       (expected === 'student' && role !== 'student') ||
-      (expected === 'teacher' && role !== 'teacher') ||
       (expected === 'admin' && !validForAdmin)
     ) {
       return null; // Mismatched — drop to prevent wrong-role 403s
@@ -53,17 +57,24 @@ export function validateTokenRole(token, expected) {
  * `this` is bound to the ApiClient instance.
  */
 export async function executeRequest(url, endpoint, options, token) {
+  const fetchOptions = { ...(options || {}) };
+  const method = String(fetchOptions.method || 'GET').toUpperCase();
+  const maxRetries = fetchOptions.retries || 0;
+  delete fetchOptions.retries;
+  delete fetchOptions.cacheTTL;
+  delete fetchOptions.cacheKey;
+  delete fetchOptions.useCache;
   const isFormDataBody =
-    typeof FormData !== 'undefined' && options?.body instanceof FormData;
+    typeof FormData !== 'undefined' && fetchOptions?.body instanceof FormData;
 
   const headers = {
     ...(isFormDataBody ? {} : { 'Content-Type': 'application/json' }),
-    ...options.headers,
+    ...fetchOptions.headers,
   };
 
-  const isPublicEndpoint = PUBLIC_ENDPOINTS.some(p => endpoint.includes(p));
+  const isPublicEndpoint = method === 'GET' && PUBLIC_ENDPOINTS.some(p => endpoint.includes(p));
 
-  if (token) {
+  if (token && !isPublicEndpoint) {
     headers['Authorization'] = `Bearer ${token}`;
   } else if (!isPublicEndpoint) {
     if (PROTECTED_PATTERNS.some(p => endpoint.includes(p))) {
@@ -71,7 +82,6 @@ export async function executeRequest(url, endpoint, options, token) {
     }
   }
 
-  const maxRetries = options.retries || 0;
   let lastError;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -79,7 +89,7 @@ export async function executeRequest(url, endpoint, options, token) {
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
     try {
-      const response = await fetch(url, { ...options, headers, signal: controller.signal });
+      const response = await fetch(url, { ...fetchOptions, headers, signal: controller.signal });
       clearTimeout(timeoutId);
 
       if (!response.ok) {
@@ -104,7 +114,8 @@ export async function executeRequest(url, endpoint, options, token) {
         }
         const err = new Error(errMessage);
         err.status = response.status;
-        err.details = error?.error?.details || null;
+        err.code = error?.code || error?.error?.code || null;
+        err.details = error?.details || error?.error?.details || null;
 
         // Auth errors — log token payload and do not retry
         if (response.status === 401 || response.status === 403) {
@@ -130,10 +141,6 @@ export async function executeRequest(url, endpoint, options, token) {
       }
 
       const data = await response.json();
-      // Cache non-auth GET responses
-      if ((options.method === 'GET' || !options.method) && !endpoint.includes('/auth')) {
-        setCache(endpoint, data);
-      }
       return data;
 
     } catch (error) {

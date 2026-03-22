@@ -4,6 +4,14 @@
 // ========================================
 
 export function applyClassScheduleMethods(ApiClient) {
+  const invalidateClassCache = (client, classId) => {
+    client.invalidateCache([
+      '/classes',
+      `/classes/${classId}/sessions`,
+      `/class-schedules/class/${classId}`,
+    ]);
+  };
+
   // ---- Class Schedules ----
 
   // Get all schedules for a specific class
@@ -34,6 +42,38 @@ export function applyClassScheduleMethods(ApiClient) {
     });
   };
 
+  // ---- Class Sessions ----
+
+  ApiClient.prototype.getClassSessions = async function(classId) {
+    return this.request(`/classes/${classId}/sessions`);
+  };
+
+  ApiClient.prototype.createClassSession = async function(classId, data) {
+    const response = await this.request(`/classes/${classId}/sessions`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    invalidateClassCache(this, classId);
+    return response;
+  };
+
+  ApiClient.prototype.updateClassSession = async function(classId, sessionId, data) {
+    const response = await this.request(`/classes/${classId}/sessions/${sessionId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    invalidateClassCache(this, classId);
+    return response;
+  };
+
+  ApiClient.prototype.deleteClassSession = async function(classId, sessionId) {
+    const response = await this.request(`/classes/${classId}/sessions/${sessionId}`, {
+      method: 'DELETE',
+    });
+    invalidateClassCache(this, classId);
+    return response;
+  };
+
   // ---- Class Teachers ----
 
   // Get teachers assigned to a class
@@ -41,11 +81,11 @@ export function applyClassScheduleMethods(ApiClient) {
     return this.request(`/class-teachers/class/${classId}`);
   };
 
-  // Assign a teacher to a class with an optional role
-  ApiClient.prototype.assignTeacherToClass = async function(classId, teacherId, role = 'teacher') {
+  // Assign a teacher (admin with role='teacher') to a class
+  ApiClient.prototype.assignTeacherToClass = async function(classId, adminId, role = 'teacher') {
     return this.request('/class-teachers', {
       method: 'POST',
-      body: JSON.stringify({ class_id: classId, teacher_id: teacherId, role }),
+      body: JSON.stringify({ class_id: classId, admin_id: adminId, role }),
     });
   };
 

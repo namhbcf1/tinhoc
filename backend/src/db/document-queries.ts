@@ -15,7 +15,12 @@ export async function createDocument(db: D1Database, data: Record<string, any>) 
     visibility,
     doc_type,
     valid_from,
-    valid_until
+    valid_until,
+    organizer_uuid,
+    program_uuid,
+    level_uuid,
+    custom_field_payload,
+    override_payload
   } = data;
 
   try {
@@ -31,9 +36,14 @@ export async function createDocument(db: D1Database, data: Record<string, any>) 
         valid_until,
         uploaded_by,
         folder_id,
-        visibility
+        visibility,
+        organizer_uuid,
+        program_uuid,
+        level_uuid,
+        custom_field_payload,
+        override_payload
       )
-      VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       title,
       description || null,
@@ -44,7 +54,12 @@ export async function createDocument(db: D1Database, data: Record<string, any>) 
       valid_until || null,
       uploaded_by || null,
       folder_id || null,
-      visibility || 'internal'
+      visibility || 'internal',
+      organizer_uuid || null,
+      program_uuid || null,
+      level_uuid || null,
+      custom_field_payload || null,
+      override_payload || null
     ).run();
 
     return {

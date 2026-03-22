@@ -12,7 +12,7 @@ const resolveGender = (g) => {
 // CCCD code badge
 function CccdBadge({ value }) {
   return (
-    <code className="bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-1.5 rounded-md text-xs font-mono font-semibold">
+    <code className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-mono font-semibold text-slate-600">
       {value}
     </code>
   );
@@ -22,6 +22,8 @@ function CccdBadge({ value }) {
 function StatusBadge({ status }) {
   const map = {
     studying:  { cls: 'bg-emerald-100 text-emerald-700', text: 'Đang học' },
+    active:    { cls: 'bg-emerald-100 text-emerald-700', text: 'Đang học' },
+    approved:  { cls: 'bg-blue-100 text-blue-700',       text: 'Đã duyệt' },
     pending:   { cls: 'bg-amber-100 text-amber-700',     text: 'Chờ duyệt' },
     completed: { cls: 'bg-blue-100 text-blue-700',       text: 'Hoàn thành' },
     certified: { cls: 'bg-purple-100 text-purple-700',   text: 'Có CC' },
@@ -48,7 +50,7 @@ function ActionBtn({ onClick, title, className, children }) {
 }
 
 const TH = ({ children, center }) => (
-  <th className={`px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50 ${center ? 'text-center' : 'text-left'}`}>
+  <th className={`px-5 py-4 text-xs font-bold uppercase tracking-[0.16em] text-slate-500 bg-[#f4f7f5] ${center ? 'text-center' : 'text-left'}`}>
     {children}
   </th>
 );
@@ -72,6 +74,7 @@ export default function StudentTableView({
   onViewDetail,
   onEdit,
   onDelete,
+  getImageUrl,
   // Bulk selection props (optional — table is still usable without them)
   selectedIds = new Set(),
   onToggleSelect,
@@ -92,7 +95,7 @@ export default function StudentTableView({
 
   return (
     <div className="w-full overflow-x-auto">
-      <table className="w-full border-collapse">
+      <table className="min-w-[1120px] w-full border-collapse">
         <thead>
           <tr className="border-b border-slate-200">
             {/* Select-all checkbox column */}
@@ -121,14 +124,14 @@ export default function StudentTableView({
             return (
               <tr
                 key={student.id}
-                className={`border-b border-slate-50 transition-all duration-150 group
+                className={`border-b border-slate-100 transition-all duration-150 group
                   ${isSelected
-                    ? 'bg-emerald-50 border-l-4 border-l-emerald-400'
-                    : 'hover:bg-slate-50 hover:border-l-4 hover:border-l-emerald-400'}`}
+                    ? 'bg-emerald-50/75'
+                    : 'hover:bg-slate-50/85'}`}
               >
                 {/* Row checkbox */}
                 {bulkEnabled && (
-                  <td className="px-4 py-5">
+                  <td className="px-4 py-4">
                     <input
                       type="checkbox"
                       checked={isSelected}
@@ -139,14 +142,22 @@ export default function StudentTableView({
                 )}
 
                 {/* Avatar + Name */}
-                <td className="px-6 py-5">
-                  <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm">
-                      {student.ho_ten_full?.charAt(0) || 'H'}
+                <td className="px-5 py-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm overflow-hidden">
+                      {student.image_3x4 ? (
+                        <img
+                          src={getImageUrl ? getImageUrl(student.image_3x4) : student.image_3x4}
+                          alt={student.ho_ten_full || 'Hoc vien'}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        student.ho_ten_full?.charAt(0) || 'H'
+                      )}
                     </div>
-                    <div>
-                      <div className="font-semibold text-slate-900 text-sm">{student.ho_ten_full}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold text-slate-900 text-sm">{student.ho_ten_full}</div>
+                      <div className="mt-0.5 text-xs text-slate-400">
                         {resolveGender(student.gioi_tinh)} &bull; {formatDateVN(student.ngay_sinh)}
                       </div>
                     </div>
@@ -154,35 +165,35 @@ export default function StudentTableView({
                 </td>
 
                 {/* CCCD */}
-                <td className="px-6 py-5">
+                <td className="px-5 py-4">
                   <CccdBadge value={student.cccd} />
                 </td>
 
                 {/* Contact */}
-                <td className="px-6 py-5">
-                  <div className="text-sm text-slate-700">{student.email}</div>
-                  <div className="text-xs text-slate-400 mt-0.5">{student.sdt}</div>
+                <td className="px-5 py-4">
+                  <div className="max-w-[260px] truncate text-sm text-slate-700">{student.email}</div>
+                  <div className="mt-0.5 text-xs text-slate-400">{student.sdt}</div>
                 </td>
 
                 {/* Classes */}
-                <td className="px-6 py-5">
+                <td className="px-5 py-4">
                   <span className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-600 text-xs font-semibold rounded-full">
                     {student.registrations?.filter(r => r.class_type === 'hoc').length || 0} lớp
                   </span>
                 </td>
-                <td className="px-6 py-5">
+                <td className="px-5 py-4">
                   <span className="inline-flex items-center px-2.5 py-1 bg-purple-50 text-purple-600 text-xs font-semibold rounded-full">
                     {student.registrations?.filter(r => r.class_type === 'thi').length || 0} lớp
                   </span>
                 </td>
 
                 {/* Status */}
-                <td className="px-6 py-5">
+                <td className="px-5 py-4">
                   <StatusBadge status={student.registrations?.[0]?.status} />
                 </td>
 
                 {/* Actions */}
-                <td className="px-6 py-5">
+                <td className="px-5 py-4">
                   <div className="flex items-center justify-center gap-1">
                     <ActionBtn onClick={() => onViewDetail(student)} title="Xem chi tiết" className="text-slate-400 hover:text-slate-700 hover:bg-slate-100">
                       <Eye size={17} />

@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import type { Env } from '../types/env.js';
-import { verifyPassword, hashPassword, generateJWT, verifyJWT, jsonResponse, errorResponse } from '../utils/helpers.js';
+import { verifyPassword, hashPassword, verifyJWT, jsonResponse, errorResponse } from '../utils/helpers.js';
 import {
   findAdminByUsername,
   updateAdminPassword,
@@ -11,11 +11,18 @@ import {
   invalidateAllPasswordResetTokens,
   createAdmin
 } from '../db/queries.js';
-import { updateAdminLastLogin, createActivityLog, getAdminCount } from '../db/admin-queries.js';
+import {
+  updateAdminLastLogin,
+  createActivityLog,
+  getAdminCount,
+  promoteLegacyTeacherAdmin,
+} from '../db/admin-queries.js';
 import { loginRateLimiter } from '../utils/rate-limiter.js';
 import { sendPasswordResetEmail } from '../utils/email-service.js';
+import { authMiddleware } from '../middleware/auth-middleware.js';
+import { issueSessionToken, revokeSessionBySid } from '../lib/auth/session-broker.js';
 
-const auth = new Hono<{ Bindings: Env }>();
+const auth = new Hono<{ Bindings: Env; Variables: { user: any } }>();
 
 // ========================================
 // POST /auth/login - Admin login
@@ -47,6 +54,9 @@ auth.post('/login', loginRateLimiter, async (c) => {
       return errorResponse('Thông tin đăng nhập không chính xác', 401);
     }
 
+    await promoteLegacyTeacherAdmin(c.env.DB, Number(admin.id));
+    const sessionRole = admin.role === 'super_admin' ? 'super_admin' : 'admin';
+
     // Update last login
     try {
       await updateAdminLastLogin(c.env.DB, admin.id);
@@ -71,25 +81,35 @@ auth.post('/login', loginRateLimiter, async (c) => {
       // Continue without logging if table doesn't exist
     }
 
-    // Generate JWT with 24 hours expiration
-    const token = await generateJWT(
+    const issued = await issueSessionToken(
+      c.env.DB,
+      c.env,
       {
-        id: admin.id,
+        id: Number(admin.id),
+        userType: 'admin',
+        role: sessionRole,
         username: admin.username,
-        role: admin.role,
-        exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60 // 24h (JWT standard: seconds)
+        teacherCode: admin.teacher_code || null,
+        phone: admin.phone || admin.sdt || null,
+        email: admin.email || null,
+        displayName: admin.full_name || admin.ho_ten_full || admin.username,
       },
-      c.env.JWT_SECRET
+      'edu'
     );
 
     return jsonResponse({
       success: true,
-      token,
+      token: issued.token,
+      sid: issued.sid,
+      expires_at: issued.expiresAt,
       admin: {
         id: admin.id,
         username: admin.username,
-        full_name: admin.full_name,
-        role: admin.role,
+        full_name: admin.full_name || admin.ho_ten_full,
+        role: sessionRole,
+        teacher_code: admin.teacher_code || undefined,
+        department: admin.department || undefined,
+        ho_ten_full: admin.ho_ten_full || undefined,
       },
     });
   } catch (error: any) {
@@ -117,6 +137,50 @@ auth.post('/verify', async (c) => {
     return jsonResponse({ success: true, user: payload });
   } catch (error: any) {
     return errorResponse('Lỗi xác thực: ' + error.message, 500);
+  }
+});
+
+auth.get('/session', authMiddleware, async (c) => {
+  try {
+    const user = c.get('user');
+    return jsonResponse({
+      success: true,
+      user: {
+        id: user.id,
+        type: user.user_type || user.type,
+        name: user.display_name || user.ho_ten || user.username || '',
+        email: user.email || undefined,
+        phone: user.phone || undefined,
+        cccd: user.cccd || undefined,
+        teacher_code: user.teacher_code || user.teacherCode || undefined,
+        teacherCode: user.teacher_code || user.teacherCode || undefined,
+      },
+      session: {
+        sid: user.sid || null,
+        aud: user.aud || null,
+        sub: user.sub || null,
+        role: user.role || null,
+      },
+    });
+  } catch (error: any) {
+    return errorResponse('Không thể lấy session hiện tại', 500);
+  }
+});
+
+auth.post('/logout-all', authMiddleware, async (c) => {
+  try {
+    const user = c.get('user');
+    if (user?.sid) {
+      await revokeSessionBySid(c.env.DB, user.sid);
+    }
+
+    return jsonResponse({
+      success: true,
+    }, 200, {
+      'Set-Cookie': 'token=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0',
+    });
+  } catch (error: any) {
+    return errorResponse('Không thể đăng xuất toàn bộ phiên', 500);
   }
 });
 
@@ -162,7 +226,7 @@ auth.post('/create-admin', async (c) => {
         id: result.meta.last_row_id,
         username,
         full_name,
-        role: role || 'admin'
+        role: role === 'super_admin' ? 'super_admin' : 'admin'
       }
     });
   } catch (error: any) {

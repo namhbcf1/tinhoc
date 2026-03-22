@@ -172,7 +172,7 @@ export function isDateInRange(checkDate: string | Date, startDate: string | Date
 // RESPONSE HELPERS
 // ========================================
 
-export function jsonResponse(data: unknown, status = 200): Response {
+export function jsonResponse(data: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   // Do NOT set Access-Control-Allow-Origin here.
   // CORS is enforced by the Hono cors() middleware in index.js (origin whitelist).
   // Hardcoding '*' here would bypass the whitelist for all origins.
@@ -180,6 +180,7 @@ export function jsonResponse(data: unknown, status = 200): Response {
     status,
     headers: {
       'Content-Type': 'application/json',
+      ...extraHeaders,
     },
   });
 }

@@ -116,8 +116,9 @@ students.put('/update-by-cccd', requireAuth, createPutEndpoint({
   body: z.any(),
   handler: (async (c: any, { body }: any) => {
     const user = c.get('user');
-    // If caller is a student, enforce they can only update their own CCCD
-    if (user?.type === 'student' && user.cccd !== body.cccd) {
+    const currentCCCD = String(body.current_cccd || body.cccd || '').trim();
+    // If caller is a student, enforce they can only update their own record
+    if (user?.type === 'student' && user.cccd !== currentCCCD) {
       throw new Error('Không có quyền cập nhật thông tin học viên khác');
     }
     return await StudentService.updateStudentByCCCD(c, body);

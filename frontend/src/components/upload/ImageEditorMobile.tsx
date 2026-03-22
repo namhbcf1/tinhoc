@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { ZoomIn, ZoomOut, RotateCw, FlipHorizontal, FlipVertical, X, Check, RotateCcw } from 'lucide-react';
-import { getOverlayRatio } from './overlayUtils';
+import { getOverlayBox } from './overlayUtils';
+import { detectDocumentAutoFitBox } from './documentAutoFit';
 import './ImageEditorMobile.css';
 
 /**
@@ -14,6 +15,7 @@ export default function ImageEditorMobile({
     onConfirm,
     onCancel
 }) {
+    const requiresDocumentDetection = type === 'cccd_front' || type === 'cccd_back';
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
     const imageRef = useRef(null);
@@ -24,6 +26,9 @@ export default function ImageEditorMobile({
     const [rotation, setRotation] = useState(0);
     const [flipHorizontal, setFlipHorizontal] = useState(false);
     const [flipVertical, setFlipVertical] = useState(false);
+    const [documentCheckState, setDocumentCheckState] = useState(
+        requiresDocumentDetection ? 'checking' : 'detected'
+    );
     
     // Touch gesture state - use refs to avoid dependency issues
     const [isDragging, setIsDragging] = useState(false);
@@ -39,6 +44,7 @@ export default function ImageEditorMobile({
     const scaleRef = useRef(1);
     const translateXRef = useRef(0);
     const translateYRef = useRef(0);
+    const initialTransformRef = useRef({ scale: 1, tx: 0, ty: 0 });
 
     const getBaseDimsAfterRotation = useCallback(() => {
         const img = imageRef.current;
@@ -52,22 +58,15 @@ export default function ImageEditorMobile({
         const container = containerRef.current;
         if (!container) return null;
         const { width: cw, height: ch } = container.getBoundingClientRect();
-        const ratio = getOverlayRatio(type);
-        const ow = cw * ratio.w;
-        const oh = ow / ratio.aspect;
-        const ox = (cw - ow) / 2;
-        const oy = (ch - oh) / 2;
+        const overlay = getOverlayBox(type, cw, ch, {
+            maxHeightRatio: 0.88,
+        });
+        const ow = overlay.overlayWidth;
+        const oh = overlay.overlayHeight;
+        const ox = overlay.overlayX;
+        const oy = overlay.overlayY;
         return { cw, ch, ox, oy, ow, oh };
     }, [type]);
-
-    const computeContainScale = useCallback(() => {
-        const overlay = getOverlayRect();
-        const { baseW, baseH } = getBaseDimsAfterRotation();
-        if (!overlay) return 1;
-        const scaleByWidth = (overlay.cw * 0.98) / baseW;
-        const scaleByHeight = (overlay.ch * 0.98) / baseH;
-        return Math.max(0.05, Math.min(scaleByWidth, scaleByHeight));
-    }, [getOverlayRect, getBaseDimsAfterRotation]);
 
     const computeCoverScaleForOverlay = useCallback(() => {
         const overlay = getOverlayRect();
@@ -106,6 +105,39 @@ export default function ImageEditorMobile({
 
         return { tx, ty };
     }, [getOverlayRect, getBaseDimsAfterRotation]);
+
+    const computeInitialTransform = useCallback(async (img) => {
+        const overlay = getOverlayRect();
+        if (!overlay) {
+            return { scale: 1, tx: 0, ty: 0, detected: false };
+        }
+
+        let nextScale = computeCoverScaleForOverlay();
+        let nextTx = 0;
+        let nextTy = 0;
+        let detected = false;
+
+        const detectedBox = await detectDocumentAutoFitBox(img, type);
+        if (detectedBox) {
+            detected = true;
+            const detectedScale = Math.max(
+                overlay.ow / detectedBox.width,
+                overlay.oh / detectedBox.height
+            ) * 1.02;
+
+            nextScale = Math.max(nextScale, detectedScale);
+            nextTx = (img.width / 2 - (detectedBox.x + detectedBox.width / 2)) * nextScale;
+            nextTy = (img.height / 2 - (detectedBox.y + detectedBox.height / 2)) * nextScale;
+        }
+
+        const clamped = clampTranslateToCoverOverlay(nextScale, nextTx, nextTy);
+        return {
+            scale: nextScale,
+            tx: clamped.tx,
+            ty: clamped.ty,
+            detected,
+        };
+    }, [clampTranslateToCoverOverlay, computeCoverScaleForOverlay, getOverlayRect, type]);
     
     // Sync refs with state
     useEffect(() => {
@@ -139,27 +171,42 @@ export default function ImageEditorMobile({
     // Load image
     useEffect(() => {
         if (!imageFile) return;
+        let cancelled = false;
 
         const img = new Image();
         img.onload = () => {
+            if (cancelled) return;
             imageRef.current = img;
+            setDocumentCheckState(requiresDocumentDetection ? 'checking' : 'detected');
 
-            // Reset transforms first
-            setTranslateX(0);
-            setTranslateY(0);
-            translateXRef.current = 0;
-            translateYRef.current = 0;
-            setRotation(0);
-            setFlipHorizontal(false);
-            setFlipVertical(false);
+            const initializeTransform = async () => {
+                const initialTransform = await computeInitialTransform(img);
+                if (cancelled) return;
 
-            // Initial view on mobile: show full image (contain)
-            const initialScale = computeContainScale();
-            setScale(initialScale);
-            scaleRef.current = initialScale;
+                setDocumentCheckState(
+                    requiresDocumentDetection
+                        ? (initialTransform.detected ? 'detected' : 'manual')
+                        : 'detected'
+                );
+                initialTransformRef.current = initialTransform;
+                setTranslateX(initialTransform.tx);
+                setTranslateY(initialTransform.ty);
+                translateXRef.current = initialTransform.tx;
+                translateYRef.current = initialTransform.ty;
+                setRotation(0);
+                setFlipHorizontal(false);
+                setFlipVertical(false);
+                setScale(initialTransform.scale);
+                scaleRef.current = initialTransform.scale;
 
-            // Initial render
-            setTimeout(() => drawImage(), 100);
+                setTimeout(() => {
+                    if (!cancelled) {
+                        drawImage();
+                    }
+                }, 100);
+            };
+
+            void initializeTransform();
         };
         img.onerror = () => {
             console.error('Failed to load image');
@@ -167,11 +214,12 @@ export default function ImageEditorMobile({
         img.src = URL.createObjectURL(imageFile);
 
         return () => {
+            cancelled = true;
             if (img.src.startsWith('blob:')) {
                 URL.revokeObjectURL(img.src);
             }
         };
-    }, [imageFile]);
+    }, [computeInitialTransform, imageFile, requiresDocumentDetection]);
 
     // Draw image with transformations (mobile: canvas = container size, no scroll)
     const drawImage = useCallback(() => {
@@ -233,12 +281,12 @@ export default function ImageEditorMobile({
 
     // Draw overlay template guide
     const drawOverlay = (ctx, canvasWidth, canvasHeight) => {
-        const ratio = getOverlayRatio(type);
-        const overlayWidth = canvasWidth * ratio.w;
-        const overlayHeight = overlayWidth / ratio.aspect;
-
-        const overlayX = (canvasWidth - overlayWidth) / 2;
-        const overlayY = (canvasHeight - overlayHeight) / 2;
+        const overlay = getOverlayRect();
+        if (!overlay) return;
+        const overlayWidth = overlay.ow;
+        const overlayHeight = overlay.oh;
+        const overlayX = overlay.ox;
+        const overlayY = overlay.oy;
 
         // Draw dark overlay (outside crop area) - vùng ngoài mờ
         ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
@@ -297,20 +345,26 @@ export default function ImageEditorMobile({
         drawImage();
     }, [drawImage]);
 
+    useEffect(() => {
+        const handleResize = () => {
+            drawImage();
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [drawImage]);
+
     // Zoom in/out
     const handleZoom = (delta) => {
         setScale((prev) => {
-            const next = Math.max(0.2, Math.min(5, prev + delta));
-            scaleRef.current = next;
-            // If we're already large enough to cover overlay, keep translate clamped to avoid nonsense.
             const minCover = computeCoverScaleForOverlay();
-            if (next >= minCover) {
-                const { tx, ty } = clampTranslateToCoverOverlay(next, translateXRef.current, translateYRef.current);
-                translateXRef.current = tx;
-                translateYRef.current = ty;
-                setTranslateX(tx);
-                setTranslateY(ty);
-            }
+            const next = Math.max(minCover, Math.min(5, prev + delta));
+            scaleRef.current = next;
+            const { tx, ty } = clampTranslateToCoverOverlay(next, translateXRef.current, translateYRef.current);
+            translateXRef.current = tx;
+            translateYRef.current = ty;
+            setTranslateX(tx);
+            setTranslateY(ty);
             return next;
         });
     };
@@ -318,9 +372,9 @@ export default function ImageEditorMobile({
     // Handle rotate
     const handleRotate = () => {
         setRotation((prev) => (prev + 90) % 360);
-        // After rotation, reset to contain view (user expects to reframe)
+        // After rotation, keep the preview in a valid crop state immediately.
         setTimeout(() => {
-            const s = computeContainScale();
+            const s = computeCoverScaleForOverlay();
             setScale(s);
             scaleRef.current = s;
             const { tx, ty } = clampTranslateToCoverOverlay(s, 0, 0);
@@ -343,13 +397,13 @@ export default function ImageEditorMobile({
 
     // Reset transformations
     const handleReset = () => {
-        const s = computeContainScale();
-        setScale(s);
-        scaleRef.current = s;
-        setTranslateX(0);
-        setTranslateY(0);
-        translateXRef.current = 0;
-        translateYRef.current = 0;
+        const initialTransform = initialTransformRef.current;
+        setScale(initialTransform.scale);
+        scaleRef.current = initialTransform.scale;
+        setTranslateX(initialTransform.tx);
+        setTranslateY(initialTransform.ty);
+        translateXRef.current = initialTransform.tx;
+        translateYRef.current = initialTransform.ty;
         setRotation(0);
         setFlipHorizontal(false);
         setFlipVertical(false);
@@ -370,8 +424,13 @@ export default function ImageEditorMobile({
         const deltaX = e.clientX - lastTouchRef.current.x;
         const deltaY = e.clientY - lastTouchRef.current.y;
         
-        const newTranslateX = translateXRef.current + deltaX;
-        const newTranslateY = translateYRef.current + deltaY;
+        const clamped = clampTranslateToCoverOverlay(
+            scaleRef.current,
+            translateXRef.current + deltaX,
+            translateYRef.current + deltaY
+        );
+        const newTranslateX = clamped.tx;
+        const newTranslateY = clamped.ty;
         
         translateXRef.current = newTranslateX;
         translateYRef.current = newTranslateY;
@@ -420,10 +479,6 @@ export default function ImageEditorMobile({
         };
 
         const touchMoveHandler = (e) => {
-            if (isDraggingRef.current || initialPinchDistanceRef.current) {
-                e.preventDefault();
-            }
-            
             if (e.touches.length === 1 && isDraggingRef.current && lastTouchRef.current) {
                 const deltaX = e.touches[0].clientX - lastTouchRef.current.x;
                 const deltaY = e.touches[0].clientY - lastTouchRef.current.y;
@@ -431,13 +486,9 @@ export default function ImageEditorMobile({
                 let newTranslateX = translateXRef.current + deltaX;
                 let newTranslateY = translateYRef.current + deltaY;
 
-                // If we are in cover mode, clamp translate so overlay never shows empty area.
-                const minCover = computeCoverScaleForOverlay();
-                if (scaleRef.current >= minCover) {
-                    const clamped = clampTranslateToCoverOverlay(scaleRef.current, newTranslateX, newTranslateY);
-                    newTranslateX = clamped.tx;
-                    newTranslateY = clamped.ty;
-                }
+                const clamped = clampTranslateToCoverOverlay(scaleRef.current, newTranslateX, newTranslateY);
+                newTranslateX = clamped.tx;
+                newTranslateY = clamped.ty;
                 
                 translateXRef.current = newTranslateX;
                 translateYRef.current = newTranslateY;
@@ -451,17 +502,14 @@ export default function ImageEditorMobile({
                 const distance = getTouchDistance(e.touches);
                 if (distance && initialPinchDistanceRef.current) {
                     const scaleChange = distance / initialPinchDistanceRef.current;
-                    const newScale = Math.max(0.2, Math.min(5, initialScaleRef.current * scaleChange));
-                    scaleRef.current = newScale;
-                    // If in cover mode, clamp translate too
                     const minCover = computeCoverScaleForOverlay();
-                    if (newScale >= minCover) {
-                        const { tx, ty } = clampTranslateToCoverOverlay(newScale, translateXRef.current, translateYRef.current);
-                        translateXRef.current = tx;
-                        translateYRef.current = ty;
-                        setTranslateX(tx);
-                        setTranslateY(ty);
-                    }
+                    const newScale = Math.max(minCover, Math.min(5, initialScaleRef.current * scaleChange));
+                    scaleRef.current = newScale;
+                    const { tx, ty } = clampTranslateToCoverOverlay(newScale, translateXRef.current, translateYRef.current);
+                    translateXRef.current = tx;
+                    translateYRef.current = ty;
+                    setTranslateX(tx);
+                    setTranslateY(ty);
                     setScale(newScale);
                 }
             }
@@ -498,14 +546,15 @@ export default function ImageEditorMobile({
         const container = containerRef.current;
         if (!img || !container) return;
 
-        const ratio = getOverlayRatio(type);
         const containerRect = container.getBoundingClientRect();
         const containerWidth = containerRect.width;
         const containerHeight = containerRect.height;
+        const overlay = getOverlayRect();
+        if (!overlay) return;
 
         // Calculate overlay dimensions (same as displayed)
-        const overlayWidth = containerWidth * ratio.w;
-        const overlayHeight = overlayWidth / ratio.aspect;
+        const overlayWidth = overlay.ow;
+        const overlayHeight = overlay.oh;
         const rad = (rotation * Math.PI) / 180;
 
         // Enforce: NO EMPTY AREA on confirm (auto cover + clamp)
@@ -572,6 +621,14 @@ export default function ImageEditorMobile({
         photo_3x4: 'Ảnh 3x4'
     };
 
+    const statusText = !requiresDocumentDetection
+        ? 'Căn ảnh chân dung trong khung 3x4'
+        : documentCheckState === 'checking'
+            ? 'Đang tự căn khung thông minh...'
+            : documentCheckState === 'detected'
+                ? 'Đã tự căn gần đúng, kéo nhẹ để chỉnh lại nếu cần'
+                : 'Không nhận ra 4 góc rõ ràng, kéo và zoom để tự căn';
+
     return (
         <div className="image-editor-mobile-wrapper">
             <div className="image-editor-mobile-header">
@@ -590,6 +647,13 @@ export default function ImageEditorMobile({
                 onMouseLeave={handleMouseUp}
             >
                 <canvas ref={canvasRef} className="image-editor-mobile-canvas-element" />
+            </div>
+
+            <div className={`image-editor-mobile-status status-${documentCheckState}`}>
+                <span className="image-editor-mobile-status-badge">
+                    {documentCheckState === 'detected' ? 'Auto-fit' : documentCheckState === 'checking' ? 'Đang đọc' : 'Chỉnh tay'}
+                </span>
+                <p>{statusText}</p>
             </div>
 
             <div className="image-editor-mobile-controls">
@@ -655,4 +719,3 @@ export default function ImageEditorMobile({
         </div>
     );
 }
-

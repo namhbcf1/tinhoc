@@ -30,7 +30,7 @@ const badgeVariants = cva(
  */
 function Badge({ className, variant, 'aria-label': ariaLabel, ...props }) {
     return (
-        <div
+        <span
             className={cn(badgeVariants({ variant }), className)}
             aria-label={ariaLabel}
             {...props}

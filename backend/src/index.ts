@@ -28,16 +28,22 @@ import cccdUpload from './routes/cccd-upload.js';
 import onlineClasses from './routes/online-classes.js';
 import videos from './routes/videos.js';
 import assignments from './routes/assignments.js';
-import vstep from './routes/vstep.js'; // VSTEP NEW SYSTEM
 import examCategories from './routes/exam-categories.js';
+import examTypes from './routes/exam-types.js';
+import programOrganizers from './routes/program-organizers.js';
+import programs from './routes/programs.js';
+import programLevels from './routes/program-levels.js';
+import fieldDefinitions from './routes/field-definitions.js';
+import fieldOptions from './routes/field-options.js';
+import sync from './routes/sync.js';
+import sso from './routes/sso.js';
+import adminTeaching from './routes/admin-teaching.js';
 import ai from './routes/ai.js';
-import examManagement from './routes/exam-management.js';
-import examTaking from './routes/exam-taking.js';
-import gradingRoute from './routes/grading.js';
+import errors from './routes/errors.js';
 // import migrate from './routes/migrate.js';
 import { errorResponse } from './utils/helpers.js';
 import { moderateRateLimiter, strictRateLimiter } from './utils/rate-limiter.js';
-import { authMiddleware, requireAdmin, requireAdminOrTeacher, requireAuth } from './middleware/auth-middleware.js';
+import { authMiddleware, requireAdmin, requireAuth } from './middleware/auth-middleware.js';
 import { globalErrorHandler } from './middleware/error-handler.js';
 
 // ========================================
@@ -45,6 +51,35 @@ import { globalErrorHandler } from './middleware/error-handler.js';
 // ========================================
 
 const app = new Hono<{ Bindings: Env }>();
+const PUBLIC_CACHEABLE_PATHS = [
+  '/classes/open',
+  '/posts',
+  '/homepage/settings',
+  '/exam-categories',
+  '/exam-types',
+  '/certificates/lookup',
+];
+
+export function resolveDefaultCacheControl(
+  request: Pick<Request, 'method' | 'url' | 'headers'>,
+  hasExistingCacheControl = false,
+): string | null {
+  if (request.method !== 'GET' || hasExistingCacheControl) {
+    return null;
+  }
+
+  const path = new URL(request.url).pathname;
+  const hasAuthContext = Boolean(
+    request.headers.get('Authorization') || request.headers.get('X-Student-CCCD'),
+  );
+  const isPublic = PUBLIC_CACHEABLE_PATHS.some((publicPath) => path.includes(publicPath));
+
+  if (isPublic && !hasAuthContext) {
+    return 'public, max-age=120, s-maxage=300, stale-while-revalidate=600';
+  }
+
+  return 'private, no-store, max-age=0, must-revalidate';
+}
 
 // ========================================
 // MIDDLEWARE
@@ -55,8 +90,11 @@ const ALLOWED_ORIGINS = [
   'https://vantrangedu.com',
   'https://www.vantrangedu.com',
   'https://vantrangedu.pages.dev',
+  'https://vantrangexam.pages.dev',
+  'https://www.vantrangexam.pages.dev',
   'http://localhost:5173',
-  'http://localhost:3000'
+  'http://localhost:3000',
+  'http://localhost:4173'
 ];
 
 app.use('/*', cors({
@@ -78,6 +116,12 @@ app.use('*', moderateRateLimiter);
 app.use('*', async (c, next) => {
   console.log(`[${new Date().toISOString()}] ${c.req.method} ${c.req.url}`);
   await next();
+  // Apply only a default Cache-Control policy for GET requests.
+  // Do not override route-level caching, and never cache authenticated/sensitive GET responses.
+  const cacheControl = resolveDefaultCacheControl(c.req.raw, c.res.headers.has('Cache-Control'));
+  if (cacheControl) {
+    c.header('Cache-Control', cacheControl);
+  }
 });
 
 // ========================================
@@ -96,6 +140,7 @@ app.get('/', (c) => {
 
 // Public routes
 app.route('/auth', auth);
+app.route('/sso', sso);
 
 // Students: register + login + search are public; list/update/delete require auth
 // Auth is enforced per-route inside students.js via the shared authMiddleware
@@ -160,18 +205,21 @@ app.use('/posts', postsAuthMiddleware);
 app.use('/posts/*', postsAuthMiddleware);
 app.route('/posts', posts);
 
-// Homepage settings (admin routes with auth + strict rate limiting)
-app.use('/homepage/*', strictRateLimiter);
+// Homepage settings:
+// - GET requests rely on the global moderate limiter to avoid over-throttling admin UI
+// - write operations keep strict rate limiting
 app.use('/homepage/*', authMiddleware);
+app.use('/homepage/*', async (c, next) => {
+  if (c.req.method === 'GET') {
+    return next();
+  }
+  return strictRateLimiter(c, next);
+});
 app.route('/homepage', homepage);
 
-// Notifications: GET public (broadcasts to all), write ops require auth
-const notificationsWriteMiddleware = async (c, next) => {
-  if (c.req.method === 'GET') return next();
-  return requireAuth(c, next);
-};
-app.use('/notifications', notificationsWriteMiddleware);
-app.use('/notifications/*', notificationsWriteMiddleware);
+// Notifications are personalized for admin/student sessions, so require auth for every method.
+app.use('/notifications', requireAuth);
+app.use('/notifications/*', requireAuth);
 app.route('/notifications', notifications);
 
 // Reports (admin only)
@@ -202,17 +250,20 @@ app.route('/attendance', attendance);
 app.use('/exam-schedules*', authMiddleware);
 app.route('/exam-schedules', examSchedules);
 
-// Teachers routes (public login, protected profile/classes)
+// Teachers routes (admin CRUD for teacher accounts, login redirects to /auth/login)
 app.route('/teachers', teachers);
 
-// Class schedules: GET public, write ops require admin or teacher
+// Admin teaching routes (my-classes, my-schedule, my-exams for admin role='teacher')
+app.route('/admin-teaching', adminTeaching);
+
+// Class schedules: GET public, write ops require admin (teacher is admin now)
 app.use('/class-schedules/*', async (c, next) => {
   if (c.req.method === 'GET') return next();
-  return requireAdminOrTeacher(c, next);
+  return requireAdmin(c, next);
 });
 app.use('/class-schedules', async (c, next) => {
   if (c.req.method === 'GET') return next();
-  return requireAdminOrTeacher(c, next);
+  return requireAdmin(c, next);
 });
 app.route('/class-schedules', classSchedules);
 
@@ -242,26 +293,50 @@ app.route('/assignments', assignments);
 // Class videos (student/teacher/admin with membership)
 app.route('/', videos);
 
-// VSTEP API
-app.route('/vstep', vstep);
 
 // Exam Categories — đồng bộ từ vantrangexam (DB chung), public GET
 app.route('/exam-categories', examCategories);
+app.route('/exam-types', examTypes);
+app.use('/program-organizers', async (c, next) => {
+  if (c.req.method === 'GET') return next();
+  return authMiddleware(c, next);
+});
+app.use('/program-organizers/*', async (c, next) => {
+  if (c.req.method === 'GET') return next();
+  return authMiddleware(c, next);
+});
+app.use('/programs', async (c, next) => {
+  if (c.req.method === 'GET') return next();
+  return authMiddleware(c, next);
+});
+app.use('/programs/*', async (c, next) => {
+  if (c.req.method === 'GET') return next();
+  return authMiddleware(c, next);
+});
+app.use('/program-levels', async (c, next) => {
+  if (c.req.method === 'GET') return next();
+  return authMiddleware(c, next);
+});
+app.use('/program-levels/*', async (c, next) => {
+  if (c.req.method === 'GET') return next();
+  return authMiddleware(c, next);
+});
+app.use('/field-definitions/*', authMiddleware);
+app.use('/field-options/*', authMiddleware);
+app.use('/sync/*', authMiddleware);
+app.route('/program-organizers', programOrganizers);
+app.route('/programs', programs);
+app.route('/program-levels', programLevels);
+app.route('/field-definitions', fieldDefinitions);
+app.route('/field-options', fieldOptions);
+app.route('/sync', sync);
 
 // AI API
 app.use('/ai/*', authMiddleware);
 app.route('/ai', ai);
 
-// Exam Management API (CRUD: exams, sections, groups, questions)
-// Routes handle their own auth internally
-app.route('/api/exams', examManagement);
-
-// Exam Taking API (start, data, answers, submit, result, history)
-// my-history is a sub-route of /api/exams, registered on same router
-app.route('/api/exams', examTaking);
-
-// Grading API (pending, detail, submit grade)
-app.route('/api/grading', gradingRoute);
+// Frontend error logging (public write-only ingestion)
+app.route('/errors', errors);
 
 // Migration route (tạm thời public để chạy migration)
 // Migration route disabled

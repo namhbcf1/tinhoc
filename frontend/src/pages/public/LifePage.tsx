@@ -1,6 +1,7 @@
 import ModernPublicLayout from '../../components/layout/ModernPublicLayout';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Music, Heart, MapPin, Camera, Trophy, Code, Calendar, ArrowRight } from 'lucide-react';
+import SEO from '../../components/common/SEO';
 
 const clubs = [
   { icon: Music, iconBg: 'bg-pink-500', title: 'CLB Âm Nhạc', desc: 'Nơi thỏa mãn đam mê ca hát, nhạc cụ và sáng tác âm nhạc cùng bạn bè.', members: '120 thành viên' },
@@ -28,8 +29,30 @@ const gallery = [
 ];
 
 export default function LifePage() {
+  const structuredData = [
+    {
+      '@type': 'WebPage',
+      name: 'Doi song sinh vien',
+      description: 'Thong tin cau lac bo, su kien va cong dong sinh vien tai Van Trang Education.',
+      url: 'https://vantrangedu.com/life'
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Trang chu', item: 'https://vantrangedu.com/' },
+        { '@type': 'ListItem', position: 2, name: 'Doi song sinh vien', item: 'https://vantrangedu.com/life' }
+      ]
+    }
+  ];
+
   return (
     <ModernPublicLayout>
+      <SEO
+        title="Doi song sinh vien"
+        description="Kham pha cau lac bo, su kien, thu vien anh va hoat dong cong dong trong doi song sinh vien tai Van Trang Education."
+        url="/life"
+        structuredData={structuredData}
+      />
       <div className="bg-slate-50 min-h-screen">
         {/* Hero */}
         <div className="bg-gradient-to-br from-pink-500 via-rose-500 to-orange-500 py-24 text-center relative overflow-hidden">
@@ -98,12 +121,12 @@ export default function LifePage() {
             <h2 className="text-3xl font-black mb-3">Tham Gia Cộng Đồng</h2>
             <p className="text-white/90 mb-8 max-w-lg mx-auto">Kết nối với hàng nghìn sinh viên VanTrang qua các kênh cộng đồng chính thức.</p>
             <div className="flex justify-center gap-4 flex-wrap">
-              <button className="bg-blue-500 hover:bg-blue-400 text-white font-bold px-8 py-3 rounded-xl inline-flex items-center gap-2 transition-colors">
+              <a href="https://zalo.me/0962445963" target="_blank" rel="noopener noreferrer" className="bg-blue-500 hover:bg-blue-400 text-white font-bold px-8 py-3 rounded-xl inline-flex items-center gap-2 transition-colors">
                 Zalo Community <ArrowRight size={16} />
-              </button>
-              <button className="bg-white/20 hover:bg-white/30 text-white font-bold px-8 py-3 rounded-xl inline-flex items-center gap-2 border border-white/30 transition-colors">
+              </a>
+              <a href="https://www.facebook.com/Englishvantrang" target="_blank" rel="noopener noreferrer" className="bg-white/20 hover:bg-white/30 text-white font-bold px-8 py-3 rounded-xl inline-flex items-center gap-2 border border-white/30 transition-colors">
                 Facebook Group <ArrowRight size={16} />
-              </button>
+              </a>
             </div>
           </div>
         </div>

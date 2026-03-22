@@ -1,32 +1,28 @@
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import StudentMobileLayout from '../../../components/layout/StudentMobileLayout';
+import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import ToastContainer, { useToast } from '../../../components/ui/ToastContainer';
+import { STUDENT_MAIN_MENU } from '../../../features/student/student-nav';
+import { getStorageValue, removeStorageValue } from '../../../utils/browser-storage.js';
+import { loadStudentData, STUDENT_SESSION_UPDATED_EVENT } from '../../../utils/studentDataLoader';
 
-// Mobile Student Modules
-import MobileExamsModule from './MobileExamsModule';
-import MobileClassesModule from './MobileClassesModule';
-import MobileScheduleModule from './MobileScheduleModule';
-import MobilePaymentModule from './MobilePaymentModule';
-import MobileProfileModule from './MobileProfileModule';
-import StudentDashboardOverview from './StudentDashboardOverview';
+const MobileExamsModule = lazy(() => import('./MobileExamsModule'));
+const MobileProfileModule = lazy(() => import('./MobileProfileModule'));
 
-/* ⛔ CẤM: Tài liệu, Chứng chỉ, Tin nhắn, Điểm danh — KHÔNG dùng trong student dashboard */
-
-// Đọc student_data an toàn từ storage
 function readStudentData() {
     try {
-        const raw = localStorage.getItem('student_data') || sessionStorage.getItem('student_data');
+        const raw = getStorageValue('student_data');
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         if (typeof parsed !== 'object' || parsed === null) {
-            localStorage.removeItem('student_data');
+            removeStorageValue('student_data');
             return null;
         }
         return parsed;
     } catch {
-        localStorage.removeItem('student_data');
+        removeStorageValue('student_data');
         return null;
     }
 }
@@ -39,20 +35,17 @@ export default function StudentDashboardMobile() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const cccd = localStorage.getItem('student_cccd') || sessionStorage.getItem('student_cccd');
+        const cccd = getStorageValue('student_cccd');
 
         if (!studentData && !cccd) {
             navigate('/login', { replace: true });
             return;
         }
 
-        // Refresh profile từ API nếu có cccd
         if (cccd) {
-            api.getStudentByCCCD(cccd)
-                .then((res) => {
-                    if (res?.success && res?.data) {
-                        const merged = { ...res.data, cccd };
-                        localStorage.setItem('student_data', JSON.stringify(merged));
+            loadStudentData(cccd)
+                .then((merged) => {
+                    if (merged) {
                         setStudentData(merged);
                     } else if (!studentData) {
                         navigate('/login', { replace: true });
@@ -66,18 +59,42 @@ export default function StudentDashboardMobile() {
             setLoading(false);
         }
 
-        // Hash navigation
         const updateTab = () => {
             const hash = window.location.hash.replace('#', '');
-            const validTabs = ['dashboard', 'exams', 'my-classes', 'schedule', 'payment', 'profile'];
+            if (hash === 'dashboard') {
+                window.location.hash = 'exams';
+                return;
+            }
+
+            if (hash === 'schedule' || hash === 'payment' || hash === 'my-classes' || hash === 'register-class') {
+                window.location.hash = 'exams';
+                return;
+            }
+
+            const validTabs = [...STUDENT_MAIN_MENU.filter((item) => !item.external).map((item) => item.id), 'profile'];
             if (hash && validTabs.includes(hash)) {
                 setActiveTab(hash);
+                return;
             }
+
+            setActiveTab('exams');
         };
 
         updateTab();
         window.addEventListener('hashchange', updateTab);
         return () => window.removeEventListener('hashchange', updateTab);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        const handleSessionUpdated = (event) => {
+            const nextStudent = event?.detail;
+            if (nextStudent && typeof nextStudent === 'object') {
+                setStudentData(nextStudent);
+            }
+        };
+
+        window.addEventListener(STUDENT_SESSION_UPDATED_EVENT, handleSessionUpdated);
+        return () => window.removeEventListener(STUDENT_SESSION_UPDATED_EVENT, handleSessionUpdated);
     }, []);
 
     const handleTabChange = (tabId) => {
@@ -90,7 +107,11 @@ export default function StudentDashboardMobile() {
         navigate('/login', { replace: true });
     };
 
-    const handleProfileUpdate = () => {
+    const handleProfileUpdate = (nextStudentData = null) => {
+        if (nextStudentData && typeof nextStudentData === 'object') {
+            setStudentData(nextStudentData);
+            return;
+        }
         const fresh = readStudentData();
         if (fresh) setStudentData(fresh);
     };
@@ -106,16 +127,16 @@ export default function StudentDashboardMobile() {
         );
     }
 
+    const props = { studentData };
+
     const renderContent = () => {
-        const props = { studentData };
         switch (activeTab) {
-            case 'dashboard':   return <StudentDashboardOverview studentData={studentData} onNavigate={handleTabChange} />;
-            case 'exams':       return <MobileExamsModule {...props} />;
-            case 'my-classes':  return <MobileClassesModule {...props} />;
-            case 'schedule':    return <MobileScheduleModule {...props} />;
-            case 'payment':     return <MobilePaymentModule {...props} />;
-            case 'profile':     return <MobileProfileModule studentData={studentData} onUpdate={handleProfileUpdate} />;
-            default:            return <MobileExamsModule {...props} />;
+            case 'exams':
+                return <MobileExamsModule {...props} />;
+            case 'profile':
+                return <MobileProfileModule studentData={studentData} onUpdate={handleProfileUpdate} />;
+            default:
+                return <MobileExamsModule {...props} />;
         }
     };
 
@@ -126,7 +147,9 @@ export default function StudentDashboardMobile() {
             setActiveTab={handleTabChange}
             onLogout={handleLogout}
         >
-            {renderContent()}
+            <Suspense fallback={<LoadingSpinner />}>
+                {renderContent()}
+            </Suspense>
             <ToastContainer toasts={toasts} removeToast={removeToast} />
         </StudentMobileLayout>
     );

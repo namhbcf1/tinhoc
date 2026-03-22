@@ -4,6 +4,7 @@ import { useGSAP } from '@gsap/react';
 import { Award, Download, CheckCircle, BookOpen, Star, Calendar, GraduationCap, Trophy } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import api from '../../../services/api';
+import { getStorageValue } from '../../../utils/browser-storage.js';
 
 // ─── Status badge for certificate ────────────────────────────────────────────
 const CertBadge = ({ status }) => {
@@ -106,7 +107,7 @@ export default function Certificates({ studentData }) {
     const [fetching, setFetching] = useState(true);
 
     useEffect(() => {
-        const cccd = studentData?.cccd || localStorage.getItem('student_cccd');
+        const cccd = studentData?.cccd || getStorageValue('student_cccd');
         if (!cccd) { setFetching(false); return; }
         api.request(`/certificates/lookup?cccd=${cccd}`)
             .then(res => {

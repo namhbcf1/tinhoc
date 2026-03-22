@@ -1,10 +1,13 @@
-import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { ZoomIn, ZoomOut, RotateCw, FlipHorizontal, FlipVertical, X, Check, RotateCcw, Loader2 } from 'lucide-react';
-import { getOverlayRatio } from './overlayUtils';
+import { getOverlayBox } from './overlayUtils';
+import { detectDocumentAutoFitBox } from './documentAutoFit';
 import { useIsMobile } from '../../utils/deviceDetection';
+import { lazyWithChunkReload } from '../../utils/lazyWithChunkReload';
 import './ImageEditor.css';
 
-const ImageEditorMobile = lazy(() => import('./ImageEditorMobile'));
+const ImageEditorMobile = lazyWithChunkReload(() => import('./ImageEditorMobile'));
 
 export default function ImageEditor({
     imageFile,
@@ -14,6 +17,7 @@ export default function ImageEditor({
     onCancel
 }) {
     const isMobile = useIsMobile();
+    const requiresDocumentDetection = type === 'cccd_front' || type === 'cccd_back';
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
     const imageRef = useRef(null);
@@ -24,6 +28,9 @@ export default function ImageEditor({
     const [rotation, setRotation] = useState(0);
     const [flipHorizontal, setFlipHorizontal] = useState(false);
     const [flipVertical, setFlipVertical] = useState(false);
+    const [documentCheckState, setDocumentCheckState] = useState(
+        requiresDocumentDetection ? 'checking' : 'detected'
+    );
     
     // Touch gesture state - use refs to avoid dependency issues
     const [isDragging, setIsDragging] = useState(false);
@@ -39,6 +46,7 @@ export default function ImageEditor({
     const scaleRef = useRef(1);
     const translateXRef = useRef(0);
     const translateYRef = useRef(0);
+    const initialTransformRef = useRef({ scale: 1, tx: 0, ty: 0 });
     
     // Sync refs with state
     useEffect(() => {
@@ -72,42 +80,42 @@ export default function ImageEditor({
     // Load image
     useEffect(() => {
         if (!imageFile) return;
+        let cancelled = false;
 
         const img = new Image();
         img.onload = () => {
+            if (cancelled) return;
             imageRef.current = img;
-            
-            // Calculate initial scale to fit image in container
-            const container = containerRef.current;
-            if (container) {
-                const containerRect = container.getBoundingClientRect();
-                const containerWidth = containerRect.width;
-                const containerHeight = containerRect.height;
-                
-                // Calculate scale to fit image in container (show full image)
-                // Use smaller scale to ensure image fits both width and height
-                const scaleByWidth = containerWidth * 0.95 / img.width;
-                const scaleByHeight = containerHeight * 0.95 / img.height;
-                // Use the smaller scale to ensure image fits completely
-                const initialScale = Math.min(scaleByWidth, scaleByHeight);
-                
-                setScale(initialScale);
-                scaleRef.current = initialScale;
-            } else {
-                setScale(1);
-                scaleRef.current = 1;
-            }
-            
-            // Reset transformations
-            setTranslateX(0);
-            setTranslateY(0);
-            translateXRef.current = 0;
-            translateYRef.current = 0;
-            setRotation(0);
-            setFlipHorizontal(false);
-            setFlipVertical(false);
-            // Initial render
-            setTimeout(() => drawImage(), 100);
+            setDocumentCheckState(requiresDocumentDetection ? 'checking' : 'detected');
+
+            const initializeTransform = async () => {
+                const initialTransform = await computeInitialTransform(img);
+                if (cancelled) return;
+
+                setDocumentCheckState(
+                    requiresDocumentDetection
+                        ? (initialTransform.detected ? 'detected' : 'manual')
+                        : 'detected'
+                );
+                initialTransformRef.current = initialTransform;
+                setScale(initialTransform.scale);
+                scaleRef.current = initialTransform.scale;
+                setTranslateX(initialTransform.tx);
+                setTranslateY(initialTransform.ty);
+                translateXRef.current = initialTransform.tx;
+                translateYRef.current = initialTransform.ty;
+                setRotation(0);
+                setFlipHorizontal(false);
+                setFlipVertical(false);
+
+                setTimeout(() => {
+                    if (!cancelled) {
+                        drawImage();
+                    }
+                }, 100);
+            };
+
+            void initializeTransform();
         };
         img.onerror = () => {
             console.error('Failed to load image');
@@ -115,31 +123,29 @@ export default function ImageEditor({
         img.src = URL.createObjectURL(imageFile);
 
         return () => {
+            cancelled = true;
             if (img.src.startsWith('blob:')) {
                 URL.revokeObjectURL(img.src);
             }
         };
-    }, [imageFile]);
+    }, [imageFile, requiresDocumentDetection]);
 
     // Helper function để tính overlay dimensions và position - DÙNG CHUNG cho drawOverlay và handleConfirm
     const calculateOverlay = useCallback((containerWidth, containerHeight, canvasWidth, canvasHeight) => {
-        const ratio = getOverlayRatio(type);
+        const visibleOverlay = getOverlayBox(type, containerWidth, containerHeight, {
+            maxHeightRatio: 0.86,
+            centerYOffset: type === 'photo_3x4' ? -0.01 : -0.04,
+        });
+        const offsetX = (canvasWidth - containerWidth) / 2;
+        const offsetY = (canvasHeight - containerHeight) / 2;
         
         // Tất cả đều fit by height để to hơn và dễ nhìn
-        let overlayWidth, overlayHeight;
-        overlayHeight = containerHeight * 0.98; // 98% of container height
-        overlayWidth = overlayHeight * ratio.aspect;
-        // If too wide, fit by width instead
-        if (overlayWidth > containerWidth * 0.98) {
-            overlayWidth = containerWidth * 0.98;
-            overlayHeight = overlayWidth / ratio.aspect;
-        }
-
-        // Center overlay horizontally, align to top for better visibility
-        const overlayX = (canvasWidth - overlayWidth) / 2;
-        const overlayY = (canvasHeight - overlayHeight) * 0.05; // 5% from top
-        
-        return { overlayWidth, overlayHeight, overlayX, overlayY };
+        return {
+            overlayWidth: visibleOverlay.overlayWidth,
+            overlayHeight: visibleOverlay.overlayHeight,
+            overlayX: visibleOverlay.overlayX + offsetX,
+            overlayY: visibleOverlay.overlayY + offsetY,
+        };
     }, [type]);
 
     // Helper function để tính minimum scale để ảnh phủ toàn bộ overlay
@@ -178,6 +184,69 @@ export default function ImageEditor({
         return { tx, ty };
     }, []);
 
+    const computeInitialTransform = useCallback(async (img) => {
+        const container = containerRef.current;
+        if (!container) {
+            return { scale: 1, tx: 0, ty: 0 };
+        }
+
+        const containerRect = container.getBoundingClientRect();
+        const containerWidth = containerRect.width;
+        const containerHeight = containerRect.height;
+        const padding = 50;
+
+        const baseCanvasWidth = Math.max(containerWidth, img.width + padding * 2);
+        const baseCanvasHeight = Math.max(containerHeight, img.height + padding * 2);
+        const baseOverlay = calculateOverlay(containerWidth, containerHeight, baseCanvasWidth, baseCanvasHeight);
+
+        let nextScale = computeCoverScaleForOverlay(
+            baseOverlay.overlayWidth,
+            baseOverlay.overlayHeight,
+            img.width,
+            img.height
+        );
+        let nextTx = 0;
+        let nextTy = 0;
+        let detected = false;
+
+        const detectedBox = await detectDocumentAutoFitBox(img, type);
+        if (detectedBox) {
+            detected = true;
+            const detectedScale = Math.max(
+                baseOverlay.overlayWidth / detectedBox.width,
+                baseOverlay.overlayHeight / detectedBox.height
+            ) * 1.02;
+
+            nextScale = Math.max(nextScale, detectedScale);
+            nextTx = (img.width / 2 - (detectedBox.x + detectedBox.width / 2)) * nextScale;
+            nextTy = (img.height / 2 - (detectedBox.y + detectedBox.height / 2)) * nextScale;
+        }
+
+        const canvasWidth = Math.max(containerWidth, img.width * nextScale + padding * 2);
+        const canvasHeight = Math.max(containerHeight, img.height * nextScale + padding * 2);
+        const overlay = calculateOverlay(containerWidth, containerHeight, canvasWidth, canvasHeight);
+        const clamped = clampTranslateToCoverOverlay(
+            nextScale,
+            nextTx,
+            nextTy,
+            overlay.overlayX,
+            overlay.overlayY,
+            overlay.overlayWidth,
+            overlay.overlayHeight,
+            canvasWidth,
+            canvasHeight,
+            img.width,
+            img.height
+        );
+
+        return {
+            scale: nextScale,
+            tx: clamped.tx,
+            ty: clamped.ty,
+            detected,
+        };
+    }, [calculateOverlay, clampTranslateToCoverOverlay, computeCoverScaleForOverlay, type]);
+
     // Draw overlay template guide
     const drawOverlay = useCallback((ctx, canvasWidth, canvasHeight) => {
         const container = containerRef.current;
@@ -193,12 +262,10 @@ export default function ImageEditor({
         // Draw dark overlay (outside crop area) - vùng ngoài mờ
         // Chỉ vẽ bên trái và phải, không vẽ trên và dưới để overlay to hơn
         ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-        
-        // Draw 2 rectangles on left and right sides only (no top/bottom)
-        // Left
-        ctx.fillRect(0, 0, overlayX, canvasHeight);
-        // Right
-        ctx.fillRect(overlayX + overlayWidth, 0, canvasWidth - (overlayX + overlayWidth), canvasHeight);
+        ctx.fillRect(0, 0, canvasWidth, overlayY);
+        ctx.fillRect(0, overlayY + overlayHeight, canvasWidth, canvasHeight - (overlayY + overlayHeight));
+        ctx.fillRect(0, overlayY, overlayX, overlayHeight);
+        ctx.fillRect(overlayX + overlayWidth, overlayY, canvasWidth - (overlayX + overlayWidth), overlayHeight);
 
         // Draw border around crop area (vùng trong sáng)
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
@@ -320,15 +387,91 @@ export default function ImageEditor({
         drawImage();
     }, [drawImage]);
 
-    // Handle zoom
+    // Handle zoom — enforce minimum cover scale and clamp translation
     const handleZoom = (delta) => {
-        const newScale = Math.max(0.5, Math.min(5, scale + delta));
+        const container = containerRef.current;
+        const img = imageRef.current;
+        if (!container || !img) {
+            setScale(prev => Math.max(0.5, Math.min(5, prev + delta)));
+            return;
+        }
+
+        const containerRect = container.getBoundingClientRect();
+        const containerWidth = containerRect.width;
+        const containerHeight = containerRect.height;
+
+        let imgWidth = img.width;
+        let imgHeight = img.height;
+        if (rotation === 90 || rotation === 270) {
+            [imgWidth, imgHeight] = [imgHeight, imgWidth];
+        }
+
+        const padding = 50;
+        const canvasWidth = Math.max(containerWidth, imgWidth * scale + padding * 2);
+        const canvasHeight = Math.max(containerHeight, imgHeight * scale + padding * 2);
+        const overlay = calculateOverlay(containerWidth, containerHeight, canvasWidth, canvasHeight);
+        const minCover = computeCoverScaleForOverlay(overlay.overlayWidth, overlay.overlayHeight, imgWidth, imgHeight);
+
+        const newScale = Math.max(minCover, Math.min(5, scale + delta));
+
+        // Recompute canvas for new scale to clamp translation
+        const newCanvasWidth = Math.max(containerWidth, imgWidth * newScale + padding * 2);
+        const newCanvasHeight = Math.max(containerHeight, imgHeight * newScale + padding * 2);
+        const newOverlay = calculateOverlay(containerWidth, containerHeight, newCanvasWidth, newCanvasHeight);
+        const clamped = clampTranslateToCoverOverlay(
+            newScale, translateX, translateY,
+            newOverlay.overlayX, newOverlay.overlayY, newOverlay.overlayWidth, newOverlay.overlayHeight,
+            newCanvasWidth, newCanvasHeight, imgWidth, imgHeight
+        );
+
         setScale(newScale);
+        scaleRef.current = newScale;
+        setTranslateX(clamped.tx);
+        setTranslateY(clamped.ty);
+        translateXRef.current = clamped.tx;
+        translateYRef.current = clamped.ty;
     };
 
-    // Handle rotate
+    // Handle rotate — recalculate cover scale and clamp (match mobile behavior)
     const handleRotate = () => {
-        setRotation((prev) => (prev + 90) % 360);
+        setRotation((prev) => {
+            const nextRotation = (prev + 90) % 360;
+
+            // After rotation, recalculate cover scale (use setTimeout to allow state update)
+            setTimeout(() => {
+                const container = containerRef.current;
+                const img = imageRef.current;
+                if (!container || !img) return;
+
+                const containerRect = container.getBoundingClientRect();
+                const cw = containerRect.width;
+                const ch = containerRect.height;
+                let imgW = img.width;
+                let imgH = img.height;
+                if (nextRotation === 90 || nextRotation === 270) {
+                    [imgW, imgH] = [imgH, imgW];
+                }
+                const padding = 50;
+                const canW = Math.max(cw, imgW + padding * 2);
+                const canH = Math.max(ch, imgH + padding * 2);
+                const overlay = calculateOverlay(cw, ch, canW, canH);
+                const minCover = computeCoverScaleForOverlay(overlay.overlayWidth, overlay.overlayHeight, imgW, imgH);
+
+                setScale(minCover);
+                scaleRef.current = minCover;
+                const clamped = clampTranslateToCoverOverlay(
+                    minCover, 0, 0,
+                    overlay.overlayX, overlay.overlayY, overlay.overlayWidth, overlay.overlayHeight,
+                    canW, canH, imgW, imgH
+                );
+                setTranslateX(clamped.tx);
+                setTranslateY(clamped.ty);
+                translateXRef.current = clamped.tx;
+                translateYRef.current = clamped.ty;
+            }, 0);
+
+            return nextRotation;
+        });
     };
 
     // Handle flip horizontal
@@ -341,11 +484,16 @@ export default function ImageEditor({
         setFlipVertical((prev) => !prev);
     };
 
-    // Reset transformations
+    // Reset transformations — compute cover scale like mobile
     const handleReset = () => {
-        setScale(1);
-        setTranslateX(0);
-        setTranslateY(0);
+        const initialTransform = initialTransformRef.current;
+
+        setScale(initialTransform.scale);
+        scaleRef.current = initialTransform.scale;
+        setTranslateX(initialTransform.tx);
+        setTranslateY(initialTransform.ty);
+        translateXRef.current = initialTransform.tx;
+        translateYRef.current = initialTransform.ty;
         setRotation(0);
         setFlipHorizontal(false);
         setFlipVertical(false);
@@ -360,12 +508,41 @@ export default function ImageEditor({
 
     const handleMouseMove = (e) => {
         if (!isDragging || !lastTouch) return;
-        
+
         const deltaX = e.clientX - lastTouch.x;
         const deltaY = e.clientY - lastTouch.y;
-        
-        setTranslateX((prev) => prev + deltaX);
-        setTranslateY((prev) => prev + deltaY);
+
+        const container = containerRef.current;
+        const img = imageRef.current;
+        let newTx = translateX + deltaX;
+        let newTy = translateY + deltaY;
+
+        if (container && img) {
+            const containerRect = container.getBoundingClientRect();
+            const containerWidth = containerRect.width;
+            const containerHeight = containerRect.height;
+            let imgWidth = img.width;
+            let imgHeight = img.height;
+            if (rotation === 90 || rotation === 270) {
+                [imgWidth, imgHeight] = [imgHeight, imgWidth];
+            }
+            const padding = 50;
+            const canvasWidth = Math.max(containerWidth, imgWidth * scale + padding * 2);
+            const canvasHeight = Math.max(containerHeight, imgHeight * scale + padding * 2);
+            const overlay = calculateOverlay(containerWidth, containerHeight, canvasWidth, canvasHeight);
+            const clamped = clampTranslateToCoverOverlay(
+                scale, newTx, newTy,
+                overlay.overlayX, overlay.overlayY, overlay.overlayWidth, overlay.overlayHeight,
+                canvasWidth, canvasHeight, imgWidth, imgHeight
+            );
+            newTx = clamped.tx;
+            newTy = clamped.ty;
+        }
+
+        setTranslateX(newTx);
+        setTranslateY(newTy);
+        translateXRef.current = newTx;
+        translateYRef.current = newTy;
         setLastTouch({ x: e.clientX, y: e.clientY });
     };
 
@@ -406,23 +583,40 @@ export default function ImageEditor({
         };
 
         const touchMoveHandler = (e) => {
-            // Use refs to check state - this avoids stale closures
-            if (isDraggingRef.current || initialPinchDistanceRef.current) {
-                e.preventDefault();
-            }
-            
             if (e.touches.length === 1 && isDraggingRef.current && lastTouchRef.current) {
                 const deltaX = e.touches[0].clientX - lastTouchRef.current.x;
                 const deltaY = e.touches[0].clientY - lastTouchRef.current.y;
-                
-                const newTranslateX = translateXRef.current + deltaX;
-                const newTranslateY = translateYRef.current + deltaY;
-                
+
+                let newTranslateX = translateXRef.current + deltaX;
+                let newTranslateY = translateYRef.current + deltaY;
+
+                // Clamp translation to keep image covering overlay
+                const img = imageRef.current;
+                if (container && img) {
+                    const containerRect = container.getBoundingClientRect();
+                    const cw = containerRect.width;
+                    const ch = containerRect.height;
+                    let imgW = img.width;
+                    let imgH = img.height;
+                    if (rotation === 90 || rotation === 270) { [imgW, imgH] = [imgH, imgW]; }
+                    const padding = 50;
+                    const canW = Math.max(cw, imgW * scaleRef.current + padding * 2);
+                    const canH = Math.max(ch, imgH * scaleRef.current + padding * 2);
+                    const ov = calculateOverlay(cw, ch, canW, canH);
+                    const clamped = clampTranslateToCoverOverlay(
+                        scaleRef.current, newTranslateX, newTranslateY,
+                        ov.overlayX, ov.overlayY, ov.overlayWidth, ov.overlayHeight,
+                        canW, canH, imgW, imgH
+                    );
+                    newTranslateX = clamped.tx;
+                    newTranslateY = clamped.ty;
+                }
+
                 translateXRef.current = newTranslateX;
                 translateYRef.current = newTranslateY;
                 setTranslateX(newTranslateX);
                 setTranslateY(newTranslateY);
-                
+
                 const touch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
                 lastTouchRef.current = touch;
                 setLastTouch(touch);
@@ -430,8 +624,46 @@ export default function ImageEditor({
                 const distance = getTouchDistance(e.touches);
                 if (distance && initialPinchDistanceRef.current) {
                     const scaleChange = distance / initialPinchDistanceRef.current;
-                    const newScale = Math.max(0.5, Math.min(5, initialScaleRef.current * scaleChange));
+                    // Compute min cover scale
+                    const img = imageRef.current;
+                    let minScale = 0.5;
+                    if (container && img) {
+                        const containerRect = container.getBoundingClientRect();
+                        const cw = containerRect.width;
+                        const ch = containerRect.height;
+                        let imgW = img.width;
+                        let imgH = img.height;
+                        if (rotation === 90 || rotation === 270) { [imgW, imgH] = [imgH, imgW]; }
+                        const padding = 50;
+                        const canW = Math.max(cw, imgW * scaleRef.current + padding * 2);
+                        const canH = Math.max(ch, imgH * scaleRef.current + padding * 2);
+                        const ov = calculateOverlay(cw, ch, canW, canH);
+                        minScale = computeCoverScaleForOverlay(ov.overlayWidth, ov.overlayHeight, imgW, imgH);
+                    }
+                    const newScale = Math.max(minScale, Math.min(5, initialScaleRef.current * scaleChange));
                     scaleRef.current = newScale;
+                    // Clamp translation after zoom change
+                    if (container && img) {
+                        const containerRect = container.getBoundingClientRect();
+                        const cw = containerRect.width;
+                        const ch = containerRect.height;
+                        let imgW = img.width;
+                        let imgH = img.height;
+                        if (rotation === 90 || rotation === 270) { [imgW, imgH] = [imgH, imgW]; }
+                        const padding = 50;
+                        const canW = Math.max(cw, imgW * newScale + padding * 2);
+                        const canH = Math.max(ch, imgH * newScale + padding * 2);
+                        const ov = calculateOverlay(cw, ch, canW, canH);
+                        const clamped = clampTranslateToCoverOverlay(
+                            newScale, translateXRef.current, translateYRef.current,
+                            ov.overlayX, ov.overlayY, ov.overlayWidth, ov.overlayHeight,
+                            canW, canH, imgW, imgH
+                        );
+                        translateXRef.current = clamped.tx;
+                        translateYRef.current = clamped.ty;
+                        setTranslateX(clamped.tx);
+                        setTranslateY(clamped.ty);
+                    }
                     setScale(newScale);
                 }
             }
@@ -585,9 +817,34 @@ export default function ImageEditor({
         photo_3x4: 'Ảnh 3x4'
     };
 
+    const statusText = !requiresDocumentDetection
+        ? 'Căn khuôn mặt vào giữa khung, chừa khoảng thở phía trên đầu và hai bên vai.'
+        : documentCheckState === 'checking'
+            ? 'Hệ thống đang tự căn khung tài liệu để bạn chỉ cần chỉnh nhẹ nếu cần.'
+            : documentCheckState === 'detected'
+                ? 'Khung đã được auto-fit gần đúng. Kéo hoặc zoom thêm để 4 mép CCCD nằm gọn trong vùng sáng.'
+                : 'Không nhận ra đủ 4 góc rõ ràng. Kéo và zoom thủ công đến khi toàn bộ CCCD nằm trọn trong khung.';
+
+    const stageHint = type === 'photo_3x4'
+        ? 'Giữ ảnh chân dung thẳng, không cắt đỉnh đầu hoặc phần cằm.'
+        : 'Đảm bảo đủ 4 góc, không lóa sáng, không cắt mép và hạn chế nghiêng lệch quá nhiều.';
+
+    const controlItems = [
+        { key: 'zoom-out', label: 'Thu nhỏ', icon: ZoomOut, onClick: () => handleZoom(-0.2), active: false },
+        { key: 'zoom-in', label: 'Phóng to', icon: ZoomIn, onClick: () => handleZoom(0.2), active: false },
+        { key: 'rotate', label: 'Xoay', icon: RotateCw, onClick: handleRotate, active: false },
+        { key: 'flip-h', label: 'Lật ngang', icon: FlipHorizontal, onClick: handleFlipHorizontal, active: flipHorizontal },
+        { key: 'flip-v', label: 'Lật dọc', icon: FlipVertical, onClick: handleFlipVertical, active: flipVertical },
+        { key: 'reset', label: 'Đặt lại', icon: RotateCcw, onClick: handleReset, active: false },
+    ];
+
+    if (typeof document === 'undefined') {
+        return null;
+    }
+
     // Mobile: Use completely separate component
     if (isMobile) {
-        return (
+        return createPortal(
             <Suspense fallback={
                 <div style={{ 
                     position: 'fixed', 
@@ -612,11 +869,13 @@ export default function ImageEditor({
                     onCancel={onCancel}
                 />
             </Suspense>
+            ,
+            document.body
         );
     }
 
     // Desktop: Modal structure
-    return (
+    return createPortal(
         <div className="image-editor-modal" onClick={(e) => {
             if (e.target === e.currentTarget) {
                 onCancel();
@@ -624,10 +883,31 @@ export default function ImageEditor({
         }}>
             <div className="image-editor-content" onClick={(e) => e.stopPropagation()}>
                 <div className="image-editor-header">
-                    <h3>Chỉnh sửa {typeLabels[type] || type}</h3>
+                    <div className="image-editor-header-copy">
+                        <span className="image-editor-eyebrow">Document Scan</span>
+                        <div className="image-editor-title-row">
+                            <h3>Chỉnh sửa {typeLabels[type] || type}</h3>
+                            <span className={`image-editor-status-badge status-${documentCheckState}`}>
+                                {documentCheckState === 'detected' ? 'Auto-fit' : documentCheckState === 'checking' ? 'Đang đọc' : 'Chỉnh tay'}
+                            </span>
+                        </div>
+                        <p className="image-editor-subtitle">{statusText}</p>
+                    </div>
                     <button type="button" className="editor-close-btn" onClick={onCancel}>
                         <X size={24} />
                     </button>
+                </div>
+
+                <div className="image-editor-stage-summary">
+                    <div className="image-editor-guidance-card">
+                        <span className="image-editor-guidance-label">Mẹo căn khung</span>
+                        <p>{stageHint}</p>
+                    </div>
+                    <div className="image-editor-telemetry">
+                        <span>{Math.round(scale * 100)}% zoom</span>
+                        <span>{rotation}° xoay</span>
+                        <span>Kéo ảnh để canh</span>
+                    </div>
                 </div>
 
                 <div 
@@ -643,67 +923,35 @@ export default function ImageEditor({
                 </div>
 
                 <div className="image-editor-controls">
-                <button
-                    type="button"
-                    className="editor-btn"
-                    onClick={() => handleZoom(-0.2)}
-                    title="Thu nhỏ"
-                >
-                    <ZoomOut size={22} />
-                </button>
-                <button
-                    type="button"
-                    className="editor-btn"
-                    onClick={() => handleZoom(0.2)}
-                    title="Phóng to"
-                >
-                    <ZoomIn size={22} />
-                </button>
-                <button
-                    type="button"
-                    className="editor-btn"
-                    onClick={handleRotate}
-                    title="Xoay"
-                >
-                    <RotateCw size={22} />
-                </button>
-                <button
-                    type="button"
-                    className={`editor-btn ${flipHorizontal ? 'active' : ''}`}
-                    onClick={handleFlipHorizontal}
-                    title="Lật ngang"
-                >
-                    <FlipHorizontal size={22} />
-                </button>
-                <button
-                    type="button"
-                    className={`editor-btn ${flipVertical ? 'active' : ''}`}
-                    onClick={handleFlipVertical}
-                    title="Lật dọc"
-                >
-                    <FlipVertical size={22} />
-                </button>
-                <button
-                    type="button"
-                    className="editor-btn"
-                    onClick={handleReset}
-                    title="Đặt lại"
-                >
-                    <RotateCcw size={22} />
-                </button>
-            </div>
+                    {controlItems.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                            <button
+                                key={item.key}
+                                type="button"
+                                className={`editor-btn ${item.active ? 'active' : ''}`}
+                                onClick={item.onClick}
+                                title={item.label}
+                            >
+                                <Icon size={20} />
+                                <span className="editor-btn-label">{item.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
 
-            <div className="image-editor-actions">
-                <button type="button" className="editor-action-btn cancel-btn" onClick={onCancel}>
-                    Hủy
-                </button>
-                <button type="button" className="editor-action-btn confirm-btn" onClick={handleConfirm}>
-                    <Check size={18} />
-                    Xác nhận
-                </button>
-            </div>
+                <div className="image-editor-actions">
+                    <button type="button" className="editor-action-btn cancel-btn" onClick={onCancel}>
+                        Hủy
+                    </button>
+                    <button type="button" className="editor-action-btn confirm-btn" onClick={handleConfirm}>
+                        <Check size={18} />
+                        Xác nhận
+                    </button>
+                </div>
             </div>
         </div>
+        ,
+        document.body
     );
 }
-

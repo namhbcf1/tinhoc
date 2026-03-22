@@ -105,6 +105,8 @@ payments.get('/stats', async (c) => {
         total_rejected: (stats as any)?.total_rejected || 0,
         total_payments: (stats as any)?.total_payments || 0,
       },
+    }, 200, {
+      'Cache-Control': 'private, max-age=300, stale-while-revalidate=60',
     });
   } catch (error: any) {
     return errorResponse('Lỗi server: ' + error.message, 500);

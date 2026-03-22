@@ -98,6 +98,16 @@ export default function PasswordResetPage() {
           <p>Vui lòng nhập mật khẩu mới cho tài khoản của bạn.</p>
 
           <form onSubmit={handleSubmit} className="password-reset-form">
+            <input
+              type="text"
+              name="username"
+              autoComplete="username"
+              value="admin"
+              readOnly
+              className="sr-only"
+              tabIndex={-1}
+              aria-hidden="true"
+            />
             <div className="form-group">
               <label>Mật khẩu mới</label>
               <input
@@ -107,6 +117,7 @@ export default function PasswordResetPage() {
                 placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
                 required
                 minLength={6}
+                autoComplete="new-password"
               />
             </div>
 
@@ -119,6 +130,7 @@ export default function PasswordResetPage() {
                 placeholder="Nhập lại mật khẩu mới"
                 required
                 minLength={6}
+                autoComplete="new-password"
               />
             </div>
 

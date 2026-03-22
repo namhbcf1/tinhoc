@@ -1,5 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import api from '../../../../services/api';
+import {
+  ADMIN_CACHE_KEYS,
+  ADMIN_CACHE_TTL,
+  getAdminCache,
+  invalidateAdminData,
+  setAdminCache,
+} from '../admin-cache';
+import { useAdminAutoRefresh } from '../useAdminAutoRefresh';
 
 const FILE_COLORS = {
   pdf: '#DC2626',
@@ -12,21 +20,51 @@ const FILE_COLORS = {
 };
 
 export function useDocumentsManagement() {
-  const [documents, setDocuments] = useState([]);
-  const [offlineClasses, setOfflineClasses] = useState([]);
-  const [onlineClasses, setOnlineClasses] = useState([]);
-  const [examSchedules, setExamSchedules] = useState([]);
-  const [folders, setFolders] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const cachedDocuments = getAdminCache(ADMIN_CACHE_KEYS.documents, ADMIN_CACHE_TTL.documents);
+  const cachedTargets = getAdminCache(ADMIN_CACHE_KEYS.documentTargets, ADMIN_CACHE_TTL.documentMeta);
+  const cachedFolders = getAdminCache(ADMIN_CACHE_KEYS.documentFolders, ADMIN_CACHE_TTL.documentMeta);
+
+  const [documents, setDocuments] = useState(() => cachedDocuments ?? []);
+  const [offlineClasses, setOfflineClasses] = useState(() => cachedTargets?.offlineClasses ?? []);
+  const [onlineClasses, setOnlineClasses] = useState(() => cachedTargets?.onlineClasses ?? []);
+  const [examSchedules, setExamSchedules] = useState(() => cachedTargets?.examSchedules ?? []);
+  const [folders, setFolders] = useState(() => cachedFolders ?? []);
+  const [loading, setLoading] = useState(() => cachedDocuments === null);
   const [error, setError] = useState(null);
 
-  const loadDocuments = async () => {
+  const normalizeClassRows = (payload, aliases = {}) => {
+    const rows = Array.isArray(payload?.data?.classes)
+      ? payload.data.classes
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload)
+          ? payload
+          : [];
+
+    return rows.map((item) => ({
+      ...item,
+      ten_lop: item.ten_lop || item.class_name || aliases.ten_lop || '',
+      ma_lop: item.ma_lop || item.class_code || aliases.ma_lop || '',
+    }));
+  };
+
+  const loadDocuments = async ({ force = false } = {}) => {
+    const cached = force ? null : getAdminCache(ADMIN_CACHE_KEYS.documents, ADMIN_CACHE_TTL.documents);
+    if (cached !== null) {
+      setDocuments(cached);
+      setLoading(false);
+      return cached;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const response = await api.getAllDocuments();
       const docs = response.success && response.data ? response.data : (response.data || []);
-      setDocuments(Array.isArray(docs) ? docs : []);
+      const normalized = Array.isArray(docs) ? docs : [];
+      setDocuments(normalized);
+      setAdminCache(ADMIN_CACHE_KEYS.documents, normalized);
+      return normalized;
     } catch (err) {
       setError(err.message);
       setDocuments([]);
@@ -36,33 +74,63 @@ export function useDocumentsManagement() {
     }
   };
 
-  const loadAllClasses = async () => {
+  const loadAllClasses = async ({ force = false } = {}) => {
+    const cached = force ? null : getAdminCache(ADMIN_CACHE_KEYS.documentTargets, ADMIN_CACHE_TTL.documentMeta);
+    if (cached !== null) {
+      setOfflineClasses(cached.offlineClasses || []);
+      setOnlineClasses(cached.onlineClasses || []);
+      setExamSchedules(cached.examSchedules || []);
+      return cached;
+    }
+
     try {
       const offlineRes = await api.getClasses();
-      setOfflineClasses(offlineRes.data || []);
+      const nextOfflineClasses = normalizeClassRows(offlineRes);
+      setOfflineClasses(nextOfflineClasses);
 
+      let nextOnlineClasses = [];
       try {
-        const onlineRes = await api.request('/online-classes');
-        setOnlineClasses(onlineRes.data || []);
+        const onlineRes = await api.getOnlineClasses(1000, 0);
+        nextOnlineClasses = normalizeClassRows(onlineRes);
+        setOnlineClasses(nextOnlineClasses);
       } catch { 
         setOnlineClasses([]); 
       }
 
+      let nextExamSchedules = [];
       try {
         const examRes = await api.request('/exam-schedules');
-        setExamSchedules(examRes.data || []);
+        nextExamSchedules = Array.isArray(examRes?.data) ? examRes.data : [];
+        setExamSchedules(nextExamSchedules);
       } catch { 
         setExamSchedules([]); 
       }
+
+      const payload = {
+        offlineClasses: nextOfflineClasses,
+        onlineClasses: nextOnlineClasses,
+        examSchedules: nextExamSchedules,
+      };
+      setAdminCache(ADMIN_CACHE_KEYS.documentTargets, payload);
+      return payload;
     } catch (err) {
       console.error('Load classes error:', err);
     }
   };
 
-  const loadFolders = async () => {
+  const loadFolders = async ({ force = false } = {}) => {
+    const cached = force ? null : getAdminCache(ADMIN_CACHE_KEYS.documentFolders, ADMIN_CACHE_TTL.documentMeta);
+    if (cached !== null) {
+      setFolders(cached);
+      return cached;
+    }
+
     try {
       const res = await api.getDocumentFolders('shared');
-      setFolders(res.data || res.results || res || []);
+      const nextFolders = res.data || res.results || res || [];
+      setFolders(nextFolders);
+      setAdminCache(ADMIN_CACHE_KEYS.documentFolders, nextFolders);
+      return nextFolders;
     } catch { 
       setFolders([]); 
     }
@@ -79,18 +147,22 @@ export function useDocumentsManagement() {
         if (totalSelected === 0) {
           throw new Error('Vui lòng chọn ít nhất 1 lớp/lịch thi');
         }
+        if (uploadData.exam_ids.length > 0) {
+          throw new Error('Phân quyền tài liệu theo lịch thi chưa được hỗ trợ');
+        }
       }
 
-      const allClassIds = [...uploadData.class_ids];
-      
       await api.uploadDocumentWithPermission({
         ...uploadData,
-        class_ids: allClassIds,
         doc_type: 'general',
         visibility: 'internal',
       });
 
-      await loadDocuments();
+      invalidateAdminData({
+        keys: [ADMIN_CACHE_KEYS.documents],
+        source: 'documents-management',
+      });
+      await loadDocuments({ force: true });
     } catch (err) {
       throw err;
     }
@@ -99,7 +171,11 @@ export function useDocumentsManagement() {
   const deleteDocument = async (docId) => {
     try {
       await api.deleteDocument(docId);
-      await loadDocuments();
+      invalidateAdminData({
+        keys: [ADMIN_CACHE_KEYS.documents],
+        source: 'documents-management',
+      });
+      await loadDocuments({ force: true });
     } catch (err) {
       throw err;
     }
@@ -111,7 +187,11 @@ export function useDocumentsManagement() {
         throw new Error('Chọn ít nhất 1 lớp');
       }
       await api.shareDocument(docId, shareTargets);
-      await loadDocuments();
+      invalidateAdminData({
+        keys: [ADMIN_CACHE_KEYS.documents],
+        source: 'documents-management',
+      });
+      await loadDocuments({ force: true });
     } catch (err) {
       throw err;
     }
@@ -123,7 +203,11 @@ export function useDocumentsManagement() {
         throw new Error('Vui lòng nhập tên folder');
       }
       await api.createDocumentFolder({ name: name.trim(), scope: 'shared' });
-      await loadFolders();
+      invalidateAdminData({
+        keys: [ADMIN_CACHE_KEYS.documentFolders],
+        source: 'documents-management',
+      });
+      await loadFolders({ force: true });
     } catch (err) {
       throw err;
     }
@@ -155,10 +239,18 @@ export function useDocumentsManagement() {
   };
 
   useEffect(() => {
-    loadDocuments();
-    loadAllClasses();
-    loadFolders();
+    void loadDocuments();
+    void loadAllClasses();
+    void loadFolders();
   }, []);
+
+  useAdminAutoRefresh(async () => {
+    await Promise.all([
+      loadDocuments({ force: true }),
+      loadAllClasses({ force: true }),
+      loadFolders({ force: true }),
+    ]);
+  }, { minIntervalMs: 12000 });
 
   return {
     documents,

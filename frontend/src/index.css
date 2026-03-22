@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
-
 @import "tailwindcss";
 
 /* ⛔ DARK MODE BỊ CẤM HOÀN TOÀN - Chỉ dùng chế độ sáng (light-only).
@@ -39,26 +37,37 @@
   --radius-md: 0.75rem;
   --radius-sm: 0.5rem;
 
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: 'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: 'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
 
   --animate-blob: blob 7s infinite;
   --animate-spotlight: spotlight 2s ease .75s 1 forwards;
   --animate-fade-in-up: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+:root {
+  --vt-mobile-root-font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  :root {
+    /* Global mobile density compression across public pages and Tailwind/rem-based views */
+    --vt-mobile-root-font-size: clamp(13px, 3.4vw, 15px);
+  }
+}
+
 @layer base {
 
-  /* Global font - Inter for clean mobile UI */
   html {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: var(--vt-mobile-root-font-size);
+    font-family: var(--font-sans);
   }
 
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 16px;
+    font-family: var(--font-sans);
+    font-size: 1rem;
     line-height: 1.6;
 
     /* 2026 Liquid Mesh Gradient - Zen Frost */
@@ -80,7 +89,7 @@
   h4,
   h5,
   h6 {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-heading);
     letter-spacing: -0.02em;
   }
 
@@ -115,6 +124,15 @@
   select,
   textarea {
     @apply border-border bg-white/50 backdrop-blur-sm shadow-sm transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary/50;
+  }
+
+  @media (max-width: 768px) {
+    input:not([type="checkbox"]):not([type="radio"]),
+    textarea,
+    select {
+      /* Keep iOS from zooming form controls while the rest of mobile UI is compressed */
+      font-size: 16px;
+    }
   }
 }
 

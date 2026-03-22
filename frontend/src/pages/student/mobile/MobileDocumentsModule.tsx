@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Image, Video, Download, Search, X, ExternalLink } from 'lucide-react';
 import api from '../../../services/api';
 import PullToRefreshWrapper from '../../../components/ui/PullToRefreshWrapper';
+import { getStorageValue } from '../../../utils/browser-storage.js';
 
 const getFileIcon = (fileType) => {
     if (!fileType) return FileText;
@@ -29,7 +30,7 @@ const getFileColor = (fileType) => {
     return { bg: 'bg-slate-500', light: 'bg-slate-50 border-slate-100', text: 'text-slate-600' };
 };
 
-const DocumentCard = ({ document }) => {
+const DocumentCard = ({ document, onDownload }) => {
     const fileName = document.file_name || document.title || document.ten_tai_lieu || 'Tài liệu';
     const fileType = document.file_type || document.loai_file || 'pdf';
     const fileSize = document.file_size || document.kich_thuoc || 0;
@@ -39,7 +40,7 @@ const DocumentCard = ({ document }) => {
 
     const handleDownload = (e) => {
         e.stopPropagation();
-        if (document.file_url) window.open(document.file_url, '_blank');
+        onDownload(document);
     };
 
     return (
@@ -73,7 +74,7 @@ export default function MobileDocumentsModule({ studentData }) {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    useEffect(() => { fetchDocuments(); }, []);
+    useEffect(() => { fetchDocuments(); }, [studentData?.cccd]);
 
     // Pull-to-refresh callback
     const handleRefresh = async () => {
@@ -83,7 +84,13 @@ export default function MobileDocumentsModule({ studentData }) {
     const fetchDocuments = async () => {
         setLoading(true);
         try {
-            const res = await api.getAllDocuments();
+            const cccd = studentData?.cccd || getStorageValue('student_cccd');
+            if (!cccd) {
+                setDocuments([]);
+                return;
+            }
+
+            const res = await api.getDocumentsByCCCD(cccd);
             const docList = Array.isArray(res) ? res : (res?.data || res?.documents || []);
             setDocuments(docList);
         } catch (error) {
@@ -92,6 +99,11 @@ export default function MobileDocumentsModule({ studentData }) {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleDownloadDocument = (document) => {
+        if (!document?.id) return;
+        window.open(api.getDocumentDownloadUrl(document.id), '_blank', 'noopener,noreferrer');
     };
 
     const filteredDocuments = documents.filter(d => {
@@ -173,7 +185,7 @@ export default function MobileDocumentsModule({ studentData }) {
                 ) : filteredDocuments.length > 0 ? (
                     <div className="space-y-2.5">
                         {filteredDocuments.map((doc) => (
-                            <DocumentCard key={doc.id} document={doc} />
+                            <DocumentCard key={doc.id} document={doc} onDownload={handleDownloadDocument} />
                         ))}
                     </div>
                 ) : (

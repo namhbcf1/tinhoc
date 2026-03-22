@@ -9,7 +9,9 @@
 const CLASS_COLUMNS = `
   id, class_name, description, schedule_rule, schedule_time, timezone, recurrence,
   start_date, end_date, meet_link, calendar_event_id, teacher_name,
-  max_students, status, created_by, created_at, updated_at
+  max_students, status, created_by, created_at, updated_at,
+  source_exam_schedule_id, source_kind, exam_category_id, exam_type_id,
+  organizer_uuid, program_uuid, level_uuid, custom_field_payload, override_payload
 `;
 
 interface ListClassesOpts {
@@ -33,6 +35,15 @@ interface InsertClassData {
   teacher_name?: string | null;
   max_students: number;
   created_by: number | string;
+  source_exam_schedule_id?: number | string | null;
+  source_kind?: string | null;
+  exam_category_id?: number | string | null;
+  exam_type_id?: number | string | null;
+  organizer_uuid?: string | null;
+  program_uuid?: string | null;
+  level_uuid?: string | null;
+  custom_field_payload?: string | null;
+  override_payload?: string | null;
 }
 
 interface CalendarInfoData {
@@ -89,25 +100,41 @@ export async function findClassById(db: D1Database, id: number | string): Promis
 }
 
 /**
+ * Find a class by linked exam schedule id.
+ */
+export async function findClassBySourceExamSchedule(db: D1Database, examScheduleId: number | string): Promise<any> {
+  return db.prepare(
+    `SELECT ${CLASS_COLUMNS} FROM online_classes WHERE source_exam_schedule_id = ?`
+  ).bind(examScheduleId).first();
+}
+
+/**
  * Insert a new online class record.
  * Returns the last_row_id from D1 meta.
  */
 export async function insertClass(db: D1Database, {
   class_name, description, schedule_rule, schedule_time,
   timezone, recurrence, start_date, end_date,
-  meet_link, calendar_event_id, teacher_name, max_students, created_by
+  meet_link, calendar_event_id, teacher_name, max_students, created_by,
+  source_exam_schedule_id, source_kind, exam_category_id, exam_type_id,
+  organizer_uuid, program_uuid, level_uuid, custom_field_payload, override_payload
 }: InsertClassData): Promise<number> {
   const result = await db.prepare(`
     INSERT INTO online_classes (
       class_name, description, schedule_rule, schedule_time, timezone, recurrence,
       start_date, end_date, meet_link, calendar_event_id, teacher_name,
-      max_students, status, created_by
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
+      max_students, status, created_by, source_exam_schedule_id, source_kind,
+      exam_category_id, exam_type_id, organizer_uuid, program_uuid, level_uuid,
+      custom_field_payload, override_payload
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     class_name, description ?? null, schedule_rule, schedule_time,
     timezone, recurrence ?? null, start_date, end_date ?? null,
     meet_link ?? null, calendar_event_id ?? null, teacher_name ?? null,
-    max_students, created_by
+    max_students, created_by, source_exam_schedule_id ?? null,
+    source_kind ?? 'exam_schedule', exam_category_id ?? null, exam_type_id ?? null,
+    organizer_uuid ?? null, program_uuid ?? null, level_uuid ?? null,
+    custom_field_payload ?? null, override_payload ?? null
   ).run();
 
   return result.meta.last_row_id;
@@ -140,7 +167,9 @@ export async function updateClass(db: D1Database, id: number | string, fields: R
   const ALLOWED = [
     'class_name', 'description', 'teacher_name', 'max_students', 'status',
     'schedule_rule', 'schedule_time', 'timezone', 'start_date', 'end_date',
-    'meet_link', 'calendar_event_id', 'recurrence'
+    'meet_link', 'calendar_event_id', 'recurrence', 'source_exam_schedule_id',
+    'source_kind', 'exam_category_id', 'exam_type_id', 'organizer_uuid',
+    'program_uuid', 'level_uuid', 'custom_field_payload', 'override_payload'
   ];
 
   const updates: string[] = [];

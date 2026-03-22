@@ -10,6 +10,7 @@ import { Input } from '../../components/ui/Input';
 import { Search, Award, Calendar, Hash, User, ShieldCheck } from 'lucide-react';
 import { useGSAP } from '@gsap/react';
 import { gsap } from 'gsap';
+import SEO from '../../components/common/SEO';
 
 export default function CertificateLookup() {
   const { language } = useLanguage();
@@ -20,6 +21,21 @@ export default function CertificateLookup() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const structuredData = [
+    {
+      '@type': 'WebPage',
+      name: 'Tra cuu chung chi',
+      description: 'Cong cu tra cuu va xac minh thong tin van bang, chung chi do Van Trang Education cap.',
+      url: 'https://vantrangedu.com/certificate/lookup'
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Trang chu', item: 'https://vantrangedu.com/' },
+        { '@type': 'ListItem', position: 2, name: 'Tra cuu chung chi', item: 'https://vantrangedu.com/certificate/lookup' }
+      ]
+    }
+  ];
 
   const container = useRef();
 
@@ -59,6 +75,12 @@ export default function CertificateLookup() {
 
   return (
     <ModernPublicLayout>
+      <SEO
+        title="Tra cuu chung chi"
+        description="Tra cuu thong tin van bang, chung chi duoc cap boi Van Trang Education theo CCCD hoac ma chung chi."
+        url="/certificate/lookup"
+        structuredData={structuredData}
+      />
       <div ref={container} className="min-h-screen bg-slate-50 py-12 sm:py-16 md:py-24 relative overflow-hidden">
         {/* Abstract Backgrounds */}
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-100/40 rounded-full blur-[100px] opacity-60 pointer-events-none -translate-y-1/2 translate-x-1/3"></div>

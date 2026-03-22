@@ -47,10 +47,6 @@ export async function exportDatabaseToJSON(db: D1Database): Promise<string> {
       // Messaging
       'messages',
       'message_threads',
-      // VSTEP
-      'vstep_tests',
-      'vstep_questions',
-      'vstep_attempts',
     ];
 
     const data: { export_date: string; version: string; tables: Record<string, unknown[]> } = {

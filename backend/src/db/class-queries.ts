@@ -148,6 +148,7 @@ export async function deleteClass(db: D1Database, id: number) {
 
   // 3. Delete dependencies
   await db.prepare('DELETE FROM class_teachers WHERE class_id = ?').bind(id).run();
+  await db.prepare('DELETE FROM class_sessions WHERE class_id = ?').bind(id).run();
   await db.prepare('DELETE FROM class_schedules WHERE class_id = ?').bind(id).run();
   await db.prepare('DELETE FROM document_permissions WHERE class_id = ?').bind(id).run();
   await db.prepare('DELETE FROM attendance WHERE class_id = ?').bind(id).run();

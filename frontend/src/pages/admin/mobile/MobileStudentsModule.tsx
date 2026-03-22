@@ -1,58 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import { Search, UserPlus, Phone, Mail, ChevronRight, X, User, Calendar, MapPin, GraduationCap, DollarSign, Clock, Filter, TrendingUp, AlertCircle, CheckCircle, BookOpen, FileText, ChevronDown, Edit2, Image as ImageIcon, CreditCard, Save, Upload, Download, Eye } from 'lucide-react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Search, UserPlus, Phone, Mail, ChevronRight, X, User, Calendar, MapPin, GraduationCap, DollarSign, Clock, Filter, TrendingUp, AlertCircle, CheckCircle, BookOpen, FileText, ChevronDown, Edit2, Image as ImageIcon, CreditCard, Save, Upload, Download, Eye, History, RefreshCw, Trash2 } from 'lucide-react';
 import api from '../../../services/api';
+import { formatDateVN, formatTime as formatTimeUtil } from '../../../utils/dateUtils';
 import { useToast } from '../../../components/ui/ToastContainer';
 import PullToRefreshWrapper from '../../../components/ui/PullToRefreshWrapper';
 import ToastContainer from '../../../components/ui/ToastContainer';
-import CCCDUploader from '../../../components/upload/CCCDUploader';
+import AdminLoadingState from '../../../components/admin/AdminLoadingState';
+import { resolveImageUrl } from '../../../utils/imageUrl.js';
+import { ADMIN_CACHE_KEYS, ADMIN_CACHE_TTL, clearAdminCache, getAdminCache, invalidateAdminData, setAdminCache } from '../shared/admin-cache';
+import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
+import BirthPlaceField from '../../../components/forms/BirthPlaceField';
 
-// Helper function to ensure image URLs are full URLs (same as desktop)
-export const getImageUrl = (url) => {
-    if (!url) return null;
-    // If already a full URL (starts with http:// or https://), return as is
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-        return url;
-    }
-    // If it's a Cloudflare Images ID (UUID format), use Cloudflare Images CDN
-    if (url.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        const accountHash = import.meta.env.VITE_CLOUDFLARE_IMAGES_ACCOUNT_HASH;
-        if (accountHash) {
-            return `https://imagedelivery.net/${accountHash}/${url}/public`;
-        }
-    }
-    // If relative URL, prepend API base URL
-    const getApiBaseUrl = () => {
-        if (import.meta.env.VITE_API_URL) {
-            return import.meta.env.VITE_API_URL;
-        }
-        // Auto-detect if running on Cloudflare Pages or Custom Domain
-        if (typeof window !== 'undefined' &&
-            (window.location.hostname.includes('pages.dev') ||
-                window.location.hostname.includes('cloudflare') ||
-                window.location.hostname.includes('vantrangedu.com'))) {
-            return 'https://vantrangedu-api.bangachieu2.workers.dev';
-        }
-        return '/api';
-    };
-    const apiBaseUrl = getApiBaseUrl();
-    // Remove trailing slash from base URL if present
-    const baseUrl = apiBaseUrl.replace(/\/$/, '');
-    // Ensure url starts with /
-    const imagePath = url.startsWith('/') ? url : `/${url}`;
-    return `${baseUrl}${imagePath}`;
-};
+const CCCDUploader = lazy(() => import('../../../components/upload/CCCDUploader'));
 
-// Format date for display
+export const getImageUrl = resolveImageUrl;
+
+// Format date - dùng dateUtils chung với desktop
 export const formatDate = (date) => {
     if (!date) return '';
-    try {
-        return new Date(date).toLocaleDateString('vi-VN');
-    } catch {
-        return date;
-    }
+    return formatDateVN(date) || '';
 };
 
-const StudentCard = ({ student, onClick }) => {
+// Format date kèm giờ phút (cho timestamp: created_at, updated_at, approved_at...)
+const formatDateTime = (date) => {
+    if (!date) return '';
+    return formatDateVN(date, true) || '';
+};
+
+function useBodyScrollLock(isOpen) {
+    useEffect(() => {
+        if (!isOpen || typeof document === 'undefined') return undefined;
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [isOpen]);
+}
+
+const StudentCard = ({ student, onView, onEdit }) => {
     const rawName = student.ho_ten_full || `${student.ho || ''} ${student.ten_dem || ''} ${student.ten || ''}`.trim();
     const displayName = rawName || 'Chưa có tên';
     const initial = displayName.charAt(0)?.toUpperCase() || 'U';
@@ -63,8 +52,8 @@ const StudentCard = ({ student, onClick }) => {
 
     return (
         <div
-            className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-3 active:scale-[0.98] transition-all duration-200 hover:shadow-md"
-            onClick={() => onClick(student)}
+            className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-3 transition-all duration-200 hover:shadow-md"
+            onClick={() => onView(student)}
         >
             <div className="flex items-start gap-4">
                 <div className="relative">
@@ -131,17 +120,44 @@ const StudentCard = ({ student, onClick }) => {
                     </div>
                 </div>
             </div>
+            <div className="mt-4 flex gap-2">
+                <button
+                    type="button"
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        onView(student);
+                    }}
+                    className="flex-1 rounded-xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 active:scale-[0.98] transition-transform"
+                >
+                    Xem chi tiết
+                </button>
+                <button
+                    type="button"
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        onEdit(student);
+                    }}
+                    className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 active:scale-[0.98] transition-transform"
+                >
+                    Sửa
+                </button>
+            </div>
         </div>
     );
 };
 
-export const StudentDetailSheet = ({ student, onClose, onEdit }) => {
+export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefresh, toast }) => {
+    useBodyScrollLock(Boolean(student));
     const [activeTab, setActiveTab] = useState('info');
     const [enrollments, setEnrollments] = useState([]);
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(false);
     const [fullImageView, setFullImageView] = useState(null);
     const [fullStudentData, setFullStudentData] = useState(student);
+    const [editHistory, setEditHistory] = useState([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+    const [actionKey, setActionKey] = useState('');
 
     // Fetch full student data with images when modal opens
     useEffect(() => {
@@ -160,6 +176,36 @@ export const StudentDetailSheet = ({ student, onClose, onEdit }) => {
         };
         fetchFullStudentData();
     }, [student?.cccd]);
+
+    useEffect(() => {
+        const loadHistory = async () => {
+            const studentId = fullStudentData?.id || student?.id;
+            if (!studentId) {
+                setEditHistory([]);
+                return;
+            }
+
+            setHistoryLoading(true);
+            try {
+                const response = await api.getStudentEditHistory(studentId, 12, 0);
+                const raw = Array.isArray(response?.data) ? response.data : [];
+                // Lọc bỏ entries mà giá trị cũ/mới giống nhau (data rác)
+                const filtered = raw.filter((item) => {
+                    const oldVal = (item.old_value ?? '').toString().trim();
+                    const newVal = (item.new_value ?? '').toString().trim();
+                    return oldVal !== newVal;
+                });
+                setEditHistory(filtered);
+            } catch (error) {
+                console.error('Failed to load edit history:', error);
+                setEditHistory([]);
+            } finally {
+                setHistoryLoading(false);
+            }
+        };
+
+        loadHistory();
+    }, [fullStudentData?.id, student?.id]);
 
     useEffect(() => {
         // Use registrations from fullStudentData (includes both hoc and thi classes)
@@ -206,8 +252,49 @@ export const StudentDetailSheet = ({ student, onClose, onEdit }) => {
         }
     };
 
+    const refreshDetail = async (showSuccessMessage = false) => {
+        if (!student?.cccd) return;
+
+        setRefreshing(true);
+        try {
+            const response = await api.getStudentByCCCD(student.cccd);
+            const nextStudent = response?.data || response || student;
+            setFullStudentData(nextStudent);
+            await onRefresh?.();
+            if (showSuccessMessage) {
+                if (toast?.success) toast.success('Đã cập nhật trạng thái học viên');
+            }
+        } catch (error) {
+            console.error('Failed to refresh student detail:', error);
+            if (toast?.error) toast.error(error?.message || 'Không thể tải lại dữ liệu học viên');
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
+    const handleApproveRegistration = async (registration) => {
+        const currentKey = `${registration.class_type || 'hoc'}-${registration.registration_id || registration.class_id}`;
+        setActionKey(currentKey);
+        try {
+            if (registration.class_type === 'thi') {
+                await api.approveExamStudent(registration.class_id, fullStudentData?.id || student?.id);
+            } else {
+                await api.updateRegistrationStatus(registration.registration_id, 'approved');
+            }
+            await refreshDetail(true);
+        } catch (error) {
+            console.error('Failed to approve registration:', error);
+            if (toast?.error) toast.error(error?.message || 'Duyệt học viên thất bại');
+        } finally {
+            setActionKey('');
+        }
+    };
+
     // Use fullStudentData if available, otherwise fallback to student
     const displayStudent = fullStudentData || student;
+    const registrations = Array.isArray(displayStudent?.registrations) ? displayStudent.registrations : [];
+    const pendingRegistrations = registrations.filter((registration) => registration?.status === 'pending');
+    const activeRegistrations = registrations.filter((registration) => ['approved', 'active', 'studying'].includes(registration?.status));
 
     // Data extraction
     const rawName = displayStudent.ho_ten_full || `${displayStudent.ho || ''} ${displayStudent.ten_dem || ''} ${displayStudent.ten || ''}`.trim();
@@ -217,28 +304,58 @@ export const StudentDetailSheet = ({ student, onClose, onEdit }) => {
     const dob = formatDate(displayStudent.ngay_sinh);
     const address = displayStudent.dia_chi || '';
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/50" onClick={onClose}>
+    if (typeof document === 'undefined') {
+        return null;
+    }
+
+    return createPortal((
+        <div className="fixed inset-0 z-[10020] flex items-end bg-black/60 backdrop-blur-[1px]" onClick={onClose}>
             <div
                 className="bg-white w-full max-h-[92vh] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col animate-slide-up"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 <div className="relative bg-gradient-to-r from-blue-600 to-blue-700 px-5 pt-6 pb-5">
-                    <button
-                        onClick={onClose}
-                        className="absolute top-4 right-4 p-2 rounded-full bg-white/20 backdrop-blur-sm active:scale-95 transition-transform"
-                    >
-                        <X size={20} className="text-white" />
-                    </button>
-
-                    <button
-                        onClick={() => onEdit(displayStudent)}
-                        className="absolute top-4 right-16 p-2 rounded-full bg-emerald-500 active:scale-95 transition-transform flex items-center gap-1.5 px-3"
-                    >
-                        <Edit2 size={16} className="text-white" />
-                        <span className="text-white text-sm font-medium">Sửa</span>
-                    </button>
+                    <div className="mb-4 flex items-center justify-end gap-2">
+                        <button
+                            onClick={() => refreshDetail()}
+                            disabled={refreshing}
+                            className="rounded-full bg-white/20 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm transition-transform active:scale-95 disabled:opacity-50"
+                        >
+                            <span className="flex items-center gap-1.5">
+                                <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+                                Làm mới
+                            </span>
+                        </button>
+                        {onEdit ? (
+                            <button
+                                onClick={() => onEdit(displayStudent)}
+                                className="rounded-full bg-emerald-500 px-3 py-2 text-xs font-semibold text-white transition-transform active:scale-95"
+                            >
+                                <span className="flex items-center gap-1.5">
+                                    <Edit2 size={14} />
+                                    Sửa
+                                </span>
+                            </button>
+                        ) : null}
+                        {onDelete ? (
+                            <button
+                                onClick={() => onDelete(displayStudent)}
+                                className="rounded-full bg-rose-500 px-3 py-2 text-xs font-semibold text-white transition-transform active:scale-95"
+                            >
+                                <span className="flex items-center gap-1.5">
+                                    <Trash2 size={14} />
+                                    Xóa
+                                </span>
+                            </button>
+                        ) : null}
+                        <button
+                            onClick={onClose}
+                            className="p-2 rounded-full bg-white/20 backdrop-blur-sm active:scale-95 transition-transform"
+                        >
+                            <X size={20} className="text-white" />
+                        </button>
+                    </div>
 
                     <div className="flex gap-4 items-center">
                         <div className="h-16 w-16 rounded-2xl bg-white flex items-center justify-center text-2xl font-bold text-blue-600 shadow-lg overflow-hidden">
@@ -285,6 +402,25 @@ export const StudentDetailSheet = ({ student, onClose, onEdit }) => {
                             <Mail size={20} />
                             <span className="text-xs font-medium">Email</span>
                         </button>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                        <div className="rounded-2xl border border-white/20 bg-white/15 px-3 py-3 text-white backdrop-blur-sm">
+                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/75">Tổng đăng ký</p>
+                            <p className="mt-1 text-2xl font-black leading-none">{registrations.length}</p>
+                        </div>
+                        <div className="rounded-2xl border border-white/20 bg-white/15 px-3 py-3 text-white backdrop-blur-sm">
+                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/75">Đang hiệu lực</p>
+                            <p className="mt-1 text-2xl font-black leading-none">{activeRegistrations.length}</p>
+                        </div>
+                        <div className="rounded-2xl border border-white/20 bg-white/15 px-3 py-3 text-white backdrop-blur-sm">
+                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/75">Chờ duyệt</p>
+                            <p className="mt-1 text-2xl font-black leading-none">{pendingRegistrations.length}</p>
+                        </div>
+                        <div className="rounded-2xl border border-white/20 bg-white/15 px-3 py-3 text-white backdrop-blur-sm">
+                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/75">Lịch sử sửa</p>
+                            <p className="mt-1 text-2xl font-black leading-none">{editHistory.length}</p>
+                        </div>
                     </div>
                 </div>
 
@@ -357,9 +493,49 @@ export const StudentDetailSheet = ({ student, onClose, onEdit }) => {
                             <div>
                                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Thông tin hệ thống</h3>
                                 <div className="space-y-3">
-                                    <InfoRow icon={<Clock size={16} />} label="Ngày tạo hồ sơ" value={formatDate(displayStudent.created_at)} />
-                                    <InfoRow icon={<Clock size={16} />} label="Cập nhật lần cuối" value={formatDate(displayStudent.updated_at)} />
+                                    <InfoRow icon={<Clock size={16} />} label="Ngày tạo hồ sơ" value={formatDateTime(displayStudent.created_at)} />
+                                    <InfoRow icon={<Clock size={16} />} label="Cập nhật lần cuối" value={formatDateTime(displayStudent.updated_at)} />
                                 </div>
+                            </div>
+
+                            <div>
+                                <div className="mb-3 flex items-center justify-between gap-3">
+                                    <div>
+                                        <h3 className="text-xs font-bold text-violet-600 uppercase tracking-wide">Lịch sử chỉnh sửa</h3>
+                                    </div>
+                                    <div className="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-violet-600">
+                                        {editHistory.length} mục
+                                    </div>
+                                </div>
+
+                                {historyLoading ? (
+                                    <div className="space-y-3">
+                                        {Array.from({ length: 2 }).map((_, index) => (
+                                            <div key={index} className="animate-pulse rounded-2xl border border-slate-200 bg-white p-3">
+                                                <div className="h-3 w-24 rounded bg-slate-200" />
+                                                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                                    <div className="h-16 rounded-xl bg-slate-100" />
+                                                    <div className="h-16 rounded-xl bg-slate-100" />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : editHistory.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {editHistory.map((item, index) => (
+                                            <HistoryEntryCard
+                                                key={`${item.changed_at || 'history'}-${item.field_name || 'field'}-${index}`}
+                                                item={item}
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center">
+                                        <History size={28} className="mx-auto text-slate-300" />
+                                        <p className="mt-3 text-sm font-semibold text-slate-700">Chưa có lịch sử sửa đổi</p>
+                                        <p className="mt-1 text-xs text-slate-500">Khi hồ sơ được chỉnh sửa, chi tiết sẽ hiển thị tại đây.</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -510,37 +686,99 @@ export const StudentDetailSheet = ({ student, onClose, onEdit }) => {
                                         const classType = enrollment.class_type || 'hoc';
                                         const isThi = classType === 'thi';
                                         const className = enrollment.class_name || enrollment.ten_lop || (isThi ? 'Lớp thi' : 'Lớp học');
+                                        const registrationKey = `${classType}-${enrollment.registration_id || enrollment.class_id || idx}`;
+                                        const rawStatus = enrollment.status || enrollment.registration_status || 'pending';
+                                        const status = String(rawStatus).toLowerCase();
+                                        const statusClass =
+                                            status === 'approved' || status === 'active' || status === 'studying'
+                                                ? 'bg-emerald-100 text-emerald-700'
+                                                : status === 'completed'
+                                                    ? 'bg-blue-100 text-blue-700'
+                                                    : status === 'rejected'
+                                                        ? 'bg-rose-100 text-rose-700'
+                                                        : 'bg-amber-100 text-amber-700';
+                                        const statusLabel =
+                                            status === 'approved' || status === 'active' || status === 'studying'
+                                                ? 'Đã duyệt'
+                                                : status === 'completed'
+                                                    ? 'Hoàn thành'
+                                                    : status === 'rejected'
+                                                        ? 'Đã từ chối'
+                                                        : 'Chờ duyệt';
+                                        const paymentStatus = enrollment.payment_status || enrollment.hoc_phi_status;
+                                        const paymentLabel =
+                                            paymentStatus === 'paid'
+                                                ? 'Đã thanh toán'
+                                                : paymentStatus === 'partial'
+                                                    ? 'Thanh toán một phần'
+                                                    : paymentStatus === 'pending'
+                                                        ? 'Chưa thanh toán'
+                                                        : '';
+                                        const createdAt = enrollment.registration_created_at || enrollment.created_at;
+                                        const approvedAt = enrollment.approved_at;
+                                        const createdBy = enrollment.created_by_name || enrollment.created_by || 'Hệ thống';
+                                        const approvedBy = enrollment.approved_by_name || enrollment.approved_by || 'Chưa có';
+                                        const canApprove = status === 'pending';
 
                                         return (
-                                            <div key={idx} className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                                                <div className="flex items-start justify-between mb-2">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <h4 className="font-bold text-slate-800">{className}</h4>
-                                                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isThi
-                                                                ? 'bg-purple-100 text-purple-700'
-                                                                : 'bg-blue-100 text-blue-700'
-                                                                }`}>
-                                                                {isThi ? '📝 Lớp thi' : '📚 Lớp học'}
+                                            <div key={idx} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <h4 className="truncate text-base font-bold text-slate-900">{className}</h4>
+                                                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] ${isThi ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                                {isThi ? 'Lớp thi' : 'Lớp học'}
+                                                            </span>
+                                                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] ${statusClass}`}>
+                                                                {statusLabel}
                                                             </span>
                                                         </div>
-                                                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                                                            <span className={`px-2 py-0.5 rounded-full ${enrollment.status === 'active' || enrollment.status === 'approved'
-                                                                ? 'bg-emerald-100 text-emerald-700'
-                                                                : 'bg-slate-200 text-slate-600'
-                                                                }`}>
-                                                                {enrollment.status === 'active' || enrollment.status === 'approved'
-                                                                    ? 'Đang học'
-                                                                    : enrollment.status === 'completed'
-                                                                        ? 'Đã hoàn thành'
-                                                                        : 'Đã kết thúc'}
-                                                            </span>
-                                                            {enrollment.ngay_bat_dau && (
-                                                                <span>• Từ {new Date(enrollment.ngay_bat_dau).toLocaleDateString('vi-VN')}</span>
-                                                            )}
-                                                            {enrollment.registration_created_at && (
-                                                                <span>• ĐK: {new Date(enrollment.registration_created_at).toLocaleDateString('vi-VN')}</span>
-                                                            )}
+
+                                                        <div className="mt-2 flex flex-wrap gap-1.5">
+                                                            {paymentLabel ? (
+                                                                <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-600">
+                                                                    {paymentLabel}
+                                                                </span>
+                                                            ) : null}
+                                                            {enrollment.ngay_bat_dau ? (
+                                                                <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-700">
+                                                                    Bắt đầu {formatDate(enrollment.ngay_bat_dau)}
+                                                                </span>
+                                                            ) : null}
+                                                            {enrollment.ngay_ket_thuc ? (
+                                                                <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-600">
+                                                                    Kết thúc {formatDate(enrollment.ngay_ket_thuc)}
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
+                                                    </div>
+
+                                                    {canApprove ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleApproveRegistration(enrollment)}
+                                                            disabled={actionKey === registrationKey}
+                                                            className="shrink-0 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition-transform active:scale-95 disabled:opacity-60"
+                                                        >
+                                                            {actionKey === registrationKey ? 'Đang duyệt...' : 'Duyệt nhanh'}
+                                                        </button>
+                                                    ) : null}
+                                                </div>
+
+                                                <div className="mt-3 grid gap-2">
+                                                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                                                        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Dấu vết đăng ký</p>
+                                                        <div className="mt-1 space-y-1 text-xs text-slate-600">
+                                                            <p>Ngày tạo: {createdAt ? formatDateTime(createdAt) : 'Chưa rõ'}</p>
+                                                            <p>Người tạo: {createdBy}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                                                        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Dấu vết phê duyệt</p>
+                                                        <div className="mt-1 space-y-1 text-xs text-slate-600">
+                                                            <p>Ngày duyệt: {approvedAt ? formatDateTime(approvedAt) : 'Chưa duyệt'}</p>
+                                                            <p>Người duyệt: {approvedBy}</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -591,7 +829,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit }) => {
 
             {/* Full Image View Modal */}
             {fullImageView && (
-                <div className="fixed inset-0 z-[60] bg-black flex items-center justify-center p-4" onClick={() => setFullImageView(null)}>
+                <div className="fixed inset-0 z-[10030] bg-black flex items-center justify-center p-4" onClick={() => setFullImageView(null)}>
                     <button
                         onClick={(e) => { e.stopPropagation(); setFullImageView(null); }}
                         className="absolute top-4 right-4 p-3 rounded-full bg-white/20 backdrop-blur-sm"
@@ -607,7 +845,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit }) => {
                 </div>
             )}
         </div>
-    );
+    ), document.body);
 };
 
 const InfoRow = ({ icon, label, value }) => {
@@ -625,32 +863,79 @@ const InfoRow = ({ icon, label, value }) => {
     );
 };
 
+const HistoryEntryCard = ({ item }) => (
+    <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                    {item.field_name || 'Trường dữ liệu'}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {formatDateTime(item.changed_at) || 'Không rõ thời gian'}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                    {item.admin_full_name || item.admin_username || 'Hệ thống'}
+                </p>
+            </div>
+            <div className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                Lịch sử
+            </div>
+        </div>
+
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2">
+                <div className="text-[10px] font-black uppercase tracking-[0.14em] text-rose-500">Trước đó</div>
+                <div className="mt-1 text-sm text-slate-700">{item.old_value || 'Trống'}</div>
+            </div>
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2">
+                <div className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-600">Sau chỉnh sửa</div>
+                <div className="mt-1 text-sm text-slate-700">{item.new_value || 'Trống'}</div>
+            </div>
+        </div>
+    </div>
+);
+
 // Edit Modal Component with full image upload support
 const StudentEditModal = ({ student, onClose, onSave }) => {
+    useBodyScrollLock(true);
     const toast = useToast();
-    const [formData, setFormData] = useState({
-        ho: student?.ho || '',
-        ten_dem: student?.ten_dem || '',
-        ten: student?.ten || '',
-        ngay_sinh: student?.ngay_sinh || '',
-        gioi_tinh: student?.gioi_tinh || 'male',
-        noi_sinh: student?.noi_sinh || '',
-        dan_toc: student?.dan_toc || 'Kinh',
-        quoc_tich: student?.quoc_tich || 'Việt Nam',
-        cccd: student?.cccd || '',
-        ngay_cap_cccd: student?.ngay_cap_cccd || '',
-        sdt: student?.sdt || '',
-        email: student?.email || '',
-        dia_chi: student?.dia_chi || '',
-        don_vi_cong_tac: student?.don_vi_cong_tac || '',
-        cccd_front_image_id: student?.cccd_front_image_id || '',
-        cccd_back_image_id: student?.cccd_back_image_id || '',
-        photo_3x4_image_id: student?.photo_3x4_image_id || ''
+    const isEditMode = Boolean(student?.id);
+    const buildInitialFormData = (studentData) => ({
+        ho: studentData?.ho || '',
+        ten_dem: studentData?.ten_dem || '',
+        ten: studentData?.ten || '',
+        ngay_sinh: studentData?.ngay_sinh || '',
+        gioi_tinh: studentData?.gioi_tinh || 'male',
+        noi_sinh: studentData?.noi_sinh || '',
+        dan_toc: studentData?.dan_toc || 'Kinh',
+        quoc_tich: studentData?.quoc_tich || 'Việt Nam',
+        cccd: studentData?.cccd || '',
+        ngay_cap_cccd: studentData?.ngay_cap_cccd || '',
+        sdt: studentData?.sdt || '',
+        email: studentData?.email || '',
+        dia_chi: studentData?.dia_chi || '',
+        don_vi_cong_tac: studentData?.don_vi_cong_tac || '',
+        cccd_front_image_id: studentData?.cccd_front_image_id || '',
+        cccd_back_image_id: studentData?.cccd_back_image_id || '',
+        photo_3x4_image_id: studentData?.photo_3x4_image_id || ''
     });
+    const [formData, setFormData] = useState(buildInitialFormData(student));
     const [imageFront, setImageFront] = useState(student?.image_cccd_front || '');
     const [imageBack, setImageBack] = useState(student?.image_cccd_back || '');
     const [imagePortrait, setImagePortrait] = useState(student?.image_3x4 || '');
     const [saving, setSaving] = useState(false);
+    const uploaderFallback = (
+        <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
+            Đang tải trình upload...
+        </div>
+    );
+
+    useEffect(() => {
+        setFormData(buildInitialFormData(student));
+        setImageFront(student?.image_cccd_front || '');
+        setImageBack(student?.image_cccd_back || '');
+        setImagePortrait(student?.image_3x4 || '');
+    }, [student]);
 
     // Handle image upload success
     const handleImageUploadSuccess = (field) => (result) => {
@@ -688,18 +973,28 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
         e.preventDefault();
         setSaving(true);
         try {
-            await api.updateStudent(student.id, formData);
+            if (isEditMode) {
+                await api.updateStudent(student.id, formData);
+                toast.success('Đã cập nhật hồ sơ học viên');
+            } else {
+                await api.createStudentAdmin(formData);
+                toast.success('Đã tạo học viên mới');
+            }
             onSave();
         } catch (error) {
-            console.error('Failed to update student', error);
-            toast.error('Lỗi: ' + error.message);
+            console.error('Failed to save student', error);
+            toast.error('Lỗi: ' + (error.message || 'Không thể lưu học viên'));
         } finally {
             setSaving(false);
         }
     };
 
-    return (
-        <div className="fixed inset-0 z-[60] bg-black/50 flex items-end" onClick={onClose}>
+    if (typeof document === 'undefined') {
+        return null;
+    }
+
+    return createPortal((
+        <div className="fixed inset-0 z-[10020] bg-black/60 flex items-end" onClick={onClose}>
             <div
                 className="bg-white w-full max-h-[95vh] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
                 onClick={(e) => e.stopPropagation()}
@@ -707,8 +1002,7 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                 {/* Header */}
                 <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-5 py-4 flex justify-between items-center">
                     <div>
-                        <h2 className="text-lg font-bold text-white">Chỉnh sửa hồ sơ</h2>
-                        <p className="text-xs text-white/80 mt-0.5">Cập nhật thông tin học viên</p>
+                        <h2 className="text-lg font-bold text-white">{isEditMode ? 'Chỉnh sửa hồ sơ' : 'Tạo học viên mới'}</h2>
                     </div>
                     <button onClick={onClose} className="p-2 rounded-full bg-white/20 backdrop-blur-sm">
                         <X size={20} className="text-white" />
@@ -736,7 +1030,20 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                                     <option value="female">Nữ</option>
                                 </select>
                             </div>
-                            <FormField label="Nơi sinh" value={formData.noi_sinh} onChange={(v) => setFormData({ ...formData, noi_sinh: v })} />
+                            <BirthPlaceField
+                                label="Nơi sinh"
+                                value={formData.noi_sinh}
+                                onChange={(v) => setFormData({ ...formData, noi_sinh: v })}
+                                hint="Trong nước chọn theo danh sách 34 tỉnh/thành."
+                                wrapperClassName="space-y-1"
+                                labelClassName="block text-sm font-medium text-slate-700"
+                                toggleWrapperClassName=""
+                                radioGroupClassName="flex flex-wrap gap-4"
+                                radioOptionClassName="inline-flex items-center gap-2 text-sm text-slate-700"
+                                inputClassName="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                selectClassName="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                hintClassName="text-xs text-slate-500"
+                            />
                             <FormField label="Dân tộc" value={formData.dan_toc} onChange={(v) => setFormData({ ...formData, dan_toc: v })} />
                             <FormField label="Quốc tịch" value={formData.quoc_tich} onChange={(v) => setFormData({ ...formData, quoc_tich: v })} />
                         </div>
@@ -746,7 +1053,7 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                     <div>
                         <h3 className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-3">Giấy tờ tùy thân</h3>
                         <div className="space-y-3">
-                            <FormField label="Số CCCD/CMND" value={formData.cccd} onChange={(v) => setFormData({ ...formData, cccd: v })} disabled />
+                            <FormField label="Số CCCD/CMND" value={formData.cccd} onChange={(v) => setFormData({ ...formData, cccd: v })} required disabled={isEditMode} />
                             <FormField label="Ngày cấp CCCD (dd/mm/yyyy)" value={formData.ngay_cap_cccd} onChange={(v) => setFormData({ ...formData, ngay_cap_cccd: v })} />
                         </div>
                     </div>
@@ -769,33 +1076,39 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                             {/* Ảnh 3x4 */}
                             <div>
                                 <p className="text-xs font-medium text-slate-600 mb-2">Ảnh thẻ 3x4</p>
-                                <CCCDUploader
-                                    type="photo_3x4"
-                                    onUploadSuccess={handleImageUploadSuccess('portrait')}
-                                    onUploadError={handleImageUploadError}
-                                    existingImageUrl={imagePortrait}
-                                />
+                                <Suspense fallback={uploaderFallback}>
+                                    <CCCDUploader
+                                        type="photo_3x4"
+                                        onUploadSuccess={handleImageUploadSuccess('portrait')}
+                                        onUploadError={handleImageUploadError}
+                                        existingImageUrl={imagePortrait}
+                                    />
+                                </Suspense>
                             </div>
 
                             {/* CCCD Images */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <p className="text-xs font-medium text-slate-600 mb-2 text-center">CCCD MẶT TRƯỚC</p>
-                                    <CCCDUploader
-                                        type="cccd_front"
-                                        onUploadSuccess={handleImageUploadSuccess('front')}
-                                        onUploadError={handleImageUploadError}
-                                        existingImageUrl={imageFront}
-                                    />
+                                    <Suspense fallback={uploaderFallback}>
+                                        <CCCDUploader
+                                            type="cccd_front"
+                                            onUploadSuccess={handleImageUploadSuccess('front')}
+                                            onUploadError={handleImageUploadError}
+                                            existingImageUrl={imageFront}
+                                        />
+                                    </Suspense>
                                 </div>
                                 <div>
                                     <p className="text-xs font-medium text-slate-600 mb-2 text-center">CCCD MẶT SAU</p>
-                                    <CCCDUploader
-                                        type="cccd_back"
-                                        onUploadSuccess={handleImageUploadSuccess('back')}
-                                        onUploadError={handleImageUploadError}
-                                        existingImageUrl={imageBack}
-                                    />
+                                    <Suspense fallback={uploaderFallback}>
+                                        <CCCDUploader
+                                            type="cccd_back"
+                                            onUploadSuccess={handleImageUploadSuccess('back')}
+                                            onUploadError={handleImageUploadError}
+                                            existingImageUrl={imageBack}
+                                        />
+                                    </Suspense>
                                 </div>
                             </div>
                         </div>
@@ -825,14 +1138,14 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                         ) : (
                             <>
                                 <Save size={16} />
-                                Lưu thay đổi
+                                {isEditMode ? 'Lưu thay đổi' : 'Tạo học viên'}
                             </>
                         )}
                     </button>
                 </div>
             </div>
         </div>
-    );
+    ), document.body);
 };
 
 const FormField = ({ label, value, onChange, type = 'text', required = false, disabled = false }) => {
@@ -853,27 +1166,49 @@ const FormField = ({ label, value, onChange, type = 'text', required = false, di
 
 export default function MobileStudentsModule() {
     const toast = useToast();
-    const [students, setStudents] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const cachedStudents = getAdminCache(ADMIN_CACHE_KEYS.students, ADMIN_CACHE_TTL.students);
+    const [students, setStudents] = useState(() => cachedStudents?.students ?? []);
+    const [studentStats, setStudentStats] = useState(() => cachedStudents?.studentStats ?? null);
+    const [loading, setLoading] = useState(() => cachedStudents === null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [editingStudent, setEditingStudent] = useState(null);
+    const [creatingStudent, setCreatingStudent] = useState(false);
     const [filterStatus, setFilterStatus] = useState('all');
     const [showFilters, setShowFilters] = useState(false);
     const [sortBy, setSortBy] = useState('name');
 
     useEffect(() => {
-        fetchStudents();
+        void fetchStudents();
     }, []);
+    useAdminAutoRefresh(() => fetchStudents({ force: true }), { minIntervalMs: 12000 });
 
-    const fetchStudents = async () => {
+    const fetchStudents = async ({ force = false } = {}) => {
+        const cached = force ? null : getAdminCache(ADMIN_CACHE_KEYS.students, ADMIN_CACHE_TTL.students);
+        if (cached) {
+            setStudents(cached.students || []);
+            setStudentStats(cached.studentStats || null);
+            setLoading(false);
+            return cached.students || [];
+        }
+
         try {
+            if (force) {
+                api.invalidateCache(['/students']);
+            }
             const res = await api.getStudents(500, 0);
             const studentList = Array.isArray(res) ? res : (res?.data || res?.results || []);
             setStudents(studentList);
+            setStudentStats(res?.meta?.stats || null);
+            setAdminCache(ADMIN_CACHE_KEYS.students, {
+                students: studentList,
+                studentStats: res?.meta?.stats || null,
+            });
+            return studentList;
         } catch (error) {
-            console.error("Failed to fetch students", error);
+            console.error('Failed to fetch students', error);
             setStudents([]);
+            setStudentStats(null);
         } finally {
             setLoading(false);
         }
@@ -881,16 +1216,58 @@ export default function MobileStudentsModule() {
 
     const handleEdit = (student) => {
         setSelectedStudent(null);
+        setCreatingStudent(false);
         setEditingStudent(student);
     };
 
-    const handleSaveEdit = async () => {
-        await fetchStudents();
+    const handleCreateStudent = () => {
+        setSelectedStudent(null);
         setEditingStudent(null);
+        setCreatingStudent(true);
     };
 
-    // Filter and sort logic
-    let processedStudents = students.filter(s => {
+    const handleViewStudent = (student) => {
+        setCreatingStudent(false);
+        setEditingStudent(null);
+        setSelectedStudent(student);
+    };
+
+    const handleSaveEdit = async () => {
+        invalidateAdminData({
+            keys: [ADMIN_CACHE_KEYS.students, ADMIN_CACHE_KEYS.dashboardOverview, ADMIN_CACHE_KEYS.mobileDashboardOverview],
+            source: 'mobile-students-management',
+        });
+        await fetchStudents({ force: true });
+        setEditingStudent(null);
+        setCreatingStudent(false);
+    };
+
+    const handleDeleteStudent = async (student) => {
+        if (!student?.id) return;
+        if (!window.confirm(`Xóa học viên "${student.ho_ten_full || student.cccd || 'này'}"?`)) return;
+
+        try {
+            const response = await api.deleteStudent(student.id);
+            if (response?.success === false) {
+                toast.error(response?.message || 'Không thể xóa học viên');
+                return;
+            }
+
+            toast.success('Đã xóa học viên');
+            if (selectedStudent?.id === student.id) setSelectedStudent(null);
+            if (editingStudent?.id === student.id) setEditingStudent(null);
+            invalidateAdminData({
+                keys: [ADMIN_CACHE_KEYS.students, ADMIN_CACHE_KEYS.dashboardOverview, ADMIN_CACHE_KEYS.mobileDashboardOverview],
+                source: 'mobile-students-management',
+            });
+            await fetchStudents({ force: true });
+        } catch (error) {
+            console.error('Failed to delete student', error);
+            toast.error(error?.message || 'Không thể xóa học viên');
+        }
+    };
+
+    let processedStudents = students.filter((s) => {
         const name = (s.ho_ten_full || `${s.ho || ''} ${s.ten_dem || ''} ${s.ten || ''}`.trim()).toLowerCase();
         const matchesSearch = name.includes(searchTerm.toLowerCase()) ||
             (s.email && s.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -907,7 +1284,7 @@ export default function MobileStudentsModule() {
         return true;
     });
 
-    if (sortBy === ' name') {
+    if (sortBy === 'name') {
         processedStudents.sort((a, b) => {
             const nameA = (a.ho_ten_full || `${a.ho || ''} ${a.ten || ''}`).toLowerCase();
             const nameB = (b.ho_ten_full || `${b.ho || ''} ${b.ten || ''}`).toLowerCase();
@@ -921,151 +1298,209 @@ export default function MobileStudentsModule() {
         });
     }
 
-    // Statistics
-    const totalStudents = students.length;
-    const activeStudents = students.filter(s => s.trang_thai === 'active' || s.is_active !== false).length;
-    const debtStudents = students.filter(s => s.cong_no > 0 || s.payment_status === 'pending').length;
+    const totalStudents = studentStats?.totalStudents ?? students.length;
+    const activeStudents = studentStats?.activeStudents ?? students.filter((s) => s.trang_thai === 'active' || s.is_active !== false).length;
+    const debtStudents = students.filter((s) => s.cong_no > 0 || s.payment_status === 'pending').length;
 
-    // Pull-to-refresh callback
     const handleRefresh = async () => {
         setLoading(true);
-        await fetchStudents();
+        clearAdminCache(ADMIN_CACHE_KEYS.students);
+        await fetchStudents({ force: true });
     };
 
     return (
         <PullToRefreshWrapper onRefresh={handleRefresh}>
-        <div className="min-h-screen bg-slate-50">
-            {/* Stats Dashboard */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 pt-4 pb-6">
-                <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 py-4 border border-white/30">
-                        <p className="text-xs text-white/80 font-medium mb-1">Total HV</p>
-                        <p className="text-2xl font-bold text-white">{totalStudents}</p>
-                    </div>
-                    <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 py-4 border border-white/30">
-                        <p className="text-xs text-white/80 font-medium mb-1">Đang học</p>
-                        <p className="text-2xl font-bold text-white">{activeStudents}</p>
-                    </div>
-                    <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 py-4 border border-white/30">
-                        <p className="text-xs text-white/80 font-medium mb-1">Công nợ</p>
-                        <p className="text-2xl font-bold text-white">{debtStudents}</p>
-                    </div>
-                </div>
-            </div>
+            <div className="min-h-screen bg-[#f3f6fb] pb-6">
+                <div className="px-4 pt-3">
+                    <div className="rounded-[28px] border border-slate-200/80 bg-white p-3.5 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Điều hành học viên</p>
+                                <h1 className="mt-1 text-[22px] font-black leading-none text-slate-900">Học viên</h1>
+                            </div>
 
-            {/* Search & Filters */}
-            <div className="px-4 py-4 bg-white shadow-sm">
-                <div className="flex gap-2 mb-3">
-                    <div className="flex-1 relative">
-                        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder="Tìm theo tên, SĐT, email..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
-                    <button
-                        onClick={() => setShowFilters(!showFilters)}
-                        className={`px-4 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 ${showFilters ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'
-                            }`}
-                    >
-                        <Filter size={18} />
-                    </button>
-                </div>
+                            <button
+                                type="button"
+                                onClick={handleCreateStudent}
+                                className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-slate-900 px-3.5 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-white shadow-sm transition-transform active:scale-[0.98]"
+                            >
+                                <UserPlus size={14} />
+                                <span>Tạo</span>
+                            </button>
+                        </div>
 
-                {showFilters && (
-                    <div className="mt-3 p-3 bg-slate-50 rounded-xl space-y-3">
-                        <div>
-                            <label className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2 block">Trạng thái</label>
-                            <div className="flex gap-2 flex-wrap">
-                                {['all', 'active', 'inactive', 'debt'].map(status => (
-                                    <button
-                                        key={status}
-                                        onClick={() => setFilterStatus(status)}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterStatus === status
-                                            ? 'bg-blue-600 text-white shadow-sm'
-                                            : 'bg-white text-slate-600 border border-slate-200'
-                                            }`}
-                                    >
-                                        {status === 'all' && 'Tất cả'}
-                                        {status === 'active' && 'Đang học'}
-                                        {status === 'inactive' && 'Ngưng học'}
-                                        {status === 'debt' && 'Có công nợ'}
-                                    </button>
-                                ))}
+                        <div className="mt-3 grid grid-cols-3 gap-2">
+                            <div className="rounded-[20px] border border-blue-100 bg-blue-50 px-3 py-3 text-blue-700">
+                                <p className="text-[10px] font-black uppercase tracking-[0.16em] opacity-75">Tổng HV</p>
+                                <p className="mt-1 text-2xl font-black leading-none">{totalStudents}</p>
+                            </div>
+                            <div className="rounded-[20px] border border-emerald-100 bg-emerald-50 px-3 py-3 text-emerald-700">
+                                <p className="text-[10px] font-black uppercase tracking-[0.16em] opacity-75">Đang học</p>
+                                <p className="mt-1 text-2xl font-black leading-none">{activeStudents}</p>
+                            </div>
+                            <div className="rounded-[20px] border border-amber-100 bg-amber-50 px-3 py-3 text-amber-700">
+                                <p className="text-[10px] font-black uppercase tracking-[0.16em] opacity-75">Công nợ</p>
+                                <p className="mt-1 text-2xl font-black leading-none">{debtStudents}</p>
                             </div>
                         </div>
-                        <div>
-                            <label className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2 block">Sắp xếp</label>
-                            <select
-                                value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value)}
-                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700"
-                            >
-                                <option value="name">Tên A-Z</option>
-                                <option value="recent">Mới nhất</option>
-                            </select>
-                        </div>
-                    </div>
-                )}
 
-                <p className="text-xs text-slate-500 font-medium mt-2">
-                    Hiển thị {processedStudents.length} / {students.length} học viên
-                </p>
-            </div>
-
-            {/* Content */}
-            <div className="p-4">
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4">
-                        <div className="animate-spin rounded-full h-12 w-12 border-[3px] border-blue-600 border-t-transparent"></div>
-                        <p className="text-slate-500 font-medium animate-pulse">Đang tải dữ liệu...</p>
-                    </div>
-                ) : processedStudents.length > 0 ? (
-                    <div className="space-y-3">
-                        {processedStudents.map(s => (
-                            <StudentCard
-                                key={s.id || s.cccd}
-                                student={s}
-                                onClick={setSelectedStudent}
+                        <div className="relative mt-3">
+                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Tìm theo tên, SĐT, email hoặc CCCD"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-10 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                             />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center py-20 opacity-60">
-                        <User size={64} className="text-slate-300 mb-4" />
-                        <p className="text-slate-500 font-medium">Không tìm thấy học viên</p>
-                        {searchTerm && (
+                            {searchTerm ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchTerm('')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-slate-200 p-1 text-slate-500"
+                                >
+                                    <X size={14} />
+                                </button>
+                            ) : null}
+                        </div>
+
+                        <div className="mt-3 flex gap-2">
                             <button
-                                onClick={() => setSearchTerm('')}
-                                className="mt-4 text-sm text-blue-600 font-medium"
+                                type="button"
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-[0.12em] transition ${
+                                    showFilters ? 'bg-blue-600 text-white shadow-md shadow-blue-100' : 'bg-slate-100 text-slate-700'
+                                }`}
                             >
-                                Xóa bộ lọc
+                                <Filter size={16} />
+                                Bộ lọc
                             </button>
+                            <button
+                                type="button"
+                                onClick={handleRefresh}
+                                className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-white"
+                            >
+                                <RefreshCw size={16} />
+                                Làm mới
+                            </button>
+                        </div>
+
+                        {showFilters && (
+                            <div className="mt-3 rounded-[24px] bg-slate-50 p-3 space-y-3">
+                                <div>
+                                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2 block">Trạng thái</label>
+                                    <div className="flex gap-2 flex-wrap">
+                                        {['all', 'active', 'inactive', 'debt'].map((status) => (
+                                            <button
+                                                key={status}
+                                                onClick={() => setFilterStatus(status)}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                                    filterStatus === status
+                                                        ? 'bg-blue-600 text-white shadow-sm'
+                                                        : 'bg-white text-slate-600 border border-slate-200'
+                                                }`}
+                                            >
+                                                {status === 'all' && 'Tất cả'}
+                                                {status === 'active' && 'Đang học'}
+                                                {status === 'inactive' && 'Ngưng học'}
+                                                {status === 'debt' && 'Có công nợ'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2 block">Sắp xếp</label>
+                                    <select
+                                        value={sortBy}
+                                        onChange={(e) => setSortBy(e.target.value)}
+                                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700"
+                                    >
+                                        <option value="name">Tên A-Z</option>
+                                        <option value="recent">Mới nhất</option>
+                                    </select>
+                                </div>
+                            </div>
                         )}
+
+                        <p className="mt-3 text-xs text-slate-500 font-medium">
+                            Hiển thị {processedStudents.length} / {students.length} học viên
+                        </p>
                     </div>
+                </div>
+
+                <div className="px-4 pb-[calc(var(--mb-bottom-nav-height)+24px)] pt-3">
+                    {loading ? (
+                        <AdminLoadingState
+                            title="Đang tải danh sách học viên"
+                            hint="Danh sách học viên được lấy lại từ cache cục bộ để giảm cảm giác chờ mỗi lần quay về tab này."
+                            variant="mobile-list"
+                            accent="blue"
+                        />
+                    ) : processedStudents.length > 0 ? (
+                        <div className="space-y-3">
+                            {processedStudents.map((s) => (
+                                <StudentCard
+                                    key={s.id || s.cccd}
+                                    student={s}
+                                    onView={handleViewStudent}
+                                    onEdit={handleEdit}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-[30px] border border-dashed border-slate-300 bg-white px-5 py-16 text-center shadow-sm">
+                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[24px] bg-slate-100 text-slate-400">
+                                <User size={30} />
+                            </div>
+                            <h3 className="mt-5 text-xl font-black text-slate-900">Không tìm thấy học viên</h3>
+                            <p className="mx-auto mt-2 max-w-[280px] text-sm text-slate-500">
+                                Thử đổi bộ lọc hoặc tạo mới.
+                            </p>
+                            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
+                                {searchTerm ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchTerm('')}
+                                        className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                                    >
+                                        Xóa từ khóa
+                                    </button>
+                                ) : null}
+                                <button
+                                    type="button"
+                                    onClick={handleCreateStudent}
+                                    className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-black text-white"
+                                >
+                                    Tạo học viên
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {selectedStudent && (
+                    <StudentDetailSheet
+                        student={selectedStudent}
+                        onClose={() => setSelectedStudent(null)}
+                        onEdit={handleEdit}
+                        onDelete={handleDeleteStudent}
+                        onRefresh={() => fetchStudents({ force: true })}
+                        toast={toast}
+                    />
+                )}
+
+                {(editingStudent || creatingStudent) && (
+                    <StudentEditModal
+                        student={editingStudent}
+                        onClose={() => {
+                            setEditingStudent(null);
+                            setCreatingStudent(false);
+                        }}
+                        onSave={handleSaveEdit}
+                    />
                 )}
             </div>
-
-            {selectedStudent && (
-                <StudentDetailSheet
-                    student={selectedStudent}
-                    onClose={() => setSelectedStudent(null)}
-                    onEdit={handleEdit}
-                />
-            )}
-
-            {editingStudent && (
-                <StudentEditModal
-                    student={editingStudent}
-                    onClose={() => setEditingStudent(null)}
-                    onSave={handleSaveEdit}
-                />
-            )}
-        </div>
-        <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
-    </PullToRefreshWrapper>
+            <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
+        </PullToRefreshWrapper>
     );
 }

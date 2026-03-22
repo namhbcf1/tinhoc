@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
+import { getStorageValue } from '../../../utils/browser-storage.js';
 
 // Helper to get file icon component
 const getFileIcon = (fileType) => {
@@ -51,7 +52,7 @@ const DocumentSkeleton = () => (
     </div>
 );
 
-const DocumentCard = ({ document }) => {
+const DocumentCard = ({ document, onDownload }) => {
     const fileName = document.file_name || document.title || document.ten_tai_lieu || 'Tài liệu';
     const fileType = document.file_type || document.loai_file || 'pdf';
     const fileSize = document.file_size || document.kich_thuoc || 0;
@@ -95,11 +96,7 @@ const DocumentCard = ({ document }) => {
                 {/* Download button */}
                 <div className="mt-auto pt-4 border-t border-slate-100">
                     <Button
-                        onClick={() => {
-                            if (document.file_url) {
-                                window.open(document.file_url, '_blank');
-                            }
-                        }}
+                        onClick={() => onDownload(document)}
                         className="w-full bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:shadow-md hover:shadow-blue-200 transition-all"
                     >
                         <Download size={15} className="mr-2" />
@@ -127,13 +124,19 @@ export default function Documents({ studentData }) {
 
     useEffect(() => {
         fetchDocuments();
-    }, []);
+    }, [studentData?.cccd]);
 
     // SAME LOGIC AS MOBILE
     const fetchDocuments = async () => {
         setLoading(true);
         try {
-            const res = await api.getAllDocuments();
+            const cccd = studentData?.cccd || getStorageValue('student_cccd');
+            if (!cccd) {
+                setDocuments([]);
+                return;
+            }
+
+            const res = await api.getDocumentsByCCCD(cccd);
             const docList = Array.isArray(res) ? res : (res?.data || res?.documents || []);
             setDocuments(docList);
         } catch (error) {
@@ -142,6 +145,11 @@ export default function Documents({ studentData }) {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleDownloadDocument = (document) => {
+        if (!document?.id) return;
+        window.open(api.getDocumentDownloadUrl(document.id), '_blank', 'noopener,noreferrer');
     };
 
     // Filter documents
@@ -227,7 +235,7 @@ export default function Documents({ studentData }) {
             ) : filteredDocuments.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredDocuments.map((doc) => (
-                        <DocumentCard key={doc.id} document={doc} />
+                        <DocumentCard key={doc.id} document={doc} onDownload={handleDownloadDocument} />
                     ))}
                 </div>
             ) : (

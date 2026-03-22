@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Label } from '../../components/ui/Label';
 import { Card, CardContent } from '../../components/ui/Card';
+import SEO from '../../components/common/SEO';
 import { gsap, ScrollTrigger, useGSAP } from '../../lib/gsap';
 import { apiPost } from '../../lib/api';
 
@@ -22,6 +23,34 @@ const contactSchema = z.object({
 export default function ContactPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const structuredData = [
+        {
+            '@type': 'ContactPage',
+            name: 'Lien he Van Trang Education',
+            description: 'Kenh lien he, tu van khoa hoc va hop tac voi Van Trang Education.',
+            url: 'https://vantrangedu.com/contact'
+        },
+        {
+            '@type': 'LocalBusiness',
+            name: 'Van Trang Education',
+            url: 'https://vantrangedu.com/contact',
+            telephone: '+84-962-445-963',
+            email: 'info@vantrangedu.edu.vn',
+            address: {
+                '@type': 'PostalAddress',
+                streetAddress: '418 De La Thanh',
+                addressLocality: 'Ha Noi',
+                addressCountry: 'VN'
+            }
+        },
+        {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Trang chu', item: 'https://vantrangedu.com/' },
+                { '@type': 'ListItem', position: 2, name: 'Lien he', item: 'https://vantrangedu.com/contact' }
+            ]
+        }
+    ];
 
     const form = useForm({
         resolver: zodResolver(contactSchema),
@@ -94,6 +123,12 @@ export default function ContactPage() {
 
     return (
         <ModernPublicLayout>
+            <SEO
+                title="Lien he tu van"
+                description="Lien he Van Trang Education de nhan tu van khoa hoc, lich thi, hop tac va ho tro nhanh qua hotline, email hoac form truc tuyen."
+                url="/contact"
+                structuredData={structuredData}
+            />
             <div ref={container} className="bg-slate-50 min-h-screen pb-24 relative overflow-hidden">
                 {/* Abstract Background */}
                 <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-emerald-100/30 rounded-full blur-[120px] opacity-60 pointer-events-none -translate-y-1/2 translate-x-1/3"></div>

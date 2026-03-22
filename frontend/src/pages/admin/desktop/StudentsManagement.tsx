@@ -1,33 +1,18 @@
-import { useState, useEffect } from 'react';
-import { Users, Search, Plus, List, Grid, ChevronLeft, ChevronRight, RefreshCw,
-         Trash2, Download, Bell, X, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Users, Plus, List, Grid, ChevronLeft, ChevronRight, RefreshCw,
+         Trash2, Download, Bell, X, AlertTriangle, Search } from 'lucide-react';
 import api from '../../../services/api';
 import { formatDateVN } from '../../../utils/dateUtils';
+import { resolveImageUrl } from '../../../utils/imageUrl';
 import '../../../styles/admin/AdminModern.css';
+import AdminLoadingState from '../../../components/admin/AdminLoadingState';
 import StudentStatsBar    from './students/StudentStatsBar';
 import StudentTableView   from './students/StudentTableView';
 import StudentGridView    from './students/StudentGridView';
 import StudentDetailModal from './students/StudentDetailModal';
 import StudentFormModal   from './students/StudentFormModal';
-
-// Resolve relative image URLs to absolute API URLs
-const getImageUrl = (url) => {
-  if (!url) return null;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  const getApiBaseUrl = () => {
-    if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-    if (typeof window !== 'undefined' &&
-      (window.location.hostname.includes('pages.dev') ||
-        window.location.hostname.includes('cloudflare') ||
-        window.location.hostname.includes('vantrangedu.com'))) {
-      return 'https://vantrangedu-api.bangachieu2.workers.dev';
-    }
-    return '/api';
-  };
-  const base = getApiBaseUrl().replace(/\/$/, '');
-  const path = url.startsWith('/') ? url : `/${url}`;
-  return `${base}${path}`;
-};
+import { ADMIN_CACHE_KEYS, ADMIN_CACHE_TTL, getAdminCache, invalidateAdminData, setAdminCache } from '../shared/admin-cache';
+import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
 
 // ─── Bulk Delete Confirm Dialog ────────────────────────────────────────────────
 function BulkDeleteDialog({ count, onConfirm, onCancel }) {
@@ -103,9 +88,12 @@ function BulkToolbar({ count, onDelete, onExport, onNotify, onClear }) {
 
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export default function StudentsManagement({ toast }) {
-  const [students,        setStudents]        = useState([]);
-  const [loading,         setLoading]         = useState(false);
-  const [searchKeyword,   setSearchKeyword]   = useState('');
+  const cachedStudents = getAdminCache(ADMIN_CACHE_KEYS.students, ADMIN_CACHE_TTL.students);
+  const [students,        setStudents]        = useState(() => cachedStudents?.students ?? []);
+  const [studentStats,    setStudentStats]    = useState(() => cachedStudents?.studentStats ?? null);
+  const [loading,         setLoading]         = useState(() => cachedStudents === null);
+  const [searching,       setSearching]       = useState(false);
+  const [searchResults,   setSearchResults]   = useState(null);
   const [viewMode,        setViewMode]        = useState('table');
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -113,6 +101,7 @@ export default function StudentsManagement({ toast }) {
   const [showEditModal,   setShowEditModal]   = useState(false);
   const [currentPage,     setCurrentPage]     = useState(1);
   const [pageSize]                            = useState(20);
+  const [searchTerm,      setSearchTerm]      = useState('');
   const [formData, setFormData] = useState({
     ho: '', ten_dem: '', ten: '', cccd: '', ngay_sinh: '', gioi_tinh: 'Nam',
     email: '', sdt: '', dia_chi: '', noi_sinh: '', dan_toc: 'Kinh', quoc_tich: 'Việt Nam',
@@ -123,44 +112,85 @@ export default function StudentsManagement({ toast }) {
   const [selectedIds,       setSelectedIds]       = useState(new Set());
   const [showBulkDeleteDlg, setShowBulkDeleteDlg] = useState(false);
 
-  // Debounced search: trigger auto-search 300ms after user stops typing
-  const [debouncedKeyword, setDebouncedKeyword] = useState('');
-
-  useEffect(() => { loadStudents(); }, []);
-
+  useEffect(() => { void loadStudents(); }, []);
+  useAdminAutoRefresh(() => loadStudents({ force: true }), { minIntervalMs: 12000 });
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedKeyword(searchKeyword), 300);
-    return () => clearTimeout(timer);
-  }, [searchKeyword]);
-
+    setCurrentPage(1);
+  }, [searchTerm]);
   useEffect(() => {
-    if (debouncedKeyword.trim()) {
-      handleSearch(debouncedKeyword);
-    } else if (debouncedKeyword === '' && students.length > 0) {
-      // Only reload when user clears an existing search (not on initial mount)
-      loadStudents();
+    const keyword = searchTerm.trim();
+
+    if (!keyword) {
+      setSearchResults(null);
+      setSearching(false);
+      return undefined;
     }
-  }, [debouncedKeyword]);
 
-  const loadStudents = async () => {
+    if (keyword.length < 2) {
+      setSearchResults(null);
+      setSearching(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setSearching(true);
+      try {
+        const response = await api.searchStudents(keyword);
+        if (cancelled) return;
+        setSearchResults(Array.isArray(response?.data) ? response.data : []);
+      } catch (error) {
+        if (cancelled) return;
+        setSearchResults([]);
+        toast?.error(error?.message || 'Lỗi tìm kiếm học viên');
+      } finally {
+        if (!cancelled) {
+          setSearching(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [searchTerm, toast]);
+
+  const loadStudents = async ({ force = false } = {}) => {
+    const cached = force ? null : getAdminCache(ADMIN_CACHE_KEYS.students, ADMIN_CACHE_TTL.students);
+    if (cached) {
+      setStudents(cached.students || []);
+      setStudentStats(cached.studentStats || null);
+      setLoading(false);
+      return cached.students || [];
+    }
+
     setLoading(true);
     setSelectedIds(new Set()); // clear selection on reload
     try {
-      // TODO: replace with server-side pagination when API supports cursor/offset+limit properly
-      const res = await api.getStudents(200, 0);
-      setStudents(Array.isArray(res.data) ? res.data : []);
-    } catch { toast?.error('Lỗi tải dữ liệu'); setStudents([]); }
-    finally { setLoading(false); }
-  };
+      if (force) {
+        api.invalidateCache(['/students']);
+      }
+      const pageLimit = 100;
+      const firstPage = await api.getStudents(pageLimit, 0);
+      const firstBatch = Array.isArray(firstPage?.data) ? firstPage.data : [];
+      const total = Number(firstPage?.meta?.total || firstBatch.length || 0);
+      const nextStats = firstPage?.meta?.stats || null;
+      const batches = [firstBatch];
 
-  const handleSearch = async (keyword) => {
-    const q = (keyword ?? searchKeyword).trim();
-    if (!q) { loadStudents(); return; }
-    setLoading(true);
-    try {
-      const res = await api.searchStudents(q);
-      setStudents(Array.isArray(res.data) ? res.data : []);
-    } catch { setStudents([]); }
+      for (let offset = firstBatch.length; offset < total; offset += pageLimit) {
+        const page = await api.getStudents(pageLimit, offset);
+        batches.push(Array.isArray(page?.data) ? page.data : []);
+      }
+
+      const nextStudents = Array.from(
+        new Map(batches.flat().map((student) => [student.id, student])).values()
+      );
+      setStudents(nextStudents);
+      setStudentStats(nextStats);
+      setAdminCache(ADMIN_CACHE_KEYS.students, { students: nextStudents, studentStats: nextStats });
+      return nextStudents;
+    } catch { toast?.error('Lỗi tải dữ liệu'); setStudents([]); }
     finally { setLoading(false); }
   };
 
@@ -199,19 +229,45 @@ export default function StudentsManagement({ toast }) {
 
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
-    try { await api.createStudentAdmin(formData); toast?.success('Thêm học viên thành công!'); setShowAddModal(false); loadStudents(); }
+    try {
+      await api.createStudentAdmin(formData);
+      invalidateAdminData({
+        keys: [ADMIN_CACHE_KEYS.students, ADMIN_CACHE_KEYS.dashboardOverview, ADMIN_CACHE_KEYS.mobileDashboardOverview],
+        source: 'students-management',
+      });
+      toast?.success('Thêm học viên thành công!');
+      setShowAddModal(false);
+      void loadStudents({ force: true });
+    }
     catch (err) { toast?.error('Lỗi: ' + err.message); }
   };
 
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
-    try { await api.updateStudent(selectedStudent.id, formData); toast?.success('Cập nhật thành công!'); setShowEditModal(false); loadStudents(); }
+    try {
+      await api.updateStudent(selectedStudent.id, formData);
+      invalidateAdminData({
+        keys: [ADMIN_CACHE_KEYS.students, ADMIN_CACHE_KEYS.dashboardOverview, ADMIN_CACHE_KEYS.mobileDashboardOverview],
+        source: 'students-management',
+      });
+      toast?.success('Cập nhật thành công!');
+      setShowEditModal(false);
+      void loadStudents({ force: true });
+    }
     catch (err) { toast?.error('Lỗi: ' + err.message); }
   };
 
   const handleDelete = async (student) => {
     if (!confirm(`Xóa học viên "${student.ho_ten_full}"?`)) return;
-    try { await api.deleteStudent(student.id); toast?.success('Xóa thành công!'); loadStudents(); }
+    try {
+      await api.deleteStudent(student.id);
+      invalidateAdminData({
+        keys: [ADMIN_CACHE_KEYS.students, ADMIN_CACHE_KEYS.dashboardOverview, ADMIN_CACHE_KEYS.mobileDashboardOverview],
+        source: 'students-management',
+      });
+      toast?.success('Xóa thành công!');
+      void loadStudents({ force: true });
+    }
     catch (err) { toast?.error('Lỗi: ' + err.message); }
   };
 
@@ -255,7 +311,11 @@ export default function StudentsManagement({ toast }) {
     }
     if (success > 0) toast?.success(`Đã xóa ${success} học viên`);
     if (failed  > 0) toast?.error(`Không xóa được ${failed} học viên`);
-    loadStudents();
+    invalidateAdminData({
+      keys: [ADMIN_CACHE_KEYS.students, ADMIN_CACHE_KEYS.dashboardOverview, ADMIN_CACHE_KEYS.mobileDashboardOverview],
+      source: 'students-management',
+    });
+    void loadStudents({ force: true });
   };
 
   // Simple CSV export for selected students
@@ -284,8 +344,32 @@ export default function StudentsManagement({ toast }) {
   };
 
   const closeForm   = () => { setShowAddModal(false); setShowEditModal(false); };
-  const paged       = students.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const totalPages  = Math.ceil(students.length / pageSize);
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const localFilteredStudents = useMemo(() => {
+    if (!normalizedSearch) return students;
+
+    return students.filter((student) => {
+      const haystack = [
+        student.ho_ten_full,
+        student.cccd,
+        student.email,
+        student.sdt,
+        student.dia_chi,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(normalizedSearch);
+    });
+  }, [students, normalizedSearch]);
+  const filteredStudents = useMemo(() => {
+    if (!normalizedSearch) return students;
+    if (normalizedSearch.length < 2) return localFilteredStudents;
+    return searchResults ?? localFilteredStudents;
+  }, [students, normalizedSearch, searchResults, localFilteredStudents]);
+  const paged       = filteredStudents.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const totalPages  = Math.max(1, Math.ceil(filteredStudents.length / pageSize));
   const bulkCount   = selectedIds.size;
 
   return (
@@ -297,8 +381,8 @@ export default function StudentsManagement({ toast }) {
           <h1 className="flex items-center gap-3"><Users size={30} /> Quản lý Học viên</h1>
           <p>Quản lý thông tin và hồ sơ của tất cả học viên trong hệ thống</p>
         </div>
-        <div className="flex gap-3">
-          <button onClick={loadStudents} className="admin-btn admin-btn-outline p-2.5">
+        <div className="admin-header-actions">
+          <button onClick={() => loadStudents({ force: true })} className="admin-btn admin-btn-outline p-2.5">
             <RefreshCw size={18} />
           </button>
           <button onClick={handleAdd} className="admin-btn admin-btn-primary">
@@ -308,39 +392,48 @@ export default function StudentsManagement({ toast }) {
       </div>
 
       {/* Main card */}
-      <div className="admin-card mt-5 p-0 overflow-hidden border border-slate-200 shadow-sm rounded-2xl">
+      <div className="admin-card p-0 overflow-hidden border border-slate-200 shadow-sm rounded-2xl">
 
         {/* Stats bar */}
-        <StudentStatsBar students={students} />
+        <StudentStatsBar students={students} stats={studentStats} />
 
-        {/* Search toolbar */}
-        <div className="flex flex-wrap items-center gap-4 px-8 py-5 border-b border-slate-100 bg-white">
-          <div className="flex-1 min-w-72 flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 transition-all focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100">
-            <Search size={18} className="text-slate-400 flex-shrink-0" />
-            <input
-              type="text"
-              placeholder="Tìm kiếm học viên..."
-              value={searchKeyword}
-              onChange={e => setSearchKeyword(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSearch(searchKeyword)}
-              className="flex-1 bg-transparent border-none outline-none text-sm text-slate-700 placeholder:text-slate-400"
-            />
+        {/* Toolbar */}
+        <div className="admin-toolbar-unified">
+          <div className="flex flex-1 flex-wrap items-center gap-3">
+            <div className="relative min-w-[280px] flex-1 max-w-[460px]">
+              <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Tìm theo tên, CCCD, email, số điện thoại..."
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-10 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+              />
+              {searchTerm ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                >
+                  <X size={14} />
+                </button>
+              ) : null}
+            </div>
+            <span className="admin-toolbar-meta">
+              {searching ? 'Đang tìm học viên...' : `Hiển thị ${paged.length} / ${filteredStudents.length} học viên`}
+            </span>
           </div>
-          <button onClick={() => handleSearch(searchKeyword)} className="admin-btn admin-btn-primary px-6 py-3 rounded-xl">
-            <Search size={16} /> Tìm kiếm
-          </button>
-          <div className="w-px h-6 bg-slate-200" />
           {/* View toggle */}
-          <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
+          <div className="admin-view-toggle">
             <button
               onClick={() => setViewMode('table')}
-              className={`p-2 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              className={viewMode === 'table' ? 'active' : ''}
             >
               <List size={18} />
             </button>
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              className={viewMode === 'grid' ? 'active' : ''}
             >
               <Grid size={18} />
             </button>
@@ -360,22 +453,29 @@ export default function StudentsManagement({ toast }) {
 
         {/* Content area */}
         {loading ? (
-          <div className="admin-loading py-16">
-            <div className="admin-loading-spinner" />
-            <span className="mt-3 text-sm font-medium text-slate-500">Đang tải dữ liệu...</span>
-          </div>
+          <AdminLoadingState
+            title="Đang tải danh sách học viên"
+            hint="Dữ liệu học viên được phục hồi từ cache gần nhất để mở lại nhanh hơn khi đổi tab."
+            variant="desktop-list"
+            accent="blue"
+          />
         ) : viewMode === 'table' ? (
           <StudentTableView
             students={paged}
             onViewDetail={handleViewDetail}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            getImageUrl={resolveImageUrl}
             selectedIds={selectedIds}
             onToggleSelect={handleToggleSelect}
             onToggleSelectAll={handleToggleSelectAll}
           />
         ) : (
-          <StudentGridView students={paged} onViewDetail={handleViewDetail} />
+          <StudentGridView
+            students={paged}
+            onViewDetail={handleViewDetail}
+            getImageUrl={resolveImageUrl}
+          />
         )}
 
         {/* Pagination */}
@@ -408,7 +508,9 @@ export default function StudentsManagement({ toast }) {
       {showDetailModal && selectedStudent && (
         <StudentDetailModal
           student={selectedStudent}
-          getImageUrl={getImageUrl}
+          getImageUrl={resolveImageUrl}
+          toast={toast}
+          onRefresh={loadStudents}
           onClose={() => setShowDetailModal(false)}
           onEdit={(s) => { setShowDetailModal(false); handleEdit(s); }}
         />
@@ -421,7 +523,7 @@ export default function StudentsManagement({ toast }) {
           formData={formData}
           setFormData={setFormData}
           selectedStudent={selectedStudent}
-          getImageUrl={getImageUrl}
+          getImageUrl={resolveImageUrl}
           onSubmit={showEditModal ? handleSubmitEdit : handleSubmitAdd}
           onClose={closeForm}
         />

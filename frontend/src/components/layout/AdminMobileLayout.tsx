@@ -1,110 +1,95 @@
-import React, { useState, useEffect } from 'react';
-import { Menu, Search, X, Bell, LogOut, User, ChevronRight, Home, Users, BookOpen, CreditCard, FileText, Calendar, MessageSquare, Settings } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import {
+    Menu,
+    MoreHorizontal,
+    X,
+    LogOut,
+    User,
+    ChevronRight,
+    Home,
+} from 'lucide-react';
 import { useDeviceType } from '../../utils/deviceDetection';
+import {
+    ADMIN_TAB_GROUP_LABELS,
+    getAdminTabsForTarget,
+    getAdminBottomTabs,
+    getAdminTabById,
+    type AdminTabGroup,
+} from '../../pages/admin/adminTabs';
 import './AdminMobileLayout.css';
+
+const GROUP_ORDER: AdminTabGroup[] = ['overview', 'teaching', 'learning', 'finance', 'content', 'system'];
 
 export default function AdminMobileLayout({
     children,
     admin,
     activeTab,
     setActiveTab,
-    onLogout
+    onLogout,
 }) {
     const { platform } = useDeviceType();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const visibleTabs = getAdminTabsForTarget(admin?.role, 'mobile', admin);
+    const bottomTabs = getAdminBottomTabs(admin?.role, admin);
+    const activeTabMeta = getAdminTabById(activeTab);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || window.innerWidth > 768) {
+            return;
+        }
+
+        const root = document.documentElement;
+        const previousFontSize = root.style.getPropertyValue('--vt-mobile-root-font-size');
+        root.style.setProperty('--vt-mobile-root-font-size', '13px');
+
+        return () => {
+            if (previousFontSize) {
+                root.style.setProperty('--vt-mobile-root-font-size', previousFontSize);
+            } else {
+                root.style.removeProperty('--vt-mobile-root-font-size');
+            }
+        };
+    }, []);
 
     useEffect(() => {
         setIsMenuOpen(false);
     }, [activeTab]);
 
-    const getPageTitle = () => {
-        const titles = {
-            dashboard: 'Tổng quan',
-            classes: 'Lớp học',
-            students: 'Học viên',
-            payments: 'Học phí',
-            posts: 'Bài viết',
-            homepage: 'Homepage',
-            reports: 'Báo cáo',
-            teachers: 'Giáo viên',
-            'exam-schedules': 'Lịch thi',
-            admins: 'Quản lý Admin',
-            backup: 'Sao lưu',
-            profile: 'Cá nhân',
-            logs: 'Nhật ký',
-        };
-        return titles[activeTab] || 'Admin Panel';
-    };
-
-    const menuItems = [
-        { id: 'dashboard', label: 'Tổng quan', icon: Home },
-        { id: 'classes', label: 'Lớp Online', icon: BookOpen },
-        { id: 'students', label: 'Học viên', icon: Users },
-        { id: 'payments', label: 'Học phí', icon: CreditCard },
-        { id: 'teachers', label: 'Giáo viên', icon: User },
-        { id: 'exam-schedules', label: 'Lịch thi', icon: Calendar },
-        { id: 'reports', label: 'Báo cáo', icon: MessageSquare },
-        { id: 'posts', label: 'Bài viết', icon: FileText },
-        { id: 'homepage', label: 'Homepage', icon: Settings },
-    ];
-
-    const adminItems = admin?.role === 'super_admin' ? [
-        { id: 'admins', label: 'Quản lý Admin', icon: Users },
-        { id: 'backup', label: 'Sao lưu', icon: Settings },
-    ] : [];
-
-    const bottomItems = [
-        { id: 'dashboard', label: 'Tổng quan', icon: Home },
-        { id: 'students', label: 'Học viên', icon: Users },
-        { id: 'classes', label: 'Lớp', icon: BookOpen },
-        { id: 'payments', label: 'Học phí', icon: CreditCard },
-        { id: 'profile', label: 'Tôi', icon: User },
-    ];
-
     return (
         <div className={`admin-mobile-layout ${platform}`}>
-            {/* Header - Sử dụng CSS classes */}
             <header className="mobile-header admin">
                 <div className="mobile-header-content">
                     <button
                         className="mobile-header-btn"
                         onClick={() => setIsMenuOpen(true)}
                         aria-label="Menu"
+                        data-tour="admin-mobile-menu"
                     >
                         <Menu size={24} />
                     </button>
 
                     <h1 className="mobile-header-title">
-                        {getPageTitle()}
+                        {activeTabMeta?.label || 'Admin'}
                     </h1>
 
                     <div className="mobile-header-actions">
                         <button
                             className="mobile-header-btn"
-                            aria-label="Search"
+                            aria-label={activeTab === 'profile' ? 'Về tổng quan' : 'Hồ sơ cá nhân'}
+                            onClick={() => setActiveTab(activeTab === 'profile' ? 'dashboard' : 'profile')}
                         >
-                            <Search size={20} />
-                        </button>
-                        <button
-                            className="mobile-header-btn"
-                            aria-label="Notifications"
-                            style={{ position: 'relative' }}
-                        >
-                            <Bell size={20} />
-                            <span className="mobile-notification-badge"></span>
+                            {activeTab === 'profile' ? <Home size={20} /> : <User size={20} />}
                         </button>
                     </div>
                 </div>
             </header>
 
-            {/* Main Content - Sử dụng CSS classes */}
             <main className="mobile-content">
                 {children}
             </main>
 
-            {/* Bottom Navigation - Sử dụng CSS classes */}
-            <nav className="mobile-bottom-nav admin">
-                {bottomItems.map((item) => {
+            <nav className="mobile-bottom-nav admin" data-tour="admin-mobile-bottom-nav">
+                {bottomTabs.map((item) => {
                     const Icon = item.icon;
                     const isActive = activeTab === item.id;
                     return (
@@ -112,23 +97,30 @@ export default function AdminMobileLayout({
                             key={item.id}
                             className={`mobile-bottom-nav-item ${isActive ? 'active' : ''}`}
                             onClick={() => setActiveTab(item.id)}
+                            data-tour={`admin-mobile-nav-${item.id}`}
                         >
                             <Icon size={22} className="mobile-bottom-nav-icon" />
                             <span className="mobile-bottom-nav-label">{item.label}</span>
                         </button>
                     );
                 })}
+                <button
+                    className={`mobile-bottom-nav-item ${isMenuOpen ? 'active' : ''}`}
+                    onClick={() => setIsMenuOpen(true)}
+                    data-tour="admin-mobile-more"
+                >
+                    <MoreHorizontal size={22} className="mobile-bottom-nav-icon" />
+                    <span className="mobile-bottom-nav-label">Thêm</span>
+                </button>
             </nav>
 
-            {/* Side Menu Drawer - Sử dụng CSS classes */}
             {isMenuOpen && (
                 <>
                     <div
                         className="mobile-overlay"
                         onClick={() => setIsMenuOpen(false)}
                     />
-                    <aside className="mobile-drawer open">
-                        {/* Drawer Header */}
+                    <aside className="mobile-drawer open" data-tour="admin-mobile-drawer">
                         <div className="mobile-drawer-header admin">
                             <div className="mobile-drawer-user">
                                 <div className="mobile-drawer-avatar">
@@ -151,57 +143,43 @@ export default function AdminMobileLayout({
                             </button>
                         </div>
 
-                        {/* Menu Items */}
                         <nav className="mobile-drawer-nav">
-                            {menuItems.map((item) => {
-                                const Icon = item.icon;
-                                const isActive = activeTab === item.id;
+                            {GROUP_ORDER.map((groupKey) => {
+                                const groupTabs = visibleTabs.filter((item) => item.group === groupKey);
+                                if (!groupTabs.length) return null;
+
                                 return (
-                                    <button
-                                        key={item.id}
-                                        className={`mobile-drawer-item ${isActive ? 'active' : ''}`}
-                                        onClick={() => {
-                                            setActiveTab(item.id);
-                                            setIsMenuOpen(false);
-                                        }}
-                                    >
-                                        <div className="mobile-drawer-item-icon">
-                                            <Icon size={20} />
+                                    <div key={groupKey}>
+                                        <div className="mobile-divider" />
+                                        <div className="px-4 pb-2 pt-3 text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-400">
+                                            {ADMIN_TAB_GROUP_LABELS[groupKey]}
                                         </div>
-                                        <span className="mobile-drawer-item-label">{item.label}</span>
-                                        <ChevronRight size={18} className="mobile-drawer-item-arrow" />
-                                    </button>
+                                        {groupTabs.map((item) => {
+                                            const Icon = item.icon;
+                                            const isActive = activeTab === item.id;
+                                            return (
+                                                <button
+                                                    key={item.id}
+                                                    className={`mobile-drawer-item ${isActive ? 'active' : ''}`}
+                                                    onClick={() => {
+                                                        setActiveTab(item.id);
+                                                        setIsMenuOpen(false);
+                                                    }}
+                                                    data-tour={`admin-mobile-nav-${item.id}`}
+                                                >
+                                                    <div className="mobile-drawer-item-icon">
+                                                        <Icon size={20} />
+                                                    </div>
+                                                    <span className="mobile-drawer-item-label">{item.label}</span>
+                                                    <ChevronRight size={18} className="mobile-drawer-item-arrow" />
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 );
                             })}
-
-                            {adminItems.length > 0 && (
-                                <>
-                                    <div className="mobile-divider" />
-                                    {adminItems.map((item) => {
-                                        const Icon = item.icon;
-                                        const isActive = activeTab === item.id;
-                                        return (
-                                            <button
-                                                key={item.id}
-                                                className={`mobile-drawer-item ${isActive ? 'active' : ''}`}
-                                                onClick={() => {
-                                                    setActiveTab(item.id);
-                                                    setIsMenuOpen(false);
-                                                }}
-                                            >
-                                                <div className="mobile-drawer-item-icon">
-                                                    <Icon size={20} />
-                                                </div>
-                                                <span className="mobile-drawer-item-label">{item.label}</span>
-                                                <ChevronRight size={18} className="mobile-drawer-item-arrow" />
-                                            </button>
-                                        );
-                                    })}
-                                </>
-                            )}
                         </nav>
 
-                        {/* Footer */}
                         <div className="mobile-drawer-footer">
                             <button
                                 className="mobile-drawer-btn profile"
@@ -211,7 +189,7 @@ export default function AdminMobileLayout({
                                 }}
                             >
                                 <User size={18} />
-                                <span style={{ flex: 1 }}>Hồ sơ cá nhân</span>
+                                <span style={{ flex: 1 }}>Hồ sơ</span>
                                 <ChevronRight size={16} style={{ color: 'var(--mb-text-light)' }} />
                             </button>
                             <button
@@ -220,6 +198,7 @@ export default function AdminMobileLayout({
                                     setIsMenuOpen(false);
                                     onLogout?.();
                                 }}
+                                data-tour="admin-mobile-logout"
                             >
                                 <LogOut size={18} />
                                 <span style={{ flex: 1 }}>Đăng xuất</span>

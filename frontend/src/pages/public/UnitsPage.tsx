@@ -1,6 +1,7 @@
 import ModernPublicLayout from '../../components/layout/ModernPublicLayout';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Building2, GraduationCap, Microscope, Users, BookOpen, Globe, Monitor, Phone } from 'lucide-react';
+import SEO from '../../components/common/SEO';
 
 const units = [
   {
@@ -48,8 +49,30 @@ const units = [
 ];
 
 export default function UnitsPage() {
+  const structuredData = [
+    {
+      '@type': 'WebPage',
+      name: 'Cac don vi truc thuoc',
+      description: 'Tong hop khoa, phong ban va trung tam truc thuoc trong he sinh thai Van Trang Education.',
+      url: 'https://vantrangedu.com/units'
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Trang chu', item: 'https://vantrangedu.com/' },
+        { '@type': 'ListItem', position: 2, name: 'Don vi truc thuoc', item: 'https://vantrangedu.com/units' }
+      ]
+    }
+  ];
+
   return (
     <ModernPublicLayout>
+      <SEO
+        title="Cac don vi truc thuoc"
+        description="Gioi thieu cac khoa, phong ban va trung tam chuyen trach trong he thong Van Trang Education."
+        url="/units"
+        structuredData={structuredData}
+      />
       <div className="min-h-screen bg-slate-50">
         {/* Hero */}
         <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white py-20">
@@ -118,10 +141,10 @@ export default function UnitsPage() {
               Đội ngũ cán bộ của chúng tôi luôn sẵn sàng hỗ trợ và giải đáp mọi thắc mắc của bạn.
             </p>
             <a
-              href="tel:02123456789"
+              href="tel:0962445963"
               className="inline-flex items-center gap-2 bg-white text-green-700 font-bold px-8 py-3 rounded-xl hover:bg-green-50 transition-colors text-lg"
             >
-              <Phone className="h-5 w-5" /> 021 234 56789
+              <Phone className="h-5 w-5" /> 096 244 5963
             </a>
           </div>
         </div>

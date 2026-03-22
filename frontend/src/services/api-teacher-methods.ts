@@ -1,71 +1,33 @@
 // ========================================
 // TEACHER METHODS MIXIN
-// Teacher login, profile, schedule, admin CRUD for teachers
+// Teacher is now admin with role='teacher'. No separate teacher auth.
+// Self-service methods (my-classes, schedule, exams) use admin token.
+// Admin CRUD methods (getAllTeachers, create, update, delete) also use admin token.
 // ========================================
 
 export function applyTeacherMethods(ApiClient) {
-  // Login as teacher using teacher_code + password (uses raw fetch, not request())
-  ApiClient.prototype.loginTeacher = async function(teacher_code, password) {
-    const response = await fetch(`${this.baseURL}/teachers/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ teacher_code, password }),
-    });
+  // ---- REMOVED: loginTeacher, getTeacherProfile, updateTeacherProfile, changeTeacherPassword ----
+  // Teacher now logs in via admin login (/auth/login)
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Login failed' }));
-      const err = new Error(error.error || 'Đăng nhập thất bại');
-      err.status = response.status;
-      throw err;
-    }
-
-    const data = await response.json();
-    if (data.success && data.token) {
-      this.setToken(data.token, 'teacher');
-    }
-    return data;
-  };
-
-  // Get teacher's own profile
-  ApiClient.prototype.getTeacherProfile = async function() {
-    return this.request('/teachers/profile', { tokenType: 'teacher' });
-  };
-
-  // Update teacher's own profile
-  ApiClient.prototype.updateTeacherProfile = async function(data) {
-    return this.request('/teachers/profile', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-      tokenType: 'teacher',
-    });
-  };
-
-  // Change teacher's own password
-  ApiClient.prototype.changeTeacherPassword = async function(oldPassword, newPassword) {
-    return this.request('/teachers/change-password', {
-      method: 'POST',
-      body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
-      tokenType: 'teacher',
-    });
-  };
-
-  // Get classes assigned to the current teacher
+  // Get classes assigned to the current teacher (admin with role='teacher')
   ApiClient.prototype.getTeacherClasses = async function() {
-    return this.request('/teachers/my-classes', { tokenType: 'teacher' });
+    return this.request('/teachers/my-classes', { tokenType: 'admin' });
   };
 
-  // Get teacher's weekly schedule, optionally from a specific week start date
+  // Get teacher's weekly schedule
   ApiClient.prototype.getTeacherSchedule = async function(weekStart) {
     const url = weekStart
       ? `/teachers/my-schedule?week_start=${weekStart}`
       : '/teachers/my-schedule';
-    return this.request(url, { tokenType: 'teacher' });
+    return this.request(url, { tokenType: 'admin' });
   };
 
   // Get exams assigned to the current teacher
   ApiClient.prototype.getTeacherExams = async function() {
-    return this.request('/teachers/my-exams', { tokenType: 'teacher' });
+    return this.request('/teachers/my-exams', { tokenType: 'admin' });
   };
+
+  // ---- Admin CRUD for teachers (creates admins with role='teacher') ----
 
   // Get all teachers with pagination (admin)
   ApiClient.prototype.getAllTeachers = async function(limit = 100, offset = 0) {
@@ -74,14 +36,15 @@ export function applyTeacherMethods(ApiClient) {
 
   // Search teachers by keyword
   ApiClient.prototype.searchTeachers = async function(keyword) {
-    return this.request(`/teachers?keyword=${encodeURIComponent(keyword)}`);
+    return this.request(`/teachers?keyword=${encodeURIComponent(keyword)}`, { tokenType: 'admin' });
   };
 
-  // Create a new teacher account
+  // Create a new teacher account (creates admin with role='teacher')
   ApiClient.prototype.createTeacher = async function(data) {
     return this.request('/teachers', {
       method: 'POST',
       body: JSON.stringify(data),
+      tokenType: 'admin',
     });
   };
 
@@ -90,13 +53,15 @@ export function applyTeacherMethods(ApiClient) {
     return this.request(`/teachers/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
+      tokenType: 'admin',
     });
   };
 
-  // Delete a teacher account
+  // Delete a teacher account (soft delete — sets status='inactive')
   ApiClient.prototype.deleteTeacher = async function(id) {
     return this.request(`/teachers/${id}`, {
       method: 'DELETE',
+      tokenType: 'admin',
     });
   };
 }

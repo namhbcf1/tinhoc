@@ -14,6 +14,16 @@
     overflow-x: clip;
 }
 
+@media (max-width: 768px) {
+    .student-mobile-layout {
+        --mb-space-scale: 0.42;
+        --mb-font-scale: 0.56;
+        --mb-touch-scale: 0.68;
+        --mb-radius-scale: 0.64;
+        --mb-layout-scale: 0.58;
+    }
+}
+
 /* Header cố định trên cùng */
 .student-mobile-layout .mobile-header {
     position: fixed;

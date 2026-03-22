@@ -13,6 +13,8 @@ export interface Env {
   ENVIRONMENT: string;
   JWT_SECRET: string;
   CLOUDFLARE_ACCOUNT_ID: string;
+  EDU_APP_URL?: string;
+  EXAM_APP_URL?: string;
 
   // R2 presigned URL credentials
   R2_ACCESS_KEY_ID: string;
@@ -28,11 +30,23 @@ export interface Env {
 }
 
 export interface JWTPayload {
-  userId: string;
-  type: 'admin' | 'teacher' | 'student';
+  id?: number;
+  userId?: string;
+  sub?: string;
+  sid?: string;
+  aud?: 'edu' | 'exam';
+  type?: 'admin' | 'student';
+  user_type?: 'admin' | 'student';
   role?: string;
+  username?: string;
+  cccd?: string;
+  teacher_code?: string;
   teacherCode?: string;
   phone?: string;
+  email?: string;
+  ho_ten?: string;
+  display_name?: string;
   iat?: number;
   exp?: number;
+  [key: string]: unknown;
 }

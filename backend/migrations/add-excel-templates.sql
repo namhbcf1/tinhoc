@@ -25,4 +25,5 @@ SELECT template_id FROM exam_schedules LIMIT 0;
 -- 3. Insert default templates (OR IGNORE handles duplicates)
 INSERT OR IGNORE INTO excel_templates (name, display_name, file_key, header_rows, data_start_row, date_cell, column_mapping) VALUES
 ('default', 'VanTrang (Mặc định)', '', 6, 7, '', '{"ho_ten_dem":"A","ten":"B","ngay_sinh":"C","gioi_tinh":"D","dan_toc":"E","sdt":"F","email":"G","cccd":"H","ngay_cap_cccd":"I","noi_sinh":"J","don_vi":"K","dia_chi":"L"}'),
-('ptit', 'Học viện PTIT', 'templates/PTIT.xlsx', 8, 10, 'G7', '{"stt":"A","ma_sv":"B","ho_ten":"C","ngay_sinh":"D","noi_sinh":"E","dan_toc":"F","gioi_tinh":"G","ho_so":"H","cccd":"I","sdt":"J","email":"K"}');
+('ptit', 'Học viện PTIT', 'templates/MAUPTIT.xlsx', 8, 9, 'F4', '{"stt":"A","so_phach":"B","cccd":"C","ho_ten_dem":"D","ten":"E","ngay_sinh":"F","noi_sinh":"G","gioi_tinh":"H","dan_toc":"I"}'),
+('vept', 'VEPT', 'templates/MAUVEPT.xlsx', 4, 5, '', '{"stt":"A","ho_ten_dem":"B","ten":"C","gioi_tinh":"D","ngay":"E","thang":"F","nam":"G","cccd":"H","sdt":"I","email":"J","don_vi":"K","exam_level":"M","exam_date":"N","location":"T"}');

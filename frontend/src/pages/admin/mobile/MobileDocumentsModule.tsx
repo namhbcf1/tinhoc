@@ -14,6 +14,7 @@ import {
     getFileColor,
     formatFileSize
 } from '../shared/hooks/useDocumentsManagement';
+import AdminLoadingState from '../../../components/admin/AdminLoadingState';
 
 // ============= BOTTOM SHEET =============
 const BottomSheet = ({ isOpen, onClose, title, children, height = 'auto' }) => {
@@ -105,7 +106,7 @@ const DocumentCard = ({ doc, onShare, onDownload, onDelete }) => {
             {/* Actions */}
             <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-50">
                 <span className="text-xs text-slate-400 flex items-center gap-1">
-                    <Calendar size={12} /> {formatDateVN(doc.created_at)}
+                    <Calendar size={12} /> {formatDateVN(doc.created_at, true)}
                 </span>
                 <div className="flex gap-2">
                     <button
@@ -405,7 +406,7 @@ const UploadSheet = ({ isOpen, onClose, onSuccess }) => {
 // ============= SHARE SHEET =============
 const ShareSheet = ({ isOpen, onClose, doc, onSuccess }) => {
     const { success, error } = useToast();
-    const { shareDocument, offlineClasses, loadAllClasses } = useDocumentsManagement();
+    const { shareDocument, offlineClasses, onlineClasses, loadAllClasses } = useDocumentsManagement();
     const [loading, setLoading] = useState(false);
     const [shareTargets, setShareTargets] = useState([]);
 
@@ -429,11 +430,11 @@ const ShareSheet = ({ isOpen, onClose, doc, onSuccess }) => {
         }
     };
 
-    const toggleTarget = (id) => {
-        const target = { type: 'offline_class', id };
-        const exists = shareTargets.some(t => t.type === 'offline_class' && t.id === id);
+    const toggleTarget = (type, id) => {
+        const target = { type, id };
+        const exists = shareTargets.some(t => t.type === type && t.id === id);
         if (exists) {
-            setShareTargets(shareTargets.filter(t => !(t.type === 'offline_class' && t.id === id)));
+            setShareTargets(shareTargets.filter(t => !(t.type === type && t.id === id)));
         } else {
             setShareTargets([...shareTargets, target]);
         }
@@ -470,10 +471,27 @@ const ShareSheet = ({ isOpen, onClose, doc, onSuccess }) => {
                                 <input
                                     type="checkbox"
                                     checked={checked}
-                                    onChange={() => toggleTarget(cls.id)}
+                                    onChange={() => toggleTarget('offline_class', cls.id)}
                                     className="w-5 h-5 rounded border-slate-300 text-blue-600"
                                 />
                                 <span className="font-medium text-slate-700">{cls.ten_lop}</span>
+                            </label>
+                        );
+                    })}
+                    {onlineClasses.map(cls => {
+                        const checked = shareTargets.some(t => t.type === 'online_class' && t.id === cls.id);
+                        return (
+                            <label
+                                key={`online-${cls.id}`}
+                                className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${checked ? 'border-blue-500 bg-blue-50' : 'border-slate-100'}`}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => toggleTarget('online_class', cls.id)}
+                                    className="w-5 h-5 rounded border-slate-300 text-blue-600"
+                                />
+                                <span className="font-medium text-slate-700">{cls.ten_lop || cls.class_name}</span>
                             </label>
                         );
                     })}
@@ -628,13 +646,17 @@ export default function MobileDocumentsModule() {
 
     const stats = getStats();
 
-    const handleDownload = (doc) => {
-        window.open(api.getDocumentDownloadUrl(doc.id), '_blank');
+    const handleDownload = async (doc) => {
+        try {
+            await api.downloadDocument(doc.id, doc.file_name);
+        } catch (err) {
+            console.error('Download document error:', err);
+        }
     };
 
     // Pull-to-refresh callback
     const handleRefresh = async () => {
-        await loadDocuments();
+        await loadDocuments({ force: true });
     };
 
     return (
@@ -734,10 +756,12 @@ export default function MobileDocumentsModule() {
             {/* List */}
             <div className="p-4 pb-24">
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4">
-                        <RefreshCw size={32} className="animate-spin text-emerald-600" />
-                        <p className="text-slate-500">Đang tải dữ liệu...</p>
-                    </div>
+                    <AdminLoadingState
+                        title="Đang tải kho tài liệu"
+                        hint="Tài liệu chia sẻ và bộ lọc quyền truy cập được lấy lại từ cache để tránh load lại nhiều lần."
+                        variant="mobile-list"
+                        accent="emerald"
+                    />
                 ) : filteredDocuments.length > 0 ? (
                     <div className="space-y-3">
                         {filteredDocuments.map((doc) => (
@@ -776,27 +800,35 @@ export default function MobileDocumentsModule() {
             <UploadSheet
                 isOpen={showUpload}
                 onClose={() => setShowUpload(false)}
-                onSuccess={loadDocuments}
+                onSuccess={async () => {
+                    await loadDocuments({ force: true });
+                }}
             />
 
             <CreateFolderSheet
                 isOpen={showFolder}
                 onClose={() => setShowFolder(false)}
-                onSuccess={loadDocuments}
+                onSuccess={async () => {
+                    await loadDocuments({ force: true });
+                }}
             />
 
             <ShareSheet
                 isOpen={!!shareDoc}
                 onClose={() => setShareDoc(null)}
                 doc={shareDoc}
-                onSuccess={loadDocuments}
+                onSuccess={async () => {
+                    await loadDocuments({ force: true });
+                }}
             />
 
             <ConfirmDeleteSheet
                 isOpen={!!deleteDoc}
                 onClose={() => setDeleteDoc(null)}
                 doc={deleteDoc}
-                onConfirm={loadDocuments}
+                onConfirm={async () => {
+                    await loadDocuments({ force: true });
+                }}
             />
         </div>
     </PullToRefreshWrapper>

@@ -158,6 +158,11 @@ export async function deleteStudent(db: D1Database, id: number) {
 export async function getAllStudents(db: D1Database, limit = 100, offset = 0) {
   const result = await db.prepare(`
     SELECT * FROM students
+    WHERE NOT (
+      LOWER(COALESCE(ho_ten_full, '')) LIKE 'test hoc vien%'
+      OR LOWER(COALESCE(email, '')) LIKE '%@student.local'
+      OR LOWER(COALESCE(cccd, '')) LIKE 'test%'
+    )
     ORDER BY created_at DESC
     LIMIT ? OFFSET ?
       `).bind(limit, offset).all();
@@ -195,6 +200,11 @@ export async function searchStudents(db: D1Database, keyword: string) {
       OR cccd LIKE ?
       OR sdt LIKE ?
     )
+    AND NOT (
+      LOWER(COALESCE(ho_ten_full, '')) LIKE 'test hoc vien%'
+      OR LOWER(COALESCE(email, '')) LIKE '%@student.local'
+      OR LOWER(COALESCE(cccd, '')) LIKE 'test%'
+    )
     ORDER BY
       CASE
         WHEN cccd = ? THEN 1
@@ -230,6 +240,11 @@ export async function searchStudents(db: D1Database, keyword: string) {
       SELECT * FROM students
       WHERE sdt IS NOT NULL AND sdt != ''
         AND REPLACE(REPLACE(REPLACE(REPLACE(sdt, ' ', ''), '-', ''), '.', ''), '(', '') LIKE ?
+        AND NOT (
+          LOWER(COALESCE(ho_ten_full, '')) LIKE 'test hoc vien%'
+          OR LOWER(COALESCE(email, '')) LIKE '%@student.local'
+          OR LOWER(COALESCE(cccd, '')) LIKE 'test%'
+        )
       LIMIT 100
     `).bind(`%${normalizedPhone}%`).all();
 

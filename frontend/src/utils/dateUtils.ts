@@ -211,6 +211,50 @@ export function formatTime(date) {
 }
 
 /**
+ * Format giá trị ngày cho input type="date" theo múi giờ Việt Nam.
+ */
+export function formatVietnamDateInputValue(date) {
+  if (!date) return '';
+
+  const d = toVietnamDate(date);
+  if (!d || isNaN(d.getTime())) return '';
+
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Tạo ISO string cố định theo giờ Việt Nam để tránh lệch múi giờ do browser locale.
+ */
+export function buildVietnamDateTimePayload(dateValue, timeValue = '00:00') {
+  if (!dateValue) return null;
+
+  const [year, month, day] = String(dateValue).split('-').map(Number);
+  const [hours = 0, minutes = 0] = String(timeValue || '00:00').split(':').map(Number);
+
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+    return null;
+  }
+
+  if (
+    !Number.isInteger(hours) || hours < 0 || hours > 23 ||
+    !Number.isInteger(minutes) || minutes < 0 || minutes > 59
+  ) {
+    return null;
+  }
+
+  const safeYear = String(year).padStart(4, '0');
+  const safeMonth = String(month).padStart(2, '0');
+  const safeDay = String(day).padStart(2, '0');
+  const safeHours = String(hours).padStart(2, '0');
+  const safeMinutes = String(minutes).padStart(2, '0');
+
+  return `${safeYear}-${safeMonth}-${safeDay}T${safeHours}:${safeMinutes}:00+07:00`;
+}
+
+/**
  * Lấy ngày hiện tại theo GMT+7
  * @param {boolean} asString - Nếu true, trả về string yyyy-MM-dd cho HTML date input
  */

@@ -1,19 +1,39 @@
 import { useState, useEffect } from 'react';
 import api from '../../../../services/api';
+import {
+  ADMIN_CACHE_KEYS,
+  ADMIN_CACHE_TTL,
+  getAdminCache,
+  invalidateAdminData,
+  setAdminCache,
+} from '../admin-cache';
+import { useAdminAutoRefresh } from '../useAdminAutoRefresh';
 
 export function usePaymentsManagement() {
-  const [payments, setPayments] = useState([]);
-  const [classes, setClasses] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const cachedPayments = getAdminCache(ADMIN_CACHE_KEYS.payments, ADMIN_CACHE_TTL.payments);
+  const cachedClasses = getAdminCache(ADMIN_CACHE_KEYS.paymentClasses, ADMIN_CACHE_TTL.classes);
+
+  const [payments, setPayments] = useState(() => cachedPayments ?? []);
+  const [classes, setClasses] = useState(() => cachedClasses ?? []);
+  const [loading, setLoading] = useState(() => cachedPayments === null);
   const [error, setError] = useState(null);
 
-  const loadPayments = async () => {
+  const loadPayments = async ({ force = false } = {}) => {
+    const cached = force ? null : getAdminCache(ADMIN_CACHE_KEYS.payments, ADMIN_CACHE_TTL.payments);
+    if (cached !== null) {
+      setPayments(cached);
+      setLoading(false);
+      return cached;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const response = await api.getPayments(1000, 0);
       const data = Array.isArray(response.data) ? response.data : [];
       setPayments(data);
+      setAdminCache(ADMIN_CACHE_KEYS.payments, data);
+      return data;
     } catch (err) {
       setError(err.message);
       setPayments([]);
@@ -23,10 +43,19 @@ export function usePaymentsManagement() {
     }
   };
 
-  const loadClasses = async () => {
+  const loadClasses = async ({ force = false } = {}) => {
+    const cached = force ? null : getAdminCache(ADMIN_CACHE_KEYS.paymentClasses, ADMIN_CACHE_TTL.classes);
+    if (cached !== null) {
+      setClasses(cached);
+      return cached;
+    }
+
     try {
       const response = await api.getClasses();
-      setClasses(response.data || []);
+      const data = response.data || [];
+      setClasses(data);
+      setAdminCache(ADMIN_CACHE_KEYS.paymentClasses, data);
+      return data;
     } catch (err) {
       setClasses([]);
     }
@@ -35,7 +64,15 @@ export function usePaymentsManagement() {
   const confirmPayment = async (paymentId) => {
     try {
       await api.confirmPayment(paymentId);
-      await loadPayments();
+      invalidateAdminData({
+        keys: [
+          ADMIN_CACHE_KEYS.payments,
+          ADMIN_CACHE_KEYS.dashboardOverview,
+          ADMIN_CACHE_KEYS.mobileDashboardOverview,
+        ],
+        source: 'payments-management',
+      });
+      await loadPayments({ force: true });
     } catch (err) {
       throw err;
     }
@@ -44,7 +81,15 @@ export function usePaymentsManagement() {
   const rejectPayment = async (paymentId) => {
     try {
       await api.rejectPayment(paymentId);
-      await loadPayments();
+      invalidateAdminData({
+        keys: [
+          ADMIN_CACHE_KEYS.payments,
+          ADMIN_CACHE_KEYS.dashboardOverview,
+          ADMIN_CACHE_KEYS.mobileDashboardOverview,
+        ],
+        source: 'payments-management',
+      });
+      await loadPayments({ force: true });
     } catch (err) {
       throw err;
     }
@@ -76,9 +121,16 @@ export function usePaymentsManagement() {
   };
 
   useEffect(() => {
-    loadPayments();
-    loadClasses();
+    void loadPayments();
+    void loadClasses();
   }, []);
+
+  useAdminAutoRefresh(async () => {
+    await Promise.all([
+      loadPayments({ force: true }),
+      loadClasses({ force: true }),
+    ]);
+  }, { minIntervalMs: 12000 });
 
   return {
     payments,

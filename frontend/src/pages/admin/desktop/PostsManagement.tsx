@@ -6,6 +6,7 @@ import {
 import api from '../../../services/api';
 import { formatDateVN } from '../../../utils/dateUtils';
 import '../../../styles/admin/AdminModern.css';
+import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
 
 export default function PostsManagement({ toast }) {
   const [posts, setPosts] = useState([]);
@@ -28,6 +29,7 @@ export default function PostsManagement({ toast }) {
   const fileInputRefs = [useRef(), useRef(), useRef(), useRef(), useRef()];
 
   useEffect(() => { loadPosts(); }, []);
+  useAdminAutoRefresh(() => loadPosts(), { minIntervalMs: 15000 });
 
   const loadPosts = async () => {
     setLoading(true);

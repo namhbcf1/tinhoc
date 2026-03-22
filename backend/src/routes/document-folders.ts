@@ -118,13 +118,13 @@ folders.post('/', authMiddleware, async (c) => {
     if (folder_type === 'private') {
       // teacher can only create their own private folders
       if (!isAdmin(user)) {
-        if (owner_role && owner_role !== 'teacher') return errorResponse('owner_role không hợp lệ', 400);
+        if (owner_role && owner_role !== 'admin') return errorResponse('owner_role không hợp lệ', 400);
         if (owner_id && String(owner_id) !== String(user.id)) return errorResponse('Không có quyền', 403);
       }
     }
 
     const createdByAdminId = isAdmin(user) ? String(user.id) : null;
-    const finalOwnerRole = folder_type === 'private' ? (owner_role || (isAdmin(user) ? 'admin' : 'teacher')) : null;
+    const finalOwnerRole = folder_type === 'private' ? (owner_role || 'admin') : null;
     const finalOwnerId = folder_type === 'private' ? (owner_id ? String(owner_id) : String(user.id)) : null;
 
     const res = await db.prepare(`
@@ -160,7 +160,7 @@ folders.put('/:id', authMiddleware, async (c) => {
     // RBAC: shared only admin; private only owner or admin
     if (existing.folder_type === 'shared' && !isAdmin(user)) return errorResponse('Không có quyền', 403);
     if (existing.folder_type === 'private' && !isAdmin(user)) {
-      if (String(existing.owner_id) !== String(user.id) || existing.owner_role !== 'teacher') return errorResponse('Không có quyền', 403);
+      if (String(existing.owner_id) !== String(user.id) || !['admin', 'teacher'].includes(existing.owner_role as string)) return errorResponse('Không có quyền', 403);
     }
 
     await db.prepare(`
@@ -189,7 +189,7 @@ folders.delete('/:id', authMiddleware, async (c) => {
 
     if (existing.folder_type === 'shared' && !isAdmin(user)) return errorResponse('Không có quyền', 403);
     if (existing.folder_type === 'private' && !isAdmin(user)) {
-      if (String(existing.owner_id) !== String(user.id) || existing.owner_role !== 'teacher') return errorResponse('Không có quyền', 403);
+      if (String(existing.owner_id) !== String(user.id) || !['admin', 'teacher'].includes(existing.owner_role as string)) return errorResponse('Không có quyền', 403);
     }
 
     // Prevent delete if has children

@@ -23,8 +23,7 @@ attendance.post('/batch', async (c) => {
       return errorResponse('Chưa đăng nhập', 401);
     }
     
-    // Allow both admin and teacher to mark attendance
-    const allowedRoles = ['admin', 'super_admin', 'teacher'];
+    const allowedRoles = ['admin', 'super_admin'];
     if (!user.role || !allowedRoles.includes(user.role)) {
       return errorResponse('Không có quyền điểm danh', 403);
     }
@@ -60,7 +59,7 @@ attendance.post('/batch', async (c) => {
           status,
           notes || null,
           user.id,
-          user.role === 'teacher' ? 'teacher' : 'admin'
+          'admin'
         );
 
         if (!result || !result.meta) {
@@ -150,7 +149,7 @@ attendance.post('/', async (c) => {
       status,
       notes || null,
       user.id,
-      user.role === 'teacher' ? 'teacher' : 'admin'
+      'admin'
     );
     
     // Log activity
@@ -216,7 +215,6 @@ attendance.get('/class/:id', async (c) => {
 });
 
 export default attendance;
-
 
 
 

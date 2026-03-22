@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../../services/api';
 import '../../../styles/admin/AdminDashboard.css';
+import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
 
 export default function HomepageManagement({ toast }) {
   const [settings, setSettings] = useState({
@@ -13,7 +14,6 @@ export default function HomepageManagement({ toast }) {
     bannerDescription: '',
     yearsExperience: 0,
     totalStudents: 0,
-    totalTeachers: 0,
     totalPrograms: 0,
   });
   const [loading, setLoading] = useState(false);
@@ -22,6 +22,7 @@ export default function HomepageManagement({ toast }) {
   useEffect(() => {
     loadSettings();
   }, []);
+  useAdminAutoRefresh(() => loadSettings(), { minIntervalMs: 15000 });
 
   const loadSettings = async () => {
     setLoadingData(true);
@@ -114,7 +115,7 @@ export default function HomepageManagement({ toast }) {
                 <span>Thống kê (Số liệu)</span>
               </label>
               <div style={{ fontSize: '12px', color: '#999', marginLeft: '32px' }}>
-                Hiển thị số năm kinh nghiệm, số học viên, giảng viên...
+                Hiển thị số năm kinh nghiệm, số học viên, chương trình...
               </div>
             </div>
 
@@ -227,16 +228,6 @@ export default function HomepageManagement({ toast }) {
                 type="number"
                 value={settings.totalStudents || 0}
                 onChange={(e) => handleChange('totalStudents', parseInt(e.target.value) || 0)}
-                min="0"
-              />
-            </div>
-
-            <div className="homepage-form-group">
-              <label>Số giảng viên</label>
-              <input
-                type="number"
-                value={settings.totalTeachers || 0}
-                onChange={(e) => handleChange('totalTeachers', parseInt(e.target.value) || 0)}
                 min="0"
               />
             </div>

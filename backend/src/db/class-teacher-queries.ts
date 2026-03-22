@@ -1,17 +1,18 @@
 // Database queries for Class Teachers
+// Now using admins table instead of teachers (teacher = admin with role='teacher')
 
-export async function assignTeacherToClass(db: D1Database, class_id: number, teacher_id: number, role = 'teacher') {
+export async function assignTeacherToClass(db: D1Database, class_id: number, admin_id: number, role = 'teacher') {
   const result = await db.prepare(
-    `INSERT INTO class_teachers (class_id, teacher_id, role)
+    `INSERT INTO class_teachers (class_id, admin_id, role)
      VALUES (?, ?, ?)`
-  ).bind(class_id, teacher_id, role).run();
+  ).bind(class_id, admin_id, role).run();
   return result;
 }
 
-export async function removeTeacherFromClass(db: D1Database, class_id: number, teacher_id: number) {
+export async function removeTeacherFromClass(db: D1Database, class_id: number, admin_id: number) {
   const result = await db.prepare(
-    'DELETE FROM class_teachers WHERE class_id = ? AND teacher_id = ?'
-  ).bind(class_id, teacher_id).run();
+    'DELETE FROM class_teachers WHERE class_id = ? AND admin_id = ?'
+  ).bind(class_id, admin_id).run();
   return result;
 }
 
@@ -28,26 +29,26 @@ export async function getClassTeachers(db: D1Database, class_id: number) {
        ct.id as assignment_id,
        ct.role,
        ct.created_at,
-       t.id as teacher_id,
-       t.teacher_code,
-       t.ho,
-       t.ten_dem,
-       t.ten,
-       t.ho_ten_full,
-       t.email,
-       t.sdt,
-       t.department,
-       t.position,
-       t.status
+       a.id as teacher_id,
+       a.teacher_code,
+       a.ho,
+       a.ten_dem,
+       a.ten,
+       a.ho_ten_full,
+       a.email,
+       a.sdt,
+       a.department,
+       a.position,
+       a.status
      FROM class_teachers ct
-     INNER JOIN teachers t ON ct.teacher_id = t.id
+     INNER JOIN admins a ON ct.admin_id = a.id
      WHERE ct.class_id = ?
-     ORDER BY ct.role, t.ho_ten_full`
+     ORDER BY ct.role, a.ho_ten_full`
   ).bind(class_id).all();
   return result;
 }
 
-export async function getTeacherClasses(db: D1Database, teacher_id: number) {
+export async function getTeacherClasses(db: D1Database, admin_id: number) {
   const result = await db.prepare(
     `SELECT
        ct.id as assignment_id,
@@ -62,9 +63,9 @@ export async function getTeacherClasses(db: D1Database, teacher_id: number) {
        c.status as class_status
      FROM class_teachers ct
      INNER JOIN classes c ON ct.class_id = c.id
-     WHERE ct.teacher_id = ?
+     WHERE ct.admin_id = ?
      ORDER BY c.ngay_bat_dau DESC`
-  ).bind(teacher_id).all();
+  ).bind(admin_id).all();
   return result;
 }
 
@@ -72,12 +73,12 @@ export async function getAssignmentById(db: D1Database, id: number) {
   const result = await db.prepare(
     `SELECT
        ct.*,
-       t.teacher_code,
-       t.ho_ten_full,
+       a.teacher_code,
+       a.ho_ten_full,
        c.ten_lop,
        c.ma_lop
      FROM class_teachers ct
-     INNER JOIN teachers t ON ct.teacher_id = t.id
+     INNER JOIN admins a ON ct.admin_id = a.id
      INNER JOIN classes c ON ct.class_id = c.id
      WHERE ct.id = ?`
   ).bind(id).first();

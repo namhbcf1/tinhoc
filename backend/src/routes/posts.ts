@@ -33,6 +33,8 @@ posts.get('/', async (c) => {
       success: true,
       data: postsData,
       total: postsData.length
+    }, 200, {
+      'Cache-Control': 'public, max-age=300, s-maxage=300, stale-while-revalidate=60',
     });
   } catch (error: any) {
     console.error('Error fetching posts:', error);
@@ -55,6 +57,8 @@ posts.get('/:id', async (c) => {
     return jsonResponse({
       success: true,
       data: post
+    }, 200, {
+      'Cache-Control': 'public, max-age=300, s-maxage=300, stale-while-revalidate=60',
     });
   } catch (error: any) {
     console.error('Error fetching post:', error);

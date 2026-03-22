@@ -2,6 +2,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getTranslation } from '../../utils/translations';
+import { getStorageValue } from '../../utils/browser-storage.js';
+import api from '../../services/api';
 import Logo from './Logo';
 import '../../styles/public/Layout.css';
 
@@ -12,7 +14,7 @@ export default function Layout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isStudentLoggedIn, setIsStudentLoggedIn] = useState(
-    !!localStorage.getItem('student_cccd')
+    !!getStorageValue('student_token')
   );
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' && window.innerWidth < 968
@@ -21,7 +23,7 @@ export default function Layout({ children }) {
   // Listen for storage changes (multi-tab support)
   useEffect(() => {
     const handleStorageChange = () => {
-      setIsStudentLoggedIn(!!localStorage.getItem('student_cccd'));
+      setIsStudentLoggedIn(!!getStorageValue('student_token'));
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -43,8 +45,7 @@ export default function Layout({ children }) {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('student_cccd');
-    localStorage.removeItem('student_data');
+    api.logoutRole('student');
     setIsStudentLoggedIn(false);
     navigate('/login');
   };
@@ -66,7 +67,7 @@ export default function Layout({ children }) {
   const menuItems = [
     {
       key: 'students',
-      label: t('students'),
+      label: t('studentsNav'),
       path: '/student-portal',
       submenu: [
         { label: 'Cổng thông tin đào tạo', path: '/training-portal' },
@@ -283,40 +284,15 @@ export default function Layout({ children }) {
                 </Link>
               </li>
               <li>
-                <Link to="/dashboard/my-classes" className={isActive('/dashboard/my-classes')}>
-                  📚 {t('myClassesMenu')}
+                <Link to="/dashboard/exams" className={isActive('/dashboard/exams')}>
+                  📝 Lịch thi
                 </Link>
               </li>
               <li>
-                <Link to="/dashboard/register-class" className={isActive('/dashboard/register-class')}>
-                  ➕ {t('registerClassMenu')}
+                <Link to="/dashboard/profile" className={isActive('/dashboard/profile')}>
+                  👤 Hồ sơ
                 </Link>
               </li>
-              <li>
-                <Link to="/dashboard/payment" className={isActive('/dashboard/payment')}>
-                  💰 {t('paymentMenu')}
-                </Link>
-              </li>
-                <li>
-                  <Link to="/dashboard/certificates" className={isActive('/dashboard/certificates')}>
-                    🎓 {t('certificatesMenu')}
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/dashboard/documents" className={isActive('/dashboard/documents')}>
-                    📁 {t('documentsMenu')}
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/dashboard/notifications" className={isActive('/dashboard/notifications')}>
-                    🔔 Thông báo
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/dashboard/schedule" className={isActive('/dashboard/schedule')}>
-                    📅 Lịch học
-                  </Link>
-                </li>
               </ul>
 
             <div className="navbar-actions">

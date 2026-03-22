@@ -7,6 +7,14 @@ import {
 } from 'lucide-react';
 import api from '../../../services/api';
 import { formatDateVN } from '../../../utils/dateUtils';
+import AdminLoadingState from '../../../components/admin/AdminLoadingState';
+import {
+  ADMIN_CACHE_KEYS,
+  ADMIN_CACHE_TTL,
+  clearAdminCache,
+  getAdminCache,
+  setAdminCache,
+} from '../shared/admin-cache';
 import './DocumentsManagement.css';
 
 const ACCESS_TABS = [
@@ -28,12 +36,20 @@ const FILE_COLORS = {
 };
 
 export default function DocumentsManagement({ toast }) {
-  const [documents, setDocuments] = useState([]);
-  const [offlineClasses, setOfflineClasses] = useState([]);
-  const [onlineClasses, setOnlineClasses] = useState([]);
-  const [examSchedules, setExamSchedules] = useState([]);
-  const [folders, setFolders] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const cachedDocuments = getAdminCache(ADMIN_CACHE_KEYS.documents, ADMIN_CACHE_TTL.documents) || [];
+  const cachedTargets = getAdminCache(ADMIN_CACHE_KEYS.documentTargets, ADMIN_CACHE_TTL.documentMeta) || {
+    offlineClasses: [],
+    onlineClasses: [],
+    examSchedules: [],
+  };
+  const cachedFolders = getAdminCache(ADMIN_CACHE_KEYS.documentFolders, ADMIN_CACHE_TTL.documentMeta) || [];
+
+  const [documents, setDocuments] = useState(cachedDocuments);
+  const [offlineClasses, setOfflineClasses] = useState(cachedTargets.offlineClasses || []);
+  const [onlineClasses, setOnlineClasses] = useState(cachedTargets.onlineClasses || []);
+  const [examSchedules, setExamSchedules] = useState(cachedTargets.examSchedules || []);
+  const [folders, setFolders] = useState(cachedFolders);
+  const [loading, setLoading] = useState(cachedDocuments.length === 0);
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('table');
@@ -62,18 +78,58 @@ export default function DocumentsManagement({ toast }) {
     folder_id: null,
   });
 
+  const normalizeClassRows = (payload) => {
+    const rows = Array.isArray(payload?.data?.classes)
+      ? payload.data.classes
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload)
+          ? payload
+          : [];
+
+    return rows.map((item) => ({
+      ...item,
+      ten_lop: item.ten_lop || item.class_name || '',
+      ma_lop: item.ma_lop || item.class_code || '',
+    }));
+  };
+
+  const normalizeExamSchedules = (payload) => {
+    if (Array.isArray(payload?.data)) {
+      return payload.data;
+    }
+    if (Array.isArray(payload?.data?.items)) {
+      return payload.data.items;
+    }
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+    return [];
+  };
+
   useEffect(() => {
     loadDocuments();
     loadAllClasses();
     loadFolders();
   }, []);
 
-  const loadDocuments = async () => {
+  const loadDocuments = async ({ force = false } = {}) => {
+    if (!force) {
+      const cached = getAdminCache(ADMIN_CACHE_KEYS.documents, ADMIN_CACHE_TTL.documents);
+      if (cached) {
+        setDocuments(cached);
+        setLoading(false);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const response = await api.getAllDocuments();
       const docs = response.success && response.data ? response.data : (response.data || []);
-      setDocuments(Array.isArray(docs) ? docs : []);
+      const nextDocuments = Array.isArray(docs) ? docs : [];
+      setDocuments(nextDocuments);
+      setAdminCache(ADMIN_CACHE_KEYS.documents, nextDocuments);
     } catch (e) {
       console.error('Load documents error:', e);
       setDocuments([]);
@@ -82,32 +138,60 @@ export default function DocumentsManagement({ toast }) {
     }
   };
 
-  const loadAllClasses = async () => {
-    try {
-      // Load offline classes
-      const offlineRes = await api.getClasses();
-      setOfflineClasses(offlineRes.data || []);
+  const loadAllClasses = async ({ force = false } = {}) => {
+    if (!force) {
+      const cached = getAdminCache(ADMIN_CACHE_KEYS.documentTargets, ADMIN_CACHE_TTL.documentMeta);
+      if (cached) {
+        setOfflineClasses(cached.offlineClasses || []);
+        setOnlineClasses(cached.onlineClasses || []);
+        setExamSchedules(cached.examSchedules || []);
+        return;
+      }
+    }
 
-      // Load online classes
+    try {
+      const offlineRes = await api.getClasses();
+      const nextOfflineClasses = normalizeClassRows(offlineRes);
+      setOfflineClasses(nextOfflineClasses);
+
+      let nextOnlineClasses = [];
       try {
-        const onlineRes = await api.request('/online-classes');
-        setOnlineClasses(onlineRes.data || []);
+        const onlineRes = await api.getOnlineClasses(1000, 0);
+        nextOnlineClasses = normalizeClassRows(onlineRes);
+        setOnlineClasses(nextOnlineClasses);
       } catch { setOnlineClasses([]); }
 
-      // Load exam schedules
+      let nextExamSchedules = [];
       try {
         const examRes = await api.request('/exam-schedules');
-        setExamSchedules(examRes.data || []);
+        nextExamSchedules = normalizeExamSchedules(examRes);
+        setExamSchedules(nextExamSchedules);
       } catch { setExamSchedules([]); }
+
+      setAdminCache(ADMIN_CACHE_KEYS.documentTargets, {
+        offlineClasses: nextOfflineClasses,
+        onlineClasses: nextOnlineClasses,
+        examSchedules: nextExamSchedules,
+      });
     } catch (e) {
       console.error('Load classes error:', e);
     }
   };
 
-  const loadFolders = async () => {
+  const loadFolders = async ({ force = false } = {}) => {
+    if (!force) {
+      const cached = getAdminCache(ADMIN_CACHE_KEYS.documentFolders, ADMIN_CACHE_TTL.documentMeta);
+      if (cached) {
+        setFolders(cached);
+        return;
+      }
+    }
+
     try {
       const res = await api.getDocumentFolders('shared');
-      setFolders(res.data || res.results || res || []);
+      const nextFolders = res.data || res.results || res || [];
+      setFolders(nextFolders);
+      setAdminCache(ADMIN_CACHE_KEYS.documentFolders, nextFolders);
     } catch { setFolders([]); }
   };
 
@@ -173,7 +257,8 @@ export default function DocumentsManagement({ toast }) {
       toast?.success('Tạo folder thành công!');
       setShowFolderModal(false);
       setNewFolderName('');
-      loadFolders();
+      clearAdminCache(ADMIN_CACHE_KEYS.documentFolders);
+      loadFolders({ force: true });
     } catch (e) {
       toast?.error('Lỗi tạo folder: ' + e.message);
     }
@@ -193,27 +278,24 @@ export default function DocumentsManagement({ toast }) {
         toast?.error('Vui lòng chọn ít nhất 1 lớp/lịch thi');
         return;
       }
+      if (uploadData.exam_ids.length > 0) {
+        toast?.error('Phân quyền tài liệu theo lịch thi chưa được hỗ trợ');
+        return;
+      }
     }
 
     setUploading(true);
     try {
-      // Merge all class/exam IDs so none are dropped from the upload payload
-      const allClassIds = [
-        ...(uploadData.class_ids || []),
-        ...(uploadData.online_class_ids || []),
-        ...(uploadData.exam_ids || []),
-      ];
-
       await api.uploadDocumentWithPermission({
         ...uploadData,
-        class_ids: allClassIds,
         doc_type: 'general',
         visibility: 'internal',
       });
       toast?.success('Upload tài liệu thành công!');
       setShowUploadModal(false);
       resetUploadForm();
-      loadDocuments();
+      clearAdminCache(ADMIN_CACHE_KEYS.documents);
+      loadDocuments({ force: true });
     } catch (error) {
       toast?.error(error.message || 'Lỗi upload');
     } finally {
@@ -240,9 +322,18 @@ export default function DocumentsManagement({ toast }) {
     try {
       await api.deleteDocument(doc.id);
       toast?.success('Xóa thành công!');
-      loadDocuments();
+      clearAdminCache(ADMIN_CACHE_KEYS.documents);
+      loadDocuments({ force: true });
     } catch (error) {
       toast?.error('Lỗi: ' + error.message);
+    }
+  };
+
+  const handleDownload = async (doc) => {
+    try {
+      await api.downloadDocument(doc.id, doc.file_name);
+    } catch (error) {
+      toast?.error('Lỗi tải tài liệu: ' + error.message);
     }
   };
 
@@ -262,11 +353,22 @@ export default function DocumentsManagement({ toast }) {
       await api.shareDocument(selectedDoc.id, shareTargets);
       toast?.success('Đã chia sẻ tài liệu');
       setShowShareModal(false);
+      clearAdminCache(ADMIN_CACHE_KEYS.documents);
+      loadDocuments({ force: true });
     } catch (e) {
       toast?.error(e.message || 'Lỗi chia sẻ');
     } finally {
       setSharing(false);
     }
+  };
+
+  const toggleShareTarget = (targetType, targetId) => {
+    const checked = shareTargets.some((target) => target.type === targetType && target.id === targetId);
+    if (checked) {
+      setShareTargets(shareTargets.filter((target) => !(target.type === targetType && target.id === targetId)));
+      return;
+    }
+    setShareTargets([...shareTargets, { type: targetType, id: targetId }]);
   };
 
   const toggleClassSelection = (type, id) => {
@@ -320,7 +422,18 @@ export default function DocumentsManagement({ toast }) {
               onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
-          <button onClick={loadDocuments} className="docs-btn docs-btn-ghost" title="Làm mới">
+          <button
+            onClick={() => {
+              clearAdminCache(ADMIN_CACHE_KEYS.documents);
+              clearAdminCache(ADMIN_CACHE_KEYS.documentTargets);
+              clearAdminCache(ADMIN_CACHE_KEYS.documentFolders);
+              loadDocuments({ force: true });
+              loadAllClasses({ force: true });
+              loadFolders({ force: true });
+            }}
+            className="docs-btn docs-btn-ghost"
+            title="Làm mới"
+          >
             <RefreshCw size={18} />
           </button>
           <button onClick={() => setShowFolderModal(true)} className="docs-btn docs-btn-ghost" title="Tạo Folder">
@@ -369,10 +482,12 @@ export default function DocumentsManagement({ toast }) {
 
       {/* Content */}
       {loading ? (
-        <div className="docs-loading">
-          <div className="docs-spinner"></div>
-          <span>Đang tải...</span>
-        </div>
+        <AdminLoadingState
+          title="Đang tải kho tài liệu"
+          hint="Danh sách tài liệu, lớp và folder ít đổi được giữ lại để mở lại nhanh hơn."
+          variant="desktop-list"
+          accent="violet"
+        />
       ) : filteredDocuments.length === 0 ? (
         <div className="docs-empty">
           <FolderOpen size={64} />
@@ -440,7 +555,7 @@ export default function DocumentsManagement({ toast }) {
                     <button onClick={() => openShareModal(doc)} className="docs-action-btn" title="Chia sẻ">
                       <Share2 size={16} />
                     </button>
-                    <button onClick={() => window.open(api.getDocumentDownloadUrl(doc.id), '_blank')} className="docs-action-btn" title="Tải xuống">
+                    <button onClick={() => handleDownload(doc)} className="docs-action-btn" title="Tải xuống">
                       <Download size={16} />
                     </button>
                     <button onClick={() => handleDelete(doc)} className="docs-action-btn danger" title="Xóa">
@@ -470,7 +585,7 @@ export default function DocumentsManagement({ toast }) {
               </div>
               <div className="docs-card-actions">
                 <button onClick={() => openShareModal(doc)} title="Chia sẻ"><Share2 size={16} /></button>
-                <button onClick={() => window.open(api.getDocumentDownloadUrl(doc.id), '_blank')} title="Tải xuống"><Download size={16} /></button>
+                <button onClick={() => handleDownload(doc)} title="Tải xuống"><Download size={16} /></button>
                 <button onClick={() => handleDelete(doc)} className="danger" title="Xóa"><Trash2 size={16} /></button>
               </div>
             </div>
@@ -750,22 +865,29 @@ export default function DocumentsManagement({ toast }) {
               <div className="docs-form-group">
                 <label>Chia sẻ với lớp</label>
                 <div className="docs-class-list">
-                  {offlineClasses.map(cls => {
-                    const checked = shareTargets.some(t => t.type === 'offline_class' && t.id === cls.id);
+                  {offlineClasses.map((cls) => {
+                    const checked = shareTargets.some((target) => target.type === 'offline_class' && target.id === cls.id);
                     return (
-                      <label key={cls.id} className="docs-checkbox">
+                      <label key={`offline-${cls.id}`} className="docs-checkbox">
                         <input
                           type="checkbox"
                           checked={checked}
-                          onChange={() => {
-                            if (checked) {
-                              setShareTargets(shareTargets.filter(t => !(t.type === 'offline_class' && t.id === cls.id)));
-                            } else {
-                              setShareTargets([...shareTargets, { type: 'offline_class', id: cls.id }]);
-                            }
-                          }}
+                          onChange={() => toggleShareTarget('offline_class', cls.id)}
                         />
                         <span>{cls.ten_lop}</span>
+                      </label>
+                    );
+                  })}
+                  {onlineClasses.map((cls) => {
+                    const checked = shareTargets.some((target) => target.type === 'online_class' && target.id === cls.id);
+                    return (
+                      <label key={`online-${cls.id}`} className="docs-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleShareTarget('online_class', cls.id)}
+                        />
+                        <span>{cls.ten_lop || cls.class_name}</span>
                       </label>
                     );
                   })}

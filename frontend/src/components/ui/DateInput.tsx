@@ -1,5 +1,37 @@
 import { useState, useEffect, useRef } from 'react';
 
+function parseDateParts(value) {
+  if (!value) return null;
+
+  if (typeof value === 'string') {
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+      const [day, month, year] = value.split('/');
+      return { year, month, day };
+    }
+
+    const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoMatch) {
+      const [, year, month, day] = isoMatch;
+      return { year, month, day };
+    }
+  }
+
+  try {
+    const date = value instanceof Date ? value : new Date(value);
+    if (!Number.isNaN(date.getTime())) {
+      return {
+        year: String(date.getFullYear()),
+        month: String(date.getMonth() + 1).padStart(2, '0'),
+        day: String(date.getDate()).padStart(2, '0'),
+      };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 /**
  * DateInput Component - Hiển thị dd/mm/yyyy chuẩn Việt Nam
  * Sử dụng hidden native date picker để chọn ngày
@@ -18,36 +50,13 @@ export default function DateInput({
 
   // Convert value to display format (dd/mm/yyyy)
   useEffect(() => {
-    if (!value) {
+    const parts = parseDateParts(value);
+    if (!parts) {
       setDisplayValue('');
       return;
     }
 
-    // If already in dd/mm/yyyy format
-    if (typeof value === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
-      setDisplayValue(value);
-      return;
-    }
-
-    // If in yyyy-mm-dd format (from native date input or ISO)
-    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
-      const [year, month, day] = value.split('-');
-      setDisplayValue(`${day}/${month}/${year}`);
-      return;
-    }
-
-    // Try to parse as Date
-    try {
-      const date = new Date(value);
-      if (!isNaN(date.getTime())) {
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        setDisplayValue(`${day}/${month}/${year}`);
-      }
-    } catch (e) {
-      setDisplayValue('');
-    }
+    setDisplayValue(`${parts.day}/${parts.month}/${parts.year}`);
   }, [value]);
 
   // Handle click on the input - open native date picker
@@ -110,11 +119,11 @@ export default function DateInput({
 
   // Convert displayValue to native format for hidden input
   const getNativeValue = () => {
-    if (!displayValue || !/^\d{2}\/\d{2}\/\d{4}$/.test(displayValue)) {
+    const parts = parseDateParts(value);
+    if (!parts) {
       return '';
     }
-    const [day, month, year] = displayValue.split('/');
-    return `${year}-${month}-${day}`;
+    return `${parts.year}-${parts.month}-${parts.day}`;
   };
 
   return (

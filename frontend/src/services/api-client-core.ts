@@ -4,22 +4,12 @@
 // Heavy fetch logic lives in api-request-engine.js
 // ========================================
 
-import { cachedFetch } from '../utils/cache.js';
+import { cachedFetch, clearAllCache, clearCacheByPrefix } from '../utils/cache.js';
+import { getApiBaseUrl } from '../utils/api-base-url.js';
+import { getStorageValue, removeStorageValue, setStorageValue } from '../utils/browser-storage.js';
 import { validateTokenRole, executeRequest } from './api-request-engine.js';
 
-// Auto-detect API base URL for local dev vs Cloudflare Pages vs custom domain
-export const getApiBaseUrl = () => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-  if (typeof window !== 'undefined' &&
-    (window.location.hostname.includes('pages.dev') ||
-      window.location.hostname.includes('cloudflare') ||
-      window.location.hostname.includes('vantrangedu.com'))) {
-    return 'https://vantrangedu-api.bangachieu2.workers.dev';
-  }
-  return '/api';
-};
+export { getApiBaseUrl } from '../utils/api-base-url.js';
 
 export class ApiClient {
   constructor(baseURL) {
@@ -34,23 +24,24 @@ export class ApiClient {
     if (typeof window === 'undefined') return 'student';
     const path = window.location.pathname;
     if (path.startsWith('/admin')) return 'admin';
-    if (path.startsWith('/teacher')) return 'teacher';
+    // Teacher routes now redirect to admin
+    if (path.startsWith('/teacher')) return 'admin';
     return 'student';
   }
 
   /** Get token from localStorage for a specific role */
   getTokenByRole(role) {
-    const keyMap = { admin: 'admin_token', teacher: 'teacher_token', student: 'student_token' };
-    return localStorage.getItem(keyMap[role] || 'student_token');
+    // teacher token is now admin token
+    const keyMap = { admin: 'admin_token', teacher: 'admin_token', student: 'student_token' };
+    return getStorageValue(keyMap[role] || 'student_token');
   }
 
   /**
    * Get token — uses explicit type or auto-detects role from URL path.
    */
   getToken(type = null) {
-    if (type === 'student') return localStorage.getItem('student_token');
-    if (type === 'teacher') return localStorage.getItem('teacher_token');
-    if (type === 'admin') return localStorage.getItem('admin_token');
+    if (type === 'student') return getStorageValue('student_token');
+    if (type === 'admin' || type === 'teacher') return getStorageValue('admin_token');
     return this.getTokenByRole(this.getCurrentRole());
   }
 
@@ -59,12 +50,12 @@ export class ApiClient {
    * Passing null clears only that role's token — does NOT touch other roles.
    */
   setToken(token, type = 'admin') {
-    const storageKey = type === 'student' ? 'student_token' :
-      type === 'teacher' ? 'teacher_token' : 'admin_token';
+    // teacher token now stored as admin_token
+    const storageKey = type === 'student' ? 'student_token' : 'admin_token';
     if (token) {
-      localStorage.setItem(storageKey, token);
+      setStorageValue(storageKey, token);
     } else {
-      localStorage.removeItem(storageKey);
+      removeStorageValue(storageKey);
     }
   }
 
@@ -103,8 +94,25 @@ export class ApiClient {
     if (options.method && options.method !== 'GET') {
       return this.request(endpoint, options);
     }
-    const cacheKey = `${endpoint}_${JSON.stringify(options)}`;
-    return cachedFetch(cacheKey, () => this.request(endpoint, options), useCache);
+    const cacheOptions = typeof useCache === 'object'
+      ? { enabled: useCache.enabled !== false, ttlMs: useCache.ttlMs }
+      : { enabled: useCache !== false };
+    const { retries, headers, signal, ...requestOptions } = options || {};
+    const tokenForKey = this.getToken(options?.tokenType);
+    const cacheIdentity = tokenForKey ? tokenForKey.slice(-16) : 'anonymous';
+    const cacheKey = `${endpoint}::${cacheIdentity}::${JSON.stringify({
+      ...requestOptions,
+      headers: headers || {},
+    })}`;
+    return cachedFetch(
+      cacheKey,
+      () => this.request(endpoint, options),
+      cacheOptions
+    );
+  }
+
+  invalidateCache(prefixes = []) {
+    prefixes.forEach(prefix => clearCacheByPrefix(prefix));
   }
 
   // ---- Auth ----
@@ -121,33 +129,66 @@ export class ApiClient {
     return response;
   }
 
+  async exchangeSsoTicket(ticket, targetApp = 'edu') {
+    return this.request('/sso/exchange', {
+      method: 'POST',
+      body: JSON.stringify({
+        ticket,
+        target_app: targetApp,
+      }),
+    });
+  }
+
   /** Logout ALL roles — clears tokens and stored user data from both storages */
   logout() {
-    const keys = ['admin_token', 'teacher_token', 'student_token',
+    const adminToken = this.getToken('admin');
+    const studentToken = this.getToken('student');
+    const revokeToken = adminToken || studentToken;
+
+    if (revokeToken) {
+      void fetch(`${this.baseURL}/auth/logout-all`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${revokeToken}`,
+        },
+      }).catch(() => null);
+    }
+
+    clearAllCache();
+    const keys = ['admin_token', 'student_token',
       'student_cccd', 'student_sdt', 'student_data', 'studentCCCD',
       'teacher', 'admin'];
     keys.forEach(key => {
-      localStorage.removeItem(key);
-      sessionStorage.removeItem(key);
+      removeStorageValue(key);
     });
   }
 
   /** Logout a single role — keeps other roles' sessions intact */
   logoutRole(role) {
-    const tokenKeyMap = { admin: 'admin_token', teacher: 'teacher_token', student: 'student_token' };
+    const token = this.getToken(role);
+    if (token) {
+      void fetch(`${this.baseURL}/auth/logout-all`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).catch(() => null);
+    }
+
+    clearAllCache();
+    // teacher uses admin token now
+    const tokenKeyMap = { admin: 'admin_token', teacher: 'admin_token', student: 'student_token' };
     const dataKeyMap = {
-      admin: ['admin'],
-      teacher: ['teacher'],
+      admin: ['admin', 'teacher'],
+      teacher: ['admin', 'teacher'],
       student: ['student_cccd', 'student_sdt', 'student_data', 'studentCCCD'],
     };
     const tokenKey = tokenKeyMap[role];
     if (tokenKey) {
-      localStorage.removeItem(tokenKey);
-      sessionStorage.removeItem(tokenKey);
+      removeStorageValue(tokenKey);
     }
     (dataKeyMap[role] || []).forEach(key => {
-      localStorage.removeItem(key);
-      sessionStorage.removeItem(key);
+      removeStorageValue(key);
     });
   }
 }

@@ -2,6 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 // Prerendering for SEO: generates static HTML snapshots for Googlebot
 // Requires Puppeteer/Chromium — only active in production builds.
@@ -16,7 +19,28 @@ function getPrerenderPlugin() {
         const PuppeteerRenderer = require('@prerenderer/renderer-puppeteer');
         return vitePrerender({
             // Static HTML will be generated for each of these routes
-            routes: ['/', '/training', '/admissions', '/contact', '/about', '/news', '/certificate-lookup'],
+            routes: [
+                '/',
+                '/about',
+                '/training',
+                '/admissions',
+                '/research',
+                '/connections',
+                '/hub4',
+                '/life',
+                '/units',
+                '/services',
+                '/news',
+                '/contact',
+                '/certificate/lookup',
+                '/ho-tro-tieng-anh',
+                '/day-ngon-ngu',
+                '/trung-tam-tieng-anh',
+                '/english-support',
+                '/language-center',
+                '/privacy',
+                '/terms',
+            ],
             renderer: new PuppeteerRenderer({
                 // Render after all React components have mounted
                 renderAfterDocumentEvent: 'render-event',
@@ -43,6 +67,8 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
+            gsap: path.resolve(__dirname, './src/lib/gsap-runtime.ts'),
+            '@gsap/react': path.resolve(__dirname, './src/lib/gsap-react.ts'),
         },
     },
     server: {
@@ -60,9 +86,9 @@ export default defineConfig({
             output: {
                 manualChunks: {
                     'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-                    'chart-vendor': ['recharts'],
-                    'pdf-vendor': ['jspdf', 'html2canvas'],
-                    'qrcode-vendor': ['qrcode'],
+                    'icon-vendor': ['lucide-react'],
+                    'form-vendor': ['react-hook-form', '@hookform/resolvers', 'zod'],
+                    'image-vendor': ['browser-image-compression'],
                 },
             },
         },

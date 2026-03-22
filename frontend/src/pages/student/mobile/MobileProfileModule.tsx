@@ -1,33 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { User, Save, Camera, Lock, X, Eye, EyeOff } from 'lucide-react';
 import api from '../../../services/api';
 import ToastContainer, { useToast } from '../../../components/ui/ToastContainer';
-import CCCDUploader from '../../../components/upload/CCCDUploader';
 import { formatDateVN } from '../../../utils/dateUtils';
+import { resolveImageUrl } from '../../../utils/imageUrl.js';
+import { buildStudentSelfServicePayload, STUDENT_PROFILE_SELF_SERVICE_NOTE } from '../../../utils/studentProfilePolicy';
+import { persistStudentData } from '../../../utils/studentDataLoader';
+import BirthPlaceField from '../../../components/forms/BirthPlaceField';
 
-// Helper to get image URL
-const getImageUrl = (url) => {
-    if (!url) return null;
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    if (url.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        const accountHash = import.meta.env.VITE_CLOUDFLARE_IMAGES_ACCOUNT_HASH;
-        if (accountHash) return `https://imagedelivery.net/${accountHash}/${url}/public`;
-    }
-    const getApiBaseUrl = () => {
-        if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-        if (typeof window !== 'undefined' &&
-            (window.location.hostname.includes('pages.dev') ||
-                window.location.hostname.includes('cloudflare') ||
-                window.location.hostname.includes('vantrangedu.com'))) {
-            return 'https://vantrangedu-api.bangachieu2.workers.dev';
-        }
-        return '/api';
-    };
-    const apiBaseUrl = getApiBaseUrl();
-    const baseUrl = apiBaseUrl.replace(/\/$/, '');
-    const imagePath = url.startsWith('/') ? url : `/${url}`;
-    return `${baseUrl}${imagePath}`;
-};
+const CCCDUploader = lazy(() => import('../../../components/upload/CCCDUploader'));
+
+const getImageUrl = resolveImageUrl;
+
+function normalizeProfileGender(value) {
+    if (value === 'male' || value === 'Male' || value === 'Nam' || value === 'nam') return 'Nam';
+    if (value === 'female' || value === 'Female' || value === 'Nữ' || value === 'nữ' || value === 'nu') return 'Nữ';
+    return '';
+}
 
 export default function MobileProfileModule({ studentData, onUpdate }) {
     const { success, error, toasts, removeToast } = useToast();
@@ -53,7 +42,7 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
         ten_dem: '',
         ten: '',
         ngay_sinh: '',
-        gioi_tinh: 'Nam',
+        gioi_tinh: '',
         noi_sinh: '',
         dan_toc: 'Kinh',
         quoc_tich: 'Việt Nam',
@@ -84,6 +73,11 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
     const [showOldPassword, setShowOldPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const uploaderFallback = (
+        <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
+            Äang táº£i trÃ¬nh upload...
+        </div>
+    );
 
     // Load student data
     useEffect(() => {
@@ -108,7 +102,7 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                 ten_dem: studentData.ten_dem || '',
                 ten: studentData.ten || '',
                 ngay_sinh: formatDateForInput(studentData.ngay_sinh),
-                gioi_tinh: studentData.gioi_tinh || 'Nam',
+                gioi_tinh: normalizeProfileGender(studentData.gioi_tinh),
                 noi_sinh: studentData.noi_sinh || '',
                 dan_toc: studentData.dan_toc || 'Kinh',
                 quoc_tich: studentData.quoc_tich || 'Việt Nam',
@@ -142,22 +136,19 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
         }
     }, [studentData]);
 
+    const syncStudentSession = (nextStudentData) => {
+        if (!nextStudentData || typeof nextStudentData !== 'object') return;
+        persistStudentData(nextStudentData, studentData?.cccd || nextStudentData?.cccd || null);
+        if (typeof onUpdate === 'function') {
+            onUpdate(nextStudentData);
+        }
+    };
+
     // Handle profile update
     const handleProfileSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
         try {
-            // Format date back to DD/MM/YYYY for API
-            const formatDateForAPI = (dateStr) => {
-                if (!dateStr) return null;
-                try {
-                    const [year, month, day] = dateStr.split('-');
-                    return `${day}/${month}/${year}`;
-                } catch (e) {
-                    return dateStr;
-                }
-            };
-
             if (!studentData || !studentData.cccd) {
                 error('Thiếu thông tin học viên');
                 setSaving(false);
@@ -165,22 +156,20 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
             }
 
             const updateData = {
-                ...profileForm,
-                ngay_sinh: formatDateForAPI(profileForm.ngay_sinh),
-                ngay_cap_cccd: formatDateForAPI(profileForm.ngay_cap_cccd),
+                ...buildStudentSelfServicePayload(profileForm),
                 photo_3x4_image_id: image3x4Id,
                 cccd_front_image_id: imageFrontId,
-                cccd_back_image_id: imageBackId
+                cccd_back_image_id: imageBackId,
             };
 
             const response = await api.updateStudentByCCCD(studentData.cccd, updateData);
             if (response && response.success) {
-                success('Cập nhật thông tin thành công');
-                if (onUpdate) {
-                    onUpdate();
+                if (response.data) {
+                    syncStudentSession(response.data);
                 }
+                success('Cập nhật thông tin thành công');
             } else {
-                error(response?.error || 'Lỗi cập nhật thông tin');
+                error(response?.error?.message || response?.message || 'Lỗi cập nhật thông tin');
             }
         } catch (err) {
             console.error('Error updating profile:', err);
@@ -267,8 +256,10 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                 else if (type === 'back') updateData.cccd_back_image_id = result.imageId;
 
                 api.updateStudentByCCCD(studentData.cccd, updateData)
-                    .then(() => {
-                        if (onUpdate) onUpdate();
+                    .then((response) => {
+                        if (response?.success && response?.data) {
+                            syncStudentSession(response.data);
+                        }
                     })
                     .catch(err => console.error('Error auto-saving image:', err));
             }
@@ -369,16 +360,26 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                                     <select
                                         value={profileForm.gioi_tinh}
                                         onChange={(e) => setProfileForm({ ...profileForm, gioi_tinh: e.target.value })}
-                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700"
                                     >
+                                        <option value="">Chọn giới tính</option>
                                         <option value="Nam">Nam</option>
                                         <option value="Nữ">Nữ</option>
                                     </select>
                                 </div>
-                                <FormField
+                                <BirthPlaceField
                                     label="Nơi sinh"
                                     value={profileForm.noi_sinh}
                                     onChange={(v) => setProfileForm({ ...profileForm, noi_sinh: v })}
+                                    hint="Trong nước dùng danh sách 34 tỉnh/thành mới."
+                                    wrapperClassName="space-y-1"
+                                    labelClassName="block text-sm font-medium text-slate-700"
+                                    toggleWrapperClassName=""
+                                    radioGroupClassName="flex flex-wrap gap-4"
+                                    radioOptionClassName="inline-flex items-center gap-2 text-sm text-slate-700"
+                                    inputClassName="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700"
+                                    selectClassName="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700"
+                                    hintClassName="text-xs text-slate-500"
                                 />
                                 <FormField
                                     label="Dân tộc"
@@ -401,7 +402,6 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                                     label="Số CCCD/CMND *"
                                     value={profileForm.cccd}
                                     onChange={(v) => setProfileForm({ ...profileForm, cccd: v })}
-                                    disabled
                                 />
                                 <FormField
                                     label="Ngày cấp CCCD"
@@ -441,6 +441,9 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                                     onChange={(v) => setProfileForm({ ...profileForm, don_vi_cong_tac: v })}
                                 />
                             </div>
+                            <p className="mt-3 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-700">
+                                {STUDENT_PROFILE_SELF_SERVICE_NOTE}
+                            </p>
                         </div>
 
                         {/* Submit Button */}
@@ -471,33 +474,39 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                         {/* Ảnh 3x4 */}
                         <div>
                             <p className="text-sm font-bold text-slate-700 mb-3">Ảnh thẻ 3x4</p>
-                            <CCCDUploader
-                                type="photo_3x4"
-                                onUploadSuccess={handleImageUploadSuccess('3x4')}
-                                onUploadError={handleImageUploadError}
-                                existingImageUrl={image3x4}
-                            />
+                            <Suspense fallback={uploaderFallback}>
+                                <CCCDUploader
+                                    type="photo_3x4"
+                                    onUploadSuccess={handleImageUploadSuccess('3x4')}
+                                    onUploadError={handleImageUploadError}
+                                    existingImageUrl={image3x4}
+                                />
+                            </Suspense>
                         </div>
 
                         {/* CCCD Images */}
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <p className="text-xs font-bold text-slate-600 mb-2 text-center">CCCD MẶT TRƯỚC</p>
-                                <CCCDUploader
-                                    type="cccd_front"
-                                    onUploadSuccess={handleImageUploadSuccess('front')}
-                                    onUploadError={handleImageUploadError}
-                                    existingImageUrl={imageFront}
-                                />
+                                <Suspense fallback={uploaderFallback}>
+                                    <CCCDUploader
+                                        type="cccd_front"
+                                        onUploadSuccess={handleImageUploadSuccess('front')}
+                                        onUploadError={handleImageUploadError}
+                                        existingImageUrl={imageFront}
+                                    />
+                                </Suspense>
                             </div>
                             <div>
                                 <p className="text-xs font-bold text-slate-600 mb-2 text-center">CCCD MẶT SAU</p>
-                                <CCCDUploader
-                                    type="cccd_back"
-                                    onUploadSuccess={handleImageUploadSuccess('back')}
-                                    onUploadError={handleImageUploadError}
-                                    existingImageUrl={imageBack}
-                                />
+                                <Suspense fallback={uploaderFallback}>
+                                    <CCCDUploader
+                                        type="cccd_back"
+                                        onUploadSuccess={handleImageUploadSuccess('back')}
+                                        onUploadError={handleImageUploadError}
+                                        existingImageUrl={imageBack}
+                                    />
+                                </Suspense>
                             </div>
                         </div>
                     </div>
@@ -528,7 +537,7 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                         </div>
                         <div className="bg-slate-50 rounded-xl p-4">
                             <p className="text-sm text-slate-600 text-center">
-                                Nếu bạn cần thay đổi số điện thoại, vui lòng liên hệ với giáo vụ để được hỗ trợ.
+                                Mọi thông tin đăng nhập và hồ sơ ở tab Thông tin đều có thể tự cập nhật trực tiếp.
                             </p>
                         </div>
                     </div>

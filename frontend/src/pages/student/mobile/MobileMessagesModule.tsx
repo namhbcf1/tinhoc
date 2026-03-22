@@ -80,7 +80,7 @@ export default function MobileMessagesModule({ studentData }) {
             setNotifications(Array.isArray(data) ? data : []);
             try {
                 const countRes = await api.getUnreadNotificationCount();
-                setUnreadCount(countRes?.data?.count || countRes?.count || 0);
+                setUnreadCount(countRes?.unreadCount || countRes?.data?.unreadCount || countRes?.data?.count || countRes?.count || 0);
             } catch { /* skip */ }
         } catch (err) {
             console.error('Load notifications error:', err);

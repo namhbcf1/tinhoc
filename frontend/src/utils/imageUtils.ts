@@ -1,5 +1,4 @@
 import imageCompression from 'browser-image-compression';
-import heic2any from 'heic2any';
 
 /**
  * Smart Image Processing Utilities for CCCD Upload
@@ -19,6 +18,7 @@ import heic2any from 'heic2any';
  */
 export async function convertHeicToJpeg(file) {
     try {
+        const { default: heic2any } = await import('heic2any');
         const blob = await heic2any({
             blob: file,
             toType: 'image/jpeg',

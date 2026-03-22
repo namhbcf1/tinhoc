@@ -1,15 +1,19 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
-  Loader2, Printer, CheckCircle2, AlertCircle, Upload,
-  User, Camera, Info
+  Loader2, CheckCircle2, AlertCircle,
+  User, Info
 } from 'lucide-react';
 import CCCDUploader from '../../components/upload/CCCDUploader';
 import api from '../../services/api';
+import { applyOCRPrefillToRegistrationForm } from './student-registration-ocr';
 import '../../styles/public/RegistrationFormA4.css';
+import SEO from '../../components/common/SEO';
+import BirthPlaceField from '../../components/forms/BirthPlaceField';
+import { normalizeBirthPlaceValue } from '../../utils/birthPlaceOptions';
 
 const registrationSchema = z.object({
   ho: z.string().min(1, 'Vui lòng nhập họ'),
@@ -23,8 +27,10 @@ const registrationSchema = z.object({
   ngay_cap_thang: z.string().min(1, 'Vui lòng chọn tháng cấp'),
   ngay_cap_nam: z.string().min(1, 'Vui lòng chọn năm cấp'),
   dan_toc: z.string().min(1, 'Vui lòng nhập dân tộc'),
-  noi_sinh: z.string().min(1, 'Vui lòng nhập nơi sinh'),
-  gioi_tinh: z.enum(['Nam', 'Nữ']),
+  noi_sinh: z.string().min(1, 'Vui lòng chọn hoặc nhập nơi sinh'),
+  gioi_tinh: z.enum(['Nam', 'Nữ'], {
+    errorMap: () => ({ message: 'Vui lòng chọn giới tính' }),
+  }),
   sdt: z.string().regex(/^(0|\+84)\d{9}$/, 'Số điện thoại không hợp lệ'),
   email: z.string().email('Email không hợp lệ'),
   workplace: z.string().min(1, 'Vui lòng nhập đơn vị công tác'),
@@ -33,122 +39,133 @@ const registrationSchema = z.object({
   commit_usage: z.boolean().refine(v => v === true, 'Bạn cần đồng ý sử dụng dữ liệu'),
 });
 
-// ---- InstructionModal for upload guidance ----
-function InstructionModal({ type, onClose }) {
-  if (!type) return null;
+type RegistrationFormData = z.infer<typeof registrationSchema>;
 
-  const content = {
-    cccd_front: {
-      title: 'QUY ĐỊNH VỀ ẢNH mặt trước CMND/CCCD/Hộ chiếu',
-      rules: [
-        '1. Ảnh mặt trước của CMND/CCCD',
-        '2. Upload Ảnh mặt trước của CMND/CCCD hoặc ảnh Hộ chiếu theo đúng số đã nhập tại mục số 3 trong Phiếu đăng ký;',
-        '3. Đảm bảo giấy tờ chụp đủ thông tin;',
-        '4. Ảnh chụp rõ nét, không bị mờ lóa;',
-        '5. Ảnh chụp không bị xoay, không bị mất góc (xoay hình ngang).',
-      ],
-      img: 'https://tec.hanu.vn/80c8302f1df48b830e40166e1f58b414/5550119/view-image/cccd_front.jpg',
-    },
-    cccd_back: {
-      title: 'QUY ĐỊNH VỀ ẢNH mặt sau CMND/CCCD',
-      rules: [
-        '1. Ảnh mặt sau của CMND/CCCD',
-        '2. Nếu sử dụng Hộ chiếu trong mục số 3 không cần tải ảnh mục này;',
-        '3. Đảm bảo giấy tờ chụp đủ thông tin;',
-        '4. Ảnh chụp rõ nét, không bị mờ lóa;',
-        '5. Ảnh chụp không bị xoay, không bị mất góc (xoay hình ngang).',
-      ],
-      img: 'https://tec.hanu.vn/80c8302f1df48b830e40166e1f58b414/5550119/view-image/cccd_back.jpg',
-    },
-    photo_3x4: {
-      title: 'QUY ĐỊNH VỀ ẢNH THẺ 3X4',
-      rules: [
-        '1. Kích thước ảnh: 3x4 cm (chuẩn Việt Nam) (xoay hình DỌC).',
-        '2. Phông nền màu TRẮNG, chụp trong 6 tháng gần nhất',
-        '3. Trang phục: Áo có cổ (sơ mi, vest) lịch sự',
-        '4. Không đeo kính màu, tai và trán phải lộ rõ.',
-      ],
-      img: 'https://tec.hanu.vn/80c8302f1df48b830e40166e1f58b414/5550119/view-image/photo_3x4.jpg',
-    },
-  };
-
-  const active = content[type];
-
-  return (
-    <div className="instruction-modal-overlay" onClick={onClose}>
-      <div
-        className="instruction-modal-content"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="instr-modal-title"
-      >
-        <div className="instruction-modal-header">
-          <Info size={20} color="#f97316" />
-          <h3 id="instr-modal-title">{active.title}</h3>
-        </div>
-        <div className="instruction-modal-body">
-          <div className="instruction-image">
-            <img
-              src={active.img}
-              alt="Hướng dẫn"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = 'https://via.placeholder.com/400x250?text=Huong+Dan';
-              }}
-            />
-          </div>
-          <div className="instruction-rules">
-            {active.rules.map((rule, i) => <p key={i}>{rule}</p>)}
-          </div>
-        </div>
-        <button className="instruction-close-btn" onClick={onClose}>✓ Tôi đã hiểu</button>
-      </div>
-    </div>
-  );
-}
+type UploadSuccessResult = {
+  imageId: string;
+  processingLogId?: string;
+  type: 'cccd_front' | 'cccd_back' | 'photo_3x4';
+};
 
 // ========================================
 // MAIN COMPONENT
 // ========================================
 export default function StudentRegistration() {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [noi_sinh_type, setNoiSinhType] = useState('trong_nuoc');
-  const [modalType, setModalType] = useState(null);
-
+  const [ocrMessage, setOcrMessage] = useState('');
+  const [ocrError, setOcrError] = useState('');
+  const [ocrLoadingType, setOcrLoadingType] = useState<string | null>(null);
   const [imageErrors, setImageErrors] = useState({
     cccd_front: '',
     cccd_back: '',
     photo_3x4: '',
   });
 
-  const [imageIds, setImageIds] = useState({
+  const [imageIds, setImageIds] = useState<{
+    cccd_front: string | null;
+    cccd_back: string | null;
+    photo_3x4: string | null;
+  }>({
     cccd_front: null,
     cccd_back: null,
     photo_3x4: null,
   });
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, setValue, getValues, watch, formState: { errors } } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
-      gioi_tinh: 'Nam',
       dan_toc: 'Kinh',
+      noi_sinh: '',
     },
   });
+  const watchedBirthPlace = watch('noi_sinh');
 
-  const handleUploadSuccess = (result) => {
-    setImageIds(prev => ({ ...prev, [result.type]: result.imageId }));
-    setImageErrors(prev => ({ ...prev, [result.type]: '' }));
+  const runCCCDOcrPrefill = async (imageId: string, type: UploadSuccessResult['type']) => {
+    if (type !== 'cccd_front' && type !== 'cccd_back') {
+      return;
+    }
+
+    setOcrError('');
+    setOcrLoadingType(type);
+    setOcrMessage(
+      type === 'cccd_front'
+        ? 'Đang đọc thông tin từ CCCD mặt trước để tự điền biểu mẫu...'
+        : 'Đang đọc ngày cấp từ CCCD mặt sau...'
+    );
+
+    try {
+      const response = await api.extractCCCDRegistrationFields(imageId, type);
+      const payload = response?.data?.prefill;
+      const hasUsefulData = response?.data?.hasUsefulData;
+
+      if (!response?.success || !payload) {
+        // Check for warning message from server
+        if (response?.warning) {
+          if (type === 'cccd_back') {
+            setOcrMessage('Không đọc được ngày cấp từ mặt sau. Vui lòng nhập thủ công.');
+          } else {
+            setOcrMessage(response.warning);
+          }
+          return;
+        }
+        throw new Error('Không lấy được dữ liệu OCR từ ảnh CCCD');
+      }
+
+      // If no useful data from OCR, show message and allow manual entry
+      if (hasUsefulData === false) {
+        if (type === 'cccd_back') {
+          // For back side, show a side-specific message
+          setOcrMessage('Đã quét CCCD mặt sau nhưng không đọc được ngày cấp. Vui lòng nhập thủ công.');
+        } else {
+          setOcrMessage('Đã quét CCCD nhưng không đọc được thông tin. Vui lòng nhập thủ công.');
+        }
+        return;
+      }
+
+      const { appliedFields, notes } = applyOCRPrefillToRegistrationForm(payload, getValues(), setValue);
+
+      if (appliedFields.length === 0 && notes.length === 0) {
+        if (type === 'cccd_back') {
+          setOcrMessage('Đã quét CCCD mặt sau nhưng chưa có trường nào mới để tự điền.');
+        } else {
+          setOcrMessage('Đã quét CCCD nhưng chưa có trường nào mới để tự điền.');
+        }
+        return;
+      }
+
+      const fieldSummary = appliedFields.length > 0
+        ? `Đã tự điền ${appliedFields.length} mục từ CCCD${type === 'cccd_back' ? ' mặt sau' : ''}.`
+        : `Đã đọc được ảnh CCCD${type === 'cccd_back' ? ' mặt sau' : ''}.`;
+      setOcrMessage([fieldSummary, ...notes].join(' '));
+    } catch (error: unknown) {
+      const message = error instanceof Error
+        ? error.message
+        : 'Không thể tự điền từ ảnh CCCD. Bạn vẫn có thể nhập tay bình thường.';
+      // For back side errors, show specific message instead of clearing
+      if (type === 'cccd_back') {
+        setOcrMessage('Không đọc được ngày cấp từ mặt sau. Vui lòng nhập thủ công.');
+      } else {
+        setOcrError(message);
+        setOcrMessage('');
+      }
+    } finally {
+      setOcrLoadingType(null);
+    }
   };
 
-  const handleUploadError = (err) => {
+  const handleUploadSuccess = (result: UploadSuccessResult) => {
+    setImageIds(prev => ({ ...prev, [result.type]: result.imageId }));
+    setImageErrors(prev => ({ ...prev, [result.type]: '' }));
+    void runCCCDOcrPrefill(result.imageId, result.type);
+  };
+
+  const handleUploadError = (err: Error) => {
     console.error('Upload error:', err);
   };
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: RegistrationFormData) => {
     setLoading(true);
     setErrorMsg('');
     setImageErrors({ cccd_front: '', cccd_back: '', photo_3x4: '' });
@@ -174,7 +191,7 @@ export default function StudentRegistration() {
         ten_dem: data.ten_dem || '',
         ten: data.ten,
         ngay_sinh: `${data.nam}-${data.thang}-${data.ngay}`,
-        noi_sinh: data.noi_sinh,
+        noi_sinh: normalizeBirthPlaceValue(data.noi_sinh),
         gioi_tinh: data.gioi_tinh,
         email: data.email,
         sdt: data.sdt,
@@ -218,10 +235,12 @@ export default function StudentRegistration() {
         localStorage.setItem('student_sdt', data.sdt);
         localStorage.setItem('student_data', JSON.stringify(sessionData));
 
-        setTimeout(() => navigate('/dashboard/exams'), 2000);
+        setTimeout(() => {
+          window.location.assign('/dashboard/exams');
+        }, 2000);
       }
-    } catch (error) {
-      setErrorMsg(error.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+    } catch (error: unknown) {
+      setErrorMsg(error instanceof Error ? error.message : 'Đăng ký thất bại. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -229,6 +248,17 @@ export default function StudentRegistration() {
 
   return (
     <div className="a4-registration-page">
+      <SEO
+        title="Dang ky du thi"
+        description="Form dang ky du thi truc tuyen cua Van Trang Education cho hoc vien va thi sinh."
+        url="/register"
+        structuredData={{
+          '@type': 'WebPage',
+          name: 'Dang ky du thi',
+          description: 'Phieu dang ky du thi truc tuyen cua Van Trang Education.',
+          url: 'https://vantrangedu.com/register'
+        }}
+      />
       <div className="a4-form-wrapper">
 
         {/* Header */}
@@ -255,6 +285,58 @@ export default function StudentRegistration() {
             <div className="section-header-row">
               <div className="section-icon"><User size={18} /></div>
               <h2>I. THÔNG TIN CÁ NHÂN</h2>
+            </div>
+
+            {/* Upload ảnh trước để OCR tự điền biểu mẫu sớm hơn */}
+            <div className="upload-section" style={{ marginBottom: '24px' }}>
+              {(ocrMessage || ocrError || ocrLoadingType) && (
+                <div
+                  className={`message-box ${ocrError ? 'error-box' : 'success-box'}`}
+                  role={ocrError ? 'alert' : 'status'}
+                  style={{ marginBottom: '16px' }}
+                >
+                  {ocrLoadingType ? <Loader2 size={20} className="animate-spin" /> : ocrError ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
+                  <span>
+                    {ocrLoadingType
+                      ? (ocrLoadingType === 'cccd_front'
+                        ? 'Đang dùng AI để đọc CCCD mặt trước và tự điền biểu mẫu...'
+                        : 'Đang dùng AI để đọc CCCD mặt sau...')
+                      : (ocrError || ocrMessage)}
+                  </span>
+                </div>
+              )}
+
+              <div className="upload-grid">
+                <div className="upload-card">
+                  <p className="upload-label">Ảnh mặt TRƯỚC thẻ CCCD <span className="required">*</span></p>
+                  <CCCDUploader
+                    type="cccd_front"
+                    onUploadSuccess={handleUploadSuccess}
+                    onUploadError={handleUploadError}
+                  />
+                  {imageErrors.cccd_front && <p className="upload-error-text">{imageErrors.cccd_front}</p>}
+                </div>
+
+                <div className="upload-card">
+                  <p className="upload-label">Ảnh mặt SAU thẻ CCCD <span className="required">*</span></p>
+                  <CCCDUploader
+                    type="cccd_back"
+                    onUploadSuccess={handleUploadSuccess}
+                    onUploadError={handleUploadError}
+                  />
+                  {imageErrors.cccd_back && <p className="upload-error-text">{imageErrors.cccd_back}</p>}
+                </div>
+
+                <div className="upload-card">
+                  <p className="upload-label">Ảnh thẻ 3×4 <span className="required">*</span></p>
+                  <CCCDUploader
+                    type="photo_3x4"
+                    onUploadSuccess={handleUploadSuccess}
+                    onUploadError={handleUploadError}
+                  />
+                  {imageErrors.photo_3x4 && <p className="upload-error-text">{imageErrors.photo_3x4}</p>}
+                </div>
+              </div>
             </div>
 
             {/* Họ / Tên đệm / Tên */}
@@ -338,13 +420,16 @@ export default function StudentRegistration() {
                     <span>Nữ</span>
                   </label>
                 </div>
+                {errors.gioi_tinh && (
+                  <p className="error-text">{errors.gioi_tinh.message}</p>
+                )}
               </div>
             </div>
 
             {/* CCCD + Ngày cấp */}
             <div className="form-row-2">
               <div className="form-field">
-                <label>4a. CCCD/Hộ chiếu <span className="required">*</span></label>
+                <label>4a. Số CCCD <span className="required">*</span></label>
                 <input
                   type="text"
                   {...register('cccd')}
@@ -424,39 +509,28 @@ export default function StudentRegistration() {
 
             {/* Nơi sinh */}
             <div className="form-field full-width">
-              <label>8. Nơi sinh (Tỉnh/Thành phố) <span className="required">*</span></label>
-              <div className="noi-sinh-row">
-                <div className="radio-group-inline">
-                  <label className="radio-option">
-                    <input
-                      type="radio"
-                      name="noi_sinh_type"
-                      value="trong_nuoc"
-                      checked={noi_sinh_type === 'trong_nuoc'}
-                      onChange={() => setNoiSinhType('trong_nuoc')}
-                    />
-                    <span className="text-red">Trong nước</span>
-                  </label>
-                  <label className="radio-option">
-                    <input
-                      type="radio"
-                      name="noi_sinh_type"
-                      value="nuoc_ngoai"
-                      checked={noi_sinh_type === 'nuoc_ngoai'}
-                      onChange={() => setNoiSinhType('nuoc_ngoai')}
-                    />
-                    <span>Nước ngoài</span>
-                  </label>
-                </div>
-              </div>
-              <input
-                type="text"
-                {...register('noi_sinh')}
-                className={`form-input ${errors.noi_sinh ? 'error' : ''}`}
-                placeholder="Vui lòng nhập tỉnh/thành phố"
+              <input type="hidden" {...register('noi_sinh')} />
+              <BirthPlaceField
+                label="8. Nơi sinh (Tỉnh/Thành phố)"
+                required
+                value={watchedBirthPlace}
+                onChange={(nextValue) => setValue('noi_sinh', nextValue, { shouldValidate: true, shouldDirty: true })}
+                hint="Ghi chú: Ghi theo VNeID cấp độ 2"
+                error={errors.noi_sinh?.message}
+                wrapperClassName=""
+                labelClassName="block text-sm font-medium text-slate-700"
+                toggleWrapperClassName="noi-sinh-row"
+                radioGroupClassName="radio-group-inline"
+                radioOptionClassName="radio-option"
+                domesticTextClassName="text-red"
+                foreignTextClassName=""
+                inputClassName={`form-input ${errors.noi_sinh ? 'error' : ''}`}
+                selectClassName={`form-input ${errors.noi_sinh ? 'error' : ''}`}
+                hintClassName="form-hint"
+                errorClassName="error-text"
+                selectPlaceholder="Vui lòng chọn tỉnh/thành phố"
+                inputPlaceholder="Vui lòng nhập nơi sinh ở nước ngoài"
               />
-              <p className="form-hint">Ghi chú: Ghi theo VNeID cấp độ 2</p>
-              {errors.noi_sinh && <p className="error-text">{errors.noi_sinh.message}</p>}
             </div>
 
             {/* Đơn vị công tác */}
@@ -482,50 +556,6 @@ export default function StudentRegistration() {
               />
               <p className="form-hint">Ghi theo địa chỉ mới sau sáp nhập</p>
               {errors.dia_chi_hien_nay && <p className="error-text">{errors.dia_chi_hien_nay.message}</p>}
-            </div>
-          </div>
-
-          {/* ===== SECTION II: UPLOAD ẢNH ===== */}
-          <div className="a4-section upload-section">
-            <div className="upload-grid">
-              <div className="upload-card">
-                <p className="upload-label">Ảnh mặt TRƯỚC thẻ CCCD - Ảnh Hộ chiếu <span className="required">*</span></p>
-                <CCCDUploader
-                  type="cccd_front"
-                  onUploadSuccess={handleUploadSuccess}
-                  onUploadError={handleUploadError}
-                />
-                {imageErrors.cccd_front && <p className="upload-error-text">{imageErrors.cccd_front}</p>}
-                <button type="button" className="view-rules-btn" onClick={() => setModalType('cccd_front')}>
-                  Xem quy định
-                </button>
-              </div>
-
-              <div className="upload-card">
-                <p className="upload-label">Ảnh mặt SAU thẻ CCCD - Ảnh Hộ chiếu <span className="required">*</span></p>
-                <CCCDUploader
-                  type="cccd_back"
-                  onUploadSuccess={handleUploadSuccess}
-                  onUploadError={handleUploadError}
-                />
-                {imageErrors.cccd_back && <p className="upload-error-text">{imageErrors.cccd_back}</p>}
-                <button type="button" className="view-rules-btn" onClick={() => setModalType('cccd_back')}>
-                  Xem quy định
-                </button>
-              </div>
-
-              <div className="upload-card">
-                <p className="upload-label">Ảnh thẻ 3x4 (Bản mềm lưu hồ sơ) <span className="required">*</span></p>
-                <CCCDUploader
-                  type="photo_3x4"
-                  onUploadSuccess={handleUploadSuccess}
-                  onUploadError={handleUploadError}
-                />
-                {imageErrors.photo_3x4 && <p className="upload-error-text">{imageErrors.photo_3x4}</p>}
-                <button type="button" className="view-rules-btn" onClick={() => setModalType('photo_3x4')}>
-                  Xem quy định
-                </button>
-              </div>
             </div>
           </div>
 
@@ -583,8 +613,6 @@ export default function StudentRegistration() {
         </form>
       </div>
 
-      {/* Instruction modal for upload guidance */}
-      <InstructionModal type={modalType} onClose={() => setModalType(null)} />
     </div>
   );
 }

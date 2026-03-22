@@ -18,7 +18,7 @@ export function applyDocumentMethods(ApiClient) {
 
   // Get all documents for a student by CCCD
   ApiClient.prototype.getDocumentsByCCCD = async function(cccd) {
-    return this.request(`/documents/cccd/${cccd}`);
+    return this.request(`/documents/cccd/${cccd}`, { tokenType: 'student' });
   };
 
   // Get paginated list of all documents (admin)
@@ -41,6 +41,7 @@ export function applyDocumentMethods(ApiClient) {
     if (data.folder_id) formData.append('folder_id', String(data.folder_id));
     if (data.visibility) formData.append('visibility', data.visibility);
     if (data.class_ids?.length) formData.append('class_ids', JSON.stringify(data.class_ids));
+    if (data.online_class_ids?.length) formData.append('online_class_ids', JSON.stringify(data.online_class_ids));
     if (data.student_ids?.length) formData.append('student_ids', JSON.stringify(data.student_ids));
     if (data.cccd) formData.append('cccd', data.cccd);
     if (data.valid_from) formData.append('valid_from', data.valid_from);

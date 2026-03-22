@@ -1,56 +1,68 @@
-import { Users, UserCheck, Clock, Award } from 'lucide-react';
+import { Award, Clock, UserCheck, Users } from 'lucide-react';
 
-// Stat card with icon circle, value, label — Tailwind only
-function StatCard({ icon, value, label, iconBg, iconColor }) {
+function StatCard({ icon: Icon, label, value, tone = 'slate' }) {
+  const toneClasses = {
+    emerald: {
+      icon: 'bg-emerald-100 text-emerald-700',
+      border: 'border-emerald-200/70',
+      bg: 'bg-emerald-50/70',
+    },
+    blue: {
+      icon: 'bg-blue-100 text-blue-700',
+      border: 'border-blue-200/70',
+      bg: 'bg-blue-50/70',
+    },
+    amber: {
+      icon: 'bg-amber-100 text-amber-700',
+      border: 'border-amber-200/70',
+      bg: 'bg-amber-50/70',
+    },
+    purple: {
+      icon: 'bg-purple-100 text-purple-700',
+      border: 'border-purple-200/70',
+      bg: 'bg-purple-50/70',
+    },
+    slate: {
+      icon: 'bg-slate-100 text-slate-700',
+      border: 'border-slate-200/80',
+      bg: 'bg-white',
+    },
+  };
+
+  const styles = toneClasses[tone] || toneClasses.slate;
+
   return (
-    <div className="flex items-center gap-4">
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg} ${iconColor}`}>
-        {icon}
-      </div>
-      <div>
-        <div className="text-2xl font-bold text-slate-900">{value}</div>
-        <div className="text-xs font-semibold text-slate-500 mt-0.5">{label}</div>
+    <div className={`rounded-[24px] border ${styles.border} ${styles.bg} px-5 py-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.3)]`}>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">{label}</div>
+          <div className="mt-2 text-[32px] font-black leading-none tracking-tight text-slate-900">{value}</div>
+        </div>
+        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${styles.icon}`}>
+          <Icon size={22} />
+        </div>
       </div>
     </div>
   );
 }
 
-export default function StudentStatsBar({ students }) {
-  const studying  = students.filter(s => s.registrations?.some(r => r.status === 'studying')).length;
-  const pending   = students.filter(s => s.registrations?.some(r => r.status === 'pending')).length;
-  const certified = students.filter(s => s.registrations?.some(r => r.status === 'certified')).length;
+export default function StudentStatsBar({ students, stats }) {
+  const fallbackStudying = students.filter((s) => s.registrations?.some((r) => ['studying', 'active', 'approved'].includes(r.status))).length;
+  const fallbackPending = students.filter((s) => s.registrations?.some((r) => r.status === 'pending')).length;
+  const fallbackCertified = students.filter((s) => s.registrations?.some((r) => r.status === 'certified')).length;
+
+  const totalStudents = stats?.totalStudents ?? students.length;
+  const studying = stats?.activeStudents ?? fallbackStudying;
+  const pending = stats?.pendingStudents ?? fallbackPending;
+  const certified = stats?.certifiedStudents ?? fallbackCertified;
 
   return (
-    <div className="px-8 py-6 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
-      <div className="grid grid-cols-4 gap-6">
-        <StatCard
-          icon={<Users size={24} />}
-          value={students.length}
-          label="Tổng học viên"
-          iconBg="bg-emerald-50"
-          iconColor="text-emerald-600"
-        />
-        <StatCard
-          icon={<UserCheck size={24} />}
-          value={studying}
-          label="Đang học"
-          iconBg="bg-emerald-100"
-          iconColor="text-emerald-500"
-        />
-        <StatCard
-          icon={<Clock size={24} />}
-          value={pending}
-          label="Chờ duyệt"
-          iconBg="bg-amber-50"
-          iconColor="text-amber-500"
-        />
-        <StatCard
-          icon={<Award size={24} />}
-          value={certified}
-          label="Có chứng chỉ"
-          iconBg="bg-blue-50"
-          iconColor="text-blue-500"
-        />
+    <div className="admin-stats-unified">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard icon={Users} label="Tổng học viên" value={totalStudents} tone="blue" />
+        <StatCard icon={UserCheck} label="Đang học" value={studying} tone="emerald" />
+        <StatCard icon={Clock} label="Chờ duyệt" value={pending} tone="amber" />
+        <StatCard icon={Award} label="Có chứng chỉ" value={certified} tone="purple" />
       </div>
     </div>
   );

@@ -20,6 +20,7 @@ import {
   approveExamRegistration,
   approveAllExamRegistrations,
   rejectExamRegistration,
+  isUpcomingExamRegistrationWindow,
 } from '../db/attendance-queries.js';
 import {
   getExamTestById,
@@ -39,12 +40,27 @@ import {
   syncLinkedOnlineClassForExamSchedule,
   syncSingleExamRegistrationToOnlineClass,
 } from '../lib/services/exam-schedule-class-sync.js';
+import { resolveProgramContext } from '../lib/program-platform/repository.js';
 
 const examSchedules = new Hono<{ Bindings: Env; Variables: { user: JWTPayload; teacher: JWTPayload } }>();
 const CLASS_SEED_TIME_RE = /^\d{2}:\d{2}-\d{2}:\d{2}$/;
+const EXAM_LEVEL_OPTIONS = new Set(['A2', 'B1', 'B2', 'C1']);
+const CLASS_SEED_WEEKLY_DAY_MIN = 1;
+const CLASS_SEED_WEEKLY_DAY_MAX = 7;
 
 // Auth guard for all exam schedule routes — use shared authMiddleware
 examSchedules.use('*', authMiddleware);
+
+function hasExamAdminAccess(user: any) {
+  return Boolean(user && (user.role === 'admin' || user.role === 'super_admin'));
+}
+
+function requireExamAdmin(user: any, message = 'Chỉ admin mới có quyền truy cập') {
+  if (!hasExamAdminAccess(user)) {
+    return errorResponse(message, 403);
+  }
+  return null;
+}
 
 function trimNullable(value: unknown) {
   if (value == null) {
@@ -53,6 +69,10 @@ function trimNullable(value: unknown) {
 
   const normalized = String(value).trim();
   return normalized.length > 0 ? normalized : null;
+}
+
+function normalizeLookupKey(value: unknown) {
+  return trimNullable(value)?.toLowerCase() ?? null;
 }
 
 function parseOptionalInt(value: unknown, fieldName: string) {
@@ -66,6 +86,317 @@ function parseOptionalInt(value: unknown, fieldName: string) {
   }
 
   return parsed;
+}
+
+async function lookupExcelTemplateId(db: D1Database, name: string) {
+  const result = await db.prepare(
+    `
+      SELECT id
+      FROM excel_templates
+      WHERE lower(name) = lower(?)
+        AND is_active = 1
+      LIMIT 1
+    `
+  ).bind(name).first<{ id: number | string }>();
+
+  return result?.id != null ? Number(result.id) : null;
+}
+
+async function getOrganizerTemplateContext(db: D1Database, organizerUuid: string | null) {
+  if (!organizerUuid) {
+    return { organizerCode: null, organizerName: null };
+  }
+
+  const result = await db.prepare(
+    `
+      SELECT code, name
+      FROM program_organizers
+      WHERE uuid = ?
+      LIMIT 1
+    `
+  ).bind(organizerUuid).first<{ code?: string | null; name?: string | null }>();
+
+  return {
+    organizerCode: result?.code ?? null,
+    organizerName: result?.name ?? null,
+  };
+}
+
+async function getProgramTemplateContext(db: D1Database, programUuid: string | null) {
+  if (!programUuid) {
+    return { programCode: null };
+  }
+
+  const result = await db.prepare(
+    `
+      SELECT code
+      FROM programs
+      WHERE uuid = ?
+      LIMIT 1
+    `
+  ).bind(programUuid).first<{ code?: string | null }>();
+
+  return {
+    programCode: result?.code ?? null,
+  };
+}
+
+async function resolveProgramOrganizerIdentifier(db: D1Database, rawValue: unknown) {
+  const normalized = normalizeLookupKey(rawValue);
+  if (!normalized) {
+    return null;
+  }
+
+  const result = await db.prepare(
+    `
+      SELECT uuid
+      FROM program_organizers
+      WHERE lower(uuid) = ?
+         OR lower(code) = ?
+         OR lower(name) = ?
+      LIMIT 1
+    `
+  ).bind(normalized, normalized, normalized).first<{ uuid?: string | null }>();
+
+  return trimNullable(result?.uuid);
+}
+
+async function resolveProgramIdentifier(
+  db: D1Database,
+  rawValue: unknown,
+  organizerUuid: string | null
+) {
+  const normalized = normalizeLookupKey(rawValue);
+  if (!normalized) {
+    return null;
+  }
+
+  const exactMatch = await db.prepare(
+    `
+      SELECT uuid
+      FROM programs
+      WHERE (? IS NULL OR organizer_uuid = ?)
+        AND (
+          lower(uuid) = ?
+          OR lower(code) = ?
+          OR lower(name) = ?
+        )
+      LIMIT 1
+    `
+  ).bind(organizerUuid, organizerUuid, normalized, normalized, normalized).first<{ uuid?: string | null }>();
+
+  if (trimNullable(exactMatch?.uuid)) {
+    return trimNullable(exactMatch?.uuid);
+  }
+
+  const fuzzyToken = `%${normalized.replace(/[\s_-]+/g, '%')}%`;
+  const fuzzyMatches = await db.prepare(
+    `
+      SELECT uuid
+      FROM programs
+      WHERE (? IS NULL OR organizer_uuid = ?)
+        AND is_active = 1
+        AND (
+          lower(code) LIKE ?
+          OR lower(name) LIKE ?
+        )
+      ORDER BY visible_on_edu_admin DESC, id ASC
+      LIMIT 2
+    `
+  ).bind(organizerUuid, organizerUuid, fuzzyToken, fuzzyToken).all<{ uuid?: string | null }>();
+
+  const fuzzyResults = (fuzzyMatches.results || [])
+    .map((row) => trimNullable(row?.uuid))
+    .filter(Boolean);
+
+  if (fuzzyResults.length === 1) {
+    return fuzzyResults[0];
+  }
+
+  return null;
+}
+
+async function inferSingleProgramIdentifierForOrganizer(db: D1Database, organizerUuid: string | null) {
+  if (!organizerUuid) {
+    return null;
+  }
+
+  const results = await db.prepare(
+    `
+      SELECT uuid
+      FROM programs
+      WHERE organizer_uuid = ?
+        AND is_active = 1
+      ORDER BY visible_on_edu_admin DESC, id ASC
+      LIMIT 2
+    `
+  ).bind(organizerUuid).all<{ uuid?: string | null }>();
+
+  const uuids = (results.results || [])
+    .map((row) => trimNullable(row?.uuid))
+    .filter(Boolean);
+
+  return uuids.length === 1 ? uuids[0] : null;
+}
+
+async function resolveProgramLevelIdentifier(
+  db: D1Database,
+  rawValue: unknown,
+  programUuid: string | null
+) {
+  const normalized = normalizeLookupKey(rawValue);
+  if (!normalized || !programUuid) {
+    return null;
+  }
+
+  const result = await db.prepare(
+    `
+      SELECT uuid
+      FROM program_levels
+      WHERE program_uuid = ?
+        AND (
+          lower(uuid) = ?
+          OR lower(code) = ?
+          OR lower(name) = ?
+        )
+      LIMIT 1
+    `
+  ).bind(programUuid, normalized, normalized, normalized).first<{ uuid?: string | null }>();
+
+  return trimNullable(result?.uuid);
+}
+
+function matchesPtitTemplate(
+  organizerCode: string | null,
+  organizerName: string | null,
+) {
+  return [organizerCode, organizerName].some((value) => value?.toUpperCase().includes('PTIT'));
+}
+
+async function resolveAutoExamTemplateId(
+  db: D1Database,
+  input: {
+    organizerUuid: string | null;
+    programUuid: string | null;
+    programContext: Awaited<ReturnType<typeof resolveProgramContext>> | null;
+  },
+) {
+  const organizerContext = input.programContext?.organizerCode || input.programContext?.organizerName
+    ? {
+        organizerCode: input.programContext?.organizerCode ?? null,
+        organizerName: input.programContext?.organizerName ?? null,
+      }
+    : await getOrganizerTemplateContext(db, input.organizerUuid);
+
+  const organizerCode = organizerContext.organizerCode;
+  const organizerName = organizerContext.organizerName;
+
+  if (matchesPtitTemplate(organizerCode, organizerName)) {
+    return lookupExcelTemplateId(db, 'ptit');
+  }
+
+  const programCode =
+    input.programContext?.programCode ??
+    (await getProgramTemplateContext(db, input.programUuid)).programCode;
+
+  if ((programCode || '').toUpperCase() === 'VEPT') {
+    return lookupExcelTemplateId(db, 'vept');
+  }
+
+  return null;
+}
+
+function parseOptionalBoolean(value: unknown) {
+  if (value == null || value === '') {
+    return null;
+  }
+
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    return value !== 0;
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+  if (['true', '1', 'yes', 'on'].includes(normalized)) {
+    return true;
+  }
+  if (['false', '0', 'no', 'off'].includes(normalized)) {
+    return false;
+  }
+
+  return null;
+}
+
+function isValidIanaTimeZone(value: string) {
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value }).format(new Date());
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function parseTimeRangeBoundary(value: string, fieldName: string) {
+  const [hours, minutes] = value.split(':').map((item) => Number.parseInt(item, 10));
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    throw Object.assign(new Error(`${fieldName} không hợp lệ`), { statusCode: 400 });
+  }
+
+  return hours * 60 + minutes;
+}
+
+function normalizeClassSeedScheduleTime(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.trim();
+  if (!CLASS_SEED_TIME_RE.test(normalized)) {
+    throw Object.assign(new Error('class_seed.schedule_time phải có định dạng HH:MM-HH:MM'), { statusCode: 400 });
+  }
+
+  const [startTime, endTime] = normalized.split('-');
+  const startMinutes = parseTimeRangeBoundary(startTime, 'Giờ bắt đầu lớp');
+  const endMinutes = parseTimeRangeBoundary(endTime, 'Giờ kết thúc lớp');
+
+  if (endMinutes <= startMinutes) {
+    throw Object.assign(new Error('class_seed.schedule_time phải có giờ kết thúc lớn hơn giờ bắt đầu'), { statusCode: 400 });
+  }
+
+  return `${startTime}-${endTime}`;
+}
+
+function normalizeClassSeedScheduleRule(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.trim().toUpperCase();
+  if (normalized === 'DAILY') {
+    return 'DAILY';
+  }
+
+  if (!normalized.startsWith('WEEKLY:')) {
+    throw Object.assign(new Error('class_seed.schedule_rule chỉ hỗ trợ DAILY hoặc WEEKLY:<1-7>'), { statusCode: 400 });
+  }
+
+  const rawDays = normalized
+    .slice('WEEKLY:'.length)
+    .split(',')
+    .map((item) => Number.parseInt(item.trim(), 10))
+    .filter((item) => Number.isInteger(item))
+    .map((item) => (item === 0 ? 7 : item))
+    .filter((item) => item >= CLASS_SEED_WEEKLY_DAY_MIN && item <= CLASS_SEED_WEEKLY_DAY_MAX);
+
+  const uniqueDays = Array.from(new Set(rawDays)).sort((left, right) => left - right);
+  if (uniqueDays.length === 0) {
+    throw Object.assign(new Error('class_seed.schedule_rule WEEKLY phải có ít nhất một ngày hợp lệ từ 1-7'), { statusCode: 400 });
+  }
+
+  return `WEEKLY:${uniqueDays.join(',')}`;
 }
 
 function toDateOnly(value: string) {
@@ -153,18 +484,50 @@ async function normalizeExamSchedulePayload(db: D1Database, rawInput: any) {
   }
 
   const formattedDate = examDate.toISOString().slice(0, 19).replace('T', ' ');
-  const duration = parseOptionalInt(rawInput?.duration_minutes, 'duration_minutes') ?? 120;
+  const duration = parseOptionalInt(rawInput?.duration_minutes, 'duration_minutes');
 
-  if (duration < 1) {
+  if (duration !== null && duration < 1) {
     throw Object.assign(new Error('Thời lượng phải là số dương'), { statusCode: 400 });
   }
 
-  const examCategoryId = parseOptionalInt(rawInput?.exam_category_id, 'exam_category_id');
+  const organizerInput = trimNullable(rawInput?.organizer_uuid);
+  const organizerUuid =
+    (await resolveProgramOrganizerIdentifier(db, organizerInput)) ??
+    organizerInput;
+  const programInput = trimNullable(rawInput?.program_uuid);
+  const programUuid =
+    (await resolveProgramIdentifier(db, programInput, organizerUuid)) ??
+    (await resolveProgramIdentifier(db, programInput, null)) ??
+    (await inferSingleProgramIdentifierForOrganizer(db, organizerUuid)) ??
+    programInput;
+  const levelInput = trimNullable(rawInput?.level_uuid);
+  const levelUuid =
+    (await resolveProgramLevelIdentifier(db, levelInput, programUuid)) ??
+    levelInput;
+  const programContext = await resolveProgramContext(db, {
+    organizerUuid,
+    programUuid,
+    levelUuid,
+  });
+
+  const examCategoryId =
+    parseOptionalInt(rawInput?.exam_category_id, 'exam_category_id') ??
+    programContext?.legacyExamCategoryId ??
+    null;
   if (!examCategoryId) {
-    throw Object.assign(new Error('Thiếu thông tin bắt buộc: exam_category_id'), { statusCode: 400 });
+    throw Object.assign(new Error('Thiếu thông tin bắt buộc: program_uuid hoặc exam_category_id'), { statusCode: 400 });
   }
 
-  const examTypeId = parseOptionalInt(rawInput?.exam_type_id, 'exam_type_id');
+  const examTypeId =
+    parseOptionalInt(rawInput?.exam_type_id, 'exam_type_id') ??
+    programContext?.legacyExamTypeId ??
+    null;
+  const rawExamLevel = trimNullable(rawInput?.exam_level);
+  const examLevelCandidate = rawExamLevel ? rawExamLevel.toUpperCase() : programContext?.levelCode ?? null;
+  const examLevel = examLevelCandidate && EXAM_LEVEL_OPTIONS.has(examLevelCandidate)
+    ? examLevelCandidate
+    : null;
+
   const classSeedMaxStudents = parseOptionalInt(
     classSeed.max_students ?? rawInput?.class_seed_max_students,
     'class_seed_max_students'
@@ -179,23 +542,86 @@ async function normalizeExamSchedulePayload(db: D1Database, rawInput: any) {
   const classSeedScheduleTime = trimNullable(classSeed.schedule_time ?? rawInput?.class_seed_schedule_time);
   const classSeedTimezone = trimNullable(classSeed.timezone ?? rawInput?.class_seed_timezone) || 'Asia/Ho_Chi_Minh';
   const classSeedStartDate = trimNullable(classSeed.start_date ?? rawInput?.class_seed_start_date);
+  const classSeedEndDate = trimNullable(classSeed.end_date ?? rawInput?.class_seed_end_date);
+  const classSeedTeacherName = trimNullable(classSeed.teacher_name ?? rawInput?.class_seed_teacher_name);
+  const isExternalRedirectProgram = programContext?.deliveryMode === 'external_redirect';
+  const enableLinkedClassFlag =
+    parseOptionalBoolean(rawInput?.enable_linked_class) ??
+    parseOptionalBoolean(classSeed.enabled) ??
+    null;
+  const enableZoomMeetingFlag = parseOptionalBoolean(rawInput?.enable_zoom_meeting) ?? null;
+  const hasLinkedClassSeed = Boolean(
+    classSeedName ||
+    classSeedScheduleRule ||
+    classSeedScheduleTime ||
+    classSeedStartDate
+  );
+  const shouldPersistLinkedClass = !isExternalRedirectProgram && (
+    enableLinkedClassFlag === true ||
+    (enableLinkedClassFlag !== false && hasLinkedClassSeed)
+  );
 
-  if (!classSeedName || !classSeedScheduleRule || !classSeedScheduleTime || !classSeedStartDate) {
+  if (shouldPersistLinkedClass && (!classSeedName || !classSeedScheduleRule || !classSeedScheduleTime || !classSeedStartDate)) {
     throw Object.assign(new Error('Thiếu thông tin lớp học tự động: class_seed.name, schedule_rule, schedule_time, start_date'), { statusCode: 400 });
   }
 
-  if (!CLASS_SEED_TIME_RE.test(classSeedScheduleTime)) {
-    throw Object.assign(new Error('class_seed.schedule_time phải có định dạng HH:MM-HH:MM'), { statusCode: 400 });
+  const normalizedClassSeedScheduleRule =
+    shouldPersistLinkedClass
+      ? normalizeClassSeedScheduleRule(classSeedScheduleRule)
+      : null;
+  const normalizedClassSeedScheduleTime =
+    shouldPersistLinkedClass
+      ? normalizeClassSeedScheduleTime(classSeedScheduleTime)
+      : null;
+  const normalizedClassSeedStartDate =
+    shouldPersistLinkedClass && classSeedStartDate
+      ? toDateOnly(classSeedStartDate)
+      : null;
+  const normalizedClassSeedEndDate =
+    shouldPersistLinkedClass && classSeedEndDate
+      ? toDateOnly(classSeedEndDate)
+      : null;
+
+  if (shouldPersistLinkedClass && !isValidIanaTimeZone(classSeedTimezone)) {
+    throw Object.assign(new Error('class_seed.timezone phải là múi giờ IANA hợp lệ'), { statusCode: 400 });
   }
 
-  const classSeedEndDate = trimNullable(classSeed.end_date ?? rawInput?.class_seed_end_date);
-  const classSeedTeacherName = trimNullable(classSeed.teacher_name ?? rawInput?.class_seed_teacher_name);
+  if (
+    normalizedClassSeedStartDate &&
+    normalizedClassSeedEndDate &&
+    normalizedClassSeedEndDate < normalizedClassSeedStartDate
+  ) {
+    throw Object.assign(new Error('class_seed.end_date phải lớn hơn hoặc bằng class_seed.start_date'), { statusCode: 400 });
+  }
   const examTypeLegacy = await resolveLegacyExamTypeLabel(
     db,
     examCategoryId,
     examTypeId,
     trimNullable(rawInput?.exam_type)
   );
+
+  const sourceSite = trimNullable(rawInput?.source_site) || 'edu';
+  const lastEventUuid = trimNullable(rawInput?.last_event_uuid) || crypto.randomUUID();
+  const customFieldPayload = rawInput?.custom_field_values ? JSON.stringify(rawInput.custom_field_values) : null;
+  const overridePayload = rawInput?.override_values ? JSON.stringify(rawInput.override_values) : null;
+  const hasZoomFields = Boolean(
+    trimNullable(rawInput?.zoom_link) ||
+    trimNullable(rawInput?.zoom_link_backup) ||
+    trimNullable(rawInput?.zoom_meeting_id) ||
+    trimNullable(rawInput?.zoom_passcode)
+  );
+  const shouldPersistZoom = enableZoomMeetingFlag === true || (enableZoomMeetingFlag !== false && hasZoomFields);
+  const hasExplicitTemplateField = Object.prototype.hasOwnProperty.call(rawInput ?? {}, 'template_id');
+  const explicitTemplateId = hasExplicitTemplateField
+    ? parseOptionalInt(rawInput?.template_id, 'template_id')
+    : undefined;
+  const resolvedTemplateId = hasExplicitTemplateField
+    ? explicitTemplateId
+    : await resolveAutoExamTemplateId(db, {
+        organizerUuid: programContext?.organizerUuid ?? organizerUuid,
+        programUuid: programContext?.programUuid ?? programUuid,
+        programContext,
+      });
 
   return {
     class_id: classId,
@@ -204,32 +630,39 @@ async function normalizeExamSchedulePayload(db: D1Database, rawInput: any) {
     duration_minutes: duration,
     location: trimNullable(rawInput?.location),
     notes: trimNullable(rawInput?.notes),
-    template_id: parseOptionalInt(rawInput?.template_id, 'template_id'),
-    zoom_link: trimNullable(rawInput?.zoom_link),
-    zoom_meeting_id: trimNullable(rawInput?.zoom_meeting_id),
-    zoom_passcode: trimNullable(rawInput?.zoom_passcode),
+    template_id: resolvedTemplateId ?? null,
+    zoom_link: shouldPersistZoom ? trimNullable(rawInput?.zoom_link) : null,
+    zoom_link_backup: shouldPersistZoom ? trimNullable(rawInput?.zoom_link_backup) : null,
+    zoom_meeting_id: shouldPersistZoom ? trimNullable(rawInput?.zoom_meeting_id) : null,
+    zoom_passcode: shouldPersistZoom ? trimNullable(rawInput?.zoom_passcode) : null,
     exam_type: examTypeLegacy,
+    exam_level: examLevel,
     exam_category_id: examCategoryId,
     exam_type_id: examTypeId,
-    class_seed_name: classSeedName,
-    class_seed_description: trimNullable(classSeed.description ?? rawInput?.class_seed_description),
-    class_seed_schedule_rule: classSeedScheduleRule.toUpperCase(),
-    class_seed_schedule_time: classSeedScheduleTime,
-    class_seed_timezone: classSeedTimezone,
-    class_seed_start_date: toDateOnly(classSeedStartDate),
-    class_seed_end_date: classSeedEndDate ? toDateOnly(classSeedEndDate) : null,
-    class_seed_teacher_name: classSeedTeacherName,
-    class_seed_max_students: classSeedMaxStudents,
+    organizer_uuid: programContext?.organizerUuid ?? organizerUuid,
+    program_uuid: programContext?.programUuid ?? programUuid,
+    level_uuid: programContext?.levelUuid ?? levelUuid,
+    custom_field_payload: customFieldPayload,
+    override_payload: overridePayload,
+    source_site: sourceSite,
+    last_event_uuid: lastEventUuid,
+    class_seed_name: shouldPersistLinkedClass ? classSeedName : null,
+    class_seed_description: shouldPersistLinkedClass ? trimNullable(classSeed.description ?? rawInput?.class_seed_description) : null,
+    class_seed_schedule_rule: normalizedClassSeedScheduleRule,
+    class_seed_schedule_time: normalizedClassSeedScheduleTime,
+    class_seed_timezone: shouldPersistLinkedClass ? classSeedTimezone : null,
+    class_seed_start_date: normalizedClassSeedStartDate,
+    class_seed_end_date: normalizedClassSeedEndDate,
+    class_seed_teacher_name: shouldPersistLinkedClass ? classSeedTeacherName : null,
+    class_seed_max_students: shouldPersistLinkedClass ? classSeedMaxStudents : null,
   };
 }
 
 examSchedules.post('/resync-classes', async (c) => {
   try {
     const user = c.get('user') as any;
-
-    if (!user || !['admin', 'super_admin'].includes(user.role)) {
-      return errorResponse('Chỉ admin mới có quyền resync linked classes', 403);
-    }
+    const denied = requireExamAdmin(user, 'Chỉ admin mới có quyền resync linked classes');
+    if (denied) return denied;
 
     const result = await resyncAllLinkedOnlineClasses(c.env.DB, c.env, user.id);
 
@@ -301,9 +734,8 @@ examSchedules.get('/upcoming', async (c) => {
 examSchedules.get('/trash', async (c) => {
   try {
     const user = c.get('user') as any;
-    if (!user || !user.role) {
-      return errorResponse('Chỉ admin mới có quyền xem thùng rác', 403);
-    }
+    const denied = requireExamAdmin(user, 'Chỉ admin mới có quyền xem thùng rác');
+    if (denied) return denied;
 
     // Auto cleanup expired items first
     await cleanupOldDeletedExams(c.env.DB);
@@ -343,9 +775,8 @@ examSchedules.get('/class/:id', async (c) => {
 examSchedules.get('/', async (c) => {
   try {
     const user = c.get('user') as any;
-    if (!user || !user.role) {
-      return errorResponse('Chỉ admin mới có quyền xem tất cả lịch thi', 403);
-    }
+    const denied = requireExamAdmin(user, 'Chỉ admin mới có quyền xem tất cả lịch thi');
+    if (denied) return denied;
 
     const limit = parseInt(c.req.query('limit') ?? '', 10) || 100;
     const offset = parseInt(c.req.query('offset') ?? '', 10) || 0;
@@ -354,17 +785,47 @@ examSchedules.get('/', async (c) => {
     const exams = await c.env.DB.prepare(`
       SELECT
         e.*,
+        org.name as organizer_name,
+        org.code as organizer_code,
+        p.name as program_name,
+        p.code as program_code,
+        p.delivery_mode,
+        p.linked_class_enabled,
+        p.redirect_url,
+        p.visible_on_edu_public,
+        p.visible_on_edu_admin,
+        p.visible_on_exam_teacher,
+        p.visible_on_exam_student,
+        p.training_enabled,
+        p.is_active as program_is_active,
+        lvl.name as level_name,
+        lvl.code as level_code,
         (
           SELECT COUNT(*)
           FROM exam_registrations er
-          WHERE er.exam_id = e.id AND er.status = 'pending'
+          JOIN students s ON s.id = er.student_id
+          WHERE er.exam_id = e.id
+            AND er.status = 'pending'
+            AND NOT (
+              LOWER(COALESCE(s.ho_ten_full, '')) LIKE 'test hoc vien%'
+              OR LOWER(COALESCE(s.cccd, '')) LIKE 'test%'
+            )
         ) AS pending_count,
         (
           SELECT COUNT(*)
           FROM exam_registrations er
-          WHERE er.exam_id = e.id AND er.status IN ('approved', 'registered')
+          JOIN students s ON s.id = er.student_id
+          WHERE er.exam_id = e.id
+            AND er.status IN ('approved', 'registered')
+            AND NOT (
+              LOWER(COALESCE(s.ho_ten_full, '')) LIKE 'test hoc vien%'
+              OR LOWER(COALESCE(s.cccd, '')) LIKE 'test%'
+            )
         ) AS approved_count
       FROM exam_schedules e
+      LEFT JOIN program_organizers org ON org.uuid = e.organizer_uuid
+      LEFT JOIN programs p ON p.uuid = e.program_uuid
+      LEFT JOIN program_levels lvl ON lvl.uuid = e.level_uuid
       WHERE e.deleted_at IS NULL
       ORDER BY e.exam_date DESC
       LIMIT ? OFFSET ?
@@ -387,14 +848,13 @@ examSchedules.get('/', async (c) => {
 });
 
 // ========================================
-// GET /exam-schedules/conflicts - Admin: students with multiple active exam registrations
+// GET /exam-schedules/conflicts - Admin: students with multiple active upcoming exam registrations
 // ========================================
 examSchedules.get('/conflicts', async (c) => {
   try {
     const user = c.get('user') as any;
-    if (!user || !user.role) {
-      return errorResponse('Chỉ admin mới có quyền xem dữ liệu trùng', 403);
-    }
+    const denied = requireExamAdmin(user, 'Chỉ admin mới có quyền xem dữ liệu trùng');
+    if (denied) return denied;
 
     const rows = await c.env.DB.prepare(`
       SELECT
@@ -405,38 +865,50 @@ examSchedules.get('/conflicts', async (c) => {
         er.status AS registration_status,
         er.created_at AS registration_created_at,
         es.exam_name,
-        es.exam_date
+        es.exam_date,
+        es.duration_minutes
       FROM exam_registrations er
       JOIN students s ON s.id = er.student_id
       LEFT JOIN exam_schedules es ON es.id = er.exam_id
       WHERE er.status IN ('pending','approved','registered')
-        AND er.student_id IN (
-          SELECT student_id
-          FROM exam_registrations
-          WHERE status IN ('pending','approved','registered')
-          GROUP BY student_id
-          HAVING COUNT(*) > 1
+        AND es.deleted_at IS NULL
+        AND NOT (
+          LOWER(COALESCE(s.ho_ten_full, '')) LIKE 'test hoc vien%'
+          OR LOWER(COALESCE(s.cccd, '')) LIKE 'test%'
         )
       ORDER BY s.ho_ten_full ASC, datetime(er.created_at) DESC, er.id DESC
     `).all();
 
+    const registrationsByStudent = new Map<string, any[]>();
+    for (const row of (rows.results || [])) {
+      const key = String((row as any).student_id);
+      const current = registrationsByStudent.get(key) || [];
+      current.push(row);
+      registrationsByStudent.set(key, current);
+    }
+
     const grouped = new Map();
-    for (const r of (rows.results || [])) {
-      const key = String(r.student_id);
-      if (!grouped.has(key)) {
-        grouped.set(key, {
-          student_id: r.student_id,
-          ho_ten_full: r.ho_ten_full,
-          cccd: r.cccd,
-          active_registrations: []
-        });
+    for (const studentRegistrations of registrationsByStudent.values()) {
+      const conflictingRegistrations = studentRegistrations.filter((registration) =>
+        isUpcomingExamRegistrationWindow(registration as any)
+      );
+
+      if (conflictingRegistrations.length <= 1) {
+        continue;
       }
-      grouped.get(key).active_registrations.push({
-        exam_id: r.exam_id,
-        exam_name: r.exam_name,
-        exam_date: r.exam_date,
-        registration_status: r.registration_status,
-        registration_created_at: r.registration_created_at
+
+      const first = conflictingRegistrations[0] as any;
+      grouped.set(String(first.student_id), {
+        student_id: first.student_id,
+        ho_ten_full: first.ho_ten_full,
+        cccd: first.cccd,
+        active_registrations: conflictingRegistrations.map((registration: any) => ({
+          exam_id: registration.exam_id,
+          exam_name: registration.exam_name,
+          exam_date: registration.exam_date,
+          registration_status: registration.registration_status,
+          registration_created_at: registration.registration_created_at,
+        })),
       });
     }
 
@@ -455,9 +927,8 @@ examSchedules.get('/conflicts', async (c) => {
 examSchedules.get('/student/:studentId/registrations', async (c) => {
   try {
     const user = c.get('user') as any;
-    if (!user || !user.role) {
-      return errorResponse('Chỉ admin mới có quyền xem lịch sử đăng ký', 403);
-    }
+    const denied = requireExamAdmin(user, 'Chỉ admin mới có quyền xem lịch sử đăng ký');
+    if (denied) return denied;
 
     const studentId = parseInt(c.req.param('studentId'));
     if (Number.isNaN(studentId)) {
@@ -505,16 +976,8 @@ examSchedules.post('/', async (c) => {
       console.error('No user in context - middleware may have failed');
       return errorResponse('Chưa đăng nhập hoặc token không hợp lệ', 401);
     }
-
-    if (!user.role) {
-      console.error('User has no role:', user);
-      return errorResponse('Tài khoản không có quyền truy cập', 403);
-    }
-
-    // Allow admin and super_admin
-    if (user.role !== 'admin' && user.role !== 'super_admin') {
-      return errorResponse('Chỉ admin mới có quyền tạo lịch thi', 403);
-    }
+    const denied = requireExamAdmin(user, 'Chỉ admin mới có quyền tạo lịch thi');
+    if (denied) return denied;
 
     const payload = await normalizeExamSchedulePayload(c.env.DB, await c.req.json());
 
@@ -577,10 +1040,8 @@ examSchedules.post('/', async (c) => {
 examSchedules.put('/:id', async (c) => {
   try {
     const user = c.get('user') as any;
-
-    if (!user || !user.role) {
-      return errorResponse('Chỉ admin mới có quyền cập nhật lịch thi', 403);
-    }
+    const denied = requireExamAdmin(user, 'Chỉ admin mới có quyền cập nhật lịch thi');
+    if (denied) return denied;
 
     const { id } = c.req.param();
     const examId = parseInt(id);
@@ -617,10 +1078,8 @@ examSchedules.put('/:id', async (c) => {
 examSchedules.delete('/:id', async (c) => {
   try {
     const user = c.get('user') as any;
-
-    if (!user || !user.role) {
-      return errorResponse('Chỉ admin mới có quyền xóa lịch thi', 403);
-    }
+    const denied = requireExamAdmin(user, 'Chỉ admin mới có quyền xóa lịch thi');
+    if (denied) return denied;
 
     const { id } = c.req.param();
     const examId = parseInt(id);
@@ -655,10 +1114,8 @@ examSchedules.delete('/:id', async (c) => {
 examSchedules.post('/:id/restore', async (c) => {
   try {
     const user = c.get('user') as any;
-
-    if (!user || !user.role) {
-      return errorResponse('Chỉ admin mới có quyền khôi phục lịch thi', 403);
-    }
+    const denied = requireExamAdmin(user, 'Chỉ admin mới có quyền khôi phục lịch thi');
+    if (denied) return denied;
 
     const { id } = c.req.param();
     const examId = parseInt(id);
@@ -699,10 +1156,8 @@ examSchedules.post('/:id/restore', async (c) => {
 examSchedules.delete('/:id/permanent', async (c) => {
   try {
     const user = c.get('user') as any;
-
-    if (!user || !user.role) {
-      return errorResponse('Chỉ admin mới có quyền xóa vĩnh viễn', 403);
-    }
+    const denied = requireExamAdmin(user, 'Chỉ admin mới có quyền xóa vĩnh viễn');
+    if (denied) return denied;
 
     const { id } = c.req.param();
     const examId = parseInt(id);
@@ -760,14 +1215,33 @@ examSchedules.post('/:id/register', async (c) => {
     try {
       await registerStudentForExam(c.env.DB, parseInt(id), user.id);
     } catch (e: any) {
-      if (e?.code === 'STUDENT_ALREADY_HAS_ACTIVE_EXAM_REGISTRATION') {
+      if (e?.code === 'TEST_STUDENT_NOT_ALLOWED') {
         return jsonResponse({
           success: false,
           code: e.code,
-          message: `Bạn đã đăng ký tối đa ${e.details?.max || 2} kỳ thi cùng lúc. Vui lòng hủy một đăng ký trước khi đăng ký thêm.`,
+          message: 'Không cho phép thêm hồ sơ test vào danh sách thi.',
+        }, 400);
+      }
+
+      if (e?.code === 'STUDENT_ALREADY_HAS_EXAM_AT_SAME_TIME') {
+        return jsonResponse({
+          success: false,
+          code: e.code,
+          message: 'Bạn đã có một kỳ thi khác trùng thời gian. Vui lòng hủy đăng ký cũ trước khi đăng ký kỳ thi này.',
           details: e.details || {}
         }, 400);
       }
+
+      if (e?.code === 'STUDENT_ALREADY_HAS_ACTIVE_EXAM_REGISTRATION') {
+        const bucketLabel = e?.details?.registration_bucket_label || 'nhóm kỳ thi này';
+        return jsonResponse({
+          success: false,
+          code: e.code,
+          message: `Bạn đã có một đăng ký ${bucketLabel} đang hoạt động. Mỗi học viên chỉ được giữ tối đa 1 lịch tiếng Anh (VSTEP/VEPT) và 1 lịch tin học (PTIT...).`,
+          details: e.details || {}
+        }, 400);
+      }
+
       throw e;
     }
 
@@ -802,10 +1276,8 @@ examSchedules.post('/:id/cancel', async (c) => {
 examSchedules.get('/:id/students', async (c) => {
   try {
     const user = c.get('user') as any;
-    // Admin, Teacher, Super Admin
-    if (!user || !['admin', 'super_admin', 'teacher'].includes(user.role)) {
-      return errorResponse('Không có quyền truy cập', 403);
-    }
+    const denied = requireExamAdmin(user, 'Không có quyền truy cập');
+    if (denied) return denied;
 
     const { id } = c.req.param();
     const students = await getExamRegistrations(c.env.DB, parseInt(id));
@@ -825,10 +1297,8 @@ examSchedules.get('/:id/students', async (c) => {
 examSchedules.post('/:id/students', async (c) => {
   try {
     const user = c.get('user') as any;
-    // Admin, Teacher, Super Admin
-    if (!user || !['admin', 'super_admin', 'teacher'].includes(user.role)) {
-      return errorResponse('Không có quyền truy cập', 403);
-    }
+    const denied = requireExamAdmin(user, 'Không có quyền truy cập');
+    if (denied) return denied;
 
     const { id } = c.req.param();
     const { student_ids, force } = await c.req.json();
@@ -845,7 +1315,11 @@ examSchedules.post('/:id/students', async (c) => {
         await syncSingleExamRegistrationToOnlineClass(c.env.DB, parseInt(id), Number(studentId));
         results.push({ student_id: studentId, status: 'success' });
       } catch (err: any) {
-        if (err?.code === 'STUDENT_ALREADY_HAS_ACTIVE_EXAM_REGISTRATION') {
+        if (err?.code === 'TEST_STUDENT_NOT_ALLOWED') {
+          results.push({ student_id: studentId, status: 'blocked', code: err.code });
+        } else if (err?.code === 'STUDENT_ALREADY_HAS_EXAM_AT_SAME_TIME') {
+          results.push({ student_id: studentId, status: 'blocked', code: err.code, details: err.details || {} });
+        } else if (err?.code === 'STUDENT_ALREADY_HAS_ACTIVE_EXAM_REGISTRATION') {
           results.push({ student_id: studentId, status: 'blocked', code: err.code, details: err.details || {} });
         } else {
           results.push({ student_id: studentId, status: 'error', error: err.message });
@@ -869,10 +1343,8 @@ examSchedules.post('/:id/students', async (c) => {
 examSchedules.delete('/:id/students/:studentId', async (c) => {
   try {
     const user = c.get('user') as any;
-    // Admin, Teacher, Super Admin
-    if (!user || !['admin', 'super_admin', 'teacher'].includes(user.role)) {
-      return errorResponse('Không có quyền truy cập', 403);
-    }
+    const denied = requireExamAdmin(user, 'Không có quyền truy cập');
+    if (denied) return denied;
 
     const { id, studentId } = c.req.param();
     await cancelExamRegistration(c.env.DB, parseInt(id), parseInt(studentId));
@@ -890,9 +1362,8 @@ examSchedules.delete('/:id/students/:studentId', async (c) => {
 examSchedules.get('/:id/pending', async (c) => {
   try {
     const user = c.get('user') as any;
-    if (!user || !['admin', 'super_admin', 'teacher'].includes(user.role)) {
-      return errorResponse('Không có quyền truy cập', 403);
-    }
+    const denied = requireExamAdmin(user, 'Không có quyền truy cập');
+    if (denied) return denied;
 
     const { id } = c.req.param();
     const students = await getPendingExamRegistrations(c.env.DB, parseInt(id));
@@ -912,9 +1383,8 @@ examSchedules.get('/:id/pending', async (c) => {
 examSchedules.post('/:id/approve/:studentId', async (c) => {
   try {
     const user = c.get('user') as any;
-    if (!user || !['admin', 'super_admin', 'teacher'].includes(user.role)) {
-      return errorResponse('Không có quyền truy cập', 403);
-    }
+    const denied = requireExamAdmin(user, 'Không có quyền truy cập');
+    if (denied) return denied;
 
     const { id, studentId } = c.req.param();
     await approveExamRegistration(c.env.DB, parseInt(id), parseInt(studentId), user.id);
@@ -953,9 +1423,8 @@ examSchedules.post('/:id/approve/:studentId', async (c) => {
 examSchedules.post('/:id/approve-all', async (c) => {
   try {
     const user = c.get('user') as any;
-    if (!user || !['admin', 'super_admin', 'teacher'].includes(user.role)) {
-      return errorResponse('Không có quyền truy cập', 403);
-    }
+    const denied = requireExamAdmin(user, 'Không có quyền truy cập');
+    if (denied) return denied;
 
     const { id } = c.req.param();
     const result = await approveAllExamRegistrations(c.env.DB, parseInt(id), user.id);
@@ -1002,9 +1471,8 @@ examSchedules.post('/:id/approve-all', async (c) => {
 examSchedules.post('/:id/reject/:studentId', async (c) => {
   try {
     const user = c.get('user') as any;
-    if (!user || !['admin', 'super_admin', 'teacher'].includes(user.role)) {
-      return errorResponse('Không có quyền truy cập', 403);
-    }
+    const denied = requireExamAdmin(user, 'Không có quyền truy cập');
+    if (denied) return denied;
 
     const { id, studentId } = c.req.param();
     await rejectExamRegistration(c.env.DB, parseInt(id), parseInt(studentId), user.id);

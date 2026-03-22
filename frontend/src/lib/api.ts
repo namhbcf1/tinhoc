@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || '';
+import { buildApiUrl } from '../utils/api-base-url.js';
 
 export const apiFetch = async (endpoint, options = {}) => {
     const token = localStorage.getItem('token');
@@ -8,7 +8,7 @@ export const apiFetch = async (endpoint, options = {}) => {
         ...options.headers,
     };
 
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetch(buildApiUrl(endpoint), {
         ...options,
         headers,
     });

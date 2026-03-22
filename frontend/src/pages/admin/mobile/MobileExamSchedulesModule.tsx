@@ -1,178 +1,1388 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Plus, Calendar, Clock, MapPin, Users, X, Check, XCircle, AlertCircle, Download, FileText, ChevronRight, CheckCircle } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+    AlertCircle,
+    Calendar,
+    Check,
+    CheckCircle2,
+    ChevronRight,
+    Clock,
+    Download,
+    FileText,
+    History,
+    Info,
+    MapPin,
+    Pencil,
+    Plus,
+    Search,
+    Sparkles,
+    Trash2,
+    RotateCcw,
+    UserPlus,
+    Users,
+    X,
+    XCircle,
+} from 'lucide-react';
 import api from '../../../services/api';
-import { StudentDetailSheet, getImageUrl, formatDate } from './MobileStudentsModule';
+import { buildVietnamDateTimePayload, formatDateVN, formatTime as formatTimeUtil, formatVietnamDateInputValue, toVietnamDate } from '../../../utils/dateUtils';
+import { findExamTemplateOption, suggestExamTemplateId } from '../../../utils/examTemplateRules';
+import { StudentDetailSheet, getImageUrl } from './MobileStudentsModule';
 import { useToast } from '../../../components/ui/ToastContainer';
 import ToastContainer from '../../../components/ui/ToastContainer';
 import PullToRefreshWrapper from '../../../components/ui/PullToRefreshWrapper';
+import AdminLoadingState from '../../../components/admin/AdminLoadingState';
+import { ADMIN_CACHE_KEYS, ADMIN_CACHE_TTL, clearAdminCache, getAdminCache, invalidateAdminData, setAdminCache } from '../shared/admin-cache';
+import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
 
-// Helper to format time
-const formatTime = (dateStr) => {
-    if (!dateStr) return '';
-    try {
-        const date = new Date(dateStr);
-        return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-    } catch {
-        return '';
-    }
+const SCHEDULE_PRESETS = [
+    {
+        id: 'weekday-evening',
+        label: '2-4-6 tối',
+        helper: 'WEEKLY:1,3,5 • 19:00-21:00',
+        rule: 'WEEKLY:1,3,5',
+        time: '19:00-21:00',
+    },
+    {
+        id: 'weekend-morning',
+        label: 'Cuối tuần sáng',
+        helper: 'WEEKLY:6,7 • 08:00-11:00',
+        rule: 'WEEKLY:6,7',
+        time: '08:00-11:00',
+    },
+    {
+        id: 'weekday-intensive',
+        label: '3 buổi/tuần',
+        helper: 'WEEKLY:2,4,6 • 18:30-20:30',
+        rule: 'WEEKLY:2,4,6',
+        time: '18:30-20:30',
+    },
+];
+const TIMEZONE_OPTIONS = ['Asia/Ho_Chi_Minh', 'Asia/Bangkok', 'Asia/Singapore', 'UTC'];
+const DEFAULT_CLASS_SEED_RULE = 'WEEKLY:1,3,5';
+const DEFAULT_CLASS_SEED_TIME = '19:00-21:00';
+const DEFAULT_CLASS_SEED_TIMEZONE = 'Asia/Ho_Chi_Minh';
+const DEFAULT_CLASS_SEED_MAX_STUDENTS = 50;
+
+const startOfDay = (value = new Date()) => {
+    const next = new Date(value);
+    next.setHours(0, 0, 0, 0);
+    return next;
 };
 
-const ExamFormSheet = ({ exam, onClose, onSuccess }) => {
-    const [formData, setFormData] = useState({
-        exam_name: '',
-        exam_date: '',
-        exam_time: '',
-        duration_minutes: 120,
-        location: '',
-        notes: '',
-    });
+const getErrorMessage = (error, fallback) => {
+    if (error?.message) return error.message;
+    return fallback;
+};
+
+const formatTime = (dateStr) => formatTimeUtil(dateStr);
+
+const formatLongDate = (value) => {
+    if (!value) return 'Chưa chọn ngày thi';
+    const d = toVietnamDate(value);
+    if (!d || isNaN(d.getTime())) return 'Chưa chọn ngày thi';
+    return d.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+};
+
+const formatShortDate = (value, opts: { withTime?: boolean } = { withTime: true }) => {
+    if (!value) return 'Chưa có ngày';
+    if (opts.withTime) return formatDateVN(value, true) || 'Chưa có ngày';
+    return formatDateVN(value, false) || 'Chưa có ngày';
+};
+
+const formatDurationLabel = (value) => {
+    const parsed = Number.parseInt(String(value ?? '').trim(), 10);
+    if (Number.isInteger(parsed) && parsed > 0) {
+        return `${parsed} phút`;
+    }
+
+    return 'Chưa khai báo thời lượng';
+};
+
+const hasConfiguredLinkedClass = (value = {}) => Boolean(
+    value.class_seed_name ||
+    value.class_seed_schedule_rule ||
+    value.class_seed_schedule_time ||
+    value.class_seed_start_date
+);
+
+const createExamFormData = (overrides = {}) => ({
+    exam_name: '',
+    exam_date: '',
+    exam_time: '',
+    duration_minutes: '',
+    location: '',
+    notes: '',
+    organizer_uuid: '',
+    program_uuid: '',
+    level_uuid: '',
+    exam_level: '',
+    template_id: '',
+    enable_linked_class: false,
+    class_seed_name: '',
+    class_seed_description: '',
+    class_seed_schedule_rule: DEFAULT_CLASS_SEED_RULE,
+    class_seed_schedule_time: DEFAULT_CLASS_SEED_TIME,
+    class_seed_timezone: DEFAULT_CLASS_SEED_TIMEZONE,
+    class_seed_start_date: '',
+    class_seed_end_date: '',
+    class_seed_max_students: DEFAULT_CLASS_SEED_MAX_STUDENTS,
+    ...overrides,
+});
+
+const normalizePreviewToken = (value) => String(value || '').trim().toUpperCase();
+
+const splitStudentName = (fullName) => {
+    if (!fullName) return { ho: '', ten: '' };
+    const parts = String(fullName).trim().split(/\s+/);
+    if (parts.length <= 1) return { ho: '', ten: parts[0] || '' };
+    const ten = parts.pop() || '';
+    return { ho: parts.join(' '), ten };
+};
+
+const getStudentNameParts = (student = {}) => {
+    const split = splitStudentName(student?.ho_ten_full);
+    return {
+        ho: String(student?.ho || split.ho || '').trim(),
+        tenDem: String(student?.ten_dem || '').trim(),
+        ten: String(student?.ten || split.ten || '').trim(),
+    };
+};
+
+const compareStudentsForExcelPreview = (left, right) => {
+    const leftName = getStudentNameParts(left);
+    const rightName = getStudentNameParts(right);
+
+    const compareByFirstName = leftName.ten.localeCompare(rightName.ten, 'vi', { sensitivity: 'base' });
+    if (compareByFirstName !== 0) return compareByFirstName;
+
+    const compareBySurname = leftName.ho.localeCompare(rightName.ho, 'vi', { sensitivity: 'base' });
+    if (compareBySurname !== 0) return compareBySurname;
+
+    const compareByMiddleName = leftName.tenDem.localeCompare(rightName.tenDem, 'vi', { sensitivity: 'base' });
+    if (compareByMiddleName !== 0) return compareByMiddleName;
+
+    return String(left?.cccd || left?.student_id || left?.id || '').localeCompare(
+        String(right?.cccd || right?.student_id || right?.id || ''),
+        'vi',
+        { sensitivity: 'base' }
+    );
+};
+
+const detectExcelPreviewFormat = (exam) => {
+    const tokens = [
+        exam?.organizer_name,
+        exam?.program_name,
+        exam?.exam_name,
+        exam?.exam_type,
+        exam?.exam_level,
+        exam?.level_name,
+    ];
+
+    const normalizedTokens = tokens.map((value) => normalizePreviewToken(value)).filter(Boolean);
+
+    if (normalizedTokens.some((value) => value.includes('VEPT') || value.includes('VSTEP') || value.includes('VERSANT'))) {
+        return 'vept';
+    }
+
+    if (normalizedTokens.some((value) => value.includes('PTIT') || value.includes('TIN HOC') || value.includes('TIN HỌC') || value.includes('CNTT'))) {
+        return 'ptit';
+    }
+
+    return 'default-exam-list';
+};
+
+const buildExcelPreviewData = ({ exam, students }) => {
+    const sortedStudents = [...(students || [])].sort(compareStudentsForExcelPreview);
+    const previewFormat = detectExcelPreviewFormat(exam);
+    const examDateLabel = formatDateVN(exam?.exam_date, true) || formatDateVN(exam?.exam_date) || 'Chưa có';
+
+    if (previewFormat === 'vept') {
+        return {
+            kind: 'vept',
+            formatLabel: 'VEPT / VSTEP',
+            sheetTitle: 'DANH SÁCH ĐĂNG KÝ THI VERSANT ENGLISH PLACEMENT TEST (VEPT)',
+            organizationLine: `Tên Đơn vị/ Trường học đăng ký: ${exam?.organizer_name || exam?.program_name || ''}`,
+            representativeLine: 'Đại diện đăng ký:',
+            phoneLine: 'Số điện thoại:',
+            centerLine: 'Phần dành cho trung tâm',
+            leftHeaders: ['STT', 'Họ và tên đệm', 'Tên', 'Giới tính', 'Ngày sinh', 'Tháng sinh', 'Năm sinh', 'Số CMND/ Hộ chiếu', 'Điện thoại', 'Email', 'Đơn vị công tác/ Trường học', 'Vị trí công tác', 'Trình độ', 'Ngày thi', 'Mục đích', 'Nguồn'],
+            rightHeaders: ['Kiểm tra hồ sơ', 'Ngày thi', 'Giờ thi', 'Địa điểm thi'],
+            rows: sortedStudents.map((student, index) => {
+                const { ho, ten } = getStudentNameParts(student);
+                const date = toVietnamDate(student?.ngay_sinh);
+                return [
+                    index + 1,
+                    ho,
+                    ten,
+                    student?.gioi_tinh || '',
+                    date ? String(date.getDate()).padStart(2, '0') : '',
+                    date ? String(date.getMonth() + 1).padStart(2, '0') : '',
+                    date ? String(date.getFullYear()) : '',
+                    student?.cccd || '',
+                    student?.sdt || '',
+                    student?.email || '',
+                    student?.don_vi_cong_tac || '',
+                    '',
+                    exam?.exam_level || exam?.level_name || '',
+                    examDateLabel,
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    exam?.location || '',
+                ];
+            }),
+        };
+    }
+
+    return {
+        kind: 'exam-list',
+        formatLabel: previewFormat === 'ptit' ? 'PTIT / Tin học' : 'Danh sách dự thi mặc định',
+        titleLines: [
+            'CHỨNG CHỈ ỨNG DỤNG CÔNG NGHỆ THÔNG TIN CƠ BẢN & NÂNG CAO',
+            'THEO THÔNG TƯ 03/2014/TT-BTTTT',
+            previewFormat === 'ptit' && exam?.exam_name ? `DANH SÁCH DỰ THI - ${exam.exam_name}` : 'DANH SÁCH DỰ THI',
+        ],
+        infoLines: [
+            `Thời gian: ${examDateLabel}`,
+            `Địa điểm thi: ${exam?.location || 'Chưa xác định'}`,
+        ],
+        headers: ['STT', 'SỐ PHÁCH', 'SỐ CMT', 'HỌ', 'TÊN', 'NGÀY SINH', 'NƠI SINH', 'GIỚI TÍNH', 'DÂN TỘC', 'MÔN THI', 'KÝ TÊN', 'GHI CHÚ'],
+        subHeaders: ['LT', 'TH'],
+        rows: sortedStudents.map((student, index) => {
+            const { ho, ten } = getStudentNameParts(student);
+            return [
+                index + 1,
+                '',
+                student?.cccd || '',
+                ho,
+                ten,
+                formatDateVN(student?.ngay_sinh) || '',
+                student?.noi_sinh || '',
+                student?.gioi_tinh || '',
+                student?.dan_toc || '',
+                '',
+                '',
+                '',
+                '',
+            ];
+        }),
+    };
+};
+
+const renderPreviewCell = (value, fallback = '-') => {
+    if (value === 0) return '0';
+    if (value) return value;
+    return <span className="text-slate-300">{fallback}</span>;
+};
+
+const MobileExcelPreviewVept = ({ preview }) => (
+    <div className="min-w-[1120px] overflow-hidden rounded-[24px] border border-slate-300 bg-white shadow-sm">
+        <table className="min-w-full border-collapse text-[11px] text-slate-700">
+            <tbody>
+                <tr>
+                    <th colSpan={20} className="border border-slate-300 px-3 py-3 text-center text-sm font-black uppercase tracking-[0.08em] text-slate-900">
+                        {preview.sheetTitle}
+                    </th>
+                </tr>
+                <tr>
+                    <td colSpan={8} className="border border-slate-300 px-2 py-2 font-semibold">{preview.organizationLine}</td>
+                    <td colSpan={12} className="border border-slate-300 px-2 py-2" />
+                </tr>
+                <tr>
+                    <td colSpan={4} className="border border-slate-300 px-2 py-2 font-semibold">{preview.representativeLine}</td>
+                    <td colSpan={4} className="border border-slate-300 px-2 py-2 font-semibold">{preview.phoneLine}</td>
+                    <td colSpan={8} className="border border-slate-300 px-2 py-2" />
+                    <td colSpan={4} className="border border-rose-300 bg-rose-100 px-2 py-2 text-center font-black uppercase tracking-[0.08em] text-rose-700">{preview.centerLine}</td>
+                </tr>
+                <tr>
+                    {preview.leftHeaders.map((header) => (
+                        <th key={header} className="border border-amber-300 bg-amber-100 px-2 py-2 text-center font-bold leading-snug text-slate-900">
+                            {header}
+                        </th>
+                    ))}
+                    {preview.rightHeaders.map((header) => (
+                        <th key={header} className="border border-rose-300 bg-rose-100 px-2 py-2 text-center font-bold leading-snug text-slate-900">
+                            {header}
+                        </th>
+                    ))}
+                </tr>
+                {preview.rows.length ? preview.rows.map((row, rowIndex) => (
+                    <tr key={`mobile-vept-row-${rowIndex}`} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                        {row.map((value, columnIndex) => (
+                            <td
+                                key={`mobile-vept-cell-${rowIndex}-${columnIndex}`}
+                                className={`border border-slate-200 px-2 py-2 align-top ${[0, 3, 4, 5, 7, 8, 12, 13, 16, 17, 18, 19].includes(columnIndex) ? 'text-center' : 'text-left'}`}
+                            >
+                                {renderPreviewCell(value)}
+                            </td>
+                        ))}
+                    </tr>
+                )) : (
+                    <tr>
+                        <td colSpan={20} className="border border-slate-200 px-4 py-8 text-center text-slate-500">Không có dữ liệu để preview.</td>
+                    </tr>
+                )}
+            </tbody>
+        </table>
+    </div>
+);
+
+const MobileExcelPreviewExamList = ({ preview }) => (
+    <div className="min-w-[860px] overflow-hidden rounded-[24px] border border-slate-300 bg-white shadow-sm">
+        <table className="min-w-full border-collapse text-[11px] text-slate-700">
+            <tbody>
+                {preview.titleLines.map((line, index) => (
+                    <tr key={`mobile-exam-title-${index}`}>
+                        <th colSpan={13} className={`px-3 py-2 text-center font-black uppercase tracking-[0.08em] text-slate-900 ${index === 2 ? 'text-sm' : 'text-[13px]'}`}>
+                            {line}
+                        </th>
+                    </tr>
+                ))}
+                <tr>
+                    <td colSpan={5} className="px-2 py-2" />
+                    <td colSpan={8} className="px-2 py-2 text-left italic text-slate-600">{preview.infoLines[0]}</td>
+                </tr>
+                <tr>
+                    <td colSpan={5} className="px-2 py-2" />
+                    <td colSpan={8} className="px-2 py-2 text-left italic text-slate-600">{preview.infoLines[1]}</td>
+                </tr>
+                <tr>
+                    <td colSpan={13} className="px-2 py-2" />
+                </tr>
+                <tr className="bg-slate-200">
+                    {preview.headers.slice(0, 9).map((header) => (
+                        <th key={header} rowSpan={2} className="border border-slate-400 bg-slate-200 px-2 py-2 text-center font-bold leading-snug text-slate-900">
+                            {header}
+                        </th>
+                    ))}
+                    <th colSpan={2} className="border border-slate-400 bg-slate-200 px-2 py-2 text-center font-bold leading-snug text-slate-900">
+                        {preview.headers[9]}
+                    </th>
+                    {preview.headers.slice(10).map((header) => (
+                        <th key={header} rowSpan={2} className="border border-slate-400 bg-slate-200 px-2 py-2 text-center font-bold leading-snug text-slate-900">
+                            {header}
+                        </th>
+                    ))}
+                </tr>
+                <tr className="bg-slate-100">
+                    <th className="border border-slate-400 bg-slate-100 px-2 py-2 text-center font-bold text-slate-900">{preview.subHeaders[0]}</th>
+                    <th className="border border-slate-400 bg-slate-100 px-2 py-2 text-center font-bold text-slate-900">{preview.subHeaders[1]}</th>
+                </tr>
+                {preview.rows.length ? preview.rows.map((row, rowIndex) => (
+                    <tr key={`mobile-exam-row-${rowIndex}`} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                        {row.map((value, columnIndex) => (
+                            <td
+                                key={`mobile-exam-cell-${rowIndex}-${columnIndex}`}
+                                className={`border border-slate-200 px-2 py-2 align-top ${[0, 1, 2, 5, 7, 8, 9, 10, 11, 12].includes(columnIndex) ? 'text-center' : 'text-left'}`}
+                            >
+                                {renderPreviewCell(value)}
+                            </td>
+                        ))}
+                    </tr>
+                )) : (
+                    <tr>
+                        <td colSpan={13} className="border border-slate-200 px-4 py-8 text-center text-slate-500">Không có dữ liệu để preview.</td>
+                    </tr>
+                )}
+            </tbody>
+        </table>
+    </div>
+);
+
+const getExamTitle = (exam) => exam?.exam_name || exam?.title || exam?.ten_lich_thi || exam?.ten || 'Chưa có tên kỳ thi';
+
+const getExamLocation = (exam) => exam?.location || exam?.room || exam?.dia_diem || exam?.phong_thi || 'Chưa xếp địa điểm';
+
+const getExamDate = (exam) => {
+    const raw = exam?.exam_date || exam?.ngay_thi || exam?.ngay;
+    if (!raw) return new Date();
+    const d = toVietnamDate(raw);
+    return d && !isNaN(d.getTime()) ? d : new Date();
+};
+
+const getExamStudentCount = (exam) => Number(exam?.approved_count || 0) + Number(exam?.pending_count || 0);
+
+const getExamPendingCount = (exam) => Number(exam?.pending_count || 0);
+
+const getExamStatusMeta = (dateValue) => {
+    const examDay = startOfDay(dateValue);
+    const today = startOfDay();
+
+    if (examDay.getTime() === today.getTime()) {
+        return {
+            key: 'today',
+            label: 'Hôm nay',
+            badgeClass: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+            cardClass: 'border-emerald-200/70 shadow-emerald-100/60',
+            accentClass: 'bg-emerald-500',
+        };
+    }
+
+    if (examDay.getTime() < today.getTime()) {
+        return {
+            key: 'past',
+            label: 'Đã qua',
+            badgeClass: 'bg-slate-100 text-slate-600 border border-slate-200',
+            cardClass: 'border-slate-200 shadow-slate-100/60',
+            accentClass: 'bg-slate-400',
+        };
+    }
+
+    return {
+        key: 'upcoming',
+        label: 'Sắp tới',
+        badgeClass: 'bg-blue-100 text-blue-700 border border-blue-200',
+        cardClass: 'border-blue-200/70 shadow-blue-100/60',
+        accentClass: 'bg-blue-500',
+    };
+};
+
+const SummaryStat = ({ label, value, icon: Icon, tone = 'slate' }) => {
+    const styles = {
+        blue: 'bg-blue-50 text-blue-700 border-blue-100',
+        emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+        amber: 'bg-amber-50 text-amber-700 border-amber-100',
+        slate: 'bg-slate-50 text-slate-700 border-slate-100',
+    };
+
+    return (
+        <div className={`rounded-[20px] border px-3 py-2.5 ${styles[tone] || styles.slate}`}>
+            <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/85 shadow-sm">
+                    <Icon size={16} />
+                </div>
+                <div className="min-w-0">
+                    <div className="text-[10px] font-black uppercase tracking-[0.16em] opacity-75">{label}</div>
+                    <div className="mt-0.5 text-lg font-black leading-none tracking-tight">{value}</div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const FilterChip = ({ active, label, count, onClick }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-black transition-all ${
+            active
+                ? 'border-slate-900 bg-slate-900 text-white shadow-md shadow-slate-200'
+                : 'border-slate-200 bg-white text-slate-600'
+        }`}
+    >
+        <span>{label}</span>
+        <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] ${active ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-500'}`}>
+            {count}
+        </span>
+    </button>
+);
+
+const SheetActionButton = ({ icon: Icon, label, tone = 'slate', onClick }) => {
+    const tones = {
+        slate: 'bg-white/15 text-white border-white/20',
+        danger: 'bg-rose-500/25 text-white border-rose-200/20',
+    };
+
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-black uppercase tracking-[0.12em] backdrop-blur-sm transition-transform active:scale-95 ${tones[tone] || tones.slate}`}
+        >
+            <Icon size={14} />
+            <span>{label}</span>
+        </button>
+    );
+};
+
+const StudentRow = ({ student, pending, conflict, processing, onOpen, onApprove, onReject, onRemove, onHistory }) => (
+    <div className={`rounded-[24px] border bg-white p-3 shadow-sm ${pending ? 'border-amber-200/80' : 'border-slate-200/80'}`}>
+        <div className="flex items-start gap-2.5">
+            <button
+                type="button"
+                onClick={onOpen}
+                className={`h-12 w-12 overflow-hidden rounded-[18px] border-2 text-sm font-black shadow-sm ${
+                    pending
+                        ? 'border-amber-200 bg-gradient-to-br from-amber-500 to-orange-500 text-white'
+                        : 'border-emerald-200 bg-gradient-to-br from-emerald-500 to-teal-500 text-white'
+                }`}
+            >
+                {student.image_3x4 ? (
+                    <img
+                        src={getImageUrl(student.image_3x4)}
+                        alt={student.ho_ten_full}
+                        className="h-full w-full object-cover"
+                        onError={(event) => {
+                            event.currentTarget.style.display = 'none';
+                            const fallback = event.currentTarget.nextElementSibling;
+                            if (fallback) fallback.style.display = 'flex';
+                        }}
+                    />
+                ) : null}
+                <span
+                    style={{ display: student.image_3x4 ? 'none' : 'flex' }}
+                    className="h-full w-full items-center justify-center"
+                >
+                    {student.ho_ten_full?.charAt(0)?.toUpperCase() || 'U'}
+                </span>
+            </button>
+
+            <div className="min-w-0 flex-1">
+                <button type="button" onClick={onOpen} className="w-full text-left">
+                    <div className="flex items-center gap-2">
+                        <h4 className="truncate text-[14px] font-bold text-slate-900">{student.ho_ten_full || 'Chưa có tên'}</h4>
+                        <ChevronRight size={14} className="shrink-0 text-slate-300" />
+                    </div>
+                    <p className="mt-1 truncate text-[13px] text-slate-500">{student.cccd || 'Chưa có CCCD'}</p>
+                </button>
+
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {student.registration_date && (
+                        <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-600">
+                            Đăng ký {formatDateVN(student.registration_date, true)}
+                        </span>
+                    )}
+                    <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
+                        pending ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                        {pending ? 'Chờ duyệt' : 'Đã duyệt'}
+                    </span>
+                    {conflict ? (
+                        <button
+                            type="button"
+                            onClick={onHistory}
+                            className="rounded-full bg-rose-100 px-2 py-1 text-[10px] font-semibold text-rose-700"
+                        >
+                            Trùng đăng ký
+                        </button>
+                    ) : null}
+                    {!pending && student.approved_at && (
+                        <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-medium text-blue-600">
+                            Duyệt {formatDateVN(student.approved_at, true)}
+                        </span>
+                    )}
+                    {!pending && student.approved_by_name && (
+                        <span className="rounded-full bg-purple-50 px-2 py-1 text-[10px] font-medium text-purple-600">
+                            {student.approved_by_name}
+                        </span>
+                    )}
+                </div>
+            </div>
+
+            <div className="flex shrink-0 flex-col gap-1.5">
+                {pending ? (
+                    <>
+                        <button
+                            type="button"
+                            onClick={onApprove}
+                            disabled={processing}
+                            className="rounded-[18px] bg-emerald-100 p-2 text-emerald-700 transition-transform active:scale-95 disabled:opacity-50"
+                            title="Duyệt thí sinh"
+                        >
+                            <Check size={16} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onReject}
+                            disabled={processing}
+                            className="rounded-[18px] bg-rose-100 p-2 text-rose-600 transition-transform active:scale-95 disabled:opacity-50"
+                            title="Từ chối thí sinh"
+                        >
+                            <XCircle size={16} />
+                        </button>
+                    </>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={onRemove}
+                        disabled={processing}
+                        className="rounded-[18px] bg-rose-50 p-2 text-rose-500 transition-transform active:scale-95 disabled:opacity-50"
+                        title="Xóa khỏi kỳ thi"
+                    >
+                        <X size={16} />
+                    </button>
+                )}
+            </div>
+        </div>
+    </div>
+);
+
+const OverlaySheet = ({ open, onClose, title, description, tone = 'slate', children, footer }) => {
+    if (!open) return null;
+
+    const toneMap = {
+        slate: 'from-slate-800 to-slate-950 text-white',
+        blue: 'from-blue-700 to-blue-900 text-white',
+        rose: 'from-rose-600 to-rose-900 text-white',
+        amber: 'from-amber-500 to-orange-600 text-white',
+    };
+
+    return (
+        <div className="fixed inset-0 z-[70] flex items-end bg-slate-950/55" onClick={onClose}>
+            <div
+                className="flex max-h-[82vh] w-full flex-col overflow-hidden rounded-t-[32px] bg-slate-50 shadow-2xl"
+                onClick={(event) => event.stopPropagation()}
+            >
+                <div className={`bg-gradient-to-r px-5 pb-4 pt-5 ${toneMap[tone] || toneMap.slate}`}>
+                    <div className="flex items-start justify-between gap-3">
+                        <div>
+                            <h3 className="text-lg font-black">{title}</h3>
+                            {description ? <p className="mt-1 text-sm text-white/80">{description}</p> : null}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex h-10 w-10 items-center justify-center rounded-[18px] bg-white/15"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto bg-slate-50">{children}</div>
+
+                {footer ? (
+                    <div className="border-t border-slate-200 bg-white px-4 py-4" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
+                        {footer}
+                    </div>
+                ) : null}
+            </div>
+        </div>
+    );
+};
+
+const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
+    const [organizerOptions, setOrganizerOptions] = useState([]);
+    const [programOptions, setProgramOptions] = useState([]);
+    const [levelOptions, setLevelOptions] = useState([]);
+    const [templateOptions, setTemplateOptions] = useState([]);
+    const [programPlatformLoading, setProgramPlatformLoading] = useState(false);
+    const [programPlatformError, setProgramPlatformError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showAdvanced, setShowAdvanced] = useState(Boolean(exam));
+    const [formData, setFormData] = useState(createExamFormData());
+    const [hasManualTemplateSelection, setHasManualTemplateSelection] = useState(false);
 
     useEffect(() => {
-        if (exam) {
-            const dateObj = new Date(exam.exam_date);
-            setFormData({
-                exam_name: exam.exam_name,
-                exam_date: dateObj.toISOString().split('T')[0],
-                exam_time: dateObj.toTimeString().slice(0, 5),
-                duration_minutes: exam.duration_minutes || 120,
-                location: exam.location || '',
-                notes: exam.notes || '',
-            });
-        }
+        const loadProgramPlatform = async () => {
+            setProgramPlatformLoading(true);
+            setProgramPlatformError('');
+
+            try {
+                const [organizersRes, programsRes, levelsRes, templatesRes] = await Promise.allSettled([
+                    api.getProgramOrganizers(),
+                    api.getPrograms(),
+                    api.getProgramLevels(),
+                    api.getTemplates(),
+                ]);
+
+                const failures = [];
+
+                if (organizersRes.status === 'fulfilled') {
+                    setOrganizerOptions(Array.isArray(organizersRes.value?.data) ? organizersRes.value.data : []);
+                } else {
+                    setOrganizerOptions([]);
+                    failures.push('đơn vị tổ chức');
+                }
+
+                if (programsRes.status === 'fulfilled') {
+                    setProgramOptions(Array.isArray(programsRes.value?.data) ? programsRes.value.data : []);
+                } else {
+                    setProgramOptions([]);
+                    failures.push('chương trình thi');
+                }
+
+                if (levelsRes.status === 'fulfilled') {
+                    setLevelOptions(Array.isArray(levelsRes.value?.data) ? levelsRes.value.data : []);
+                } else {
+                    setLevelOptions([]);
+                    failures.push('trình độ');
+                }
+
+                if (templatesRes.status === 'fulfilled') {
+                    setTemplateOptions(Array.isArray(templatesRes.value?.data) ? templatesRes.value.data : []);
+                } else {
+                    setTemplateOptions([]);
+                    failures.push('mẫu Excel');
+                }
+
+                if (failures.length > 0) {
+                    setProgramPlatformError(`Không tải được ${failures.join(', ')}. Vui lòng thử lại.`);
+                }
+            } catch (error) {
+                console.error('Failed to load program platform', error);
+                setProgramPlatformError('Không tải được danh mục lịch thi. Vui lòng thử lại.');
+            } finally {
+                setProgramPlatformLoading(false);
+            }
+        };
+
+        loadProgramPlatform();
+    }, []);
+
+    useEffect(() => {
+        setHasManualTemplateSelection(false);
+
+        if (!exam) return;
+
+        setFormData(createExamFormData({
+            exam_name: getExamTitle(exam),
+            exam_date: formatVietnamDateInputValue(exam.exam_date),
+            exam_time: formatTimeUtil(exam.exam_date),
+            duration_minutes: exam.duration_minutes != null ? String(exam.duration_minutes) : '',
+            location: getExamLocation(exam) === 'Chưa xếp địa điểm' ? '' : getExamLocation(exam),
+            notes: exam.notes || '',
+            organizer_uuid: exam.organizer_uuid || '',
+            program_uuid: exam.program_uuid || '',
+            level_uuid: exam.level_uuid || '',
+            exam_level: exam.exam_level || '',
+            template_id: exam.template_id ? String(exam.template_id) : '',
+            enable_linked_class: hasConfiguredLinkedClass(exam),
+            class_seed_name: exam.class_seed_name || `${getExamTitle(exam)} - Lớp ôn tập`,
+            class_seed_description: exam.class_seed_description || exam.notes || '',
+            class_seed_schedule_rule: exam.class_seed_schedule_rule || DEFAULT_CLASS_SEED_RULE,
+            class_seed_schedule_time: exam.class_seed_schedule_time || DEFAULT_CLASS_SEED_TIME,
+            class_seed_timezone: exam.class_seed_timezone || DEFAULT_CLASS_SEED_TIMEZONE,
+            class_seed_start_date: formatVietnamDateInputValue(exam.class_seed_start_date || exam.exam_date),
+            class_seed_end_date: exam.class_seed_end_date || '',
+            class_seed_max_students: exam.class_seed_max_students || DEFAULT_CLASS_SEED_MAX_STUDENTS,
+        }));
     }, [exam]);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            const dateStr = `${formData.exam_date}T${formData.exam_time}:00`;
-            const examDate = new Date(dateStr);
+    const updateField = (key, value) => {
+        if (key === 'template_id') {
+            setHasManualTemplateSelection(true);
+        }
 
+        setFormData((current) => {
+            const next = { ...current, [key]: value };
+
+            if (!exam && key === 'exam_name') {
+                if (!current.class_seed_name || current.class_seed_name === `${current.exam_name} - Lớp ôn tập`) {
+                    next.class_seed_name = value ? `${value} - Lớp ôn tập` : '';
+                }
+            }
+
+            if (key === 'exam_date' && (!current.class_seed_start_date || current.class_seed_start_date === current.exam_date)) {
+                next.class_seed_start_date = value;
+            }
+
+            if (key === 'organizer_uuid' && current.organizer_uuid !== value) {
+                next.program_uuid = '';
+                next.level_uuid = '';
+                next.exam_level = '';
+            }
+
+            if (key === 'program_uuid' && current.program_uuid !== value) {
+                const nextProgram = programOptions.find((item) => String(item.uuid) === String(value));
+                next.level_uuid = '';
+                next.exam_level = '';
+                if (nextProgram?.deliveryMode === 'external_redirect') {
+                    next.enable_linked_class = false;
+                    next.class_seed_name = '';
+                    next.class_seed_description = '';
+                }
+            }
+
+            if (key === 'level_uuid') {
+                const nextLevel = levelOptions.find((item) => String(item.uuid) === String(value));
+                next.exam_level = nextLevel?.code || '';
+            }
+
+            return next;
+        });
+    };
+
+    const applySchedulePreset = (preset) => {
+        setFormData((current) => ({
+            ...current,
+            class_seed_schedule_rule: preset.rule,
+            class_seed_schedule_time: preset.time,
+        }));
+    };
+
+    const summaryDateText = useMemo(() => {
+        if (!formData.exam_date) return 'Chọn ngày và giờ để xem trước';
+        const composed = `${formData.exam_date}T${formData.exam_time || '00:00'}:00`;
+        return `${formatLongDate(composed)}${formData.exam_time ? ` • ${formData.exam_time}` : ''}`;
+    }, [formData.exam_date, formData.exam_time]);
+
+    const selectedOrganizer = useMemo(
+        () => organizerOptions.find((item) => String(item.uuid) === String(formData.organizer_uuid)),
+        [organizerOptions, formData.organizer_uuid]
+    );
+
+    const selectedProgram = useMemo(
+        () => programOptions.find((item) => String(item.uuid) === String(formData.program_uuid)),
+        [programOptions, formData.program_uuid]
+    );
+
+    const selectedLevel = useMemo(
+        () => levelOptions.find((item) => String(item.uuid) === String(formData.level_uuid)),
+        [levelOptions, formData.level_uuid]
+    );
+
+    const selectedTemplate = useMemo(
+        () => findExamTemplateOption(templateOptions, formData.template_id),
+        [templateOptions, formData.template_id]
+    );
+
+    const filteredProgramOptions = useMemo(() => {
+        if (!formData.organizer_uuid) {
+            return programOptions;
+        }
+
+        return programOptions.filter((item) => String(item.organizerUuid) === String(formData.organizer_uuid));
+    }, [formData.organizer_uuid, programOptions]);
+
+    const filteredLevelOptions = useMemo(() => {
+        if (!formData.program_uuid) {
+            return [];
+        }
+
+        return levelOptions.filter((item) => String(item.programUuid) === String(formData.program_uuid));
+    }, [formData.program_uuid, levelOptions]);
+
+    const usesExternalExamLink = useMemo(
+        () => selectedProgram?.deliveryMode === 'external_redirect',
+        [selectedProgram]
+    );
+    const linkedClassEnabled = !usesExternalExamLink && Boolean(formData.enable_linked_class);
+
+    useEffect(() => {
+        if (!templateOptions.length) {
+            return;
+        }
+
+        const suggestedTemplateId = suggestExamTemplateId({
+            selectedOrganizerUuid: formData.organizer_uuid,
+            selectedProgramUuid: formData.program_uuid,
+            organizers: organizerOptions,
+            programs: programOptions,
+            templates: templateOptions,
+        });
+
+        setFormData((current) => {
+            const currentTemplateId = current.template_id ? String(current.template_id) : '';
+            const shouldKeepSavedEditTemplate = Boolean(exam && currentTemplateId);
+            const shouldKeepManualSelection = Boolean(hasManualTemplateSelection && currentTemplateId);
+
+            if (shouldKeepSavedEditTemplate || shouldKeepManualSelection) {
+                return current;
+            }
+
+            const nextTemplateId = suggestedTemplateId || '';
+            if (currentTemplateId === nextTemplateId) {
+                return current;
+            }
+
+            return {
+                ...current,
+                template_id: nextTemplateId,
+            };
+        });
+    }, [
+        exam,
+        hasManualTemplateSelection,
+        formData.organizer_uuid,
+        formData.program_uuid,
+        organizerOptions,
+        programOptions,
+        templateOptions,
+    ]);
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+
+        if (programPlatformLoading) {
+            onError?.('Đang tải danh mục lịch thi. Vui lòng chờ tải xong rồi thử lại.');
+            return;
+        }
+
+        if (organizerOptions.length === 0 || programOptions.length === 0) {
+            onError?.(programPlatformError || 'Chưa tải được đơn vị tổ chức hoặc chương trình thi. Vui lòng thử lại.');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            if (!formData.organizer_uuid) {
+                throw new Error('Vui lòng chọn đơn vị tổ chức');
+            }
+
+            if (!formData.program_uuid) {
+                throw new Error('Vui lòng chọn chương trình thi');
+            }
+
+            if (filteredLevelOptions.length > 0 && !formData.level_uuid) {
+                throw new Error('Vui lòng chọn trình độ');
+            }
+
+            if (formData.duration_minutes !== '') {
+                const parsedDuration = Number.parseInt(String(formData.duration_minutes), 10);
+                if (!Number.isInteger(parsedDuration) || parsedDuration < 1) {
+                    throw new Error('Thời lượng phải là số dương hợp lệ');
+                }
+            }
+
+            if (linkedClassEnabled) {
+                if (!formData.class_seed_name?.trim()) {
+                    throw new Error('Vui lòng nhập tên lớp linked');
+                }
+
+                if (!formData.class_seed_schedule_rule?.trim() || !formData.class_seed_schedule_time?.trim()) {
+                    throw new Error('Vui lòng nhập đủ lịch học cho lớp linked');
+                }
+
+                if (!formData.class_seed_start_date) {
+                    throw new Error('Vui lòng chọn ngày bắt đầu lớp linked');
+                }
+            }
+
+            const examDatePayload = buildVietnamDateTimePayload(formData.exam_date, formData.exam_time);
+            if (!examDatePayload) {
+                throw new Error('Ngày giờ thi không hợp lệ');
+            }
+            const durationMinutes = formData.duration_minutes === ''
+                ? null
+                : Number.parseInt(String(formData.duration_minutes), 10);
             const payload = {
                 exam_name: formData.exam_name,
-                exam_date: examDate.toISOString(),
-                duration_minutes: parseInt(formData.duration_minutes),
+                exam_date: examDatePayload,
+                duration_minutes: durationMinutes,
                 location: formData.location,
                 notes: formData.notes,
-                class_id: null
+                organizer_uuid: formData.organizer_uuid || null,
+                program_uuid: formData.program_uuid || null,
+                level_uuid: formData.level_uuid || null,
+                exam_level: selectedLevel?.code || formData.exam_level || null,
+                template_id: formData.template_id ? Number.parseInt(String(formData.template_id), 10) : undefined,
+                class_id: null,
+                enable_linked_class: linkedClassEnabled,
+                class_seed: linkedClassEnabled
+                    ? {
+                        name: formData.class_seed_name,
+                        description: formData.class_seed_description || null,
+                        schedule_rule: formData.class_seed_schedule_rule,
+                        schedule_time: formData.class_seed_schedule_time,
+                        timezone: formData.class_seed_timezone || DEFAULT_CLASS_SEED_TIMEZONE,
+                        start_date: formData.class_seed_start_date,
+                        end_date: formData.class_seed_end_date || null,
+                        max_students: Math.max(1, Number(formData.class_seed_max_students) || DEFAULT_CLASS_SEED_MAX_STUDENTS),
+                    }
+                    : null,
             };
 
-            let response;
-            if (exam) {
-                response = await api.updateExamSchedule(exam.id, payload);
-            } else {
-                response = await api.createExamSchedule(payload);
+            const response = exam
+                ? await api.updateExamSchedule(exam.id, payload)
+                : await api.createExamSchedule(payload);
+
+            if (response?.success) {
+                onSuccess?.();
+                return;
             }
 
-            if (response.success) {
-                onSuccess?.();
-                onClose();
-            } else {
-                toast.error('Có lỗi xảy ra: ' + (response.message || 'Unknown error'));
-            }
-        } catch (err) {
-            console.error(err);
-            toast.error('Lỗi: ' + err.message);
+            onError?.(response?.message || 'Không thể lưu lịch thi');
+        } catch (error) {
+            console.error(error);
+            onError?.(getErrorMessage(error, 'Không thể lưu lịch thi'));
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-end bg-black/50" onClick={onClose}>
+        <div className="fixed inset-0 z-[60] flex items-end bg-slate-950/55" onClick={onClose}>
             <div
-                className="bg-white w-full max-h-[90vh] rounded-t-3xl shadow-xl overflow-hidden flex flex-col animate-slide-up"
-                onClick={e => e.stopPropagation()}
+                className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[32px] bg-slate-50 shadow-2xl"
+                onClick={(event) => event.stopPropagation()}
             >
-                <div className="px-5 py-4 border-b flex justify-between items-center bg-slate-50">
-                    <h3 className="font-bold text-lg text-slate-800">
-                        {exam ? 'Cập nhật lịch thi' : 'Tạo lịch thi mới'}
-                    </h3>
-                    <button onClick={onClose} className="p-2 bg-slate-200 rounded-full text-slate-600">
-                        <X size={20} />
-                    </button>
+                <div className="bg-[linear-gradient(135deg,#0f172a_0%,#1d4ed8_55%,#3b82f6_100%)] px-5 pb-5 pt-6 text-white">
+                    <div className="mb-4 flex items-start justify-between gap-3">
+                        <div>
+                            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-blue-100">
+                                {exam ? 'Chỉnh sửa kỳ thi' : 'Tạo kỳ thi mới'}
+                            </p>
+                            <h3 className="mt-2 text-2xl font-black tracking-tight">
+                                {exam ? 'Cập nhật lịch thi' : 'Tạo kỳ thi mới'}
+                            </h3>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                        <div className="rounded-[28px] border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
+                        <h4 className="text-lg font-black leading-tight">
+                            {formData.exam_name || '...'}
+                        </h4>
+                        <p className="mt-2 text-sm text-blue-50/90">{summaryDateText}</p>
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                            {selectedOrganizer?.name ? (
+                                <span className="rounded-full bg-white/15 px-3 py-1.5 font-semibold">{selectedOrganizer.name}</span>
+                            ) : null}
+                            {selectedProgram?.name ? (
+                                <span className="rounded-full bg-white/15 px-3 py-1.5 font-semibold">{selectedProgram.name}</span>
+                            ) : null}
+                            {selectedLevel?.code ? (
+                                <span className="rounded-full bg-amber-100 px-3 py-1.5 font-semibold text-amber-800">{selectedLevel.code}</span>
+                            ) : null}
+                            {selectedTemplate?.display_name ? (
+                                <span className="rounded-full bg-white/15 px-3 py-1.5 font-semibold">{selectedTemplate.display_name}</span>
+                            ) : null}
+                            <span className="rounded-full bg-white/15 px-3 py-1.5 font-semibold">
+                                {formatDurationLabel(formData.duration_minutes)}
+                            </span>
+                            {formData.location ? (
+                                <span className="rounded-full bg-white/15 px-3 py-1.5 font-semibold">{formData.location}</span>
+                            ) : null}
+                            {linkedClassEnabled && formData.class_seed_name ? (
+                                <span className="rounded-full bg-white/15 px-3 py-1.5 font-semibold">Linked lớp ôn tập</span>
+                            ) : null}
+                        </div>
+                    </div>
                 </div>
 
-                <div className="overflow-y-auto p-5">
-                    <form id="exam-form" onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Tên kỳ thi <span className="text-red-500">*</span></label>
-                            <input
-                                type="text"
-                                required
-                                value={formData.exam_name}
-                                onChange={e => setFormData({ ...formData, exam_name: e.target.value })}
-                                placeholder="VD: Thi cuối kỳ K12..."
-                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
+                <div className="flex-1 overflow-y-auto px-4 pb-6 pt-4">
+                    <form id="mobile-exam-form" onSubmit={handleSubmit} className="space-y-4">
+                        <section className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
+                            <div className="mb-4">
+                                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Khung chính</p>
+                                <h4 className="mt-1 text-lg font-black text-slate-900">Thông tin kỳ thi</h4>
+                            </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Ngày thi <span className="text-red-500">*</span></label>
-                                <input
-                                    type="date"
-                                    required
-                                    value={formData.exam_date}
-                                    onChange={e => setFormData({ ...formData, exam_date: e.target.value })}
-                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Giờ thi <span className="text-red-500">*</span></label>
-                                <input
-                                    type="time"
-                                    required
-                                    value={formData.exam_time}
-                                    onChange={e => setFormData({ ...formData, exam_time: e.target.value })}
-                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                        </div>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">Tên kỳ thi</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.exam_name}
+                                        onChange={(event) => updateField('exam_name', event.target.value)}
+                                        placeholder="Ví dụ: Thi cuối kỳ lớp B1"
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                    />
+                                </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Thời lượng (phút)</label>
-                                <input
-                                    type="number"
-                                    value={formData.duration_minutes}
-                                    onChange={e => setFormData({ ...formData, duration_minutes: e.target.value })}
-                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Địa điểm</label>
-                                <input
-                                    type="text"
-                                    value={formData.location}
-                                    onChange={e => setFormData({ ...formData, location: e.target.value })}
-                                    placeholder="Phòng 101"
-                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                        </div>
+                                {programPlatformError ? (
+                                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                        {programPlatformError}
+                                    </div>
+                                ) : null}
 
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Ghi chú</label>
-                            <textarea
-                                value={formData.notes}
-                                onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                                rows={3}
-                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            ></textarea>
-                        </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="mb-1.5 block text-sm font-semibold text-slate-700">Đơn vị tổ chức</label>
+                                        <select
+                                            required
+                                            value={formData.organizer_uuid}
+                                            onChange={(event) => updateField('organizer_uuid', event.target.value)}
+                                            disabled={programPlatformLoading}
+                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                        >
+                                            <option value="">{programPlatformLoading ? 'Đang tải đơn vị' : 'Chọn đơn vị'}</option>
+                                            {organizerOptions.map((item) => (
+                                                <option key={item.uuid} value={item.uuid}>{item.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-1.5 block text-sm font-semibold text-slate-700">Chương trình thi</label>
+                                        <select
+                                            required
+                                            value={formData.program_uuid}
+                                            onChange={(event) => updateField('program_uuid', event.target.value)}
+                                            disabled={programPlatformLoading || !formData.organizer_uuid}
+                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                        >
+                                            <option value="">{programPlatformLoading ? 'Đang tải chương trình' : 'Chọn chương trình'}</option>
+                                            {filteredProgramOptions.map((item) => (
+                                                <option key={item.uuid} value={item.uuid}>{item.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="mb-1.5 block text-sm font-semibold text-slate-700">Trình độ</label>
+                                        <select
+                                            value={formData.level_uuid}
+                                            onChange={(event) => updateField('level_uuid', event.target.value)}
+                                            disabled={programPlatformLoading || !formData.program_uuid || filteredLevelOptions.length === 0}
+                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                        >
+                                            <option value="">
+                                                {programPlatformLoading
+                                                    ? 'Đang tải trình độ'
+                                                    : filteredLevelOptions.length
+                                                        ? 'Chọn trình độ'
+                                                        : 'Không có trình độ'}
+                                            </option>
+                                            {filteredLevelOptions.map((item) => (
+                                                <option key={item.uuid} value={item.uuid}>{item.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ngày thi</label>
+                                        <input
+                                            type="date"
+                                            required
+                                            value={formData.exam_date}
+                                            onChange={(event) => updateField('exam_date', event.target.value)}
+                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">Mẫu Excel</label>
+                                    <select
+                                        value={formData.template_id}
+                                        onChange={(event) => updateField('template_id', event.target.value)}
+                                        disabled={programPlatformLoading}
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                    >
+                                        <option value="">{programPlatformLoading ? 'Đang tải mẫu' : 'Không dùng mẫu riêng'}</option>
+                                        {templateOptions.map((item) => (
+                                            <option key={item.id} value={String(item.id)}>{item.display_name || item.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="mb-1.5 block text-sm font-semibold text-slate-700">Giờ thi</label>
+                                        <input
+                                            type="time"
+                                            required
+                                            value={formData.exam_time}
+                                            onChange={(event) => updateField('exam_time', event.target.value)}
+                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="mb-1.5 block text-sm font-semibold text-slate-700">Thời lượng</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            step="1"
+                                            value={formData.duration_minutes}
+                                            onChange={(event) => updateField('duration_minutes', event.target.value)}
+                                            placeholder="Có thể bỏ trống"
+                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1.5 block text-sm font-semibold text-slate-700">Địa điểm / hình thức</label>
+                                        <input
+                                            type="text"
+                                            value={formData.location}
+                                            onChange={(event) => updateField('location', event.target.value)}
+                                            placeholder="Ví dụ: Eduglobal, Trực tuyến qua Zoom"
+                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ghi chú</label>
+                                    <textarea
+                                        value={formData.notes}
+                                        onChange={(event) => updateField('notes', event.target.value)}
+                                        rows={3}
+                                        placeholder="Ghi chú cho admin, giám thị hoặc lớp ôn tập liên quan. Giữ nguyên xuống dòng khi hiển thị."
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                    />
+                                </div>
+                            </div>
+                        </section>
+
+                        {usesExternalExamLink ? (
+                            <section className="rounded-[28px] border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 shadow-sm">
+                                VEPT/Versant dùng link riêng, không tạo lớp đào tạo nội bộ. VSTEP và Tin học mới cần linked class để ôn tập.
+                            </section>
+                        ) : null}
+
+                        <section className="rounded-[28px] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
+                            <div className="mb-4 flex items-start justify-between gap-3">
+                                <div>
+                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-500">Tự động hóa</p>
+                                    <h4 className="mt-1 text-lg font-black text-slate-900">Lớp ôn tập linked</h4>
+                                </div>
+                                <div className="flex flex-col items-end gap-2">
+                                    <label className="flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
+                                        <input
+                                            type="checkbox"
+                                            checked={linkedClassEnabled}
+                                            onChange={(event) => updateField('enable_linked_class', event.target.checked)}
+                                        />
+                                        Mở linked
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAdvanced((current) => !current)}
+                                        className="shrink-0 rounded-full border border-emerald-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700"
+                                    >
+                                        {showAdvanced ? 'Thu gọn' : 'Mở rộng'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {linkedClassEnabled ? (
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">Tên lớp ôn tập *</label>
+                                    <input
+                                        type="text"
+                                        required={linkedClassEnabled}
+                                        value={formData.class_seed_name}
+                                        onChange={(event) => updateField('class_seed_name', event.target.value)}
+                                        placeholder="Ví dụ: Lớp ôn thi B1"
+                                        className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-semibold text-slate-700">Preset lịch học</label>
+                                    <div className="flex gap-2 overflow-x-auto pb-1">
+                                        {SCHEDULE_PRESETS.map((preset) => {
+                                            const active = formData.class_seed_schedule_rule === preset.rule && formData.class_seed_schedule_time === preset.time;
+                                            return (
+                                                <button
+                                                    key={preset.id}
+                                                    type="button"
+                                                    onClick={() => applySchedulePreset(preset)}
+                                                    className={`shrink-0 rounded-2xl border px-3 py-2 text-left transition ${
+                                                        active
+                                                            ? 'border-emerald-500 bg-emerald-500 text-white shadow-lg shadow-emerald-100'
+                                                            : 'border-emerald-200 bg-white text-slate-700'
+                                                    }`}
+                                                >
+                                                    <div className="text-sm font-bold">{preset.label}</div>
+                                                    <div className={`text-[11px] ${active ? 'text-white/85' : 'text-slate-500'}`}>{preset.helper}</div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="mb-1.5 block text-sm font-semibold text-slate-700">Quy tắc lịch *</label>
+                                        <input
+                                            type="text"
+                                            required={linkedClassEnabled}
+                                            value={formData.class_seed_schedule_rule}
+                                            onChange={(event) => updateField('class_seed_schedule_rule', event.target.value.toUpperCase())}
+                                            placeholder="WEEKLY:1,3,5"
+                                            className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1.5 block text-sm font-semibold text-slate-700">Khung giờ học *</label>
+                                        <input
+                                            type="text"
+                                            required={linkedClassEnabled}
+                                            value={formData.class_seed_schedule_time}
+                                            onChange={(event) => updateField('class_seed_schedule_time', event.target.value)}
+                                            placeholder="19:00-21:00"
+                                            className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div>
+                                        <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ngày bắt đầu *</label>
+                                        <input
+                                            type="date"
+                                            required={linkedClassEnabled}
+                                            value={formData.class_seed_start_date}
+                                            onChange={(event) => updateField('class_seed_start_date', event.target.value)}
+                                            className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">Mô tả lớp</label>
+                                    <textarea
+                                        value={formData.class_seed_description}
+                                        onChange={(event) => updateField('class_seed_description', event.target.value)}
+                                        rows={3}
+                                        placeholder="Mục tiêu lớp, nội dung ôn tập hoặc nhắc nhở cho giáo viên"
+                                        className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                    />
+                                </div>
+
+                                {showAdvanced ? (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ngày kết thúc</label>
+                                            <input
+                                                type="date"
+                                                value={formData.class_seed_end_date}
+                                                onChange={(event) => updateField('class_seed_end_date', event.target.value)}
+                                                className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Sĩ số tối đa</label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={formData.class_seed_max_students}
+                                                onChange={(event) => updateField('class_seed_max_students', event.target.value)}
+                                                className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                            />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Múi giờ</label>
+                                            <select
+                                                value={formData.class_seed_timezone}
+                                                onChange={(event) => updateField('class_seed_timezone', event.target.value)}
+                                                className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                            >
+                                                {TIMEZONE_OPTIONS.map((item) => (
+                                                    <option key={item} value={item}>{item}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                ) : null}
+                            </div>
+                            ) : (
+                            <div className="rounded-2xl border border-dashed border-emerald-200 bg-white/70 p-4 text-sm text-emerald-800">
+                                Linked class đang tắt. Lịch thi sẽ được lưu độc lập, không tạo lớp online cho teacher workspace.
+                            </div>
+                            )}
+                        </section>
                     </form>
                 </div>
 
-                <div className="p-5 border-t bg-white safe-pb">
+                <div
+                    className="border-t border-slate-200 bg-white px-4 pb-4 pt-4"
+                    style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+                >
                     <button
                         type="submit"
-                        form="exam-form"
-                        disabled={loading}
-                        className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 shadow-lg shadow-blue-200"
+                        form="mobile-exam-form"
+                        disabled={loading || programPlatformLoading}
+                        className="w-full rounded-2xl bg-slate-900 px-4 py-4 text-base font-black text-white shadow-[0_16px_30px_rgba(15,23,42,0.16)] transition-transform active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                        {loading ? 'Đang xử lý...' : (exam ? 'Lưu thay đổi' : 'Tạo lịch thi')}
+                        {loading ? 'Đang lưu lịch thi...' : programPlatformLoading ? 'Đang tải danh mục...' : exam ? 'Lưu thay đổi' : 'Tạo lịch thi'}
                     </button>
                 </div>
             </div>
@@ -180,158 +1390,235 @@ const ExamFormSheet = ({ exam, onClose, onSuccess }) => {
     );
 };
 
-const ExamCard = ({ exam, onClick }) => {
-    const title = exam.exam_name || exam.title || exam.ten_lich_thi || exam.ten || 'Chưa có tên';
-    const examDate = exam.exam_date || exam.ngay_thi || exam.ngay || new Date();
-    const room = exam.location || exam.room || exam.dia_diem || exam.phong_thi || 'Chưa xếp phòng';
-    const dateObj = new Date(examDate);
-
-    // Create separate Date objects for comparison
-    const examDateOnly = new Date(dateObj);
-    examDateOnly.setHours(0, 0, 0, 0);
-    const todayOnly = new Date();
-    todayOnly.setHours(0, 0, 0, 0);
-
-    const isPast = examDateOnly.getTime() < todayOnly.getTime();
-    const isToday = examDateOnly.getTime() === todayOnly.getTime();
-    const pendingCount = exam.pending_count || 0;
-    const totalStudents = exam.total_students || exam.student_count || 0;
+const ExamCard = ({ exam, onOpen }) => {
+    const title = getExamTitle(exam);
+    const dateObj = getExamDate(exam);
+    const location = getExamLocation(exam);
+    const pendingCount = getExamPendingCount(exam);
+    const studentCount = getExamStudentCount(exam);
+    const status = getExamStatusMeta(dateObj);
 
     return (
-        <div
-            className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-3 active:scale-[0.98] transition-all duration-200"
-            onClick={() => onClick(exam)}
+        <button
+            type="button"
+            onClick={() => onOpen(exam)}
+            className={`relative w-full overflow-hidden rounded-[20px] border bg-white p-3 text-left shadow-sm transition-transform active:scale-[0.98] ${status.cardClass}`}
         >
-            <div className="flex justify-between items-start mb-2">
-                <div className="flex-1 min-w-0 pr-3">
-                    <h3 className="font-bold text-slate-800 line-clamp-2 mb-2">{title}</h3>
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${isToday ? 'bg-emerald-100 text-emerald-700' :
-                            isPast ? 'bg-slate-100 text-slate-600' :
-                                'bg-blue-100 text-blue-700'
-                            }`}>
-                            {isToday ? 'Hôm nay' : isPast ? 'Đã qua' : 'Sắp tới'}
+            <div className="flex items-start gap-3">
+                <div className="flex w-[52px] shrink-0 flex-col items-center rounded-[14px] bg-slate-950 py-2 text-white">
+                    <p className="text-[8px] font-bold uppercase tracking-wider text-white/60">
+                        {dateObj.toLocaleDateString('vi-VN', { weekday: 'short' })}
+                    </p>
+                    <p className="text-[22px] font-black leading-none">{String(dateObj.getDate()).padStart(2, '0')}</p>
+                    <p className="text-[9px] font-semibold text-white/60">T{dateObj.getMonth() + 1}/{dateObj.getFullYear()}</p>
+                </div>
+
+                <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1">
+                        <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wide ${status.badgeClass}`}>
+                            {status.label}
                         </span>
-                        {totalStudents > 0 && (
-                            <span className="text-xs text-slate-500 font-medium bg-slate-50 px-2 py-0.5 rounded-md flex items-center gap-1">
-                                <Users size={10} />
-                                {totalStudents} thí sinh
-                            </span>
-                        )}
                         {pendingCount > 0 && (
-                            <span className="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded-md flex items-center gap-1">
-                                <AlertCircle size={10} />
-                                {pendingCount} chờ
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-semibold text-amber-700">
+                                {pendingCount} chờ duyệt
                             </span>
                         )}
                     </div>
-                </div>
-                <div className="text-center bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-xl min-w-[70px] flex-shrink-0">
-                    <p className="text-xs text-blue-600 font-bold uppercase">{dateObj.toLocaleDateString('vi-VN', { weekday: 'short' })}</p>
-                    <p className="text-2xl font-bold text-blue-700 my-0.5">{dateObj.getDate()}</p>
-                    <p className="text-xs text-blue-600 font-medium">Th {dateObj.getMonth() + 1}</p>
-                </div>
-            </div>
 
-            <div className="space-y-1.5 mt-3">
-                <div className="flex items-center text-sm text-slate-600">
-                    <Clock size={14} className="mr-2 text-slate-400 flex-shrink-0" />
-                    <span className="truncate">{formatTime(examDate)} • {exam.duration_minutes || 120} phút</span>
-                </div>
-                <div className="flex items-center text-sm text-slate-600">
-                    <MapPin size={14} className="mr-2 text-slate-400 flex-shrink-0" />
-                    <span className="truncate">{room}</span>
+                    <h3 className="mt-1.5 line-clamp-1 text-[14px] font-black leading-snug text-slate-900">
+                        {title}
+                    </h3>
+
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                        <span className="flex items-center gap-1">
+                            <Clock size={12} className="text-slate-400" />
+                            {formatDateVN(exam.exam_date)} {formatTimeUtil(exam.exam_date)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                            <MapPin size={12} className="text-slate-400" />
+                            <span className="max-w-[120px] truncate">{location}</span>
+                        </span>
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-between rounded-[12px] bg-slate-50 px-2.5 py-1.5">
+                        <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700">
+                            <Users size={13} className="text-slate-400" />
+                            {studentCount} thí sinh
+                        </span>
+                        <span className="flex items-center gap-0.5 text-[10px] font-bold text-slate-400">
+                            Chi tiết <ChevronRight size={12} />
+                        </span>
+                    </div>
                 </div>
             </div>
-        </div>
+        </button>
     );
 };
 
-const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete }) => {
+const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }) => {
     const [activeTab, setActiveTab] = useState('approved');
     const [approvedList, setApprovedList] = useState([]);
     const [pendingList, setPendingList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [showStudentDetail, setShowStudentDetail] = useState(false);
+    const [studentSearch, setStudentSearch] = useState('');
+    const [processingStudentId, setProcessingStudentId] = useState(null);
+    const [conflictStudentIds, setConflictStudentIds] = useState(new Set());
+    const [conflicts, setConflicts] = useState([]);
+    const [conflictsLoading, setConflictsLoading] = useState(false);
+    const [showConflictsSheet, setShowConflictsSheet] = useState(false);
+    const [showAddStudentsSheet, setShowAddStudentsSheet] = useState(false);
+    const [addStudentsQuery, setAddStudentsQuery] = useState('');
+    const [addStudentsLoading, setAddStudentsLoading] = useState(false);
+    const [addStudentsResults, setAddStudentsResults] = useState([]);
+    const [selectedAddStudentIds, setSelectedAddStudentIds] = useState(new Set());
+    const [addingStudents, setAddingStudents] = useState(false);
+    const [addStudentsSummary, setAddStudentsSummary] = useState('');
+    const [showHistorySheet, setShowHistorySheet] = useState(false);
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [historyRows, setHistoryRows] = useState([]);
+    const [historyStudent, setHistoryStudent] = useState(null);
+    const [showExcelPreviewSheet, setShowExcelPreviewSheet] = useState(false);
 
     useEffect(() => {
-        if (exam) {
-            loadStudentLists();
-        }
+        if (!exam) return;
+        loadStudentLists();
     }, [exam]);
+
+    const normalizeList = (response) => (
+        Array.isArray(response?.data)
+            ? response.data
+            : Array.isArray(response?.data?.data)
+                ? response.data.data
+                : Array.isArray(response)
+                    ? response
+                    : []
+    );
+
+    const fetchConflicts = async ({ showLoader = false, surfaceError = false } = {}) => {
+        if (showLoader) setConflictsLoading(true);
+        try {
+            const response = await api.getExamRegistrationConflicts();
+            const rows = response?.success === false ? [] : normalizeList(response);
+            setConflicts(rows);
+            setConflictStudentIds(new Set(rows.map((item) => Number(item.student_id))));
+            return rows;
+        } catch (error) {
+            console.error('Failed to load conflicts', error);
+            if (surfaceError) onError?.(getErrorMessage(error, 'Không tải được danh sách trùng đăng ký'));
+            setConflicts([]);
+            setConflictStudentIds(new Set());
+            return [];
+        } finally {
+            if (showLoader) setConflictsLoading(false);
+        }
+    };
 
     const loadStudentLists = async () => {
         setLoading(true);
         try {
-            const [approvedRes, pendingRes] = await Promise.all([
+            const [approvedRes, pendingRes, conflictRows] = await Promise.all([
                 api.getExamStudents(exam.id),
-                api.getPendingExamStudents(exam.id)
+                api.getPendingExamStudents(exam.id),
+                fetchConflicts(),
             ]);
-            setApprovedList(Array.isArray(approvedRes.data) ? approvedRes.data : (approvedRes.data?.data || []));
-            setPendingList(Array.isArray(pendingRes.data) ? pendingRes.data : (pendingRes.data?.data || []));
+
+            const approvedData = normalizeList(approvedRes);
+            const pendingData = normalizeList(pendingRes);
+            setApprovedList(approvedData);
+            setPendingList(pendingData);
+            setConflicts(conflictRows);
+
+            if (!pendingData.length && activeTab === 'pending') {
+                setActiveTab('approved');
+            } else if (pendingData.length && activeTab !== 'approved' && activeTab !== 'pending') {
+                setActiveTab('pending');
+            } else if (!approvedData.length && pendingData.length) {
+                setActiveTab('pending');
+            }
         } catch (error) {
             console.error('Failed to load student lists', error);
+            onError?.('Không tải được danh sách thí sinh');
         } finally {
             setLoading(false);
         }
     };
 
     const handleApproveStudent = async (student) => {
+        setProcessingStudentId(student.student_id);
         try {
-            const res = await api.approveExamStudent(exam.id, student.student_id);
-            if (res.success) {
-                // Move from pending to approved
-                setPendingList(prev => prev.filter(s => s.student_id !== student.student_id));
-                setApprovedList(prev => [{ ...student, registration_status: 'approved' }, ...prev]);
-                onRefresh?.(); // Refresh exam list to update counts
+            const response = await api.approveExamStudent(exam.id, student.student_id);
+            if (!response?.success) {
+                onError?.(response?.message || 'Không thể duyệt thí sinh');
+                return;
             }
+
+            await loadStudentLists();
+            onRefresh?.();
         } catch (error) {
             console.error('Failed to approve student', error);
-            toast.error('Lỗi duyệt thí sinh: ' + error.message);
+            onError?.(getErrorMessage(error, 'Không thể duyệt thí sinh'));
+        } finally {
+            setProcessingStudentId(null);
         }
     };
 
     const handleApproveAll = async () => {
-        if (pendingList.length === 0) return;
+        if (!pendingList.length) return;
+
         try {
-            const res = await api.approveAllExamStudents(exam.id);
-            if (res.success) {
-                // Move all pending to approved
-                setApprovedList(prev => [...pendingList.map(s => ({ ...s, registration_status: 'approved' })), ...prev]);
-                setPendingList([]);
-                onRefresh?.();
+            const response = await api.approveAllExamStudents(exam.id);
+            if (!response?.success) {
+                onError?.(response?.message || 'Không thể duyệt toàn bộ');
+                return;
             }
+
+            await loadStudentLists();
+            onRefresh?.();
         } catch (error) {
             console.error('Failed to approve all', error);
-            toast.error('Lỗi duyệt tất cả: ' + error.message);
+            onError?.(getErrorMessage(error, 'Không thể duyệt toàn bộ'));
         }
     };
 
     const handleRejectStudent = async (student) => {
+        setProcessingStudentId(student.student_id);
         try {
-            const res = await api.rejectExamStudent(exam.id, student.student_id);
-            if (res.success) {
-                setPendingList(prev => prev.filter(s => s.student_id !== student.student_id));
-                onRefresh?.();
+            const response = await api.rejectExamStudent(exam.id, student.student_id);
+            if (!response?.success) {
+                onError?.(response?.message || 'Không thể từ chối thí sinh');
+                return;
             }
+
+            await loadStudentLists();
+            onRefresh?.();
         } catch (error) {
             console.error('Failed to reject student', error);
-            toast.error('Lỗi từ chối thí sinh: ' + error.message);
+            onError?.(getErrorMessage(error, 'Không thể từ chối thí sinh'));
+        } finally {
+            setProcessingStudentId(null);
         }
     };
 
     const handleRemoveStudent = async (student) => {
-        if (!confirm(`Xóa ${student.ho_ten_full} khỏi danh sách?`)) return;
+        if (!window.confirm(`Xóa ${student.ho_ten_full} khỏi danh sách kỳ thi này?`)) return;
+
+        setProcessingStudentId(student.student_id);
         try {
-            const res = await api.removeStudentFromExam(exam.id, student.student_id);
-            if (res.success) {
-                setApprovedList(prev => prev.filter(s => s.student_id !== student.student_id));
-                onRefresh?.();
+            const response = await api.removeStudentFromExam(exam.id, student.student_id);
+            if (!response?.success) {
+                onError?.(response?.message || 'Không thể xóa thí sinh');
+                return;
             }
+
+            await loadStudentLists();
+            onRefresh?.();
         } catch (error) {
             console.error('Failed to remove student', error);
-            toast.error('Lỗi xóa thí sinh: ' + error.message);
+            onError?.(getErrorMessage(error, 'Không thể xóa thí sinh'));
+        } finally {
+            setProcessingStudentId(null);
         }
     };
 
@@ -340,228 +1627,367 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete }) => {
             await api.downloadExamListExcel(exam.id);
         } catch (error) {
             console.error('Failed to export', error);
-            toast.error('Lỗi xuất Excel: ' + error.message);
+            onError?.(getErrorMessage(error, 'Không thể xuất danh sách Excel'));
         }
+    };
+
+    const handleOpenExcelPreview = () => {
+        if (!approvedList.length) {
+            onError?.('Không có dữ liệu để preview Excel');
+            return;
+        }
+
+        setShowExcelPreviewSheet(true);
     };
 
     const handleOpenStudentDetail = async (student) => {
-        // Fetch full student data by CCCD
         try {
             const response = await api.getStudentByCCCD(student.cccd);
-            const fullStudent = response.data || response || student;
-            setSelectedStudent(fullStudent);
-            setShowStudentDetail(true);
+            setSelectedStudent(response?.data || response || student);
         } catch (error) {
-            console.error('Failed to fetch student data', error);
+            console.error('Failed to fetch student detail', error);
             setSelectedStudent(student);
+        } finally {
             setShowStudentDetail(true);
         }
     };
 
-    const dateObj = new Date(exam.exam_date);
+    const openAddStudentsSheet = () => {
+        setAddStudentsQuery('');
+        setAddStudentsResults([]);
+        setSelectedAddStudentIds(new Set());
+        setAddStudentsSummary('');
+        setShowAddStudentsSheet(true);
+    };
+
+    const closeAddStudentsSheet = () => {
+        setShowAddStudentsSheet(false);
+        setAddStudentsQuery('');
+        setAddStudentsResults([]);
+        setSelectedAddStudentIds(new Set());
+        setAddStudentsSummary('');
+    };
+
+    const handleSearchAddStudents = async () => {
+        const query = String(addStudentsQuery || '').trim();
+        if (query.length < 2) {
+            onError?.('Nhập ít nhất 2 ký tự để tìm học viên');
+            return;
+        }
+
+        setAddStudentsLoading(true);
+        try {
+            const response = await api.searchStudents(query);
+            const rawResults = response?.success === false ? [] : normalizeList(response);
+            const existingIds = new Set(
+                [...approvedList, ...pendingList]
+                    .map((student) => Number(student.student_id || student.id))
+                    .filter(Boolean)
+            );
+            const filtered = rawResults.filter((student) => !existingIds.has(Number(student.id)));
+            setSelectedAddStudentIds(new Set());
+            setAddStudentsResults(filtered);
+            setAddStudentsSummary(filtered.length ? '' : 'Không còn học viên phù hợp để thêm vào kỳ thi này.');
+        } catch (error) {
+            console.error('Failed to search students', error);
+            onError?.(getErrorMessage(error, 'Không thể tìm kiếm học viên'));
+        } finally {
+            setAddStudentsLoading(false);
+        }
+    };
+
+    const toggleSelectAddStudent = (studentId) => {
+        setSelectedAddStudentIds((current) => {
+            const next = new Set(current);
+            if (next.has(studentId)) next.delete(studentId);
+            else next.add(studentId);
+            return next;
+        });
+    };
+
+    const handleAddSelectedStudents = async (force = false) => {
+        const ids = Array.from(selectedAddStudentIds || []);
+        if (!ids.length) {
+            onError?.('Chưa chọn học viên nào');
+            return;
+        }
+
+        setAddingStudents(true);
+        try {
+            const response = await api.addStudentsToExamWithForce(exam.id, ids, force);
+            if (!response?.success) {
+                onError?.(response?.message || 'Không thể thêm thí sinh');
+                return;
+            }
+
+            const results = Array.isArray(response?.results) ? response.results : [];
+            const addedCount = results.filter((item) => item.status === 'success').length;
+            const blockedCount = results.filter((item) => item.status === 'blocked').length;
+            const failedCount = results.filter((item) => item.status === 'error').length;
+            const summary = `Đã thêm ${addedCount}${blockedCount ? `, bị chặn ${blockedCount}` : ''}${failedCount ? `, lỗi ${failedCount}` : ''}.`;
+            setAddStudentsSummary(summary);
+            if (results.length) {
+                const retryIds = results
+                    .filter((item) => item.status !== 'success')
+                    .map((item) => Number(item.student_id || item.id))
+                    .filter(Boolean);
+                setSelectedAddStudentIds(new Set(retryIds));
+            }
+
+            await loadStudentLists();
+            onRefresh?.();
+
+            if (blockedCount > 0 && !force) {
+                onError?.(`${summary} Có hồ sơ bị chặn vì trùng đăng ký. Bạn có thể kiểm tra lịch sử hoặc thêm cưỡng bức.`);
+            } else {
+                closeAddStudentsSheet();
+            }
+        } catch (error) {
+            console.error('Failed to add students', error);
+            onError?.(getErrorMessage(error, 'Không thể thêm thí sinh vào kỳ thi'));
+        } finally {
+            setAddingStudents(false);
+        }
+    };
+
+    const handleOpenConflicts = async () => {
+        setShowConflictsSheet(true);
+        await fetchConflicts({ showLoader: true, surfaceError: true });
+    };
+
+    const handleViewDuplicateHistory = async (student) => {
+        if (!student?.student_id) return;
+
+        setHistoryStudent(student);
+        setHistoryRows([]);
+        setShowHistorySheet(true);
+        setHistoryLoading(true);
+
+        try {
+            const response = await api.getStudentExamRegistrationHistory(student.student_id);
+            const rows = response?.success === false ? [] : normalizeList(response);
+            setHistoryRows(rows);
+        } catch (error) {
+            console.error('Failed to load registration history', error);
+            onError?.(getErrorMessage(error, 'Không thể tải lịch sử đăng ký'));
+        } finally {
+            setHistoryLoading(false);
+        }
+    };
+
     const displayList = activeTab === 'approved' ? approvedList : pendingList;
+    const filteredStudents = useMemo(() => {
+        const keyword = studentSearch.trim().toLowerCase();
+        if (!keyword) return displayList;
+
+        return displayList.filter((student) => {
+            const name = (student.ho_ten_full || '').toLowerCase();
+            const cccd = (student.cccd || '').toLowerCase();
+            return name.includes(keyword) || cccd.includes(keyword);
+        });
+    }, [displayList, studentSearch]);
+
+    const currentConflictCount = useMemo(() => {
+        const ids = new Set(
+            [...approvedList, ...pendingList]
+                .map((student) => Number(student.student_id || student.id))
+                .filter(Boolean)
+        );
+        let total = 0;
+        conflictStudentIds.forEach((id) => {
+            if (ids.has(id)) total += 1;
+        });
+        return total;
+    }, [approvedList, pendingList, conflictStudentIds]);
+
+    const excelPreviewData = useMemo(
+        () => buildExcelPreviewData({ exam, students: approvedList }),
+        [exam, approvedList]
+    );
+
+    const examDate = getExamDate(exam);
+    const status = getExamStatusMeta(examDate);
 
     return (
         <>
-            <div className="fixed inset-0 z-50 flex items-end bg-black/50" onClick={onClose}>
+            <div className="fixed inset-0 z-50 flex items-end bg-slate-950/55" onClick={onClose}>
                 <div
-                    className="bg-white w-full max-h-[92vh] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col animate-slide-up"
-                    onClick={(e) => e.stopPropagation()}
+                    className="flex max-h-[95vh] w-full flex-col overflow-hidden rounded-t-[28px] bg-slate-50 shadow-2xl"
+                    onClick={(event) => event.stopPropagation()}
                 >
-                    {/* Header */}
-                    <div className="relative bg-gradient-to-r from-purple-600 to-pink-600 px-5 pt-6 pb-5">
-                        <button
-                            onClick={onClose}
-                            className="absolute top-4 right-4 p-2 rounded-full bg-white/20 backdrop-blur-sm active:scale-95 transition-transform z-10"
-                        >
-                            <X size={20} className="text-white" />
-                        </button>
-
-                        <div className="absolute top-4 left-4 flex gap-2 z-10">
+                    <div className="bg-[linear-gradient(135deg,#0f172a_0%,#1d4ed8_60%,#2563eb_100%)] px-4 pb-4 pt-4 text-white">
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100">Chi tiết lịch thi</p>
+                                <h2 className="mt-1.5 line-clamp-2 text-xl font-black leading-snug">{getExamTitle(exam)}</h2>
+                            </div>
                             <button
-                                onClick={onEdit}
-                                className="p-2 rounded-full bg-white/20 backdrop-blur-sm active:scale-95 transition-transform"
-                                title="Chỉnh sửa"
+                                type="button"
+                                onClick={onClose}
+                                className="flex h-10 w-10 items-center justify-center rounded-[18px] bg-white/15"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                            </button>
-                            <button
-                                onClick={onDelete}
-                                className="p-2 rounded-full bg-red-500/30 backdrop-blur-sm active:scale-95 transition-transform"
-                                title="Xóa"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>
+                                <X size={18} />
                             </button>
                         </div>
 
-                        <div className="text-center">
-                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm border-2 border-white/30 mb-3">
-                                <Calendar size={32} className="text-white" />
-                            </div>
-                            <h2 className="text-xl font-bold text-white mb-1">{exam.exam_name}</h2>
-                            <div className="flex items-center justify-center gap-2 text-white/90 text-sm mb-3">
-                                <Calendar size={14} />
-                                <span>{dateObj.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
-                                <span>•</span>
-                                <Clock size={14} />
-                                <span>{formatTime(exam.exam_date)}</span>
-                            </div>
-                            {exam.location && (
-                                <div className="flex items-center justify-center gap-1.5 text-white/80 text-xs">
-                                    <MapPin size={12} />
-                                    <span>{exam.location}</span>
-                                </div>
-                            )}
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                            <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${status.badgeClass}`}>
+                                {status.label}
+                            </span>
+                            <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold">
+                                {formatDateVN(exam.exam_date)} • {formatTimeUtil(exam.exam_date)}
+                            </span>
+                            <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold">
+                                {formatDurationLabel(exam.duration_minutes)}
+                            </span>
+                            <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold">
+                                {getExamLocation(exam)}
+                            </span>
                         </div>
 
-                        {/* Stats */}
-                        <div className="grid grid-cols-3 gap-3 mt-4">
-                            <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/30">
-                                <p className="text-xs text-white/80 font-medium mb-0.5">Tổng số</p>
-                                <p className="text-xl font-bold text-white">{approvedList.length + pendingList.length}</p>
+                        <div className="mt-3 grid grid-cols-3 gap-2">
+                            <div className="rounded-[18px] border border-white/15 bg-white/10 p-2.5 backdrop-blur-sm">
+                                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-100">Tổng số</div>
+                                <div className="mt-1.5 text-xl font-black">{approvedList.length + pendingList.length}</div>
                             </div>
-                            <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/30">
-                                <p className="text-xs text-white/80 font-medium mb-0.5">Đã duyệt</p>
-                                <p className="text-xl font-bold text-white">{approvedList.length}</p>
+                            <div className="rounded-[18px] border border-white/15 bg-white/10 p-2.5 backdrop-blur-sm">
+                                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-100">Đã duyệt</div>
+                                <div className="mt-1.5 text-xl font-black">{approvedList.length}</div>
                             </div>
-                            <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/30">
-                                <p className="text-xs text-white/80 font-medium mb-0.5">Chờ duyệt</p>
-                                <p className="text-xl font-bold text-white">{pendingList.length}</p>
+                            <div className="rounded-[18px] border border-white/15 bg-white/10 p-2.5 backdrop-blur-sm">
+                                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-100">Chờ duyệt</div>
+                                <div className="mt-1.5 text-xl font-black">{pendingList.length}</div>
                             </div>
+                        </div>
+
+                        {currentConflictCount > 0 ? (
+                            <div className="mt-3 rounded-[18px] border border-rose-200/25 bg-rose-500/20 px-3 py-2 text-sm text-white/95">
+                                Có {currentConflictCount} thí sinh trong kỳ thi này đang bị trùng đăng ký ở kỳ thi khác.
+                            </div>
+                        ) : null}
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                            <SheetActionButton icon={UserPlus} label="Thêm HV" onClick={openAddStudentsSheet} />
+                            <SheetActionButton icon={Info} label="Kiểm tra trùng" onClick={handleOpenConflicts} />
+                            <SheetActionButton icon={Pencil} label="Sửa" onClick={onEdit} />
+                            <SheetActionButton icon={Trash2} label="Xóa" tone="danger" onClick={onDelete} />
                         </div>
                     </div>
 
-                    {/* Tabs */}
-                    <div className="flex border-b border-slate-200 px-5 bg-white sticky top-0 z-10">
-                        <button
-                            onClick={() => setActiveTab('approved')}
-                            className={`flex-1 pb-3 pt-3 font-medium text-sm transition-colors border-b-2 ${activeTab === 'approved' ? 'text-emerald-600 border-emerald-600' : 'text-slate-500 border-transparent'}`}
-                        >
-                            ✅ Đã duyệt ({approvedList.length})
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('pending')}
-                            className={`flex-1 pb-3 pt-3 font-medium text-sm transition-colors border-b-2 relative ${activeTab === 'pending' ? 'text-amber-600 border-amber-600' : 'text-slate-500 border-transparent'}`}
-                        >
-                            ⏳ Chờ duyệt ({pendingList.length})
-                            {pendingList.length > 0 && (
-                                <span className="absolute top-2 right-[calc(50%-60px)] w-2 h-2 rounded-full bg-amber-500"></span>
-                            )}
-                        </button>
-                    </div>
+                    <div className="border-b border-slate-200 bg-white px-4 py-3">
+                        <div className="flex gap-2 overflow-x-auto pb-1">
+                            <FilterChip
+                                active={activeTab === 'approved'}
+                                label="Đã duyệt"
+                                count={approvedList.length}
+                                onClick={() => setActiveTab('approved')}
+                            />
+                            <FilterChip
+                                active={activeTab === 'pending'}
+                                label="Chờ duyệt"
+                                count={pendingList.length}
+                                onClick={() => setActiveTab('pending')}
+                            />
+                        </div>
 
-                    {/* Actions Bar */}
-                    <div className="px-5 py-3 border-b border-slate-200 flex gap-2 flex-wrap bg-slate-50">
-                        {activeTab === 'pending' && pendingList.length > 0 && (
+                        <div className="relative mt-3">
+                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                value={studentSearch}
+                                onChange={(event) => setStudentSearch(event.target.value)}
+                                placeholder="Tìm thí sinh theo tên hoặc CCCD"
+                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-10 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                            />
+                            {studentSearch ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setStudentSearch('')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-slate-200 p-1 text-slate-500"
+                                >
+                                    <X size={14} />
+                                </button>
+                            ) : null}
+                        </div>
+
+                        <div className="mt-3 flex gap-2">
+                            {activeTab === 'pending' && pendingList.length ? (
+                                <button
+                                    type="button"
+                                    onClick={handleApproveAll}
+                                    className="flex-1 rounded-2xl bg-amber-500 px-4 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-white shadow-lg shadow-amber-100 transition-transform active:scale-[0.985]"
+                                >
+                                    Duyệt tất cả
+                                </button>
+                            ) : null}
+                            {activeTab === 'approved' ? (
+                                <button
+                                    type="button"
+                                    onClick={handleOpenExcelPreview}
+                                    className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-slate-700 shadow-sm transition-transform active:scale-[0.985]"
+                                >
+                                    <Info size={15} />
+                                    <span>Preview Excel</span>
+                                </button>
+                            ) : null}
                             <button
-                                onClick={handleApproveAll}
-                                className="px-3 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg text-xs font-medium active:scale-95 transition-transform flex items-center gap-1.5 flex-1 justify-center min-w-0"
+                                type="button"
+                                onClick={handleExportExcel}
+                                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-white shadow-lg shadow-slate-200 transition-transform active:scale-[0.985]"
                             >
-                                <Check size={14} />
-                                Duyệt tất cả
+                                <Download size={15} />
+                                <span>Xuất Excel</span>
                             </button>
-                        )}
-                        <button
-                            onClick={handleExportExcel}
-                            className="px-3 py-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-lg text-xs font-medium active:scale-95 transition-transform flex items-center gap-1.5 flex-1 justify-center min-w-0"
-                        >
-                            <Download size={14} />
-                            Export Excel
-                        </button>
+                        </div>
                     </div>
 
-                    {/* Student List */}
-                    <div className="flex-1 overflow-y-auto px-5 py-4">
+                    <div className="flex-1 overflow-y-auto px-4 py-3">
                         {loading ? (
-                            <div className="flex justify-center py-12">
-                                <div className="animate-spin rounded-full h-10 w-10 border-[3px] border-purple-600 border-t-transparent"></div>
+                            <div className="flex flex-col items-center justify-center gap-4 py-16">
+                                <div className="h-11 w-11 animate-spin rounded-full border-[3px] border-blue-600 border-t-transparent" />
+                                <p className="text-sm font-medium text-slate-500">Đang tải danh sách thí sinh...</p>
                             </div>
-                        ) : displayList.length > 0 ? (
-                            <div className="space-y-3">
-                                {displayList.map((student) => (
-                                    <div
-                                        key={student.student_id || student.id}
-                                        className={`bg-white p-4 rounded-xl border-2 ${activeTab === 'pending' ? 'border-amber-200' : 'border-slate-100'} shadow-sm`}
-                                    >
-                                        <div className="flex items-start gap-3">
-                                            <div
-                                                className={`h-12 w-12 rounded-2xl flex items-center justify-center text-lg font-bold shadow-sm overflow-hidden flex-shrink-0 ${activeTab === 'pending'
-                                                    ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white'
-                                                    : 'bg-gradient-to-br from-purple-500 to-pink-500 text-white'
-                                                    }`}
-                                                onClick={() => handleOpenStudentDetail(student)}
-                                            >
-                                                {student.image_3x4 ? (
-                                                    <img
-                                                        src={getImageUrl(student.image_3x4)}
-                                                        alt={student.ho_ten_full}
-                                                        className="w-full h-full object-cover"
-                                                        onError={(e) => {
-                                                            e.target.style.display = 'none';
-                                                            const fallback = e.target.nextElementSibling;
-                                                            if (fallback) fallback.style.display = 'flex';
-                                                        }}
-                                                    />
-                                                ) : null}
-                                                <span style={{ display: student.image_3x4 ? 'none' : 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                                                    {student.ho_ten_full?.charAt(0)?.toUpperCase() || 'U'}
-                                                </span>
-                                            </div>
-
-                                            <div
-                                                className="flex-1 min-w-0 cursor-pointer"
-                                                onClick={() => handleOpenStudentDetail(student)}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <h4 className="font-bold text-slate-800 truncate">{student.ho_ten_full}</h4>
-                                                    <ChevronRight size={16} className="text-slate-300 flex-shrink-0" />
-                                                </div>
-                                                <p className="text-sm text-slate-500 truncate">{student.cccd}</p>
-                                                {student.registration_date && (
-                                                    <p className="text-xs text-slate-400 mt-1">
-                                                        Đăng ký: {new Date(student.registration_date).toLocaleDateString('vi-VN')}
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            {/* Action Buttons */}
-                                            <div className="flex flex-col gap-2 flex-shrink-0">
-                                                {activeTab === 'pending' ? (
-                                                    <>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleApproveStudent(student); }}
-                                                            className="p-2 bg-emerald-100 text-emerald-700 rounded-lg active:scale-95 transition-transform"
-                                                            title="Duyệt"
-                                                        >
-                                                            <Check size={18} />
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleRejectStudent(student); }}
-                                                            className="p-2 bg-red-100 text-red-600 rounded-lg active:scale-95 transition-transform"
-                                                            title="Từ chối"
-                                                        >
-                                                            <XCircle size={18} />
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); handleRemoveStudent(student); }}
-                                                        className="p-2 bg-red-50 text-red-500 rounded-lg active:scale-95 transition-transform opacity-60 hover:opacity-100"
-                                                        title="Xóa"
-                                                    >
-                                                        <X size={18} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                        ) : filteredStudents.length ? (
+                            <div className="space-y-3 pb-4">
+                                {filteredStudents.map((student) => {
+                                    const studentId = Number(student.student_id || student.id);
+                                    const hasConflict = conflictStudentIds.has(studentId);
+                                    return (
+                                        <StudentRow
+                                            key={student.student_id || student.id}
+                                            student={student}
+                                            pending={activeTab === 'pending'}
+                                            conflict={hasConflict}
+                                            processing={processingStudentId === student.student_id}
+                                            onOpen={() => handleOpenStudentDetail(student)}
+                                            onApprove={() => handleApproveStudent(student)}
+                                            onReject={() => handleRejectStudent(student)}
+                                            onRemove={() => handleRemoveStudent(student)}
+                                            onHistory={() => handleViewDuplicateHistory(student)}
+                                        />
+                                    );
+                                })}
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-                                <Users size={64} className="mb-3 opacity-30" />
-                                <p className="font-medium">
-                                    {activeTab === 'pending' ? 'Không có thí sinh chờ duyệt' : 'Chưa có thí sinh nào'}
+                            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                                {activeTab === 'pending' ? (
+                                    <AlertCircle size={56} className="text-amber-300" />
+                                ) : (
+                                    <CheckCircle2 size={56} className="text-emerald-300" />
+                                )}
+                                <div className="text-lg font-black text-slate-900">
+                                    {studentSearch
+                                        ? 'Không tìm thấy thí sinh phù hợp'
+                                        : activeTab === 'pending'
+                                            ? 'Không còn hồ sơ chờ duyệt'
+                                            : 'Chưa có thí sinh đã duyệt'}
+                                </div>
+                                <p className="max-w-[280px] text-sm text-slate-500">
+                                    {studentSearch
+                                        ? 'Thử đổi từ khóa hoặc xóa tìm kiếm để xem toàn bộ danh sách.'
+                                        : activeTab === 'pending'
+                                            ? 'Kỳ thi này hiện không có hồ sơ chờ xác nhận.'
+                                            : 'Danh sách đã duyệt sẽ xuất hiện tại đây sau khi thí sinh được thêm vào kỳ thi.'}
                                 </p>
                             </div>
                         )}
@@ -569,223 +1995,941 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete }) => {
                 </div>
             </div>
 
-            {/* Student Detail Sheet */}
-            {showStudentDetail && selectedStudent && (
+            <OverlaySheet
+                open={showAddStudentsSheet}
+                onClose={closeAddStudentsSheet}
+                title="Thêm thí sinh"
+                description="Tìm theo tên, CCCD hoặc SĐT rồi chọn nhiều học viên để đưa vào kỳ thi."
+                tone="blue"
+                footer={
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={closeAddStudentsSheet}
+                            className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                        >
+                            Đóng
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleAddSelectedStudents(false)}
+                            disabled={addingStudents}
+                            className="flex-1 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-black text-white disabled:opacity-60"
+                        >
+                            {addingStudents ? 'Đang thêm...' : 'Thêm thường'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleAddSelectedStudents(true)}
+                            disabled={addingStudents}
+                            className="flex-1 rounded-2xl bg-amber-500 px-4 py-3 text-sm font-black text-white disabled:opacity-60"
+                        >
+                            Thêm cưỡng bức
+                        </button>
+                    </div>
+                }
+            >
+                <div className="border-b border-slate-200 bg-white px-4 py-4">
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={addStudentsQuery}
+                            onChange={(event) => setAddStudentsQuery(event.target.value)}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter') handleSearchAddStudents();
+                            }}
+                            placeholder="Nhập tên, CCCD hoặc SĐT..."
+                            className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                        />
+                        <button
+                            type="button"
+                            onClick={handleSearchAddStudents}
+                            disabled={addStudentsLoading}
+                            className="rounded-2xl bg-slate-900 px-4 py-3 text-xs font-black uppercase tracking-[0.12em] text-white disabled:opacity-60"
+                        >
+                            {addStudentsLoading ? 'Đang tìm...' : 'Tìm'}
+                        </button>
+                    </div>
+                    {addStudentsSummary ? (
+                        <div className="mt-3 rounded-2xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+                            {addStudentsSummary}
+                        </div>
+                    ) : null}
+                </div>
+
+                <div className="p-4">
+                    {addStudentsLoading ? (
+                        <div className="flex flex-col items-center justify-center gap-3 py-16">
+                            <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-blue-600 border-t-transparent" />
+                            <p className="text-sm text-slate-500">Đang tìm học viên...</p>
+                        </div>
+                    ) : addStudentsResults.length ? (
+                        <div className="space-y-3">
+                            {addStudentsResults.map((student) => {
+                                const selected = selectedAddStudentIds.has(student.id);
+                                return (
+                                    <button
+                                        key={student.id}
+                                        type="button"
+                                        onClick={() => toggleSelectAddStudent(student.id)}
+                                        className={`flex w-full items-center justify-between gap-3 rounded-[24px] border bg-white p-4 text-left shadow-sm transition ${
+                                            selected ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200'
+                                        }`}
+                                    >
+                                        <div className="min-w-0">
+                                            <div className="truncate text-sm font-bold text-slate-900">{student.ho_ten_full || 'Chưa có tên'}</div>
+                                            <div className="mt-1 truncate text-xs text-slate-500">
+                                                CCCD: {student.cccd || '---'} • SĐT: {student.sdt || '---'}
+                                            </div>
+                                        </div>
+                                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${
+                                            selected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
+                                        }`}>
+                                            {selected ? 'Đã chọn' : 'Chọn'}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                            <Users size={48} className="text-slate-300" />
+                            <div className="text-lg font-black text-slate-900">Chưa có kết quả phù hợp</div>
+                            <p className="max-w-[280px] text-sm text-slate-500">
+                                Nhập ít nhất 2 ký tự rồi bấm tìm để chọn học viên thêm vào kỳ thi.
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </OverlaySheet>
+
+            <OverlaySheet
+                open={showConflictsSheet}
+                onClose={() => setShowConflictsSheet(false)}
+                title="Sinh viên trùng đăng ký"
+                description="Danh sách học viên đang có nhiều hơn một đăng ký thi đang giữ chỗ."
+                tone="rose"
+                footer={
+                    <button
+                        type="button"
+                        onClick={() => setShowConflictsSheet(false)}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                    >
+                        Đóng
+                    </button>
+                }
+            >
+                <div className="p-4">
+                    {conflictsLoading ? (
+                        <div className="flex flex-col items-center justify-center gap-3 py-16">
+                            <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-rose-500 border-t-transparent" />
+                            <p className="text-sm text-slate-500">Đang tải danh sách trùng đăng ký...</p>
+                        </div>
+                    ) : conflicts.length ? (
+                        <div className="space-y-3">
+                            {conflicts.map((item) => (
+                                <div key={item.student_id} className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <div className="truncate text-sm font-bold text-slate-900">{item.ho_ten_full || 'Chưa có tên'}</div>
+                                            <div className="mt-1 text-xs text-slate-500">CCCD: {item.cccd || '---'}</div>
+                                        </div>
+                                        <span className="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-rose-700">
+                                            {(item.active_registrations || []).length} đăng ký
+                                        </span>
+                                    </div>
+
+                                    <div className="mt-3 space-y-2">
+                                        {(item.active_registrations || []).map((registration, index) => (
+                                            <div key={`${item.student_id}-${registration.exam_id || index}`} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                                                <div className="text-sm font-semibold text-slate-900">
+                                                    {registration.exam_name || `Kỳ thi #${registration.exam_id}`}
+                                                </div>
+                                                <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-slate-500">
+                                                    <span>ID: {registration.exam_id || '---'}</span>
+                                                    <span>Trạng thái: {registration.registration_status || '---'}</span>
+                                                    <span>Ngày thi: {registration.exam_date ? `${formatDateVN(registration.exam_date)} ${formatTimeUtil(registration.exam_date)}` : '---'}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleViewDuplicateHistory(item)}
+                                        className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-white"
+                                    >
+                                        <History size={14} />
+                                        Xem lịch sử
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                            <Info size={48} className="text-slate-300" />
+                            <div className="text-lg font-black text-slate-900">Không phát hiện hồ sơ trùng</div>
+                            <p className="max-w-[280px] text-sm text-slate-500">
+                                Hiện tại không có học viên nào giữ chỗ ở nhiều kỳ thi cùng lúc.
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </OverlaySheet>
+
+            <OverlaySheet
+                open={showHistorySheet}
+                onClose={() => setShowHistorySheet(false)}
+                title="Lịch sử đăng ký"
+                description={historyStudent ? `${historyStudent.ho_ten_full || 'Học viên'}${historyStudent.cccd ? ` • ${historyStudent.cccd}` : ''}` : ''}
+                tone="amber"
+                footer={
+                    <button
+                        type="button"
+                        onClick={() => setShowHistorySheet(false)}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                    >
+                        Đóng
+                    </button>
+                }
+            >
+                <div className="p-4">
+                    {historyLoading ? (
+                        <div className="flex flex-col items-center justify-center gap-3 py-16">
+                            <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-amber-500 border-t-transparent" />
+                            <p className="text-sm text-slate-500">Đang tải lịch sử đăng ký...</p>
+                        </div>
+                    ) : historyRows.length ? (
+                        <div className="space-y-3">
+                            {historyRows.map((row) => {
+                                const isCurrentExam = Number(row.exam_id) === Number(exam.id);
+                                return (
+                                    <div key={row.registration_id || `${row.exam_id}-${row.registration_created_at}`} className={`rounded-[24px] border bg-white p-4 shadow-sm ${isCurrentExam ? 'border-blue-300' : 'border-slate-200'}`}>
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <div className="truncate text-sm font-bold text-slate-900">
+                                                    {row.exam_name || `Kỳ thi #${row.exam_id}`}
+                                                </div>
+                                                <div className="mt-1 text-xs text-slate-500">
+                                                    {row.class_name || 'Chưa gắn lớp ôn tập'}
+                                                </div>
+                                            </div>
+                                            <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${
+                                                isCurrentExam ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
+                                            }`}>
+                                                {row.registration_status || '---'}
+                                            </span>
+                                        </div>
+
+                                        <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-500">
+                                            <span>Ngày thi: {row.exam_date ? `${formatDateVN(row.exam_date)} ${formatTimeUtil(row.exam_date)}` : '---'}</span>
+                                            <span>Đăng ký: {row.registration_created_at ? formatDateVN(row.registration_created_at, true) : '---'}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                            <History size={48} className="text-slate-300" />
+                            <div className="text-lg font-black text-slate-900">Chưa có lịch sử đăng ký</div>
+                            <p className="max-w-[280px] text-sm text-slate-500">
+                                Không tìm thấy bản ghi đăng ký nào cho học viên này.
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </OverlaySheet>
+
+            <OverlaySheet
+                open={showExcelPreviewSheet}
+                onClose={() => setShowExcelPreviewSheet(false)}
+                title="Preview Excel"
+                description={`${excelPreviewData?.formatLabel || 'Danh sách thí sinh'}${exam?.exam_name ? ` • ${exam.exam_name}` : ''}`}
+                tone="blue"
+                footer={
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowExcelPreviewSheet(false)}
+                            className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                        >
+                            Đóng
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleExportExcel}
+                            className="flex-1 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-black text-white"
+                        >
+                            Tải Excel
+                        </button>
+                    </div>
+                }
+            >
+                <div className="border-b border-slate-200 bg-white px-4 py-4">
+                    <div className="flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">Tổng thí sinh: {approvedList.length}</span>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">Ngày thi: {formatDateVN(exam?.exam_date, true) || 'Chưa có'}</span>
+                    </div>
+                </div>
+
+                <div className="overflow-x-auto bg-slate-100 px-4 py-4">
+                    <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600 shadow-sm">
+                        <FileText size={14} />
+                        Preview theo bố cục file xuất
+                    </div>
+
+                    {excelPreviewData?.kind === 'vept' ? (
+                        <MobileExcelPreviewVept preview={excelPreviewData} />
+                    ) : (
+                        <MobileExcelPreviewExamList preview={excelPreviewData} />
+                    )}
+                </div>
+            </OverlaySheet>
+
+            {showStudentDetail && selectedStudent ? (
                 <StudentDetailSheet
                     student={selectedStudent}
                     onClose={() => setShowStudentDetail(false)}
-                    onEdit={() => { }} // Disable edit from exam view
+                    onRefresh={async () => {
+                        await loadStudentLists();
+                        await onRefresh?.();
+                    }}
                 />
-            )}
+            ) : null}
         </>
     );
 };
 
 export default function MobileExamSchedulesModule() {
     const toast = useToast();
-    const [exams, setExams] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const cachedExams = getAdminCache(ADMIN_CACHE_KEYS.examSchedules, ADMIN_CACHE_TTL.examSchedules);
+    const [exams, setExams] = useState(() => cachedExams ?? []);
+    const [loading, setLoading] = useState(() => cachedExams === null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [filter, setFilter] = useState('upcoming');
     const [selectedExam, setSelectedExam] = useState(null);
     const [isCreating, setIsCreating] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [filter, setFilter] = useState('upcoming'); // 'upcoming', 'past', 'all'
+    const [showGlobalConflicts, setShowGlobalConflicts] = useState(false);
+    const [globalConflictsLoading, setGlobalConflictsLoading] = useState(false);
+    const [globalConflicts, setGlobalConflicts] = useState([]);
+    const [showTrashSheet, setShowTrashSheet] = useState(false);
+    const [trashLoading, setTrashLoading] = useState(false);
+    const [trashActionId, setTrashActionId] = useState(null);
+    const [trashExams, setTrashExams] = useState([]);
 
     useEffect(() => {
         fetchExams();
     }, []);
+    useAdminAutoRefresh(() => fetchExams({ force: true }), { minIntervalMs: 12000 });
 
-    const fetchExams = async () => {
+    const fetchExams = async ({ force = false } = {}) => {
+        const cached = force ? null : getAdminCache(ADMIN_CACHE_KEYS.examSchedules, ADMIN_CACHE_TTL.examSchedules);
+        if (cached !== null) {
+            setExams(cached);
+            setLoading(false);
+            return cached;
+        }
+
         setLoading(true);
         try {
-            const res = await api.getAllExamSchedules(100, 0);
-            const examList = Array.isArray(res) ? res : (res?.data || res?.results || []);
+            const response = await api.getAllExamSchedules(100, 0);
+            const examList = Array.isArray(response)
+                ? response
+                : Array.isArray(response?.data)
+                    ? response.data
+                    : Array.isArray(response?.results)
+                        ? response.results
+                        : [];
             setExams(examList);
+            setAdminCache(ADMIN_CACHE_KEYS.examSchedules, examList);
+            return examList;
         } catch (error) {
-            console.error("Failed to fetch exams", error);
+            console.error('Failed to fetch exams', error);
             setExams([]);
         } finally {
             setLoading(false);
         }
     };
 
+    const filterCounts = useMemo(() => {
+        const today = startOfDay();
+        const counts = {
+            all: exams.length,
+            today: 0,
+            upcoming: 0,
+            pending: 0,
+            past: 0,
+        };
+
+        exams.forEach((exam) => {
+            const examDay = startOfDay(getExamDate(exam));
+            if (examDay.getTime() === today.getTime()) counts.today += 1;
+            if (examDay.getTime() >= today.getTime()) counts.upcoming += 1;
+            if (examDay.getTime() < today.getTime()) counts.past += 1;
+            if (getExamPendingCount(exam) > 0) counts.pending += 1;
+        });
+
+        return counts;
+    }, [exams]);
+
+    const totalPendingStudents = useMemo(
+        () => exams.reduce((sum, exam) => sum + getExamPendingCount(exam), 0),
+        [exams],
+    );
+
+    const nextExam = useMemo(() => {
+        const today = startOfDay();
+        return exams
+            .filter((exam) => startOfDay(getExamDate(exam)).getTime() >= today.getTime())
+            .sort((a, b) => getExamDate(a) - getExamDate(b))[0] || null;
+    }, [exams]);
+
+    const filteredExams = useMemo(() => {
+        const today = startOfDay();
+        const keyword = searchTerm.trim().toLowerCase();
+
+        const matched = exams.filter((exam) => {
+            const title = getExamTitle(exam).toLowerCase();
+            const location = getExamLocation(exam).toLowerCase();
+            const matchSearch = !keyword || title.includes(keyword) || location.includes(keyword);
+
+            if (!matchSearch) return false;
+
+            const examDay = startOfDay(getExamDate(exam));
+
+            if (filter === 'all') return true;
+            if (filter === 'today') return examDay.getTime() === today.getTime();
+            if (filter === 'upcoming') return examDay.getTime() >= today.getTime();
+            if (filter === 'past') return examDay.getTime() < today.getTime();
+            if (filter === 'pending') return getExamPendingCount(exam) > 0;
+
+            return true;
+        });
+
+        return matched.sort((left, right) => {
+            if (filter === 'pending') {
+                const pendingDiff = getExamPendingCount(right) - getExamPendingCount(left);
+                if (pendingDiff !== 0) return pendingDiff;
+            }
+
+            if (filter === 'past') {
+                return getExamDate(right) - getExamDate(left);
+            }
+
+            return getExamDate(left) - getExamDate(right);
+        });
+    }, [exams, filter, searchTerm]);
+
     const handleCreateSuccess = () => {
         setIsCreating(false);
         setIsEditing(false);
         setSelectedExam(null);
-        fetchExams();
+        invalidateAdminData({
+            keys: [ADMIN_CACHE_KEYS.examSchedules],
+            source: 'mobile-exam-schedules',
+        });
+        void fetchExams({ force: true });
     };
 
     const handleDeleteExam = async (examId) => {
-        if (!confirm('Bạn có chắc muốn xóa lịch thi này? Dữ liệu không thể khôi phục.')) return;
+        if (!window.confirm('Chuyển lịch thi này vào thùng rác? Bạn vẫn có thể khôi phục trong vòng 7 ngày.')) return;
+
         try {
-            const res = await api.deleteExamSchedule(examId);
-            if (res.success) {
-                setSelectedExam(null);
-                fetchExams();
+            const response = await api.deleteExamSchedule(examId);
+            if (!response?.success) {
+                toast.error(response?.message || 'Không thể xóa lịch thi');
+                return;
             }
-        } catch (e) {
-            toast.error('Không thể xóa: ' + e.message);
+            setSelectedExam(null);
+            invalidateAdminData({
+                keys: [ADMIN_CACHE_KEYS.examSchedules],
+                source: 'mobile-exam-schedules',
+            });
+            toast.success(response?.message || 'Đã chuyển lịch thi vào thùng rác');
+            await Promise.all([
+                fetchExams({ force: true }),
+                showTrashSheet ? loadTrashExams() : Promise.resolve(),
+            ]);
+        } catch (error) {
+            toast.error(getErrorMessage(error, 'Không thể xóa lịch thi'));
         }
     };
 
-    // Filter and search
-    let filteredExams = exams.filter(e => {
-        const title = (e.exam_name || e.title || e.ten_lich_thi || e.ten || '').toLowerCase();
-        const matchesSearch = title.includes(searchTerm.toLowerCase());
-        if (!matchesSearch) return false;
-
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const examDate = new Date(e.exam_date);
-        examDate.setHours(0, 0, 0, 0);
-
-        if (filter === 'all') return true;
-        if (filter === 'upcoming') return examDate >= now;
-        if (filter === 'past') return examDate < now;
-        return true;
-    });
-
-    // Sort by date
-    filteredExams.sort((a, b) => new Date(a.exam_date) - new Date(b.exam_date));
-
-    // Stats
-    const totalExams = exams.length;
-    const upcomingExams = exams.filter(e => {
-        const examDate = new Date(e.exam_date);
-        examDate.setHours(0, 0, 0, 0);
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        return examDate.getTime() >= now.getTime();
-    }).length;
-    const pastExams = totalExams - upcomingExams;
-    const totalPending = exams.reduce((sum, e) => sum + (e.pending_count || 0), 0);
-
-    // Pull-to-refresh callback
-    const handleRefresh = async () => {
-        await fetchExams();
+    const loadTrashExams = async () => {
+        setTrashLoading(true);
+        try {
+            const response = await api.getTrashExamSchedules();
+            if (response?.success) {
+                setTrashExams(Array.isArray(response.data) ? response.data : []);
+            } else {
+                setTrashExams([]);
+                toast.error(response?.message || 'Không tải được thùng rác');
+            }
+        } catch (error) {
+            console.error('Failed to load trash exams', error);
+            setTrashExams([]);
+            toast.error(getErrorMessage(error, 'Không tải được thùng rác'));
+        } finally {
+            setTrashLoading(false);
+        }
     };
 
+    const handleOpenTrash = async () => {
+        setShowTrashSheet(true);
+        await loadTrashExams();
+    };
+
+    const handleRestoreExam = async (examId) => {
+        setTrashActionId(examId);
+        try {
+            const response = await api.restoreExamSchedule(examId);
+            if (!response?.success) {
+                toast.error(response?.message || 'Không thể khôi phục lịch thi');
+                return;
+            }
+
+            invalidateAdminData({
+                keys: [ADMIN_CACHE_KEYS.examSchedules],
+                source: 'mobile-exam-schedules',
+            });
+            toast.success(response?.message || 'Khôi phục lịch thi thành công');
+            await Promise.all([
+                fetchExams({ force: true }),
+                loadTrashExams(),
+            ]);
+        } catch (error) {
+            toast.error(getErrorMessage(error, 'Không thể khôi phục lịch thi'));
+        } finally {
+            setTrashActionId(null);
+        }
+    };
+
+    const handlePermanentDeleteExam = async (exam) => {
+        if (!window.confirm(`Xóa vĩnh viễn "${getExamTitle(exam)}" khỏi thùng rác?`)) return;
+
+        setTrashActionId(exam.id);
+        try {
+            const response = await api.permanentDeleteExamSchedule(exam.id);
+            if (!response?.success) {
+                toast.error(response?.message || 'Không thể xóa vĩnh viễn lịch thi');
+                return;
+            }
+
+            invalidateAdminData({
+                keys: [ADMIN_CACHE_KEYS.examSchedules],
+                source: 'mobile-exam-schedules',
+            });
+            toast.success(response?.message || 'Đã xóa vĩnh viễn lịch thi');
+            await loadTrashExams();
+        } catch (error) {
+            toast.error(getErrorMessage(error, 'Không thể xóa vĩnh viễn lịch thi'));
+        } finally {
+            setTrashActionId(null);
+        }
+    };
+
+    const handleOpenGlobalConflicts = async () => {
+        setShowGlobalConflicts(true);
+        setGlobalConflictsLoading(true);
+        try {
+            const response = await api.getExamRegistrationConflicts();
+            const rows = Array.isArray(response?.data)
+                ? response.data
+                : Array.isArray(response?.data?.data)
+                    ? response.data.data
+                    : Array.isArray(response)
+                        ? response
+                        : [];
+            setGlobalConflicts(rows);
+        } catch (error) {
+            console.error('Failed to load global conflicts', error);
+            toast.error(getErrorMessage(error, 'Không tải được danh sách trùng đăng ký'));
+            setGlobalConflicts([]);
+        } finally {
+            setGlobalConflictsLoading(false);
+        }
+    };
+
+    const filterOptions = [
+        { id: 'all', label: 'Tất cả', count: filterCounts.all },
+        { id: 'upcoming', label: 'Sắp tới', count: filterCounts.upcoming },
+        { id: 'today', label: 'Hôm nay', count: filterCounts.today },
+        { id: 'pending', label: 'Cần duyệt', count: filterCounts.pending },
+        { id: 'past', label: 'Đã qua', count: filterCounts.past },
+    ];
+    const activeFilterMeta = filterOptions.find((option) => option.id === filter) || filterOptions[0];
+
     return (
-        <PullToRefreshWrapper onRefresh={handleRefresh}>
-        <div className="min-h-screen bg-slate-50">
-            {/* Stats Dashboard */}
-            <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-4 pt-4 pb-6">
-                <div className="grid grid-cols-4 gap-2 mb-4">
-                    <div
-                        className={`bg-white/20 backdrop-blur-sm rounded-xl px-2 py-3 border border-white/30 cursor-pointer active:scale-95 transition-transform ${filter === 'all' ? 'ring-2 ring-white' : ''}`}
-                        onClick={() => setFilter('all')}
-                    >
-                        <p className="text-xs text-white/80 font-medium mb-0.5 text-center">Tổng</p>
-                        <p className="text-2xl font-bold text-white text-center">{totalExams}</p>
-                    </div>
-                    <div
-                        className={`bg-white/20 backdrop-blur-sm rounded-xl px-2 py-3 border border-white/30 cursor-pointer active:scale-95 transition-transform ${filter === 'upcoming' ? 'ring-2 ring-white' : ''}`}
-                        onClick={() => setFilter('upcoming')}
-                    >
-                        <p className="text-xs text-white/80 font-medium mb-0.5 text-center">Sắp tới</p>
-                        <p className="text-2xl font-bold text-white text-center">{upcomingExams}</p>
-                    </div>
-                    <div
-                        className={`bg-white/20 backdrop-blur-sm rounded-xl px-2 py-3 border border-white/30 cursor-pointer active:scale-95 transition-transform ${filter === 'past' ? 'ring-2 ring-white' : ''}`}
-                        onClick={() => setFilter('past')}
-                    >
-                        <p className="text-xs text-white/80 font-medium mb-0.5 text-center">Đã qua</p>
-                        <p className="text-2xl font-bold text-white text-center">{pastExams}</p>
-                    </div>
-                    <div className="bg-white/20 backdrop-blur-sm rounded-xl px-2 py-3 border border-white/30 relative">
-                        <p className="text-xs text-white/80 font-medium mb-0.5 text-center">Chờ</p>
-                        <p className="text-2xl font-bold text-white text-center">{totalPending}</p>
-                        {totalPending > 0 && (
-                            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-400 animate-pulse"></span>
-                        )}
+        <PullToRefreshWrapper onRefresh={() => {
+            clearAdminCache(ADMIN_CACHE_KEYS.examSchedules);
+            return fetchExams({ force: true });
+        }}>
+            <div className="min-h-screen bg-[#f3f6fb] pb-6">
+                <div className="px-4 pt-3">
+                    <div className="rounded-[28px] border border-slate-200/80 bg-white p-3.5 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Điều hành lịch thi</p>
+                                <h1 className="mt-1 text-[22px] font-black leading-none text-slate-900">Lịch thi</h1>
+                            </div>
+
+                            <div className="flex shrink-0 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handleOpenTrash}
+                                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-slate-700 shadow-sm transition-transform active:scale-[0.98]"
+                                >
+                                    <Trash2 size={14} />
+                                    <span>Rác</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleOpenGlobalConflicts}
+                                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-slate-700 shadow-sm transition-transform active:scale-[0.98]"
+                                >
+                                    <Info size={14} />
+                                    <span>Trùng</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCreating(true)}
+                                    className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3.5 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-white shadow-sm transition-transform active:scale-[0.98]"
+                                >
+                                    <Plus size={14} />
+                                    <span>Tạo</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="mt-3 rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,#eff6ff_0%,#f8fafc_65%,#ffffff_100%)] p-3">
+                            {nextExam ? (
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-blue-600">
+                                            <Sparkles size={14} />
+                                            <span>Kỳ thi gần nhất</span>
+                                        </div>
+                                        <h2 className="mt-2 line-clamp-2 text-[15px] font-black leading-snug text-slate-900">{getExamTitle(nextExam)}</h2>
+                                        <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+                                            <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-slate-600 shadow-sm">
+                                                {formatDateVN(nextExam.exam_date)} • {formatTimeUtil(nextExam.exam_date)}
+                                            </span>
+                                            <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-slate-600 shadow-sm">
+                                                {formatDurationLabel(nextExam.duration_minutes)}
+                                            </span>
+                                            <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-slate-600 shadow-sm">
+                                                {getExamStudentCount(nextExam)} thí sinh
+                                            </span>
+                                            {getExamPendingCount(nextExam) > 0 ? (
+                                                <span className="rounded-full bg-amber-100 px-2.5 py-1 font-semibold text-amber-700">
+                                                    {getExamPendingCount(nextExam)} chờ duyệt
+                                                </span>
+                                            ) : (
+                                                <span className="rounded-full bg-emerald-100 px-2.5 py-1 font-semibold text-emerald-700">
+                                                    Sẵn sàng
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
+                                            <MapPin size={13} />
+                                            <span className="truncate">{getExamLocation(nextExam)}</span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedExam(nextExam)}
+                                        className="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-900 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-white"
+                                    >
+                                        Mở
+                                        <ChevronRight size={12} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="rounded-[20px] border border-dashed border-slate-300 bg-white px-3.5 py-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-slate-100 text-slate-500">
+                                            <Calendar size={20} />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-black text-slate-900">Chưa có kỳ thi sắp tới</div>
+                                            <div className="mt-1 text-[13px] text-slate-500">Tạo lịch mới để bắt đầu.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                            <SummaryStat label="Tổng kỳ thi" value={filterCounts.all} icon={FileText} tone="slate" />
+                            <SummaryStat label="Hôm nay" value={filterCounts.today} icon={Calendar} tone="blue" />
+                            <SummaryStat label="Sắp tới" value={filterCounts.upcoming} icon={CheckCircle2} tone="emerald" />
+                            <SummaryStat label="Hồ sơ chờ" value={totalPendingStudents} icon={AlertCircle} tone="amber" />
+                        </div>
+
+                        <div className="relative mt-3">
+                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(event) => setSearchTerm(event.target.value)}
+                                placeholder="Tìm theo tên kỳ thi hoặc địa điểm"
+                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-10 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                            />
+                            {searchTerm ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchTerm('')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-slate-200 p-1 text-slate-500"
+                                >
+                                    <X size={14} />
+                                </button>
+                            ) : null}
+                        </div>
+
+                        <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
+                            {filterOptions.map((option) => (
+                                <FilterChip
+                                    key={option.id}
+                                    active={filter === option.id}
+                                    label={option.label}
+                                    count={option.count}
+                                    onClick={() => setFilter(option.id)}
+                                />
+                            ))}
+                        </div>
                     </div>
                 </div>
 
-                {/* Search */}
-                <div className="relative">
-                    <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60" />
-                    <input
-                        type="text"
-                        placeholder="Tìm kỳ thi..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50"
-                    />
-                    {searchTerm && (
-                        <button
-                            onClick={() => setSearchTerm('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/80"
-                        >
-                            <X size={16} />
-                        </button>
+                <div className="px-4 pb-[calc(var(--mb-bottom-nav-height)+24px)] pt-3">
+                    <div className="mb-2 flex items-end justify-between gap-3">
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Danh sách kỳ thi</p>
+                            <h2 className="mt-1 text-lg font-black text-slate-900">{filteredExams.length} kỳ thi</h2>
+                        </div>
+                        <div className="text-right text-[11px] font-semibold text-slate-500">
+                            <div>{activeFilterMeta.label}</div>
+                        </div>
+                    </div>
+
+                    {loading ? (
+                        <AdminLoadingState
+                            title="Đang tải lịch thi"
+                            hint="Lịch thi là tab mặc định nên được giữ trong cache ngắn để vào admin nhanh hơn đáng kể."
+                            variant="mobile-list"
+                            accent="rose"
+                        />
+                    ) : filteredExams.length ? (
+                        <div className="space-y-3">
+                            {filteredExams.map((exam) => (
+                                <ExamCard key={exam.id} exam={exam} onOpen={setSelectedExam} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-[30px] border border-dashed border-slate-300 bg-white px-5 py-16 text-center shadow-sm">
+                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[24px] bg-slate-100 text-slate-400">
+                                <Calendar size={30} />
+                            </div>
+                            <h3 className="mt-5 text-xl font-black text-slate-900">Không tìm thấy kỳ thi</h3>
+                            <p className="mx-auto mt-2 max-w-[280px] text-sm text-slate-500">
+                                Thử đổi bộ lọc hoặc tạo mới.
+                            </p>
+                            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
+                                {searchTerm ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchTerm('')}
+                                        className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                                    >
+                                        Xóa từ khóa
+                                    </button>
+                                ) : null}
+                                <button
+                                    type="button"
+                                    onClick={() => setFilter('all')}
+                                    className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-black text-white"
+                                >
+                                    Xem tất cả
+                                </button>
+                            </div>
+                        </div>
                     )}
                 </div>
-            </div>
 
-            {/* Exam List */}
-            <div className="p-4">
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4">
-                        <div className="animate-spin rounded-full h-12 w-12 border-[3px] border-purple-600 border-t-transparent"></div>
-                        <p className="text-slate-500 font-medium animate-pulse">Đang tải dữ liệu...</p>
-                    </div>
-                ) : filteredExams.length > 0 ? (
-                    <div className="space-y-3 pb-6">
-                        {filteredExams.map((e) => (
-                            <ExamCard
-                                key={e.id}
-                                exam={e}
-                                onClick={setSelectedExam}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center py-20 opacity-60">
-                        <Calendar size={64} className="text-slate-300 mb-4" />
-                        <p className="text-slate-500 font-medium">Không tìm thấy kỳ thi nào</p>
-                        {searchTerm && (
-                            <button
-                                onClick={() => setSearchTerm('')}
-                                className="mt-4 text-sm text-purple-600 font-medium"
-                            >
-                                Xóa bộ lọc
-                            </button>
+                {selectedExam && !isEditing ? (
+                    <ExamDetailSheet
+                        exam={selectedExam}
+                        onClose={() => setSelectedExam(null)}
+                        onRefresh={fetchExams}
+                        onEdit={() => setIsEditing(true)}
+                        onDelete={() => handleDeleteExam(selectedExam.id)}
+                        onError={toast.error}
+                    />
+                ) : null}
+
+                {(isCreating || isEditing) ? (
+                    <ExamFormSheet
+                        exam={isEditing ? selectedExam : null}
+                        onClose={() => {
+                            setIsCreating(false);
+                            setIsEditing(false);
+                        }}
+                        onSuccess={handleCreateSuccess}
+                        onError={toast.error}
+                    />
+                ) : null}
+
+                <OverlaySheet
+                    open={showGlobalConflicts}
+                    onClose={() => setShowGlobalConflicts(false)}
+                    title="Sinh viên trùng đăng ký"
+                    description="Danh sách học viên đang có nhiều hơn một đăng ký thi đang giữ chỗ."
+                    tone="rose"
+                    footer={
+                        <button
+                            type="button"
+                            onClick={() => setShowGlobalConflicts(false)}
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                        >
+                            Đóng
+                        </button>
+                    }
+                >
+                    <div className="p-4">
+                        {globalConflictsLoading ? (
+                            <div className="flex flex-col items-center justify-center gap-3 py-16">
+                                <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-rose-500 border-t-transparent" />
+                                <p className="text-sm text-slate-500">Đang tải danh sách trùng đăng ký...</p>
+                            </div>
+                        ) : globalConflicts.length ? (
+                            <div className="space-y-3">
+                                {globalConflicts.map((item) => (
+                                    <div key={item.student_id} className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <div className="truncate text-sm font-bold text-slate-900">{item.ho_ten_full || 'Chưa có tên'}</div>
+                                                <div className="mt-1 text-xs text-slate-500">CCCD: {item.cccd || '---'}</div>
+                                            </div>
+                                            <span className="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-rose-700">
+                                                {(item.active_registrations || []).length} đăng ký
+                                            </span>
+                                        </div>
+
+                                        <div className="mt-3 space-y-2">
+                                            {(item.active_registrations || []).map((registration, index) => (
+                                                <div key={`${item.student_id}-${registration.exam_id || index}`} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                                                    <div className="text-sm font-semibold text-slate-900">
+                                                        {registration.exam_name || `Kỳ thi #${registration.exam_id}`}
+                                                    </div>
+                                                    <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-slate-500">
+                                                        <span>ID: {registration.exam_id || '---'}</span>
+                                                        <span>Trạng thái: {registration.registration_status || '---'}</span>
+                                                        <span>Ngày thi: {registration.exam_date ? `${formatDateVN(registration.exam_date)} ${formatTimeUtil(registration.exam_date)}` : '---'}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                                <Info size={48} className="text-slate-300" />
+                                <div className="text-lg font-black text-slate-900">Không phát hiện hồ sơ trùng</div>
+                                <p className="max-w-[280px] text-sm text-slate-500">
+                                    Hiện tại không có học viên nào giữ chỗ ở nhiều kỳ thi cùng lúc.
+                                </p>
+                            </div>
                         )}
                     </div>
-                )}
+                </OverlaySheet>
+
+                <OverlaySheet
+                    open={showTrashSheet}
+                    onClose={() => setShowTrashSheet(false)}
+                    title="Thùng rác lịch thi"
+                    description="Lịch thi xóa mềm được giữ tối đa 7 ngày để có thể khôi phục."
+                    tone="slate"
+                    footer={
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={loadTrashExams}
+                                className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                            >
+                                Tải lại
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowTrashSheet(false)}
+                                className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                            >
+                                Đóng
+                            </button>
+                        </div>
+                    }
+                >
+                    <div className="p-4">
+                        {trashLoading ? (
+                            <div className="flex flex-col items-center justify-center gap-3 py-16">
+                                <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-slate-500 border-t-transparent" />
+                                <p className="text-sm text-slate-500">Đang tải thùng rác...</p>
+                            </div>
+                        ) : trashExams.length ? (
+                            <div className="space-y-3">
+                                {trashExams.map((exam) => (
+                                    <div key={exam.id} className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+                                        <div className="text-sm font-black text-slate-900">{getExamTitle(exam)}</div>
+                                        <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-500">
+                                            <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
+                                                Thi: {formatShortDate(exam.exam_date)}
+                                            </span>
+                                            <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
+                                                Xóa: {formatShortDate(exam.deleted_at)}
+                                            </span>
+                                        </div>
+                                        <div className="mt-3 flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRestoreExam(exam.id)}
+                                                disabled={trashActionId === exam.id}
+                                                className="flex-1 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm font-black text-emerald-700 disabled:opacity-50"
+                                            >
+                                                <span className="inline-flex items-center gap-2">
+                                                    <RotateCcw size={15} />
+                                                    {trashActionId === exam.id ? 'Đang khôi phục...' : 'Khôi phục'}
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handlePermanentDeleteExam(exam)}
+                                                disabled={trashActionId === exam.id}
+                                                className="flex-1 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm font-black text-rose-700 disabled:opacity-50"
+                                            >
+                                                <span className="inline-flex items-center gap-2">
+                                                    <Trash2 size={15} />
+                                                    Xóa vĩnh viễn
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                                <Trash2 size={48} className="text-slate-300" />
+                                <div className="text-lg font-black text-slate-900">Thùng rác đang trống</div>
+                                <p className="max-w-[280px] text-sm text-slate-500">
+                                    Chưa có lịch thi nào bị chuyển vào thùng rác.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </OverlaySheet>
+
+                <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
             </div>
-
-            {/* Exam Detail Sheet */}
-            {selectedExam && !isEditing && (
-                <ExamDetailSheet
-                    exam={selectedExam}
-                    onClose={() => setSelectedExam(null)}
-                    onRefresh={fetchExams}
-                    onEdit={() => setIsEditing(true)}
-                    onDelete={() => handleDeleteExam(selectedExam.id)}
-                />
-            )}
-
-            {/* Create/Edit Form */}
-            {(isCreating || isEditing) && (
-                <ExamFormSheet
-                    exam={isEditing ? selectedExam : null}
-                    onClose={() => { setIsCreating(false); setIsEditing(false); }}
-                    onSuccess={handleCreateSuccess}
-                />
-            )}
-
-            {/* Floating Action Button */}
-            <button
-                onClick={() => setIsCreating(true)}
-                className="fixed bottom-24 right-5 w-14 h-14 bg-blue-600 rounded-full shadow-lg shadow-blue-600/30 flex items-center justify-center text-white active:scale-90 transition-transform z-40"
-            >
-                <Plus size={28} />
-            </button>
-        </div>
-
-            <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
         </PullToRefreshWrapper>
     );
 }

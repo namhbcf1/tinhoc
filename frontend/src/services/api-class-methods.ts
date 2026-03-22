@@ -6,17 +6,17 @@
 export function applyClassMethods(ApiClient) {
   // Get all offline classes
   ApiClient.prototype.getClasses = async function() {
-    return this.request('/classes');
+    return this.cachedRequest('/classes', {}, { ttlMs: 5 * 60 * 1000 });
   };
 
   // Get open/public classes (no auth required)
   ApiClient.prototype.getOpenClasses = async function() {
-    return this.request('/classes/open');
+    return this.cachedRequest('/classes/open', {}, { ttlMs: 5 * 60 * 1000 });
   };
 
   // Get single class by ID (fetches full list and filters locally to avoid 404 spam)
   ApiClient.prototype.getClass = async function(id) {
-    const listResp = await this.request('/classes');
+    const listResp = await this.cachedRequest('/classes', {}, { ttlMs: 5 * 60 * 1000 });
     if (listResp?.success && Array.isArray(listResp.data)) {
       const found = listResp.data.find(
         (c) => String(c.id) === String(id) || String(c.class_id) === String(id)
@@ -34,25 +34,31 @@ export function applyClassMethods(ApiClient) {
 
   // Create a new offline class
   ApiClient.prototype.createClass = async function(data) {
-    return this.request('/classes', {
+    const response = await this.request('/classes', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    this.invalidateCache(['/classes', '/reports/summary', '/reports/students-by-class']);
+    return response;
   };
 
   // Update an offline class
   ApiClient.prototype.updateClass = async function(id, data) {
-    return this.request(`/classes/${id}`, {
+    const response = await this.request(`/classes/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
+    this.invalidateCache(['/classes', '/reports/summary', '/reports/students-by-class']);
+    return response;
   };
 
   // Delete an offline class
   ApiClient.prototype.deleteClass = async function(id) {
-    return this.request(`/classes/${id}`, {
+    const response = await this.request(`/classes/${id}`, {
       method: 'DELETE',
     });
+    this.invalidateCache(['/classes', '/reports/summary', '/reports/students-by-class']);
+    return response;
   };
 
   // ---- Online Classes ----
@@ -69,6 +75,57 @@ export function applyClassMethods(ApiClient) {
     return this.request(`/online-classes/${id}`, {
       tokenType: 'admin',
     });
+  };
+
+  // Get online classes visible to the current student
+  ApiClient.prototype.getStudentOnlineClasses = async function(params = {}, studentCCCD = null) {
+    const query = new URLSearchParams();
+    Object.entries(params || {}).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        query.append(key, String(value));
+      }
+    });
+
+    const endpoint = `/online-classes${query.toString() ? `?${query.toString()}` : ''}`;
+    return this.cachedRequest(
+      endpoint,
+      {
+        tokenType: 'student',
+        headers: studentCCCD ? { 'X-Student-CCCD': studentCCCD } : {},
+      },
+      { ttlMs: 5 * 60 * 1000 }
+    );
+  };
+
+  // Get student-specific join status for an online class
+  ApiClient.prototype.getStudentOnlineClassStatus = async function(id, studentCCCD = null) {
+    return this.request(`/online-classes/${id}/my-status`, {
+      tokenType: 'student',
+      headers: studentCCCD ? { 'X-Student-CCCD': studentCCCD } : {},
+    });
+  };
+
+  // Get student-facing detail for an online class
+  ApiClient.prototype.getStudentOnlineClassDetail = async function(id, studentCCCD = null) {
+    return this.cachedRequest(
+      `/online-classes/${id}`,
+      {
+        tokenType: 'student',
+        headers: studentCCCD ? { 'X-Student-CCCD': studentCCCD } : {},
+      },
+      { ttlMs: 5 * 60 * 1000 }
+    );
+  };
+
+  // Student self-enrollment for an online class
+  ApiClient.prototype.enrollInOnlineClass = async function(id, studentCCCD = null) {
+    const response = await this.request(`/online-classes/${id}/enroll`, {
+      method: 'POST',
+      tokenType: 'student',
+      headers: studentCCCD ? { 'X-Student-CCCD': studentCCCD } : {},
+    });
+    this.invalidateCache(['/online-classes']);
+    return response;
   };
 
   // Get available students for a class (not registered yet)

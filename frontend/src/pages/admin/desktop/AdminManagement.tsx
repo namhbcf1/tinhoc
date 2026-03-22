@@ -7,6 +7,7 @@ import api from '../../../services/api';
 import ToastContainer, { useToast } from '../../../components/ui/ToastContainer';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import '../../../styles/admin/AdminModern.css';
+import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
 
 export default function AdminManagement() {
   const { success, error, toasts, removeToast } = useToast();
@@ -18,6 +19,7 @@ export default function AdminManagement() {
   const [formData, setFormData] = useState({ username: '', password: '', email: '', phone: '', role: 'admin', status: 'active' });
 
   useEffect(() => { loadAdmins(); }, []);
+  useAdminAutoRefresh(() => loadAdmins(), { minIntervalMs: 15000 });
 
   const loadAdmins = async () => {
     setLoading(true);

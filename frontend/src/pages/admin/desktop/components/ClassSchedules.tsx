@@ -1,246 +1,435 @@
-import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CalendarDays, Edit, ExternalLink, Plus, Trash2 } from 'lucide-react';
 import api from '../../../services/api';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Label } from '../../../components/ui/Label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '../../../components/ui/Dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../../components/ui/Dialog';
+import { Badge } from '../../../components/ui/Badge';
 import { useToast } from '../../../components/ui/ToastContainer';
 
-export default function ClassSchedules({ classId, className, maLop }) {
-    const { toast } = useToast();
-    const [schedules, setSchedules] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [editingSchedule, setEditingSchedule] = useState(null);
-    const [showModal, setShowModal] = useState(false);
+const SESSION_TYPE_OPTIONS = [
+  { value: 'lesson', label: 'Buổi học' },
+  { value: 'exam', label: 'Bài test / thi' },
+  { value: 'final_assessment', label: 'Đánh giá cuối khóa' },
+  { value: 'assignment_review', label: 'Bài thu hoạch' },
+  { value: 'other', label: 'Khác' },
+];
 
-    const [formData, setFormData] = useState({
-        day_of_week: 1,
-        start_time: '08:00',
-        end_time: '10:00',
-        room: '',
-        notes: '',
-        create_meet_link: false,
+function formatDateLabel(dateValue) {
+  if (!dateValue) return 'Chưa có ngày';
+  const [year, month, day] = String(dateValue).split('-');
+  if (!year || !month || !day) return dateValue;
+  return `${day}/${month}/${year}`;
+}
+
+function getSessionTypeLabel(sessionType) {
+  return SESSION_TYPE_OPTIONS.find((item) => item.value === sessionType)?.label || sessionType || 'Khác';
+}
+
+function getLegacyDayName(day) {
+  return ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'][day] || 'Không rõ';
+}
+
+export default function ClassSchedules({ classId }) {
+  const { toast } = useToast();
+  const [sessions, setSessions] = useState([]);
+  const [legacySchedules, setLegacySchedules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editingSession, setEditingSession] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const [formData, setFormData] = useState({
+    session_date: '',
+    start_time: '18:30',
+    end_time: '20:30',
+    session_type: 'lesson',
+    title: '',
+    content_outline: '',
+    period_count: '',
+    room: '',
+    meeting_link: '',
+    notes: '',
+    sort_order: 0,
+  });
+
+  useEffect(() => {
+    void loadData();
+  }, [classId]);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [sessionsResponse, legacyResponse] = await Promise.all([
+        api.getClassSessions(classId),
+        api.getClassSchedules(classId).catch(() => ({ success: false, data: [] })),
+      ]);
+
+      setSessions(sessionsResponse?.success && Array.isArray(sessionsResponse.data) ? sessionsResponse.data : []);
+      setLegacySchedules(legacyResponse?.success && Array.isArray(legacyResponse.data) ? legacyResponse.data : []);
+    } catch (error) {
+      console.error('Error loading class sessions:', error);
+      toast?.error('Không thể tải lịch chi tiết của lớp');
+      setSessions([]);
+      setLegacySchedules([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setEditingSession(null);
+    setFormData({
+      session_date: '',
+      start_time: '18:30',
+      end_time: '20:30',
+      session_type: 'lesson',
+      title: '',
+      content_outline: '',
+      period_count: '',
+      room: '',
+      meeting_link: '',
+      notes: '',
+      sort_order: sessions.length + 1,
     });
+  };
 
-    useEffect(() => {
-        loadSchedules();
-    }, [classId]);
+  const handleCreate = () => {
+    resetForm();
+    setShowModal(true);
+  };
 
-    const loadSchedules = async () => {
-        setLoading(true);
-        try {
-            const response = await api.getClassSchedules(classId);
-            setSchedules(response.success && Array.isArray(response.data) ? response.data : []);
-        } catch (error) {
-            console.error('Error loading schedules:', error);
-            setSchedules([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const handleEdit = (session) => {
+    setEditingSession(session);
+    setFormData({
+      session_date: session.session_date || '',
+      start_time: session.start_time || '18:30',
+      end_time: session.end_time || '20:30',
+      session_type: session.session_type || 'lesson',
+      title: session.title || '',
+      content_outline: session.content_outline || '',
+      period_count: session.period_count ?? '',
+      room: session.room || '',
+      meeting_link: session.meeting_link || '',
+      notes: session.notes || '',
+      sort_order: session.sort_order ?? 0,
+    });
+    setShowModal(true);
+  };
 
-    const handleCreate = () => {
-        setEditingSchedule(null);
-        setFormData({
-            day_of_week: 1,
-            start_time: '08:00',
-            end_time: '10:00',
-            room: '',
-            notes: '',
-            create_meet_link: false,
-        });
-        setShowModal(true);
-    };
+  const handleDelete = async (session) => {
+    if (!confirm(`Xóa buổi "${session.title || formatDateLabel(session.session_date)}"?`)) {
+      return;
+    }
 
-    const handleEdit = (schedule) => {
-        setEditingSchedule(schedule);
-        setFormData({
-            day_of_week: schedule.day_of_week,
-            start_time: schedule.start_time,
-            end_time: schedule.end_time,
-            room: schedule.room || '',
-            notes: schedule.notes || '',
-        });
-        setShowModal(true);
-    };
+    try {
+      await api.deleteClassSession(classId, session.id);
+      toast?.success('Đã xóa buổi học');
+      await loadData();
+    } catch (error) {
+      toast?.error(`Lỗi: ${error.message}`);
+    }
+  };
 
-    const handleDelete = async (id) => {
-        if (!confirm('Xóa lịch học này?')) return;
-        try {
-            await api.deleteClassSchedule(id);
-            toast?.success('Đã xóa lịch học');
-            loadSchedules();
-        } catch (error) {
-            toast?.error('Lỗi: ' + error.message);
-        }
-    };
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const data = {
-                class_id: classId,
-                class_name: className,
-                ma_lop: maLop,
-                ...formData
-            };
-            if (editingSchedule) {
-                await api.updateClassSchedule(editingSchedule.id, formData);
-                toast?.success('Cập nhật thành công');
-            } else {
-                const result = await api.createClassSchedule(data);
-                if (result.data?.meeting_link) {
-                    toast?.success('Tạo lịch học thành công với Google Meet link!');
-                } else {
-                    toast?.success('Tạo lịch mới thành công');
-                }
-            }
-            setShowModal(false);
-            loadSchedules();
-        } catch (error) {
-            toast?.error('Lỗi: ' + error.message);
-        }
-    };
+    try {
+      const payload = {
+        session_date: formData.session_date,
+        start_time: formData.start_time,
+        end_time: formData.end_time,
+        session_type: formData.session_type,
+        title: formData.title,
+        content_outline: formData.content_outline,
+        period_count: formData.period_count === '' ? null : Number(formData.period_count),
+        room: formData.room || null,
+        meeting_link: formData.meeting_link || null,
+        notes: formData.notes || null,
+        sort_order: Number(formData.sort_order) || 0,
+      };
 
-    const getDayName = (day) => ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'][day];
+      if (editingSession) {
+        await api.updateClassSession(classId, editingSession.id, payload);
+        toast?.success('Đã cập nhật buổi học');
+      } else {
+        await api.createClassSession(classId, payload);
+        toast?.success('Đã tạo buổi học');
+      }
 
-    if (loading) return <div className="p-8 text-center text-slate-500">Đang tải lịch học...</div>;
+      setShowModal(false);
+      resetForm();
+      await loadData();
+    } catch (error) {
+      toast?.error(`Lỗi: ${error.message}`);
+    }
+  };
 
-    return (
-        <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-slate-800">Lịch học chi tiết</h3>
-                <Button onClick={handleCreate} className="bg-blue-600 hover:bg-blue-700 text-white" size="sm">
-                    <Plus size={16} className="mr-2" /> Thêm buổi học
-                </Button>
-            </div>
+  if (loading) {
+    return <div className="p-8 text-center text-slate-500">Đang tải lịch chi tiết...</div>;
+  }
 
-            <div className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
-                <table className="w-full text-sm text-left">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs font-semibold">
-                        <tr>
-                            <th className="px-4 py-3">Thứ</th>
-                            <th className="px-4 py-3">Thời gian</th>
-                            <th className="px-4 py-3">Phòng</th>
-                            <th className="px-4 py-3">Ghi chú</th>
-                            <th className="px-4 py-3 text-right">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {schedules.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} className="px-4 py-8 text-center text-slate-500">Chưa có lịch học chi tiết.</td>
-                            </tr>
-                        ) : schedules.map((sch) => {
-                            const isUrl = sch.room && (sch.room.startsWith('http://') || sch.room.startsWith('https://'));
-                            return (
-                                <tr key={sch.id} className="hover:bg-slate-50">
-                                    <td className="px-4 py-3 font-medium text-slate-800">{getDayName(sch.day_of_week)}</td>
-                                    <td className="px-4 py-3 font-mono text-slate-600">{sch.start_time} - {sch.end_time}</td>
-                                    <td className="px-4 py-3">
-                                        {isUrl ? (
-                                            <a href={sch.room} target="_blank" rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-600 rounded-md text-xs font-medium hover:bg-blue-200">
-                                                🎥 Link học online
-                                            </a>
-                                        ) : (
-                                            <span>{sch.room || <span className="text-red-500">⚠️ Chưa có</span>}</span>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3 text-slate-500 italic">{sch.notes || '-'}</td>
-                                    <td className="px-4 py-3 text-right space-x-1">
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(sch)}>
-                                            <Edit size={16} className="text-slate-400 hover:text-blue-600" />
-                                        </Button>
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleDelete(sch.id)}>
-                                            <Trash2 size={16} className="text-slate-400 hover:text-red-600" />
-                                        </Button>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
-
-            <Dialog open={showModal} onOpenChange={setShowModal}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{editingSchedule ? 'Sửa lịch học' : 'Thêm buổi học'}</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label>Thứ trong tuần</Label>
-                            <select
-                                className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                                value={formData.day_of_week}
-                                onChange={(e) => setFormData({ ...formData, day_of_week: parseInt(e.target.value) })}
-                            >
-                                {[1, 2, 3, 4, 5, 6, 0].map(d => <option key={d} value={d}>{getDayName(d)}</option>)}
-                            </select>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Bắt đầu (24H)</Label>
-                                <Input type="text" value={formData.start_time} onChange={(e) => setFormData({ ...formData, start_time: e.target.value })} placeholder="08:00" required />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Kết thúc (24H)</Label>
-                                <Input type="text" value={formData.end_time} onChange={(e) => setFormData({ ...formData, end_time: e.target.value })} placeholder="10:00" required />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-2">
-                                <span>Phòng học / Link học online</span>
-                                <span className="text-xs text-blue-500 font-normal">(Nhập link Zoom/Meet nếu học online)</span>
-                            </Label>
-                            <Input
-                                value={formData.room}
-                                onChange={(e) => setFormData({ ...formData, room: e.target.value })}
-                                placeholder="P.101 hoặc https://meet.google.com/xxx-xxxx-xxx"
-                                disabled={formData.create_meet_link}
-                            />
-                            {formData.room && (formData.room.startsWith('http://') || formData.room.startsWith('https://')) && (
-                                <p className="text-xs text-green-600">✅ Đã nhận diện là link học online - Học viên sẽ thấy nút "Vào lớp học"</p>
-                            )}
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Ghi chú</Label>
-                            <Input value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="Lý thuyết/Thực hành..." />
-                        </div>
-
-                        {/* Checkbox tạo Google Meet tự động */}
-                        {!editingSchedule && (
-                            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                <label className="flex items-start gap-3 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={formData.create_meet_link}
-                                        onChange={(e) => setFormData({
-                                            ...formData,
-                                            create_meet_link: e.target.checked,
-                                            room: e.target.checked ? '' : formData.room
-                                        })}
-                                        className="mt-1 w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-                                    />
-                                    <div>
-                                        <span className="font-semibold text-blue-800">🎥 Tự động tạo Google Meet</span>
-                                        <p className="text-xs text-blue-600 mt-1">
-                                            Hệ thống sẽ tự động tạo link Google Meet cho buổi học này.
-                                            Link sẽ được lưu lại và dùng lâu dài.
-                                        </p>
-                                    </div>
-                                </label>
-                            </div>
-                        )}
-                        <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setShowModal(false)}>Hủy</Button>
-                            <Button type="submit" className="bg-blue-600 text-white">Lưu</Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+  return (
+    <div className="space-y-5 p-6">
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="flex items-center gap-2 text-slate-900">
+            <CalendarDays size={18} className="text-blue-600" />
+            <h3 className="text-lg font-semibold">Lịch theo từng buổi</h3>
+          </div>
+          <p className="mt-2 max-w-3xl text-sm text-slate-500">
+            Mỗi dòng là một buổi học hoặc giai đoạn đánh giá riêng. Có thể thay giáo viên, nội dung,
+            phòng học và link online theo từng buổi.
+          </p>
         </div>
-    );
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge className="border border-blue-200 bg-blue-50 text-blue-700">
+            {sessions.length} buổi
+          </Badge>
+          <Button onClick={handleCreate} className="bg-blue-600 text-white hover:bg-blue-700" size="sm">
+            <Plus size={16} className="mr-2" /> Thêm buổi
+          </Button>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <table className="w-full text-left text-sm">
+          <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase text-slate-500">
+            <tr>
+              <th className="px-4 py-3">Ngày</th>
+              <th className="px-4 py-3">Loại</th>
+              <th className="px-4 py-3">Thời gian</th>
+              <th className="px-4 py-3">Tiêu đề / nội dung</th>
+              <th className="px-4 py-3">Địa điểm</th>
+              <th className="px-4 py-3">Tiết</th>
+              <th className="px-4 py-3 text-right">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {sessions.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
+                  Chưa có buổi học nào. Hãy thêm từng buổi để lớp vận hành theo mô hình linh hoạt.
+                </td>
+              </tr>
+            ) : (
+              sessions.map((session) => (
+                <tr key={session.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 font-medium text-slate-800">
+                    {formatDateLabel(session.session_date)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge className="border border-slate-200 bg-slate-100 text-slate-700">
+                      {getSessionTypeLabel(session.session_type)}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-slate-600">
+                    {session.start_time} - {session.end_time}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-slate-900">{session.title || 'Chưa đặt tiêu đề'}</div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {session.content_outline || session.notes || 'Chưa có mô tả nội dung'}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="space-y-1 text-slate-600">
+                      <div>{session.room || 'Chưa có phòng'}</div>
+                      {session.meeting_link ? (
+                        <a
+                          href={session.meeting_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800"
+                        >
+                          Mở link học <ExternalLink size={12} />
+                        </a>
+                      ) : null}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {session.period_count ?? '-'}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="inline-flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(session)}>
+                        <Edit size={16} className="text-slate-400 hover:text-blue-600" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleDelete(session)}>
+                        <Trash2 size={16} className="text-slate-400 hover:text-red-600" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {legacySchedules.length > 0 ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="text-sm font-semibold text-amber-900">Lịch tuần cũ đang còn dữ liệu</h4>
+            <Badge className="border border-amber-300 bg-white text-amber-700">
+              {legacySchedules.length} dòng legacy
+            </Badge>
+          </div>
+          <p className="mt-2 text-sm text-amber-800">
+            Phần dưới chỉ để tham chiếu cho lớp cũ. Dữ liệu vận hành mới nên nhập ở bảng buổi học phía trên.
+          </p>
+          <div className="mt-4 overflow-hidden rounded-xl border border-amber-200 bg-white">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-amber-100 bg-amber-50 text-xs font-semibold uppercase text-amber-700">
+                <tr>
+                  <th className="px-4 py-3">Thứ</th>
+                  <th className="px-4 py-3">Giờ</th>
+                  <th className="px-4 py-3">Phòng</th>
+                  <th className="px-4 py-3">Ghi chú</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-amber-100">
+                {legacySchedules.map((item) => (
+                  <tr key={item.id}>
+                    <td className="px-4 py-3">{getLegacyDayName(item.day_of_week)}</td>
+                    <td className="px-4 py-3 font-mono">{item.start_time} - {item.end_time}</td>
+                    <td className="px-4 py-3">{item.room || '-'}</td>
+                    <td className="px-4 py-3">{item.notes || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
+
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{editingSession ? 'Sửa buổi học' : 'Thêm buổi học'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4 py-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Ngày học</Label>
+                <Input
+                  type="date"
+                  value={formData.session_date}
+                  onChange={(event) => setFormData((current) => ({ ...current, session_date: event.target.value }))}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Loại buổi</Label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={formData.session_type}
+                  onChange={(event) => setFormData((current) => ({ ...current, session_type: event.target.value }))}
+                >
+                  {SESSION_TYPE_OPTIONS.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Giờ bắt đầu</Label>
+                <Input
+                  type="time"
+                  value={formData.start_time}
+                  onChange={(event) => setFormData((current) => ({ ...current, start_time: event.target.value }))}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Giờ kết thúc</Label>
+                <Input
+                  type="time"
+                  value={formData.end_time}
+                  onChange={(event) => setFormData((current) => ({ ...current, end_time: event.target.value }))}
+                  required
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>Tiêu đề buổi học</Label>
+                <Input
+                  value={formData.title}
+                  onChange={(event) => setFormData((current) => ({ ...current, title: event.target.value }))}
+                  placeholder="Ví dụ: Buổi 1 - Khởi động và giới thiệu khóa"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>Nội dung buổi học</Label>
+                <textarea
+                  className="min-h-[90px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={formData.content_outline}
+                  onChange={(event) => setFormData((current) => ({ ...current, content_outline: event.target.value }))}
+                  placeholder="Mô tả nội dung, mục tiêu, đầu việc của buổi học"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Số tiết</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.period_count}
+                  onChange={(event) => setFormData((current) => ({ ...current, period_count: event.target.value }))}
+                  placeholder="3"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Phòng học</Label>
+                <Input
+                  value={formData.room}
+                  onChange={(event) => setFormData((current) => ({ ...current, room: event.target.value }))}
+                  placeholder="Ví dụ: P.301"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Link học online</Label>
+                <Input
+                  value={formData.meeting_link}
+                  onChange={(event) => setFormData((current) => ({ ...current, meeting_link: event.target.value }))}
+                  placeholder="https://meet.google.com/..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Thứ tự hiển thị</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.sort_order}
+                  onChange={(event) => setFormData((current) => ({ ...current, sort_order: event.target.value }))}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>Ghi chú vận hành</Label>
+                <textarea
+                  className="min-h-[90px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={formData.notes}
+                  onChange={(event) => setFormData((current) => ({ ...current, notes: event.target.value }))}
+                  placeholder="Thiết bị cần chuẩn bị, đầu bài thu hoạch, lưu ý riêng..."
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
+                Hủy
+              </Button>
+              <Button type="submit" className="bg-blue-600 text-white">
+                {editingSession ? 'Lưu thay đổi' : 'Tạo buổi học'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }

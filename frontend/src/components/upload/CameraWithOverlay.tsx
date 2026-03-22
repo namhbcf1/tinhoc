@@ -399,6 +399,10 @@ export default function CameraWithOverlay({
 
 
     const currentRatio = getOverlayRatio(type);
+    const isMobileViewport = typeof window !== 'undefined' && window.innerWidth <= 768;
+    const overlayWidth = `${Math.round(currentRatio.w * 100)}%`;
+    const overlayTop = isMobileViewport ? '38%' : '50%';
+    const overlayMaxHeight = isMobileViewport ? '52vh' : '72vh';
     const typeLabels = {
         cccd_front: 'CCCD mặt trước',
         cccd_back: 'CCCD mặt sau',
@@ -450,7 +454,10 @@ export default function CameraWithOverlay({
                     ref={overlayRef}
                     className="camera-overlay-template"
                     style={{
-                        aspectRatio: `${currentRatio.aspect} / 1`
+                        aspectRatio: `${currentRatio.aspect} / 1`,
+                        '--overlay-width': overlayWidth,
+                        '--overlay-top': overlayTop,
+                        '--overlay-max-height': overlayMaxHeight,
                     }}
                     data-overlay-width={currentRatio.w}
                 >

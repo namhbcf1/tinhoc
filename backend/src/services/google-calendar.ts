@@ -12,128 +12,15 @@
  */
 
 import type { Env } from '../types/env.js';
+import { getGoogleAccessToken } from './google-auth.js';
 
-// ========================================
-// JWT GENERATION FOR SERVICE ACCOUNT
-// ========================================
+const CALENDAR_SCOPES = [
+  'https://www.googleapis.com/auth/calendar',
+  'https://www.googleapis.com/auth/calendar.events',
+];
 
-/**
- * Base64URL encode (không có padding)
- */
-function base64URLEncode(str: string): string {
-  const base64 = btoa(str);
-  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
-
-/**
- * Convert ArrayBuffer to Base64URL
- */
-function arrayBufferToBase64URL(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return base64URLEncode(binary);
-}
-
-/**
- * Import PEM private key to CryptoKey
- */
-async function importPrivateKey(pemKey: string): Promise<CryptoKey> {
-  // Remove PEM header/footer and decode
-  const pemContents = pemKey
-    .replace(/-----BEGIN PRIVATE KEY-----/g, '')
-    .replace(/-----END PRIVATE KEY-----/g, '')
-    .replace(/\s/g, '');
-
-  const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
-
-  return await crypto.subtle.importKey(
-    'pkcs8',
-    binaryKey,
-    {
-      name: 'RSASSA-PKCS1-v1_5',
-      hash: 'SHA-256',
-    },
-    false,
-    ['sign']
-  );
-}
-
-/**
- * Tạo JWT token cho Service Account với Domain-wide Delegation
- * @param clientEmail - Service Account email
- * @param privateKey - Private key (PEM format)
- * @param impersonateEmail - Email của user cần impersonate
- * @param scopes - OAuth scopes
- */
-async function generateJWT(clientEmail: string, privateKey: string, impersonateEmail: string, scopes: string[]): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-
-  const header = {
-    alg: 'RS256',
-    typ: 'JWT'
-  };
-
-  const payload = {
-    iss: clientEmail,               // Service account email
-    sub: impersonateEmail,          // User to impersonate (Domain-wide Delegation)
-    scope: scopes.join(' '),        // OAuth scopes
-    aud: 'https://oauth2.googleapis.com/token',
-    iat: now,
-    exp: now + 3600                 // 1 hour expiry
-  };
-
-  const encodedHeader = base64URLEncode(JSON.stringify(header));
-  const encodedPayload = base64URLEncode(JSON.stringify(payload));
-  const signatureInput = `${encodedHeader}.${encodedPayload}`;
-
-  // Sign with private key
-  const cryptoKey = await importPrivateKey(privateKey);
-  const signature = await crypto.subtle.sign(
-    'RSASSA-PKCS1-v1_5',
-    cryptoKey,
-    new TextEncoder().encode(signatureInput)
-  );
-
-  const encodedSignature = arrayBufferToBase64URL(signature);
-
-  return `${encodedHeader}.${encodedPayload}.${encodedSignature}`;
-}
-
-/**
- * Exchange JWT for Access Token
- */
 async function getAccessToken(env: Env): Promise<string> {
-  const jwt = await generateJWT(
-    env.GOOGLE_CLIENT_EMAIL,
-    env.GOOGLE_PRIVATE_KEY,
-    env.GOOGLE_ADMIN_EMAIL,
-    [
-      'https://www.googleapis.com/auth/calendar',
-      'https://www.googleapis.com/auth/calendar.events'
-    ]
-  );
-
-  const response = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: jwt
-    })
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to get access token: ${error}`);
-  }
-
-  const data: any = await response.json();
-  return data.access_token;
+  return getGoogleAccessToken(env, CALENDAR_SCOPES, env.GOOGLE_ADMIN_EMAIL);
 }
 
 // ========================================

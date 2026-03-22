@@ -3,6 +3,9 @@ import { useEffect, lazy, Suspense } from 'react';
 import analytics from './utils/analytics';
 import useAnalytics from './hooks/useAnalytics';
 import LoadingSpinner from './components/ui/LoadingSpinner';
+import ExternalRedirect from './components/routing/ExternalRedirect';
+import ProductTour from './components/tour/ProductTour';
+import { STUDY_PLATFORM_URL, openStudyPlatform } from './features/student/student-nav';
 
 // Public pages — lazy-loaded for code splitting (reduces main bundle ~2.7MB → ~200KB)
 const HomePage = lazy(() => import('./pages/public/HomePage'));
@@ -19,10 +22,13 @@ const UnitsPage = lazy(() => import('./pages/public/UnitsPage'));
 const StudentPortalPage = lazy(() => import('./pages/public/StudentPortalPage'));
 const FacultyPortalPage = lazy(() => import('./pages/public/FacultyPortalPage'));
 const CertificateLookup = lazy(() => import('./pages/public/CertificateLookup'));
+const StudentLookup = lazy(() => import('./pages/public/StudentLookup'));
 const ServicesPage = lazy(() => import('./pages/public/ServicesPage'));
 const NewsPage = lazy(() => import('./pages/public/NewsPage'));
 const PostDetailPage = lazy(() => import('./pages/public/PostDetailPage'));
 const ContactPage = lazy(() => import('./pages/public/ContactPage'));
+const PrivacyPage = lazy(() => import('./pages/public/PrivacyPage'));
+const TermsPage = lazy(() => import('./pages/public/TermsPage'));
 const SemanticLanding = lazy(() => import('./pages/public/SemanticLanding'));
 // Admin auth pages — lazy-loaded
 const AdminLogin = lazy(() => import('./pages/admin/auth/AdminLogin'));
@@ -34,18 +40,17 @@ const PasswordResetPage = lazy(() => import('./pages/admin/auth/PasswordResetPag
 // import ExamResultPage from './pages/exam/ExamResultPage';
 // import ExamHistoryPage from './pages/exam/ExamHistoryPage';
 // VSTEP Admin — lazy-loaded
-const VStepManager = lazy(() => import('./pages/admin/vstep/VStepManager'));
-const VStepEditor = lazy(() => import('./pages/admin/vstep/VStepEditor'));
-const ExcelImportStats = lazy(() => import('./pages/admin/vstep/ExcelImportStats'));
-// VSTEP Student — lazy-loaded
-const VStepExamList = lazy(() => import('./pages/student/vstep/VStepExamList'));
-const VStepExamHall = lazy(() => import('./pages/student/vstep/VStepExamHall'));
-const VStepExamResult = lazy(() => import('./pages/student/vstep/VStepExamResult'));
-const VStepExamHistory = lazy(() => import('./pages/student/vstep/VStepExamHistory'));
 // Authenticated dashboards — lazy-loaded
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const StudentDashboard = lazy(() => import('./pages/student/StudentDashboard'));
-const TeacherDashboard = lazy(() => import('./pages/teacher/TeacherDashboard'));
+
+function StudyPlatformRedirect() {
+  useEffect(() => {
+    void openStudyPlatform();
+  }, []);
+
+  return <ExternalRedirect to={STUDY_PLATFORM_URL} />;
+}
 
 function AppRoutes() {
   // Initialize analytics tracking
@@ -58,15 +63,14 @@ function AppRoutes() {
       <Route path="/" element={<HomePage />} />
       <Route path="/register" element={<StudentRegistration />} />
       <Route path="/login" element={<UnifiedLogin />} />
-      <Route path="/teacher/login" element={<UnifiedLogin />} />
       <Route path="/dashboard" element={<StudentDashboard />} />
-      <Route path="/dashboard/my-classes" element={<StudentDashboard />} />
-      <Route path="/dashboard/register-class" element={<StudentDashboard />} />
-      <Route path="/dashboard/payment" element={<StudentDashboard />} />
-      <Route path="/dashboard/schedule" element={<StudentDashboard />} />
+      <Route path="/dashboard/my-classes" element={<StudyPlatformRedirect />} />
+      <Route path="/dashboard/register-class" element={<StudyPlatformRedirect />} />
+      <Route path="/dashboard/payment" element={<Navigate to="/dashboard/exams" replace />} />
+      <Route path="/dashboard/schedule" element={<Navigate to="/dashboard/exams" replace />} />
       <Route path="/dashboard/exams" element={<StudentDashboard />} />
       <Route path="/dashboard/profile" element={<StudentDashboard />} />
-      <Route path="/dashboard/online-classes" element={<StudentDashboard />} />
+      <Route path="/dashboard/online-classes" element={<StudyPlatformRedirect />} />
 
       {/* Main pages */}
       <Route path="/about" element={<AboutPage />} />
@@ -198,6 +202,10 @@ function AppRoutes() {
 
       {/* Certificate lookup (public) */}
       <Route path="/certificate/lookup" element={<CertificateLookup />} />
+      <Route path="/student-lookup" element={<StudentLookup />} />
+      <Route path="/student/lookup" element={<Navigate to="/student-lookup" replace />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
 
       {/* Exam Platform routes */}
       {/* Exam Platform routes (Legacy)
@@ -209,9 +217,11 @@ function AppRoutes() {
       <Route path="/exam/history" element={<ExamHistoryPage />} />
       */}
 
-      {/* Teacher routes */}
-      <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-      <Route path="/teacher/dashboard/*" element={<TeacherDashboard />} />
+      {/* Teacher routes → redirect to admin dashboard */}
+      <Route path="/teacher/login" element={<Navigate to="/admin/login" replace />} />
+      <Route path="/teacher/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
+      <Route path="/teacher/dashboard/*" element={<Navigate to="/admin/dashboard" replace />} />
+      <Route path="/teacher/*" element={<Navigate to="/admin/dashboard" replace />} />
 
       {/* Admin routes */}
       <Route path="/admin" element={<AdminLogin />} />
@@ -219,27 +229,16 @@ function AppRoutes() {
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
       {/* VSTEP Management */}
-      <Route path="/admin/vstep" element={<VStepManager />} />
-      <Route path="/admin/vstep/import" element={<ExcelImportStats />} />
-      <Route path="/admin/vstep/new" element={<VStepEditor />} />
-      <Route path="/admin/vstep/:id" element={<VStepEditor />} />
-
       <Route path="/admin/reset-password" element={<PasswordResetPage />} />
 
-      {/* Student VSTEP exam routes — under /dashboard to stay consistent */}
-      <Route path="/dashboard/vstep/take/:id" element={<VStepExamHall />} />
-      <Route path="/dashboard/vstep/result/:examId/:attemptId" element={<VStepExamResult />} />
-      <Route path="/dashboard/vstep/history" element={<VStepExamHistory />} />
-
-      {/* Legacy /student/vstep/* — redirect to /dashboard equivalent */}
-      <Route path="/student/vstep/take/:id" element={<VStepExamHall />} />
-      <Route path="/student/vstep/result/:examId/:attemptId" element={<VStepExamResult />} />
-      <Route path="/student/vstep/history" element={<VStepExamHistory />} />
-      <Route path="/student/vstep" element={<VStepExamList />} />
+      {/* Student VSTEP now lives on the dedicated VanTrangExam site */}
+      <Route path="/dashboard/vstep/*" element={<StudyPlatformRedirect />} />
+      <Route path="/student/vstep/*" element={<StudyPlatformRedirect />} />
 
       {/* Redirect unknown routes */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    <ProductTour />
     </Suspense>
   );
 }

@@ -121,6 +121,15 @@ async function setupTables(db) {
       max_students INTEGER DEFAULT 50,
       status TEXT DEFAULT 'active',
       created_by INTEGER,
+      source_exam_schedule_id INTEGER,
+      source_kind TEXT DEFAULT 'exam_schedule',
+      exam_category_id INTEGER,
+      exam_type_id INTEGER,
+      organizer_uuid TEXT,
+      program_uuid TEXT,
+      level_uuid TEXT,
+      custom_field_payload TEXT,
+      override_payload TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )

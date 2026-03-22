@@ -4,6 +4,8 @@ import { Mail, Phone } from 'lucide-react';
 function StatusBadge({ status }) {
   const map = {
     studying:  { cls: 'bg-emerald-100 text-emerald-700', text: 'Đang học' },
+    active:    { cls: 'bg-emerald-100 text-emerald-700', text: 'Đang học' },
+    approved:  { cls: 'bg-blue-100 text-blue-700',       text: 'Đã duyệt' },
     pending:   { cls: 'bg-amber-100 text-amber-700',     text: 'Chờ duyệt' },
     completed: { cls: 'bg-blue-100 text-blue-700',       text: 'Hoàn thành' },
     certified: { cls: 'bg-purple-100 text-purple-700',   text: 'Có CC' },
@@ -17,11 +19,11 @@ function StatusBadge({ status }) {
 }
 
 // Single grid card
-function StudentCard({ student, onClick }) {
+function StudentCard({ student, onClick, getImageUrl }) {
   return (
     <div
       onClick={onClick}
-      className="relative bg-white rounded-2xl border border-slate-200 p-6 cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:border-emerald-200"
+      className="relative cursor-pointer rounded-[28px] border border-slate-200 bg-white p-6 transition-all duration-200 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-[0_28px_60px_-34px_rgba(15,23,42,0.34)]"
     >
       {/* Status badge — top-right */}
       <div className="absolute top-4 right-4">
@@ -29,18 +31,26 @@ function StudentCard({ student, onClick }) {
       </div>
 
       {/* Avatar + Name */}
-      <div className="flex items-center gap-4 mb-5">
-        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white font-bold text-2xl shadow-md flex-shrink-0">
-          {student.ho_ten_full?.charAt(0) || 'H'}
+      <div className="mb-5 flex items-center gap-4">
+        <div className="h-14 w-14 rounded-[20px] bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white font-bold text-2xl shadow-md flex-shrink-0 overflow-hidden">
+          {student.image_3x4 ? (
+            <img
+              src={getImageUrl ? getImageUrl(student.image_3x4) : student.image_3x4}
+              alt={student.ho_ten_full || 'Hoc vien'}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            student.ho_ten_full?.charAt(0) || 'H'
+          )}
         </div>
-        <div>
-          <div className="font-bold text-slate-900 text-base leading-tight">{student.ho_ten_full}</div>
-          <div className="text-xs text-slate-400 mt-1 font-mono">{student.cccd}</div>
+        <div className="min-w-0">
+          <div className="truncate font-bold text-slate-900 text-base leading-tight">{student.ho_ten_full}</div>
+          <div className="mt-1 text-xs font-mono text-slate-400">{student.cccd}</div>
         </div>
       </div>
 
       {/* Contact info */}
-      <div className="border-t border-slate-100 pt-4 flex flex-col gap-2.5">
+      <div className="flex flex-col gap-2.5 border-t border-slate-100 pt-4">
         <div className="flex items-center gap-2 text-slate-500 text-sm">
           <Mail size={14} className="flex-shrink-0 text-slate-400" />
           <span className="truncate">{student.email || 'N/A'}</span>
@@ -54,14 +64,15 @@ function StudentCard({ student, onClick }) {
   );
 }
 
-export default function StudentGridView({ students, onViewDetail }) {
+export default function StudentGridView({ students, onViewDetail, getImageUrl }) {
   return (
-    <div className="p-8 grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6 bg-slate-50/50">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-5 bg-slate-50/45 p-7">
       {students.map(student => (
         <StudentCard
           key={student.id}
           student={student}
           onClick={() => onViewDetail(student)}
+          getImageUrl={getImageUrl}
         />
       ))}
     </div>

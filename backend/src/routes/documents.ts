@@ -70,9 +70,15 @@ documents.post('/student', createPostEndpoint({
   handler: async (c, { body }) => await DocService.getStudentDocuments(c, body.student_id, body.class_ids || [])
 }));
 
-documents.get('/cccd/:cccd', createGetEndpoint({
+documents.get('/cccd/:cccd', authMiddleware, createGetEndpoint({
   params: z.object({ cccd: z.string() }),
-  handler: async (c, { params }) => await DocService.getDocumentsByCCCD(c, params.cccd)
+  handler: async (c, { params }) => {
+    const user = c.get('user');
+    if (user?.type === 'student' && String(user.cccd || '') !== String(params.cccd || '')) {
+      throw new Error('Không có quyền xem tài liệu của học viên khác');
+    }
+    return await DocService.getDocumentsByCCCD(c, params.cccd);
+  }
 }));
 
 documents.get('/class/:classId', createGetEndpoint({
