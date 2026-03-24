@@ -193,11 +193,11 @@ export default function ImageEditor({
         const containerRect = container.getBoundingClientRect();
         const containerWidth = containerRect.width;
         const containerHeight = containerRect.height;
-        const padding = 50;
 
-        const baseCanvasWidth = Math.max(containerWidth, img.width + padding * 2);
-        const baseCanvasHeight = Math.max(containerHeight, img.height + padding * 2);
-        const baseOverlay = calculateOverlay(containerWidth, containerHeight, baseCanvasWidth, baseCanvasHeight);
+        // Canvas always equals container — no CSS rescaling, overlay coords stay accurate
+        const canvasWidth = containerWidth;
+        const canvasHeight = containerHeight;
+        const baseOverlay = calculateOverlay(containerWidth, containerHeight, canvasWidth, canvasHeight);
 
         let nextScale = computeCoverScaleForOverlay(
             baseOverlay.overlayWidth,
@@ -222,8 +222,6 @@ export default function ImageEditor({
             nextTy = (img.height / 2 - (detectedBox.y + detectedBox.height / 2)) * nextScale;
         }
 
-        const canvasWidth = Math.max(containerWidth, img.width * nextScale + padding * 2);
-        const canvasHeight = Math.max(containerHeight, img.height * nextScale + padding * 2);
         const overlay = calculateOverlay(containerWidth, containerHeight, canvasWidth, canvasHeight);
         const clamped = clampTranslateToCoverOverlay(
             nextScale,
@@ -335,12 +333,10 @@ export default function ImageEditor({
         const scaledWidth = imgWidth * scale;
         const scaledHeight = imgHeight * scale;
 
-        // Set canvas size to be large enough to contain the full scaled image
-        // Add padding to ensure all edges are visible
-        const padding = 50;
-        const canvasWidth = Math.max(containerWidth, scaledWidth + padding * 2);
-        const canvasHeight = Math.max(containerHeight, scaledHeight + padding * 2);
-        
+        // Canvas always equals container — parts of image outside bounds are clipped (expected for crop editor)
+        const canvasWidth = containerWidth;
+        const canvasHeight = containerHeight;
+
         canvas.width = canvasWidth;
         canvas.height = canvasHeight;
 
