@@ -4,34 +4,28 @@
 // Uses D1 table `rate_limits` for persistence across Workers instances.
 // Falls back to allowing requests (with warning) if DB binding unavailable.
 //
-// Table schema (apply via migration if not exists):
-//   CREATE TABLE IF NOT EXISTS rate_limits (
-//     key TEXT NOT NULL,
-//     count INTEGER NOT NULL DEFAULT 1,
-//     window_start INTEGER NOT NULL,
-//     PRIMARY KEY (key)
-//   );
+// Admin/super_admin/teacher roles bypass rate limiting entirely.
 
 import type { Context, Next } from 'hono';
 import type { Env } from '../types/env.js';
+import { verifyJWT } from './helpers.js';
 
 interface RateLimiterOptions {
   windowMs?: number;
   maxRequests?: number;
   keyGenerator?: (c: Context<{ Bindings: Env }>) => string;
+  /** Skip rate limiting entirely for admin/super_admin/teacher roles */
+  bypassAdmin?: boolean;
 }
 
 /**
  * D1-based rate limiter factory.
- * @param {Object} options
- * @param {number} options.windowMs   - Time window in milliseconds
- * @param {number} options.maxRequests - Max allowed requests per window
- * @param {function} options.keyGenerator - (c) => string key
  */
 export function createRateLimiter(options: RateLimiterOptions = {}) {
   const {
     windowMs = 60 * 1000,
     maxRequests = 100,
+    bypassAdmin = false,
     keyGenerator = (c: Context<{ Bindings: Env }>) => {
       const ip =
         c.req.header('CF-Connecting-IP') ||
@@ -42,10 +36,27 @@ export function createRateLimiter(options: RateLimiterOptions = {}) {
   } = options;
 
   return async (c: Context<{ Bindings: Env }>, next: Next) => {
+    // Bypass rate limiting for admin users
+    if (bypassAdmin) {
+      try {
+        const authHeader = c.req.header('Authorization');
+        const cookieToken = c.req.header('Cookie')?.match(/(?:^|;\s*)token=([^;]+)/)?.[1];
+        const token = authHeader ? authHeader.replace('Bearer ', '') : cookieToken || '';
+        if (token && c.env?.JWT_SECRET) {
+          const payload = await verifyJWT(token, c.env.JWT_SECRET) as any;
+          if (payload && ['admin', 'super_admin', 'teacher'].includes(payload.role)) {
+            await next();
+            return;
+          }
+        }
+      } catch {
+        // Token invalid — continue with rate limiting for non-admin
+      }
+    }
+
     const db = c.env?.DB;
 
     if (!db) {
-      // No DB binding — skip rate limiting, log warning
       console.warn('[RateLimiter] DB binding not available, skipping rate limit');
       await next();
       return;
@@ -54,10 +65,9 @@ export function createRateLimiter(options: RateLimiterOptions = {}) {
     const key = keyGenerator(c);
     const nowSec = Math.floor(Date.now() / 1000);
     const windowSec = Math.floor(windowMs / 1000);
-    const windowStart = nowSec - (nowSec % windowSec); // floor to window boundary
+    const windowStart = nowSec - (nowSec % windowSec);
 
     try {
-      // Upsert: if row exists and same window → increment; else reset
       await db
         .prepare(
           `INSERT INTO rate_limits (key, count, window_start)
@@ -83,10 +93,9 @@ export function createRateLimiter(options: RateLimiterOptions = {}) {
       }
 
       const count = row.count;
-      const windowEndsAt = (row.window_start + windowSec) * 1000; // ms
+      const windowEndsAt = (row.window_start + windowSec) * 1000;
       const retryAfter = Math.ceil((windowEndsAt - Date.now()) / 1000);
 
-      // Set rate limit headers
       c.header('X-RateLimit-Limit', String(maxRequests));
       c.header('X-RateLimit-Remaining', String(Math.max(0, maxRequests - count)));
       c.header('X-RateLimit-Reset', String(windowEndsAt));
@@ -112,7 +121,6 @@ export function createRateLimiter(options: RateLimiterOptions = {}) {
 
       await next();
     } catch (err) {
-      // D1 error (e.g. table missing) — fail open, log error
       console.error('[RateLimiter] D1 error, skipping rate limit:', (err as Error).message);
       await next();
     }
@@ -121,28 +129,31 @@ export function createRateLimiter(options: RateLimiterOptions = {}) {
 
 // ─── Pre-configured limiters ────────────────────────────────────────────────
 
-/** 10 req/min — strict endpoints */
+/** 10 req/min — strict endpoints (bypasses admin) */
 export const strictRateLimiter = createRateLimiter({
   windowMs: 60 * 1000,
   maxRequests: 10,
+  bypassAdmin: true,
 });
 
-/** 200 req/min — general API use (SPA makes many calls) */
+/** 200 req/min — general API use, bypasses admin */
 export const moderateRateLimiter = createRateLimiter({
   windowMs: 60 * 1000,
   maxRequests: 200,
+  bypassAdmin: true,
 });
 
-/** 200 req/min — lenient endpoints */
+/** 200 req/min — lenient endpoints (bypasses admin) */
 export const lenientRateLimiter = createRateLimiter({
   windowMs: 60 * 1000,
   maxRequests: 200,
+  bypassAdmin: true,
 });
 
-/** 5 login attempts per 15 min per IP */
+/** 30 login attempts per 15 min per IP (nới lỏng) */
 export const loginRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
-  maxRequests: 5,
+  maxRequests: 30,
   keyGenerator: (c: Context<{ Bindings: Env }>) => {
     const ip =
       c.req.header('CF-Connecting-IP') ||

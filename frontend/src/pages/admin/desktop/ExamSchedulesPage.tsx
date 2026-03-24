@@ -190,11 +190,13 @@ const hasConfiguredLinkedClass = (value = {}) => Boolean(
   value.class_seed_start_date
 );
 
-const hasConfiguredZoomMeeting = (value = {}) => Boolean(
+const hasConfiguredZoomMeeting = (value: any = {}) => Boolean(
   value.zoom_link ||
   value.zoom_link_backup ||
   value.zoom_meeting_id ||
-  value.zoom_passcode
+  value.zoom_passcode ||
+  value.zoom_meeting_id_backup ||
+  value.zoom_passcode_backup
 );
 
 const formatDurationLabel = (value) => {
@@ -217,6 +219,8 @@ const createExamFormData = (overrides = {}) => ({
   zoom_link_backup: '',
   zoom_meeting_id: '',
   zoom_passcode: '',
+  zoom_meeting_id_backup: '',
+  zoom_passcode_backup: '',
   enable_zoom_meeting: false,
   organizer_uuid: '',
   program_uuid: '',
@@ -1188,8 +1192,9 @@ export default function ExamSchedulesPage() {
     () => selectedProgram?.deliveryMode === 'external_redirect',
     [selectedProgram]
   );
-  const linkedClassEnabled = !usesExternalExamLink && Boolean(formData.enable_linked_class);
   const zoomMeetingEnabled = Boolean(formData.enable_zoom_meeting);
+  const linkedClassForcedByZoom = !usesExternalExamLink && zoomMeetingEnabled;
+  const linkedClassEnabled = !usesExternalExamLink && (Boolean(formData.enable_linked_class) || linkedClassForcedByZoom);
 
   useEffect(() => {
     if (!showModal || templateOptions.length === 0) {
@@ -1278,6 +1283,28 @@ export default function ExamSchedulesPage() {
         next.exam_level = nextLevel?.code || '';
       }
 
+      if (key === 'enable_zoom_meeting' && value === true && !usesExternalExamLink) {
+        next.enable_linked_class = true;
+
+        if (!next.class_seed_name?.trim()) {
+          next.class_seed_name = next.exam_name?.trim()
+            ? `${next.exam_name.trim()} - Lớp ôn tập`
+            : '';
+        }
+
+        if (!next.class_seed_schedule_rule?.trim()) {
+          next.class_seed_schedule_rule = DEFAULT_CLASS_SEED_RULE;
+        }
+
+        if (!next.class_seed_schedule_time?.trim()) {
+          next.class_seed_schedule_time = DEFAULT_CLASS_SEED_TIME;
+        }
+
+        if (!next.class_seed_start_date) {
+          next.class_seed_start_date = next.exam_date || '';
+        }
+      }
+
       return next;
     });
   };
@@ -1363,6 +1390,8 @@ export default function ExamSchedulesPage() {
       zoom_link_backup: exam.zoom_link_backup || '',
       zoom_meeting_id: exam.zoom_meeting_id || '',
       zoom_passcode: exam.zoom_passcode || '',
+      zoom_meeting_id_backup: exam.zoom_meeting_id_backup || '',
+      zoom_passcode_backup: exam.zoom_passcode_backup || '',
       enable_zoom_meeting: hasConfiguredZoomMeeting(exam),
       organizer_uuid: exam.organizer_uuid || '',
       program_uuid: exam.program_uuid || '',
@@ -1484,8 +1513,12 @@ export default function ExamSchedulesPage() {
         enable_zoom_meeting: zoomMeetingEnabled,
         zoom_link: zoomMeetingEnabled ? (formData.zoom_link?.trim() || null) : null,
         zoom_link_backup: zoomMeetingEnabled ? (formData.zoom_link_backup?.trim() || null) : null,
+        zoom_link_backup_2: null,
+        zoom_link_backup_3: null,
         zoom_meeting_id: zoomMeetingEnabled ? (formData.zoom_meeting_id?.trim() || null) : null,
         zoom_passcode: zoomMeetingEnabled ? (formData.zoom_passcode?.trim() || null) : null,
+        zoom_meeting_id_backup: zoomMeetingEnabled ? (formData.zoom_meeting_id_backup?.trim() || null) : null,
+        zoom_passcode_backup: zoomMeetingEnabled ? (formData.zoom_passcode_backup?.trim() || null) : null,
         organizer_uuid: organizerUuid || null,
         program_uuid: programUuid || null,
         level_uuid: levelUuid || null,
@@ -2675,11 +2708,17 @@ export default function ExamSchedulesPage() {
                         type="checkbox"
                         checked={linkedClassEnabled}
                         onChange={e => updateFormField('enable_linked_class', e.target.checked)}
-                        disabled={submitting}
+                        disabled={submitting || linkedClassForcedByZoom}
                       />
                       Mở linked class
                     </label>
                   </div>
+
+                  {linkedClassForcedByZoom ? (
+                    <div className="rounded-xl border border-emerald-200 bg-white/80 px-3 py-2 text-xs text-emerald-800">
+                      Zoom đang bật nên linked class được tự động mở để teacher workspace luôn đồng bộ.
+                    </div>
+                  ) : null}
 
                   {linkedClassEnabled ? (
                     <>
@@ -2926,10 +2965,35 @@ export default function ExamSchedulesPage() {
                         />
                       </div>
                     </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="zoom_meeting_id_backup" className="text-sm font-medium text-gray-700">Meeting ID dự phòng</Label>
+                        <Input
+                          id="zoom_meeting_id_backup"
+                          value={formData.zoom_meeting_id_backup}
+                          onChange={e => updateFormField('zoom_meeting_id_backup', e.target.value)}
+                          placeholder="835 2818 4752"
+                          className="mt-1.5"
+                          disabled={submitting}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="zoom_passcode_backup" className="text-sm font-medium text-gray-700">Passcode dự phòng</Label>
+                        <Input
+                          id="zoom_passcode_backup"
+                          value={formData.zoom_passcode_backup}
+                          onChange={e => updateFormField('zoom_passcode_backup', e.target.value)}
+                          placeholder="476358"
+                          className="mt-1.5"
+                          disabled={submitting}
+                        />
+                      </div>
+                    </div>
                   </>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-blue-200 bg-white/70 p-4 text-sm text-blue-800">
                     Zoom meeting đang tắt. Kỳ thi vẫn có thể lưu bình thường mà không cần link họp.
+                    Zoom Meeting (tuỳ chọn) hỗ trợ 1 link chính + 1 link dự phòng để chuyển phòng nhanh.
                   </div>
                 )}
               </div>

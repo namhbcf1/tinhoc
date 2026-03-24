@@ -158,6 +158,11 @@ export default function Layout({ children }) {
       label: t('units'),
       path: '/units'
     },
+    {
+      key: 'guides',
+      label: t('guides'),
+      path: '/guides'
+    },
   ];
 
   return (

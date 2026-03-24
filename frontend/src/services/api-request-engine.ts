@@ -4,6 +4,11 @@
 // Imported and used exclusively by api-client-core.js
 // ========================================
 
+import {
+  handleAuthFailureRedirect,
+  shouldHandleAuthFailureRedirect,
+} from '../utils/authRedirect.js';
+
 /** Public endpoints that never require an Authorization header */
 const PUBLIC_ENDPOINTS = [
   '/students/register',
@@ -56,7 +61,7 @@ export function validateTokenRole(token, expected) {
  * Core fetch with retry, error normalisation and response caching.
  * `this` is bound to the ApiClient instance.
  */
-export async function executeRequest(url, endpoint, options, token) {
+export async function executeRequest(url, endpoint, options, token, authRole = null) {
   const fetchOptions = { ...(options || {}) };
   const method = String(fetchOptions.method || 'GET').toUpperCase();
   const maxRetries = fetchOptions.retries || 0;
@@ -117,7 +122,7 @@ export async function executeRequest(url, endpoint, options, token) {
         err.code = error?.code || error?.error?.code || null;
         err.details = error?.details || error?.error?.details || null;
 
-        // Auth errors — log token payload and do not retry
+        // Auth errors — log token payload, redirect out of protected areas, and do not retry
         if (response.status === 401 || response.status === 403) {
           if (token) {
             try {
@@ -127,6 +132,19 @@ export async function executeRequest(url, endpoint, options, token) {
               console.error('Could not decode token');
             }
           }
+
+          const normalizedMessage = String(errMessage || '').toLowerCase();
+          const isSessionExpiryError =
+            response.status === 401 ||
+            /token|hết hạn|het han|unauthorized|thiếu token|thieu token|đăng nhập|dang nhap/.test(normalizedMessage);
+
+          if (
+            isSessionExpiryError &&
+            shouldHandleAuthFailureRedirect({ role: authRole, hasToken: Boolean(token) })
+          ) {
+            handleAuthFailureRedirect(authRole);
+          }
+
           throw err;
         }
 

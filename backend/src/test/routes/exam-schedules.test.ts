@@ -181,8 +181,12 @@ async function setupDatabase() {
       template_id INTEGER,
       zoom_link TEXT,
       zoom_link_backup TEXT,
+      zoom_link_backup_2 TEXT,
+      zoom_link_backup_3 TEXT,
       zoom_meeting_id TEXT,
       zoom_passcode TEXT,
+      zoom_meeting_id_backup TEXT,
+      zoom_passcode_backup TEXT,
       exam_type TEXT,
       exam_level TEXT,
       exam_category_id INTEGER,
@@ -496,6 +500,176 @@ describe('exam schedules routes', () => {
     expect(saved?.template_id ?? null).toBe(1);
   });
 
+  it('keeps only 2 Zoom links when zoom meeting is enabled', async () => {
+    const app = createTestApp();
+    const token = await createAdminToken();
+
+    const response = await app.request('/exam-schedules', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        exam_name: 'VEPT HUC 28-29/3/2026',
+        exam_date: '2026-03-28T00:00:00.000Z',
+        duration_minutes: 50,
+        organizer_uuid: 'org-eduglobal',
+        program_uuid: 'program-vept',
+        enable_linked_class: false,
+        enable_zoom_meeting: true,
+        zoom_link: 'https://zoom.example/main',
+        zoom_link_backup: 'https://zoom.example/backup-1',
+        zoom_link_backup_2: 'https://zoom.example/backup-2',
+        zoom_link_backup_3: 'https://zoom.example/backup-3',
+        zoom_meeting_id: '111 1111 1111',
+        zoom_passcode: 'main-pass',
+        zoom_meeting_id_backup: '222 2222 2222',
+        zoom_passcode_backup: 'backup-pass',
+      }),
+    });
+
+    expect(response.status).toBe(201);
+
+    const saved = await env.DB.prepare(`
+      SELECT zoom_link, zoom_link_backup, zoom_link_backup_2, zoom_link_backup_3, zoom_meeting_id, zoom_passcode, zoom_meeting_id_backup, zoom_passcode_backup
+      FROM exam_schedules
+      WHERE exam_name = ?
+    `).bind('VEPT HUC 28-29/3/2026').first<{
+      zoom_link: string | null;
+      zoom_link_backup: string | null;
+      zoom_link_backup_2: string | null;
+      zoom_link_backup_3: string | null;
+      zoom_meeting_id: string | null;
+      zoom_passcode: string | null;
+      zoom_meeting_id_backup: string | null;
+      zoom_passcode_backup: string | null;
+    }>();
+
+    expect(saved?.zoom_link ?? null).toBe('https://zoom.example/main');
+    expect(saved?.zoom_link_backup ?? null).toBe('https://zoom.example/backup-1');
+    expect(saved?.zoom_link_backup_2 ?? null).toBeNull();
+    expect(saved?.zoom_link_backup_3 ?? null).toBeNull();
+    expect(saved?.zoom_meeting_id ?? null).toBe('111 1111 1111');
+    expect(saved?.zoom_passcode ?? null).toBe('main-pass');
+    expect(saved?.zoom_meeting_id_backup ?? null).toBe('222 2222 2222');
+    expect(saved?.zoom_passcode_backup ?? null).toBe('backup-pass');
+  });
+
+  it('auto enables linked class seed and syncs teacher workspace class when zoom is enabled', async () => {
+    const app = createTestApp();
+    const token = await createAdminToken();
+
+    const response = await app.request('/exam-schedules', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        exam_name: 'Thi zoom auto linked class',
+        exam_date: '2026-03-28T00:00:00.000Z',
+        duration_minutes: 60,
+        organizer_uuid: 'org-ptit',
+        program_uuid: 'program-tinhoc',
+        enable_linked_class: false,
+        enable_zoom_meeting: true,
+        zoom_link: 'https://zoom.example/main',
+      }),
+    });
+
+    expect(response.status).toBe(201);
+    const payload = await response.json();
+    const scheduleId = Number(payload?.data?.id);
+
+    const savedSchedule = await env.DB.prepare(`
+      SELECT class_seed_name, class_seed_schedule_rule, class_seed_schedule_time, class_seed_start_date, zoom_link
+      FROM exam_schedules
+      WHERE id = ?
+    `).bind(scheduleId).first<{
+      class_seed_name: string | null;
+      class_seed_schedule_rule: string | null;
+      class_seed_schedule_time: string | null;
+      class_seed_start_date: string | null;
+      zoom_link: string | null;
+    }>();
+
+    expect(savedSchedule?.zoom_link ?? null).toBe('https://zoom.example/main');
+    expect(savedSchedule?.class_seed_name ?? null).toContain('Thi zoom auto linked class');
+    expect(savedSchedule?.class_seed_schedule_rule ?? null).toBe('DAILY');
+    expect(savedSchedule?.class_seed_schedule_time ?? null).toMatch(/^\d{2}:\d{2}-\d{2}:\d{2}$/);
+    expect(savedSchedule?.class_seed_start_date ?? null).toBe('2026-03-28');
+
+    const linkedClass = await env.DB.prepare(`
+      SELECT id, source_exam_schedule_id, class_name
+      FROM online_classes
+      WHERE source_exam_schedule_id = ?
+      LIMIT 1
+    `).bind(scheduleId).first<{
+      id: number | null;
+      source_exam_schedule_id: number | null;
+      class_name: string | null;
+    }>();
+
+    expect(linkedClass?.id ?? null).not.toBeNull();
+    expect(linkedClass?.source_exam_schedule_id ?? null).toBe(scheduleId);
+    expect(linkedClass?.class_name ?? '').toContain('Thi zoom auto linked class');
+  });
+
+  it('promotes backup_2 as secondary link when first backup is empty', async () => {
+    const app = createTestApp();
+    const token = await createAdminToken();
+
+    const response = await app.request('/exam-schedules', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        exam_name: 'VEPT fallback backup link',
+        exam_date: '2026-03-28T00:00:00.000Z',
+        duration_minutes: 50,
+        organizer_uuid: 'org-eduglobal',
+        program_uuid: 'program-vept',
+        enable_linked_class: false,
+        enable_zoom_meeting: true,
+        zoom_link: '',
+        zoom_link_backup: '',
+        zoom_link_backup_2: 'https://zoom.example/backup-2',
+        zoom_link_backup_3: 'https://zoom.example/backup-3',
+        zoom_meeting_id_backup: '333 3333 3333',
+        zoom_passcode_backup: 'fallback-pass',
+      }),
+    });
+
+    expect(response.status).toBe(201);
+
+    const saved = await env.DB.prepare(`
+      SELECT zoom_link, zoom_link_backup, zoom_link_backup_2, zoom_link_backup_3, zoom_meeting_id, zoom_passcode, zoom_meeting_id_backup, zoom_passcode_backup
+      FROM exam_schedules
+      WHERE exam_name = ?
+    `).bind('VEPT fallback backup link').first<{
+      zoom_link: string | null;
+      zoom_link_backup: string | null;
+      zoom_link_backup_2: string | null;
+      zoom_link_backup_3: string | null;
+      zoom_meeting_id: string | null;
+      zoom_passcode: string | null;
+      zoom_meeting_id_backup: string | null;
+      zoom_passcode_backup: string | null;
+    }>();
+
+    expect(saved?.zoom_link ?? null).toBe('https://zoom.example/backup-2');
+    expect(saved?.zoom_link_backup ?? null).toBe('https://zoom.example/backup-3');
+    expect(saved?.zoom_link_backup_2 ?? null).toBeNull();
+    expect(saved?.zoom_link_backup_3 ?? null).toBeNull();
+    expect(saved?.zoom_meeting_id ?? null).toBeNull();
+    expect(saved?.zoom_passcode ?? null).toBeNull();
+    expect(saved?.zoom_meeting_id_backup ?? null).toBeNull();
+    expect(saved?.zoom_passcode_backup ?? null).toBeNull();
+  });
+
   it('auto assigns VEPT template when organizer is not PTIT and program code is VEPT', async () => {
     const app = createTestApp();
     const token = await createAdminToken();
@@ -718,6 +892,58 @@ describe('exam schedules routes', () => {
     expect(saved?.class_seed_name ?? null).toBeNull();
     expect(saved?.class_seed_schedule_rule ?? null).toBeNull();
     expect(saved?.zoom_link ?? null).toBeNull();
+  });
+
+  it('clears every Zoom backup link when zoom meeting is disabled on update', async () => {
+    const app = createTestApp();
+    const token = await createAdminToken();
+    const examId = await insertExamSchedule();
+
+    await env.DB.prepare(`
+      UPDATE exam_schedules
+      SET zoom_link = ?, zoom_link_backup = ?, zoom_link_backup_2 = ?, zoom_link_backup_3 = ?
+      WHERE id = ?
+    `).bind(
+      'https://zoom.example/main',
+      'https://zoom.example/backup-1',
+      'https://zoom.example/backup-2',
+      'https://zoom.example/backup-3',
+      examId
+    ).run();
+
+    const response = await app.request(`/exam-schedules/${examId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        exam_name: 'Tin hoc PTIT 22/03/2026',
+        exam_date: '2026-03-22T09:00:00.000Z',
+        organizer_uuid: 'org-ptit',
+        program_uuid: 'program-tinhoc',
+        enable_linked_class: false,
+        enable_zoom_meeting: false,
+      }),
+    });
+
+    expect(response.status).toBe(200);
+
+    const saved = await env.DB.prepare(`
+      SELECT zoom_link, zoom_link_backup, zoom_link_backup_2, zoom_link_backup_3
+      FROM exam_schedules
+      WHERE id = ?
+    `).bind(examId).first<{
+      zoom_link: string | null;
+      zoom_link_backup: string | null;
+      zoom_link_backup_2: string | null;
+      zoom_link_backup_3: string | null;
+    }>();
+
+    expect(saved?.zoom_link ?? null).toBeNull();
+    expect(saved?.zoom_link_backup ?? null).toBeNull();
+    expect(saved?.zoom_link_backup_2 ?? null).toBeNull();
+    expect(saved?.zoom_link_backup_3 ?? null).toBeNull();
   });
 
   it('blocks student registration when another active upcoming exam in the same bucket already exists', async () => {

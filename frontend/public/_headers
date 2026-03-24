@@ -4,7 +4,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=self, microphone=(), geolocation=()
   X-XSS-Protection: 1; mode=block
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://www.google-analytics.com https://*.r2.cloudflarestorage.com https://imagedelivery.net; font-src 'self' data:; worker-src blob:; media-src 'self' blob: https:; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://vantrangedu-api.bangachieu2.workers.dev https://files.vantrangedu.com https://www.google-analytics.com https://*.r2.cloudflarestorage.com https://imagedelivery.net; font-src 'self' data:; worker-src blob:; media-src 'self' blob: https:; frame-ancestors 'none'
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable

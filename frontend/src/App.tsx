@@ -25,6 +25,7 @@ const CertificateLookup = lazy(() => import('./pages/public/CertificateLookup'))
 const StudentLookup = lazy(() => import('./pages/public/StudentLookup'));
 const ServicesPage = lazy(() => import('./pages/public/ServicesPage'));
 const NewsPage = lazy(() => import('./pages/public/NewsPage'));
+const GuidesPage = lazy(() => import('./pages/public/GuidesPage'));
 const PostDetailPage = lazy(() => import('./pages/public/PostDetailPage'));
 const ContactPage = lazy(() => import('./pages/public/ContactPage'));
 const PrivacyPage = lazy(() => import('./pages/public/PrivacyPage'));
@@ -126,6 +127,7 @@ function AppRoutes() {
       <Route path="/services" element={<ServicesPage />} />
       <Route path="/news" element={<NewsPage />} />
       <Route path="/news/:slug" element={<PostDetailPage />} />
+      <Route path="/guides" element={<GuidesPage />} />
       <Route path="/contact" element={<ContactPage />} />
 
       {/* ========================================================= */}

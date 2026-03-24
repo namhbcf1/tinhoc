@@ -12,6 +12,23 @@ function sortByDateAsc<T>(items: T[], getValue: (item: T) => string | Date) {
   return [...items].sort((a, b) => new Date(getValue(a)).getTime() - new Date(getValue(b)).getTime());
 }
 
+function normalizeZoomLinkPair(item: any) {
+  const orderedLinks = [
+    item?.zoom_link,
+    item?.zoom_link_backup,
+    item?.zoom_link_backup_2,
+    item?.zoom_link_backup_3,
+  ]
+    .map((value) => (typeof value === 'string' ? value.trim() : ''))
+    .filter((value) => value.length > 0);
+
+  const uniqueLinks = Array.from(new Set(orderedLinks));
+  return {
+    zoomLink: uniqueLinks[0] || null,
+    zoomLinkBackup: uniqueLinks[1] || null,
+  };
+}
+
 export function useStudentExams(studentData: any) {
   const [exams, setExams] = useState<StudentExamCardVM[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +43,8 @@ export function useStudentExams(studentData: any) {
       const response = await api.getStudentExams();
       const items = sortByDateAsc(getResponseList(response), (item) => item.exam_date || new Date()).map((item: any) => {
         const status = item.registration_status || 'available';
-        const mode = item.zoom_link || item.zoom_meeting_id ? 'online' : 'offline';
+        const zoomLinks = normalizeZoomLinkPair(item);
+        const mode = zoomLinks.zoomLink || item.zoom_meeting_id ? 'online' : 'offline';
         return {
           id: item.id,
           title: item.exam_name || 'Kỳ thi',
@@ -40,8 +58,8 @@ export function useStudentExams(studentData: any) {
           mode,
           status,
           note: item.notes || '',
-          zoomLink: item.zoom_link || null,
-          zoomLinkBackup: item.zoom_link_backup || null,
+          zoomLink: zoomLinks.zoomLink,
+          zoomLinkBackup: zoomLinks.zoomLinkBackup,
           className: item.class_name || '',
           hasTimeConflict: Boolean(item.has_time_conflict),
           conflictingExamId: item.conflicting_exam_id ?? null,

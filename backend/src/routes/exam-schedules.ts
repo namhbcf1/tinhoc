@@ -330,6 +330,79 @@ function parseOptionalBoolean(value: unknown) {
   return null;
 }
 
+function normalizeZoomLinkPair(rawInput: any, shouldPersistZoom: boolean) {
+  if (!shouldPersistZoom) {
+    return {
+      zoom_link: null,
+      zoom_link_backup: null,
+      zoom_link_backup_2: null,
+      zoom_link_backup_3: null,
+      zoom_meeting_id: null,
+      zoom_passcode: null,
+      zoom_meeting_id_backup: null,
+      zoom_passcode_backup: null,
+    };
+  }
+
+  const slots = [
+    {
+      link: trimNullable(rawInput?.zoom_link),
+      meetingId: trimNullable(rawInput?.zoom_meeting_id),
+      passcode: trimNullable(rawInput?.zoom_passcode),
+    },
+    {
+      link: trimNullable(rawInput?.zoom_link_backup),
+      meetingId: trimNullable(rawInput?.zoom_meeting_id_backup),
+      passcode: trimNullable(rawInput?.zoom_passcode_backup),
+    },
+    {
+      link: trimNullable(rawInput?.zoom_link_backup_2),
+      meetingId: null,
+      passcode: null,
+    },
+    {
+      link: trimNullable(rawInput?.zoom_link_backup_3),
+      meetingId: null,
+      passcode: null,
+    },
+  ];
+
+  const normalizedSlots: Array<{ link: string; meetingId: string | null; passcode: string | null }> = [];
+  for (const slot of slots) {
+    if (!slot.link) {
+      continue;
+    }
+
+    if (normalizedSlots.some((item) => item.link === slot.link)) {
+      continue;
+    }
+
+    normalizedSlots.push({
+      link: slot.link,
+      meetingId: slot.meetingId,
+      passcode: slot.passcode,
+    });
+
+    if (normalizedSlots.length >= 2) {
+      break;
+    }
+  }
+
+  const primary = normalizedSlots[0] ?? null;
+  const backup = normalizedSlots[1] ?? null;
+
+  return {
+    zoom_link: primary?.link ?? null,
+    zoom_link_backup: backup?.link ?? null,
+    zoom_link_backup_2: null,
+    zoom_link_backup_3: null,
+    zoom_meeting_id: primary?.meetingId ?? null,
+    zoom_passcode: primary?.passcode ?? null,
+    zoom_meeting_id_backup: backup?.meetingId ?? null,
+    zoom_passcode_backup: backup?.passcode ?? null,
+  };
+}
+
 function isValidIanaTimeZone(value: string) {
   try {
     new Intl.DateTimeFormat('en-US', { timeZone: value }).format(new Date());
@@ -409,6 +482,20 @@ function toDateOnly(value: string) {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+function toTimeOnly(value: Date) {
+  const hours = String(value.getHours()).padStart(2, '0');
+  const minutes = String(value.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
+function buildDefaultClassSeedScheduleTime(examDate: Date, durationMinutes: number | null) {
+  const safeDuration = Math.max(durationMinutes || 120, 30);
+  const start = toTimeOnly(examDate);
+  const endDate = new Date(examDate.getTime() + safeDuration * 60 * 1000);
+  const end = toTimeOnly(endDate);
+  return `${start}-${end}`;
 }
 
 async function resolveLegacyExamTypeLabel(
@@ -550,6 +637,18 @@ async function normalizeExamSchedulePayload(db: D1Database, rawInput: any) {
     parseOptionalBoolean(classSeed.enabled) ??
     null;
   const enableZoomMeetingFlag = parseOptionalBoolean(rawInput?.enable_zoom_meeting) ?? null;
+  const hasZoomFields = Boolean(
+    trimNullable(rawInput?.zoom_link) ||
+    trimNullable(rawInput?.zoom_link_backup) ||
+    trimNullable(rawInput?.zoom_link_backup_2) ||
+    trimNullable(rawInput?.zoom_link_backup_3) ||
+    trimNullable(rawInput?.zoom_meeting_id) ||
+    trimNullable(rawInput?.zoom_passcode) ||
+    trimNullable(rawInput?.zoom_meeting_id_backup) ||
+    trimNullable(rawInput?.zoom_passcode_backup)
+  );
+  const shouldPersistZoom = enableZoomMeetingFlag === true || (enableZoomMeetingFlag !== false && hasZoomFields);
+  const shouldAutoEnableLinkedClassFromZoom = shouldPersistZoom && !isExternalRedirectProgram;
   const hasLinkedClassSeed = Boolean(
     classSeedName ||
     classSeedScheduleRule ||
@@ -558,31 +657,46 @@ async function normalizeExamSchedulePayload(db: D1Database, rawInput: any) {
   );
   const shouldPersistLinkedClass = !isExternalRedirectProgram && (
     enableLinkedClassFlag === true ||
+    shouldAutoEnableLinkedClassFromZoom ||
     (enableLinkedClassFlag !== false && hasLinkedClassSeed)
   );
 
-  if (shouldPersistLinkedClass && (!classSeedName || !classSeedScheduleRule || !classSeedScheduleTime || !classSeedStartDate)) {
-    throw Object.assign(new Error('Thiếu thông tin lớp học tự động: class_seed.name, schedule_rule, schedule_time, start_date'), { statusCode: 400 });
-  }
+  const resolvedClassSeedName = shouldPersistLinkedClass
+    ? (classSeedName || `${examName} - Lớp ôn tập`)
+    : null;
+  const resolvedClassSeedScheduleRuleInput = shouldPersistLinkedClass
+    ? (classSeedScheduleRule || 'DAILY')
+    : null;
+  const resolvedClassSeedScheduleTimeInput = shouldPersistLinkedClass
+    ? (classSeedScheduleTime || buildDefaultClassSeedScheduleTime(examDate, duration))
+    : null;
+  const resolvedClassSeedStartDateInput = shouldPersistLinkedClass
+    ? (classSeedStartDate || toDateOnly(formattedDate))
+    : null;
+  const resolvedClassSeedDescription = shouldPersistLinkedClass
+    ? trimNullable(classSeed.description ?? rawInput?.class_seed_description)
+    : null;
+  const resolvedClassSeedTimezone = shouldPersistLinkedClass ? classSeedTimezone : null;
+  const resolvedClassSeedTeacherName = shouldPersistLinkedClass ? classSeedTeacherName : null;
 
   const normalizedClassSeedScheduleRule =
     shouldPersistLinkedClass
-      ? normalizeClassSeedScheduleRule(classSeedScheduleRule)
+      ? normalizeClassSeedScheduleRule(resolvedClassSeedScheduleRuleInput)
       : null;
   const normalizedClassSeedScheduleTime =
     shouldPersistLinkedClass
-      ? normalizeClassSeedScheduleTime(classSeedScheduleTime)
+      ? normalizeClassSeedScheduleTime(resolvedClassSeedScheduleTimeInput)
       : null;
   const normalizedClassSeedStartDate =
-    shouldPersistLinkedClass && classSeedStartDate
-      ? toDateOnly(classSeedStartDate)
+    shouldPersistLinkedClass && resolvedClassSeedStartDateInput
+      ? toDateOnly(resolvedClassSeedStartDateInput)
       : null;
   const normalizedClassSeedEndDate =
     shouldPersistLinkedClass && classSeedEndDate
       ? toDateOnly(classSeedEndDate)
       : null;
 
-  if (shouldPersistLinkedClass && !isValidIanaTimeZone(classSeedTimezone)) {
+  if (shouldPersistLinkedClass && resolvedClassSeedTimezone && !isValidIanaTimeZone(resolvedClassSeedTimezone)) {
     throw Object.assign(new Error('class_seed.timezone phải là múi giờ IANA hợp lệ'), { statusCode: 400 });
   }
 
@@ -604,13 +718,7 @@ async function normalizeExamSchedulePayload(db: D1Database, rawInput: any) {
   const lastEventUuid = trimNullable(rawInput?.last_event_uuid) || crypto.randomUUID();
   const customFieldPayload = rawInput?.custom_field_values ? JSON.stringify(rawInput.custom_field_values) : null;
   const overridePayload = rawInput?.override_values ? JSON.stringify(rawInput.override_values) : null;
-  const hasZoomFields = Boolean(
-    trimNullable(rawInput?.zoom_link) ||
-    trimNullable(rawInput?.zoom_link_backup) ||
-    trimNullable(rawInput?.zoom_meeting_id) ||
-    trimNullable(rawInput?.zoom_passcode)
-  );
-  const shouldPersistZoom = enableZoomMeetingFlag === true || (enableZoomMeetingFlag !== false && hasZoomFields);
+  const normalizedZoomLinks = normalizeZoomLinkPair(rawInput, shouldPersistZoom);
   const hasExplicitTemplateField = Object.prototype.hasOwnProperty.call(rawInput ?? {}, 'template_id');
   const explicitTemplateId = hasExplicitTemplateField
     ? parseOptionalInt(rawInput?.template_id, 'template_id')
@@ -631,10 +739,14 @@ async function normalizeExamSchedulePayload(db: D1Database, rawInput: any) {
     location: trimNullable(rawInput?.location),
     notes: trimNullable(rawInput?.notes),
     template_id: resolvedTemplateId ?? null,
-    zoom_link: shouldPersistZoom ? trimNullable(rawInput?.zoom_link) : null,
-    zoom_link_backup: shouldPersistZoom ? trimNullable(rawInput?.zoom_link_backup) : null,
-    zoom_meeting_id: shouldPersistZoom ? trimNullable(rawInput?.zoom_meeting_id) : null,
-    zoom_passcode: shouldPersistZoom ? trimNullable(rawInput?.zoom_passcode) : null,
+    zoom_link: normalizedZoomLinks.zoom_link,
+    zoom_link_backup: normalizedZoomLinks.zoom_link_backup,
+    zoom_link_backup_2: normalizedZoomLinks.zoom_link_backup_2,
+    zoom_link_backup_3: normalizedZoomLinks.zoom_link_backup_3,
+    zoom_meeting_id: normalizedZoomLinks.zoom_meeting_id,
+    zoom_passcode: normalizedZoomLinks.zoom_passcode,
+    zoom_meeting_id_backup: normalizedZoomLinks.zoom_meeting_id_backup,
+    zoom_passcode_backup: normalizedZoomLinks.zoom_passcode_backup,
     exam_type: examTypeLegacy,
     exam_level: examLevel,
     exam_category_id: examCategoryId,
@@ -646,14 +758,14 @@ async function normalizeExamSchedulePayload(db: D1Database, rawInput: any) {
     override_payload: overridePayload,
     source_site: sourceSite,
     last_event_uuid: lastEventUuid,
-    class_seed_name: shouldPersistLinkedClass ? classSeedName : null,
-    class_seed_description: shouldPersistLinkedClass ? trimNullable(classSeed.description ?? rawInput?.class_seed_description) : null,
+    class_seed_name: resolvedClassSeedName,
+    class_seed_description: resolvedClassSeedDescription,
     class_seed_schedule_rule: normalizedClassSeedScheduleRule,
     class_seed_schedule_time: normalizedClassSeedScheduleTime,
-    class_seed_timezone: shouldPersistLinkedClass ? classSeedTimezone : null,
+    class_seed_timezone: resolvedClassSeedTimezone,
     class_seed_start_date: normalizedClassSeedStartDate,
     class_seed_end_date: normalizedClassSeedEndDate,
-    class_seed_teacher_name: shouldPersistLinkedClass ? classSeedTeacherName : null,
+    class_seed_teacher_name: resolvedClassSeedTeacherName,
     class_seed_max_students: shouldPersistLinkedClass ? classSeedMaxStudents : null,
   };
 }

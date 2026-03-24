@@ -9,8 +9,8 @@
     "preview": "vite preview",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "deploy": "npm install && npm run build:prod && wrangler pages deploy dist --project-name=vantrangedu",
-    "deploy:quick": "npm run build:prod && wrangler pages deploy dist --project-name=vantrangedu"
+    "deploy": "npm install && npm run build:prod && npx wrangler pages deploy dist --project-name=vantrangedu",
+    "deploy:quick": "npm run build:prod && npx wrangler pages deploy dist --project-name=vantrangedu"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

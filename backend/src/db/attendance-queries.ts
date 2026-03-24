@@ -134,8 +134,12 @@ export async function createExamSchedule(
   const {
     zoom_link,
     zoom_link_backup,
+    zoom_link_backup_2,
+    zoom_link_backup_3,
     zoom_meeting_id,
     zoom_passcode,
+    zoom_meeting_id_backup,
+    zoom_passcode_backup,
     exam_type,
     exam_level,
     exam_category_id,
@@ -170,8 +174,12 @@ export async function createExamSchedule(
       template_id,
       zoom_link,
       zoom_link_backup,
+      zoom_link_backup_2,
+      zoom_link_backup_3,
       zoom_meeting_id,
       zoom_passcode,
+      zoom_meeting_id_backup,
+      zoom_passcode_backup,
       exam_type,
       exam_level,
       exam_category_id,
@@ -194,7 +202,7 @@ export async function createExamSchedule(
       class_seed_teacher_name,
       class_seed_max_students
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     classId,
     examName,
@@ -205,8 +213,12 @@ export async function createExamSchedule(
     templateId,
     zoom_link ?? null,
     zoom_link_backup ?? null,
+    zoom_link_backup_2 ?? null,
+    zoom_link_backup_3 ?? null,
     zoom_meeting_id ?? null,
     zoom_passcode ?? null,
+    zoom_meeting_id_backup ?? null,
+    zoom_passcode_backup ?? null,
     exam_type ?? null,
     exam_level ?? null,
     exam_category_id ?? null,
@@ -284,8 +296,12 @@ export async function updateExamSchedule(db: D1Database, examId: number, data: R
     template_id,
     zoom_link,
     zoom_link_backup,
+    zoom_link_backup_2,
+    zoom_link_backup_3,
     zoom_meeting_id,
     zoom_passcode,
+    zoom_meeting_id_backup,
+    zoom_passcode_backup,
     exam_type,
     exam_level,
     exam_category_id,
@@ -347,6 +363,14 @@ export async function updateExamSchedule(db: D1Database, examId: number, data: R
     updates.push('zoom_link_backup = ?');
     values.push(zoom_link_backup || null);
   }
+  if (zoom_link_backup_2 !== undefined) {
+    updates.push('zoom_link_backup_2 = ?');
+    values.push(zoom_link_backup_2 || null);
+  }
+  if (zoom_link_backup_3 !== undefined) {
+    updates.push('zoom_link_backup_3 = ?');
+    values.push(zoom_link_backup_3 || null);
+  }
   if (zoom_meeting_id !== undefined) {
     updates.push('zoom_meeting_id = ?');
     values.push(zoom_meeting_id || null);
@@ -354,6 +378,14 @@ export async function updateExamSchedule(db: D1Database, examId: number, data: R
   if (zoom_passcode !== undefined) {
     updates.push('zoom_passcode = ?');
     values.push(zoom_passcode || null);
+  }
+  if (zoom_meeting_id_backup !== undefined) {
+    updates.push('zoom_meeting_id_backup = ?');
+    values.push(zoom_meeting_id_backup || null);
+  }
+  if (zoom_passcode_backup !== undefined) {
+    updates.push('zoom_passcode_backup = ?');
+    values.push(zoom_passcode_backup || null);
   }
   // exam_type: optional field for categorizing exam (VSTEP, TOPIK, MOS, IC3, etc.)
   if (exam_type !== undefined) {

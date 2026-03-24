@@ -20,6 +20,7 @@ export const translations = {
     hub4: 'HUB 4.0',
     life: 'Đời sống HUB',
     units: 'Đơn vị HUB',
+    guides: 'Hướng dẫn',
 
     // Actions
     login: 'Đăng nhập',
@@ -196,6 +197,7 @@ export const translations = {
     hub4: 'HUB 4.0',
     life: 'HUB Life',
     units: 'HUB Units',
+    guides: 'Guides',
 
     // Actions
     login: 'Login',

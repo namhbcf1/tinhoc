@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "serena": {
+      "command": "C:\\Users\\ADMIN\\.local\\bin\\serena.exe",
+      "args": ["start-mcp-server", "--context", "claude-code-serena", "--project", "."],
+      "env": {}
+    }
+  }
+}

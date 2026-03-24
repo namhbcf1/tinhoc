@@ -68,6 +68,7 @@ export async function createPost(db: D1Database, postData: Record<string, any>) 
     category,
     tags,
     featured_image,
+    video_url,
     author_id,
     status = 'draft',
     publish_at
@@ -84,8 +85,8 @@ export async function createPost(db: D1Database, postData: Record<string, any>) 
   const result = await db.prepare(`
     INSERT INTO posts (
       title, slug, content, excerpt, category, tags,
-      featured_image, author_id, status, publish_at, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      featured_image, video_url, author_id, status, publish_at, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
   `).bind(
     title,
     postSlug,
@@ -94,6 +95,7 @@ export async function createPost(db: D1Database, postData: Record<string, any>) 
     category || 'general',
     tags || null,
     featured_image || null,
+    video_url || null,
     author_id || 0,
     status,
     publish_at || null
@@ -118,6 +120,7 @@ export async function updatePost(db: D1Database, postId: number, postData: Recor
     category,
     tags,
     featured_image,
+    video_url,
     status,
     publish_at
   } = postData;
@@ -153,6 +156,10 @@ export async function updatePost(db: D1Database, postId: number, postData: Recor
   if (featured_image !== undefined) {
     updates.push('featured_image = ?');
     params.push(featured_image);
+  }
+  if (video_url !== undefined) {
+    updates.push('video_url = ?');
+    params.push(video_url);
   }
   if (status !== undefined) {
     updates.push('status = ?');

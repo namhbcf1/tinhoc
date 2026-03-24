@@ -611,7 +611,8 @@ export async function listProgramOrganizers(
       `
         SELECT *
         FROM program_organizers
-        WHERE ? = 1 OR is_active = 1
+        WHERE source_site IN ('edu', 'system')
+          AND (? = 1 OR is_active = 1)
         ORDER BY name ASC, id ASC
       `
     )
@@ -774,7 +775,8 @@ export async function listPrograms(
                o.created_at as organizer_created_at, o.updated_at as organizer_updated_at
         FROM programs p
         JOIN program_organizers o ON o.uuid = p.organizer_uuid
-        WHERE (? IS NULL OR p.organizer_uuid = ?)
+        WHERE p.source_site IN ('edu', 'system')
+          AND (? IS NULL OR p.organizer_uuid = ?)
           AND (? = 1 OR p.is_active = 1)
         ORDER BY o.name ASC, p.name ASC, p.id ASC
       `
@@ -1063,7 +1065,8 @@ export async function listProgramLevels(
                p.last_event_uuid as program_last_event_uuid, p.created_at as program_created_at, p.updated_at as program_updated_at
         FROM program_levels pl
         JOIN programs p ON p.uuid = pl.program_uuid
-        WHERE (? IS NULL OR pl.program_uuid = ?)
+        WHERE pl.source_site IN ('edu', 'system')
+          AND (? IS NULL OR pl.program_uuid = ?)
           AND (? = 1 OR pl.is_active = 1)
         ORDER BY p.name ASC, pl.sort_order ASC, pl.name ASC, pl.id ASC
       `
@@ -1259,7 +1262,8 @@ export async function listFieldDefinitions(
       `
         SELECT *
         FROM field_definitions
-        WHERE (? IS NULL OR target_entity_type = ?)
+        WHERE source_site IN ('edu', 'system')
+          AND (? IS NULL OR target_entity_type = ?)
           AND (? IS NULL OR owner_entity_type = ?)
           AND (? IS NULL OR owner_entity_uuid = ?)
           AND (? = 1 OR is_active = 1)
@@ -1491,7 +1495,8 @@ export async function listFieldOptions(
       `
         SELECT *
         FROM field_options
-        WHERE (? IS NULL OR field_definition_uuid = ?)
+        WHERE source_site IN ('edu', 'system')
+          AND (? IS NULL OR field_definition_uuid = ?)
           AND (? = 1 OR is_active = 1)
         ORDER BY sort_order ASC, label ASC, id ASC
       `

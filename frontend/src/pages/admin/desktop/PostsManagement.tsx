@@ -23,6 +23,7 @@ export default function PostsManagement({ toast }) {
     category: 'general',
     tags: '',
     featured_image: '',
+    video_url: '',
     images: ['', '', '', '', ''], // 5 slots for images
     status: 'draft'
   });
@@ -73,6 +74,7 @@ export default function PostsManagement({ toast }) {
       category: post.category || 'general',
       tags: post.tags || '',
       featured_image: post.featured_image || '',
+      video_url: post.video_url || '',
       images: images,
       status: post.status || 'draft'
     });
@@ -131,7 +133,6 @@ export default function PostsManagement({ toast }) {
     e.preventDefault();
     setLoading(true);
     try {
-      // Don't send images field - images are embedded in content as HTML
       const submitData = {
         title: formData.title,
         content: formData.content,
@@ -139,6 +140,7 @@ export default function PostsManagement({ toast }) {
         category: formData.category,
         tags: formData.tags,
         status: formData.status,
+        video_url: formData.video_url || null,
         // Use first uploaded image as featured if not set
         featured_image: formData.featured_image || formData.images.find(img => img) || ''
       };
@@ -169,7 +171,7 @@ export default function PostsManagement({ toast }) {
   const handleUnpublish = async (postId) => { try { await api.unpublishPost(postId); toast?.success('Gỡ bài thành công!'); loadPosts(); } catch (error) { toast?.error('Lỗi: ' + error.message); } };
 
   const getCategoryBadge = (category) => {
-    const map = { general: { class: 'default', text: 'Chung', icon: '📰' }, tuyensinh: { class: 'purple', text: 'Tuyển sinh', icon: '🎓' }, thongbao: { class: 'info', text: 'Thông báo', icon: '📢' }, tintuc: { class: 'success', text: 'Tin tức', icon: '📰' }, sukien: { class: 'warning', text: 'Sự kiện', icon: '🎉' } };
+    const map = { general: { class: 'default', text: 'Chung', icon: '📰' }, tuyensinh: { class: 'purple', text: 'Tuyển sinh', icon: '🎓' }, thongbao: { class: 'info', text: 'Thông báo', icon: '📢' }, tintuc: { class: 'success', text: 'Tin tức', icon: '📰' }, sukien: { class: 'warning', text: 'Sự kiện', icon: '🎉' }, huongdan: { class: 'primary', text: 'Hướng dẫn', icon: '🎬' } };
     const s = map[category] || { class: 'default', text: category, icon: '📄' };
     return <span className={`admin-badge ${s.class}`}>{s.icon} {s.text}</span>;
   };
@@ -198,7 +200,7 @@ export default function PostsManagement({ toast }) {
       {/* Filters */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center', background: 'white', padding: 20, borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
         <Filter size={20} color="#64748b" />
-        <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 14 }}><option value="">Tất cả danh mục</option><option value="general">Chung</option><option value="tuyensinh">Tuyển sinh</option><option value="thongbao">Thông báo</option><option value="tintuc">Tin tức</option><option value="sukien">Sự kiện</option></select>
+        <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 14 }}><option value="">Tất cả danh mục</option><option value="general">Chung</option><option value="tuyensinh">Tuyển sinh</option><option value="thongbao">Thông báo</option><option value="tintuc">Tin tức</option><option value="sukien">Sự kiện</option><option value="huongdan">🎬 Hướng dẫn</option></select>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 14 }}><option value="">Tất cả trạng thái</option><option value="draft">Nháp</option><option value="published">Đã đăng</option><option value="archived">Lưu trữ</option></select>
         {(filterCategory || filterStatus) && <button onClick={() => { setFilterCategory(''); setFilterStatus(''); }} className="admin-btn admin-btn-ghost" style={{ marginLeft: 'auto', padding: '8px 16px' }}><X size={16} /> Xóa lọc</button>}
       </div>
@@ -377,6 +379,7 @@ Bạn có thể dùng HTML để định dạng:
                       <option value="thongbao">Thông báo</option>
                       <option value="tintuc">Tin tức</option>
                       <option value="sukien">Sự kiện</option>
+                      <option value="huongdan">🎬 Hướng dẫn</option>
                     </select>
                   </div>
                   <div>
@@ -391,6 +394,18 @@ Bạn có thể dùng HTML để định dạng:
                 <div style={{ marginBottom: 20 }}>
                   <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>Tags (phân cách bằng dấu phẩy)</label>
                   <input type="text" value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} style={inputStyle} placeholder="VD: tin-hoc, thi-cong-chuc, VSTEP" />
+                </div>
+
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>🎬 URL Video (YouTube / clip)</label>
+                  <input
+                    type="url"
+                    value={formData.video_url}
+                    onChange={e => setFormData({ ...formData, video_url: e.target.value })}
+                    style={inputStyle}
+                    placeholder="https://www.youtube.com/watch?v=... hoặc https://youtu.be/..."
+                  />
+                  <p style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>Dán link YouTube để hiển thị video trong trang Hướng dẫn</p>
                 </div>
 
                 <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>

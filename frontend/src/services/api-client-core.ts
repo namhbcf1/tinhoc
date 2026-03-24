@@ -76,6 +76,8 @@ export class ApiClient {
   /** Main request method — resolves token, validates role, then delegates to engine */
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
+    const explicitRole = options.tokenType === 'teacher' ? 'admin' : options.tokenType;
+    const authRole = explicitRole || this.getCurrentRole();
     let token = this.getToken(options.tokenType);
 
     // Drop token if it belongs to a different role than expected
@@ -86,7 +88,7 @@ export class ApiClient {
       console.warn('Token may be expired but continuing request (backend may not enforce expiration)');
     }
 
-    return executeRequest(url, endpoint, options, token);
+    return executeRequest(url, endpoint, options, token, authRole);
   }
 
   /** Cached GET wrapper — skips cache for non-GET or when useCache=false */
