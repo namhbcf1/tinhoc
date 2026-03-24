@@ -86,7 +86,7 @@ assignments.get('/', authMiddleware, async (c) => {
     const db = c.env.DB;
     const { class_id, status = 'open' } = c.req.query();
 
-    let query = 'SELECT * FROM assignments WHERE 1=1';
+    let query = `SELECT * FROM assignments WHERE source_site IN ('edu', 'system')`;
     const params: any[] = [];
 
     if (class_id) {
@@ -145,9 +145,9 @@ assignments.post('/', authMiddleware, adminOnly, async (c) => {
     const result = await db.prepare(`
     INSERT INTO assignments (
       title, description, class_id, due_date, max_file_size, allowed_types, max_attempts, created_by,
-      organizer_uuid, program_uuid, level_uuid, custom_field_payload, override_payload
+      organizer_uuid, program_uuid, level_uuid, custom_field_payload, override_payload, source_site
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'edu')
   `).bind(
         title,
         description || null,

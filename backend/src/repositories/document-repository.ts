@@ -3,8 +3,9 @@ export async function createDocument(db: any, data: any) {
     INSERT INTO documents (
       title, description, file_url, file_name, file_size, file_type,
       status, valid_until, uploaded_by, folder_id, visibility,
-      organizer_uuid, program_uuid, level_uuid, custom_field_payload, override_payload
-    ) VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      organizer_uuid, program_uuid, level_uuid, custom_field_payload, override_payload,
+      source_site
+    ) VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'edu')
   `).bind(
     data.title, data.description || null, data.r2_key, data.file_name,
     data.file_size, data.file_type, data.valid_until || null,
@@ -12,7 +13,7 @@ export async function createDocument(db: any, data: any) {
     data.organizer_uuid || null, data.program_uuid || null, data.level_uuid || null,
     data.custom_field_payload || null, data.override_payload || null
   ).run();
-  
+
   if (!result.success) throw new Error(result.error);
   return result.meta.last_row_id;
 }
@@ -31,7 +32,7 @@ export async function createDocumentPermission(db: any, data: any) {
 }
 
 export async function getDocumentById(db: any, id: number) {
-  return await db.prepare('SELECT * FROM documents WHERE id = ?').bind(id).first();
+  return await db.prepare(`SELECT * FROM documents WHERE id = ? AND source_site IN ('edu', 'system')`).bind(id).first();
 }
 
 export async function getDocumentsByFolderId(db: any, folderId: number) {
@@ -40,6 +41,7 @@ export async function getDocumentsByFolderId(db: any, folderId: number) {
     FROM documents d
     LEFT JOIN admins a ON d.uploaded_by = a.id
     WHERE d.folder_id = ?
+      AND d.source_site IN ('edu', 'system')
     ORDER BY d.created_at DESC
   `).bind(folderId).all();
   return docs.results || [];
@@ -69,7 +71,9 @@ export async function unshareDocument(db: any, id: number, targetType: string, t
 export async function getDocsByOnlineClassShared(db: any, classId: number) {
   const docs = await db.prepare(`
     SELECT d.* FROM document_shares s JOIN documents d ON d.id = s.document_id
-    WHERE s.target_type = 'online_class' AND s.target_id = ? AND s.status = 'active' ORDER BY s.shared_at DESC
+    WHERE s.target_type = 'online_class' AND s.target_id = ? AND s.status = 'active'
+      AND d.source_site IN ('edu', 'system')
+    ORDER BY s.shared_at DESC
   `).bind(classId).all();
   return docs.results || [];
 }
@@ -77,7 +81,9 @@ export async function getDocsByOnlineClassShared(db: any, classId: number) {
 export async function getDocsByOfflineClassShared(db: any, classId: number) {
   const docs = await db.prepare(`
     SELECT d.* FROM document_shares s JOIN documents d ON d.id = s.document_id
-    WHERE s.target_type = 'offline_class' AND s.target_id = ? AND s.status = 'active' ORDER BY s.shared_at DESC
+    WHERE s.target_type = 'offline_class' AND s.target_id = ? AND s.status = 'active'
+      AND d.source_site IN ('edu', 'system')
+    ORDER BY s.shared_at DESC
   `).bind(classId).all();
   return docs.results || [];
 }
@@ -86,7 +92,8 @@ export async function getDocsByOnlineClass(db: any, classId: number) {
   const docs = await db.prepare(`
     SELECT DISTINCT d.*, a.full_name as uploader_name
     FROM documents d LEFT JOIN document_permissions dp ON d.id = dp.document_id LEFT JOIN admins a ON d.uploaded_by = a.id
-    WHERE (dp.permission_type = 'class' AND dp.online_class_id = ?) OR dp.permission_type = 'public'
+    WHERE ((dp.permission_type = 'class' AND dp.online_class_id = ?) OR dp.permission_type = 'public')
+      AND d.source_site IN ('edu', 'system')
     ORDER BY d.created_at DESC
   `).bind(classId).all();
   return docs.results || [];
@@ -96,7 +103,8 @@ export async function getDocsByClass(db: any, classId: number) {
   const docs = await db.prepare(`
     SELECT DISTINCT d.*, a.full_name as uploader_name
     FROM documents d LEFT JOIN document_permissions dp ON d.id = dp.document_id LEFT JOIN admins a ON d.uploaded_by = a.id
-    WHERE (dp.permission_type = 'class' AND dp.class_id = ?) OR dp.permission_type = 'public'
+    WHERE ((dp.permission_type = 'class' AND dp.class_id = ?) OR dp.permission_type = 'public')
+      AND d.source_site IN ('edu', 'system')
     ORDER BY d.created_at DESC
   `).bind(classId).all();
   return docs.results || [];
@@ -105,7 +113,9 @@ export async function getDocsByClass(db: any, classId: number) {
 export async function getAllDocuments(db: any, limit: number, offset: number) {
   const result = await db.prepare(`
     SELECT d.*, (SELECT COUNT(*) FROM document_permissions WHERE document_id = d.id) as permission_count
-    FROM documents d ORDER BY d.created_at DESC LIMIT ? OFFSET ?
+    FROM documents d
+    WHERE d.source_site IN ('edu', 'system')
+    ORDER BY d.created_at DESC LIMIT ? OFFSET ?
   `).bind(limit, offset).all();
   return result.results || [];
 }
@@ -138,27 +148,33 @@ export async function getDocumentDownloadStats(db: any, id: number) {
 
 export async function getDocumentsForStudent(db: any, studentId: number, classIds: number[]) {
   const now = new Date().toISOString();
-  
+
   const publicDocs = await db.prepare(`
     SELECT DISTINCT d.* FROM documents d INNER JOIN document_permissions dp ON d.id = dp.document_id
-    WHERE dp.permission_type = 'public' AND d.status = 'active' AND (d.valid_until IS NULL OR d.valid_until > ?)
+    WHERE dp.permission_type = 'public' AND d.status = 'active'
+      AND d.source_site IN ('edu', 'system')
+      AND (d.valid_until IS NULL OR d.valid_until > ?)
   `).bind(now).all();
-  
+
   let classDocs: any[] = [];
   if (classIds.length > 0) {
     const placeholders = classIds.map(() => '?').join(',');
     const result = await db.prepare(`
       SELECT DISTINCT d.* FROM documents d INNER JOIN document_permissions dp ON d.id = dp.document_id
-      WHERE dp.permission_type = 'class' AND dp.class_id IN (${placeholders}) AND d.status = 'active' AND (d.valid_until IS NULL OR d.valid_until > ?)
+      WHERE dp.permission_type = 'class' AND dp.class_id IN (${placeholders}) AND d.status = 'active'
+        AND d.source_site IN ('edu', 'system')
+        AND (d.valid_until IS NULL OR d.valid_until > ?)
     `).bind(...classIds, now).all();
     classDocs = result.results || [];
   }
-  
+
   const studentDocs = await db.prepare(`
     SELECT DISTINCT d.* FROM documents d INNER JOIN document_permissions dp ON d.id = dp.document_id
-    WHERE dp.permission_type = 'student' AND dp.student_id = ? AND d.status = 'active' AND (d.valid_until IS NULL OR d.valid_until > ?)
+    WHERE dp.permission_type = 'student' AND dp.student_id = ? AND d.status = 'active'
+      AND d.source_site IN ('edu', 'system')
+      AND (d.valid_until IS NULL OR d.valid_until > ?)
   `).bind(studentId, now).all();
-  
+
   const allDocs = [...(publicDocs.results || []), ...classDocs, ...(studentDocs.results || [])];
   return Array.from(new Map(allDocs.map((doc: any) => [doc.id, doc])).values());
 }

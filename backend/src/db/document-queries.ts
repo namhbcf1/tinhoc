@@ -41,9 +41,10 @@ export async function createDocument(db: D1Database, data: Record<string, any>) 
         program_uuid,
         level_uuid,
         custom_field_payload,
-        override_payload
+        override_payload,
+        source_site
       )
-      VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'edu')
     `).bind(
       title,
       description || null,
@@ -104,7 +105,7 @@ export async function createDocumentPermission(db: D1Database, data: Record<stri
 
 export async function getDocumentById(db: D1Database, id: number) {
   const result = await db.prepare(
-    'SELECT * FROM documents WHERE id = ?'
+    `SELECT * FROM documents WHERE id = ? AND source_site IN ('edu', 'system')`
   ).bind(id).first();
   return result;
 }
@@ -136,6 +137,7 @@ export async function getDocumentsForStudent(db: D1Database, studentId: number, 
     INNER JOIN document_permissions dp ON d.id = dp.document_id
     WHERE dp.permission_type = 'public'
       AND d.status = 'active'
+      AND d.source_site IN ('edu', 'system')
       AND (d.valid_until IS NULL OR d.valid_until > ?)
   `).bind(now).all();
 
@@ -150,6 +152,7 @@ export async function getDocumentsForStudent(db: D1Database, studentId: number, 
       WHERE dp.permission_type = 'class'
         AND dp.class_id IN (${placeholders})
         AND d.status = 'active'
+        AND d.source_site IN ('edu', 'system')
         AND (d.valid_until IS NULL OR d.valid_until > ?)
     `).bind(...classIds, now).all();
     classDocs = result.results || [];
@@ -163,6 +166,7 @@ export async function getDocumentsForStudent(db: D1Database, studentId: number, 
     WHERE dp.permission_type = 'student'
       AND dp.student_id = ?
       AND d.status = 'active'
+      AND d.source_site IN ('edu', 'system')
       AND (d.valid_until IS NULL OR d.valid_until > ?)
   `).bind(studentId, now).all();
 
@@ -184,6 +188,7 @@ export async function getAllDocuments(db: D1Database, limit = 100, offset = 0) {
     SELECT d.*,
            (SELECT COUNT(*) FROM document_permissions WHERE document_id = d.id) as permission_count
     FROM documents d
+    WHERE d.source_site IN ('edu', 'system')
     ORDER BY d.created_at DESC
     LIMIT ? OFFSET ?
   `).bind(limit, offset).all();

@@ -35,9 +35,24 @@ interface ExamScheduleRow {
   level_uuid: string | null;
   custom_field_payload: string | null;
   override_payload: string | null;
+  zoom_link: string | null;
+  zoom_link_backup: string | null;
+  zoom_link_backup_2: string | null;
+  zoom_link_backup_3: string | null;
+  zoom_meeting_id: string | null;
+  zoom_passcode: string | null;
+  zoom_meeting_id_backup: string | null;
+  zoom_passcode_backup: string | null;
   delivery_mode: string | null;
   linked_class_enabled: number | null;
   visible_on_exam_teacher: number | null;
+}
+
+function normalizeString(value: unknown) {
+  if (value == null) {
+    return '';
+  }
+  return String(value).trim();
 }
 
 function pad2(value: number) {
@@ -80,6 +95,14 @@ async function findExamSchedule(db: D1Database, examScheduleId: number): Promise
         exam_schedules.level_uuid,
         exam_schedules.custom_field_payload,
         exam_schedules.override_payload,
+        exam_schedules.zoom_link,
+        exam_schedules.zoom_link_backup,
+        exam_schedules.zoom_link_backup_2,
+        exam_schedules.zoom_link_backup_3,
+        exam_schedules.zoom_meeting_id,
+        exam_schedules.zoom_passcode,
+        exam_schedules.zoom_meeting_id_backup,
+        exam_schedules.zoom_passcode_backup,
         p.delivery_mode,
         p.linked_class_enabled,
         p.visible_on_exam_teacher
@@ -101,17 +124,34 @@ function hasLinkedClassSeed(schedule: ExamScheduleRow) {
   );
 }
 
+function hasZoomMeetingConfig(schedule: ExamScheduleRow) {
+  return Boolean(
+    normalizeString(schedule.zoom_link) ||
+      normalizeString(schedule.zoom_link_backup) ||
+      normalizeString(schedule.zoom_link_backup_2) ||
+      normalizeString(schedule.zoom_link_backup_3) ||
+      normalizeString(schedule.zoom_meeting_id) ||
+      normalizeString(schedule.zoom_passcode) ||
+      normalizeString(schedule.zoom_meeting_id_backup) ||
+      normalizeString(schedule.zoom_passcode_backup)
+  );
+}
+
 function shouldSyncLinkedClass(schedule: ExamScheduleRow) {
+  const hasSeed = hasLinkedClassSeed(schedule);
+  const hasZoom = hasZoomMeetingConfig(schedule);
+
   if (!schedule.program_uuid) {
-    return hasLinkedClassSeed(schedule);
+    return hasSeed || hasZoom;
   }
 
-  return Boolean(
+  const canSyncByProgramConfig = Boolean(
     schedule.delivery_mode === 'internal_training' &&
       Number(schedule.linked_class_enabled || 0) > 0 &&
-      Number(schedule.visible_on_exam_teacher || 0) > 0 &&
-      hasLinkedClassSeed(schedule)
+      Number(schedule.visible_on_exam_teacher || 0) > 0
   );
+
+  return canSyncByProgramConfig && (hasSeed || hasZoom);
 }
 
 async function resolveExamCategoryId(
@@ -207,13 +247,13 @@ async function cleanupClassScopedData(db: D1Database, classId: number) {
     await db.prepare(`DELETE FROM assignment_submissions WHERE assignment_id = ?`).bind(row.id).run();
   }
 
-  await db.prepare(`DELETE FROM assignments WHERE class_id = ?`).bind(classId).run();
+  await db.prepare(`DELETE FROM assignments WHERE class_id = ? AND source_site = 'edu'`).bind(classId).run();
   await db.prepare(`DELETE FROM document_permissions WHERE online_class_id = ?`).bind(classId).run();
   await db.prepare(
     `DELETE FROM document_shares WHERE target_type = 'online_class' AND target_id = ?`
   ).bind(classId).run();
   await db.prepare(
-    `DELETE FROM notifications WHERE online_class_id = ? AND COALESCE(audience_scope, 'all') = 'class'`
+    `DELETE FROM notifications WHERE online_class_id = ? AND COALESCE(audience_scope, 'all') = 'class' AND source_site = 'edu'`
   ).bind(classId).run();
   await db.prepare(
     `UPDATE practice_exam_assignments SET online_class_id = NULL WHERE online_class_id = ? AND student_id IS NOT NULL`

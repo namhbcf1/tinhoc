@@ -20,8 +20,8 @@ export async function createNotification(db: D1Database, notification: {
   } = notification;
 
   const result = await db.prepare(`
-    INSERT INTO notifications (user_id, user_type, title, message, type, link)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO notifications (user_id, user_type, title, message, type, link, source_site)
+    VALUES (?, ?, ?, ?, ?, ?, 'edu')
   `).bind(user_id, user_type, title, message, type, link).run();
 
   return result;
@@ -42,7 +42,7 @@ export async function getNotifications(db: D1Database, options: {
     offset = 0,
   } = options;
 
-  let query = 'SELECT * FROM notifications WHERE 1=1';
+  let query = `SELECT * FROM notifications WHERE source_site IN ('edu', 'system')`;
   const params: unknown[] = [];
 
   if (user_id !== null) {
@@ -66,7 +66,7 @@ export async function getNotifications(db: D1Database, options: {
 }
 
 export async function getUnreadCount(db: D1Database, user_id: number | null = null, user_type: string | null = null) {
-  let query = 'SELECT COUNT(*) as count FROM notifications WHERE read = 0';
+  let query = `SELECT COUNT(*) as count FROM notifications WHERE read = 0 AND source_site IN ('edu', 'system')`;
   const params: unknown[] = [];
 
   if (user_id !== null) {
