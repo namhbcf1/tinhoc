@@ -211,6 +211,91 @@ onlineClasses.get('/:id/my-status', studentAuth, async (c) => {
 });
 
 /**
+ * PATCH /online-classes/:id/attendance
+ * Học viên bấm "Vào lớp học" → tự tạo session hôm nay + ghi điểm danh zoom_click.
+ * Admin có thể cập nhật status thủ công.
+ */
+onlineClasses.patch('/:id/attendance', studentAuth, async (c) => {
+  const db = c.env.DB;
+  const classId = parseInt(c.req.param('id'));
+  if (isNaN(classId)) return errorResponse('Class ID không hợp lệ', 400);
+
+  const viewer = getViewer(c);
+  const studentId = viewer?.studentId ?? viewer?.id ?? null;
+  const isAdmin = c.get('isAdmin') ?? false;
+
+  if (!studentId && !isAdmin) return errorResponse('Vui lòng đăng nhập', 401);
+
+  let body: any = {};
+  try { body = await c.req.json(); } catch (_) { /* body optional */ }
+
+  const source = String(body?.source || 'manual').trim();
+  const isZoomClick = source === 'zoom_click';
+
+  try {
+    // Xác định ngày hôm nay theo giờ VN (UTC+7)
+    const todayVN = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+
+    // Tìm hoặc tạo session hôm nay
+    let sessionId: number | null = body?.sessionId ? parseInt(body.sessionId) : null;
+    if (!sessionId) {
+      const existingSession: any = await db.prepare(
+        `SELECT id FROM online_class_sessions WHERE online_class_id = ? AND session_date = ? LIMIT 1`
+      ).bind(classId, todayVN).first();
+
+      if (existingSession?.id) {
+        sessionId = existingSession.id;
+      } else {
+        // Lấy giờ từ schedule_time của lớp nếu có
+        const classInfo: any = await db.prepare(
+          `SELECT schedule_time FROM online_classes WHERE id = ? LIMIT 1`
+        ).bind(classId).first();
+        let startTime = '00:00', endTime = '23:59';
+        if (classInfo?.schedule_time && classInfo.schedule_time.includes('-')) {
+          const [s, e] = classInfo.schedule_time.split('-').map((t: string) => t.trim());
+          startTime = s; endTime = e;
+        }
+        const insertSession = await db.prepare(
+          `INSERT INTO online_class_sessions (online_class_id, session_date, start_time, end_time, created_at, updated_at)
+           VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+        ).bind(classId, todayVN, startTime, endTime).run();
+        sessionId = insertSession.meta?.last_row_id ?? null;
+      }
+    }
+
+    if (!sessionId) return errorResponse('Không thể tạo buổi học', 500);
+
+    // Đảm bảo có record attendance (INSERT OR IGNORE)
+    await db.prepare(
+      `INSERT OR IGNORE INTO online_class_attendance (session_id, student_id, status, created_at, updated_at)
+       VALUES (?, ?, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+    ).bind(sessionId, studentId).run();
+
+    // Cập nhật điểm danh
+    await db.prepare(
+      `UPDATE online_class_attendance
+       SET status = 'present',
+           checked_in_at = CURRENT_TIMESTAMP,
+           marked_by = ?,
+           marked_by_role = 'student',
+           zoom_join_source = ?,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE session_id = ? AND student_id = ?`
+    ).bind(studentId, isZoomClick ? 'zoom_click' : 'manual', sessionId, studentId).run();
+
+    return successResponse({
+      session_id: sessionId,
+      session_date: todayVN,
+      zoom_join_source: isZoomClick ? 'zoom_click' : 'manual',
+      status: 'present',
+    });
+  } catch (error: any) {
+    return errorResponse('Lỗi ghi điểm danh: ' + error.message, 500);
+  }
+});
+
+
+/**
  * POST /online-classes/:id/enroll
  * Student self-enrollment. Requires JWT or X-Student-CCCD header.
  */

@@ -10,6 +10,7 @@ import { loadStudentData, STUDENT_SESSION_UPDATED_EVENT } from '../../../utils/s
 
 const MobileExamsModule = lazy(() => import('./MobileExamsModule'));
 const MobileProfileModule = lazy(() => import('./MobileProfileModule'));
+const MobileMyOnlineClassesModule = lazy(() => import('./MobileMyOnlineClassesModule'));
 
 function readStudentData() {
     try {
@@ -133,6 +134,8 @@ export default function StudentDashboardMobile() {
         switch (activeTab) {
             case 'exams':
                 return <MobileExamsModule {...props} />;
+            case 'classes':
+                return <MobileMyOnlineClassesModule studentData={studentData} />;
             case 'profile':
                 return <MobileProfileModule studentData={studentData} onUpdate={handleProfileUpdate} />;
             default:

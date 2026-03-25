@@ -128,6 +128,16 @@ export function applyClassMethods(ApiClient) {
     return response;
   };
 
+  // Học viên click "Vào lớp học" → ghi nhận zoom_click + tự tạo session hôm nay
+  ApiClient.prototype.recordZoomAttendance = async function(classId, source = 'zoom_click', studentCCCD = null) {
+    return this.request(`/online-classes/${classId}/attendance`, {
+      method: 'PATCH',
+      tokenType: 'student',
+      headers: studentCCCD ? { 'X-Student-CCCD': studentCCCD } : {},
+      body: JSON.stringify({ source }),
+    });
+  };
+
   // Get available students for a class (not registered yet)
   ApiClient.prototype.getAvailableStudents = async function(classId, keyword = '') {
     const query = keyword ? `?q=${encodeURIComponent(keyword)}` : '';
