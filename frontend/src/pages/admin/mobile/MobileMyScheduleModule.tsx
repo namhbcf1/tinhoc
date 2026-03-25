@@ -2,14 +2,18 @@ import { useState, useEffect } from 'react';
 import api from '../../../services/api';
 import PullToRefreshWrapper from '../../../components/ui/PullToRefreshWrapper';
 import { formatDateVN } from '../../../utils/dateUtils';
-import { Calendar as CalendarIcon, Clock, MapPin, ChevronLeft, ChevronRight, BookOpen, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, MapPin, ChevronLeft, ChevronRight, BookOpen, X, Video, Loader2, CheckCircle2 } from 'lucide-react';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
+import { useToast } from '../../../components/ui/ToastContainer';
 
 export default function MobileMyScheduleModule() {
+    const { success, error } = useToast();
     const [schedule, setSchedule] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedWeek, setSelectedWeek] = useState(new Date());
     const [selectedSchedule, setSelectedSchedule] = useState(null);
+    const [joiningClass, setJoiningClass] = useState(false);
+    const [joinedToday, setJoinedToday] = useState<Record<string, boolean>>({});
 
     const getWeekStart = (date) => {
         const d = new Date(date);
@@ -49,6 +53,48 @@ export default function MobileMyScheduleModule() {
         const d = new Date(selectedWeek);
         d.setDate(d.getDate() + dir * 7);
         setSelectedWeek(d);
+    };
+
+    // Tự động tạo session hôm nay rồi mở link
+    const handleJoinClass = async (s) => {
+        const meetLink = s.meeting_link;
+        const examId = s.source_exam_schedule_id;
+        const classKey = s.id;
+
+        // Nếu là lớp online có exam_id → tạo session + ghi điểm danh tự động
+        if (examId) {
+            setJoiningClass(true);
+            try {
+                const today = new Date();
+                const pad = (n) => String(n).padStart(2, '0');
+                const sessionDate = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+                const startTime = s.start_time || `${pad(today.getHours())}:${pad(today.getMinutes())}`;
+                const endTime = s.end_time || `${pad(today.getHours() + 2)}:${pad(today.getMinutes())}`;
+
+                await api.createExamLearningSession(examId, {
+                    session_date: sessionDate,
+                    start_time: startTime,
+                    end_time: endTime,
+                    note: 'Tự động tạo khi vào lớp',
+                });
+                success('Đã ghi điểm danh hôm nay ✓');
+                setJoinedToday((prev) => ({ ...prev, [classKey]: true }));
+            } catch (err: any) {
+                // 409 = đã có session hôm nay → vẫn OK
+                if (err?.status === 409 || String(err?.message).includes('đã có')) {
+                    setJoinedToday((prev) => ({ ...prev, [classKey]: true }));
+                } else {
+                    error('Không thể ghi điểm danh: ' + (err?.message || ''));
+                }
+            } finally {
+                setJoiningClass(false);
+            }
+        }
+
+        // Mở link sau khi ghi (hoặc nếu không có exam)
+        if (meetLink) {
+            window.open(meetLink, '_blank', 'noopener,noreferrer');
+        }
     };
 
     const weekDays = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
@@ -253,12 +299,34 @@ export default function MobileMyScheduleModule() {
                                     )}
                                 </div>
 
-                                <button
-                                    onClick={() => setSelectedSchedule(null)}
-                                    className="w-full py-3.5 rounded-2xl text-sm font-bold text-slate-600 bg-slate-100"
-                                >
-                                    Đóng
-                                </button>
+                                {/* Nút Vào lớp học */}
+                                {(selectedSchedule.meeting_link || selectedSchedule.source_exam_schedule_id) && (
+                                    <button
+                                        onClick={() => handleJoinClass(selectedSchedule)}
+                                        disabled={joiningClass}
+                                        className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all active:scale-[0.98] mb-3"
+                                        style={{
+                                            background: joinedToday[selectedSchedule.id]
+                                                ? 'linear-gradient(135deg, #10b981, #059669)'
+                                                : 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                                            color: '#fff',
+                                            opacity: joiningClass ? 0.7 : 1,
+                                        }}
+                                    >
+                                        {joiningClass ? (
+                                            <Loader2 size={18} className="animate-spin" />
+                                        ) : joinedToday[selectedSchedule.id] ? (
+                                            <CheckCircle2 size={18} />
+                                        ) : (
+                                            <Video size={18} />
+                                        )}
+                                        {joiningClass
+                                            ? 'Đang ghi điểm danh...'
+                                            : joinedToday[selectedSchedule.id]
+                                                ? 'Đã điểm danh hôm nay ✓'
+                                                : 'Vào lớp học →'}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>

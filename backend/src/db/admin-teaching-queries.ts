@@ -45,7 +45,7 @@ export async function getAdminClasses(db: D1Database, adminId: number) {
     ? `SELECT
          id as class_id,
          class_name as ten_lop,
-         CONCAT('ONLINE-', id) as ma_lop,
+         'ONLINE-' || id as ma_lop,
          start_date as ngay_bat_dau,
          end_date as ngay_ket_thuc,
          'online' as loai,
@@ -56,7 +56,9 @@ export async function getAdminClasses(db: D1Database, adminId: number) {
          schedule_rule,
          schedule_time,
          description,
-         max_students
+         max_students,
+         id as online_class_id,
+         source_exam_schedule_id
        FROM online_classes
        WHERE status = 'active' AND (
          ${teacherNameVariants.map(() => 'LOWER(TRIM(teacher_name)) = LOWER(TRIM(?))').join(' OR ')}
@@ -120,18 +122,19 @@ export async function getAdminSchedule(db: D1Database, adminId: number, week_sta
 
   const onlineClassesQuery = teacherNameVariants.length > 0
     ? `SELECT
-         id,
-         class_name,
-         schedule_rule,
-         schedule_time,
-         teacher_name,
-         meet_link,
-         start_date,
-         end_date,
-         status
-       FROM online_classes
-       WHERE status = 'active' AND (
-         ${teacherNameVariants.map(() => 'LOWER(TRIM(teacher_name)) = LOWER(TRIM(?))').join(' OR ')}
+         oc.id,
+         oc.class_name,
+         oc.schedule_rule,
+         oc.schedule_time,
+         oc.teacher_name,
+         oc.meet_link,
+         oc.start_date,
+         oc.end_date,
+         oc.status,
+         oc.source_exam_schedule_id
+       FROM online_classes oc
+       WHERE oc.status = 'active' AND (
+         ${teacherNameVariants.map(() => 'LOWER(TRIM(oc.teacher_name)) = LOWER(TRIM(?))').join(' OR ')}
        )`
     : `SELECT * FROM online_classes WHERE 1=0`;
 
@@ -164,6 +167,8 @@ export async function getAdminSchedule(db: D1Database, adminId: number, week_sta
       onlineSchedule.push({
         id: `online_${oc.id}_${dayOfWeek}`,
         class_id: `online_${oc.id}`,
+        online_class_id: oc.id,
+        source_exam_schedule_id: oc.source_exam_schedule_id ?? null,
         day_of_week: dayOfWeek,
         start_time: startTime,
         end_time: endTime,

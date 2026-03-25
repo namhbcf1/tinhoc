@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
 import api from '../../../services/api';
 import PullToRefreshWrapper from '../../../components/ui/PullToRefreshWrapper';
-import { BookOpen, Calendar, MapPin, ChevronRight } from 'lucide-react';
+import { BookOpen, Calendar, MapPin, ChevronRight, Video, Loader2, CheckCircle2 } from 'lucide-react';
 import { formatDateVN } from '../../../utils/dateUtils';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
+import { useToast } from '../../../components/ui/ToastContainer';
 
 export default function MobileMyClassesModule() {
+    const { success, error } = useToast();
     const [classes, setClasses] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [joiningId, setJoiningId] = useState<string | number | null>(null);
+    const [joinedIds, setJoinedIds] = useState<Set<string | number>>(new Set());
 
     useEffect(() => {
         loadClasses();
@@ -29,6 +33,50 @@ export default function MobileMyClassesModule() {
             console.error('Error loading classes:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleJoinClass = async (cls) => {
+        const clsKey = cls.online_class_id || cls.class_id || cls.id;
+        const examId = cls.source_exam_schedule_id;
+        const meetLink = cls.meet_link;
+
+        if (examId) {
+            setJoiningId(clsKey);
+            try {
+                const today = new Date();
+                const pad = (n) => String(n).padStart(2, '0');
+                const sessionDate = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+                // Lấy giờ từ schedule_time nếu có, VD: "08:00-10:00"
+                let startTime = `${pad(today.getHours())}:${pad(today.getMinutes())}`;
+                let endTime = `${pad(today.getHours() + 2)}:00`;
+                if (cls.schedule_time && cls.schedule_time.includes('-')) {
+                    const [s, e] = cls.schedule_time.split('-').map((t) => t.trim());
+                    startTime = s;
+                    endTime = e;
+                }
+
+                await api.createExamLearningSession(examId, {
+                    session_date: sessionDate,
+                    start_time: startTime,
+                    end_time: endTime,
+                    note: 'Tự động tạo khi vào lớp',
+                });
+                success('Đã ghi điểm danh hôm nay ✓');
+                setJoinedIds((prev) => new Set([...prev, clsKey]));
+            } catch (err: any) {
+                if (err?.status === 409 || String(err?.message).includes('đã có')) {
+                    setJoinedIds((prev) => new Set([...prev, clsKey]));
+                } else {
+                    error('Không thể ghi điểm danh: ' + (err?.message || ''));
+                }
+            } finally {
+                setJoiningId(null);
+            }
+        }
+
+        if (meetLink) {
+            window.open(meetLink, '_blank', 'noopener,noreferrer');
         }
     };
 
@@ -109,7 +157,38 @@ export default function MobileMyClassesModule() {
                                         </div>
                                     </div>
 
-                                    <ChevronRight size={16} className="text-slate-300 flex-shrink-0 mt-1" />
+                                    {/* Nút Vào lớp học cho lớp online */}
+                                    {(cls.meet_link || cls.source_exam_schedule_id) ? (() => {
+                                        const clsKey = cls.online_class_id || cls.class_id || cls.id;
+                                        const isJoining = joiningId === clsKey;
+                                        const isJoined = joinedIds.has(clsKey);
+                                        return (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleJoinClass(cls); }}
+                                                disabled={isJoining}
+                                                className="flex-shrink-0 flex flex-col items-center justify-center gap-1 w-16 h-14 rounded-xl font-bold text-xs text-white transition-all active:scale-95"
+                                                style={{
+                                                    background: isJoined
+                                                        ? 'linear-gradient(135deg, #10b981, #059669)'
+                                                        : 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                                                    opacity: isJoining ? 0.7 : 1,
+                                                }}
+                                            >
+                                                {isJoining ? (
+                                                    <Loader2 size={18} className="animate-spin" />
+                                                ) : isJoined ? (
+                                                    <CheckCircle2 size={18} />
+                                                ) : (
+                                                    <Video size={18} />
+                                                )}
+                                                <span style={{ fontSize: 9 }}>
+                                                    {isJoined ? 'Đã vào' : 'Vào lớp'}
+                                                </span>
+                                            </button>
+                                        );
+                                    })() : (
+                                        <ChevronRight size={16} className="text-slate-300 flex-shrink-0 mt-1" />
+                                    )}
                                 </div>
                             </div>
                         ))
