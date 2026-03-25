@@ -21,6 +21,7 @@ import {
   approveAllExamRegistrations,
   rejectExamRegistration,
   isUpcomingExamRegistrationWindow,
+  getZoomCheckinsForExam,
 } from '../db/attendance-queries.js';
 import {
   getExamTestById,
@@ -1392,14 +1393,161 @@ examSchedules.get('/:id/students', async (c) => {
     if (denied) return denied;
 
     const { id } = c.req.param();
-    const students = await getExamRegistrations(c.env.DB, parseInt(id));
+    const examId = parseInt(id);
+    const withZoomCheckin = c.req.query('with_zoom_checkin') === '1';
+
+    const students = await getExamRegistrations(c.env.DB, examId);
     const enrichedStudents = await Promise.all(
       students.map((student: any) => enrichStudentWithImages(c, student))
     );
 
+    // Nếu yêu cầu thêm thông tin zoom check-in (?with_zoom_checkin=1)
+    if (withZoomCheckin) {
+      const zoomMap = await getZoomCheckinsForExam(c.env.DB, examId);
+      const studentsWithZoom = enrichedStudents.map((student: any) => {
+        const zoomData = zoomMap.get(Number(student.student_id));
+        return {
+          ...student,
+          zoom_checked_in_at: zoomData?.checked_in_at ?? null,
+          zoom_join_source: zoomData?.zoom_join_source ?? null,
+        };
+      });
+      return jsonResponse({ success: true, data: studentsWithZoom });
+    }
+
     return jsonResponse({ success: true, data: enrichedStudents });
   } catch (error: any) {
     return errorResponse('Lỗi lấy danh sách thí sinh: ' + error.message, 500);
+  }
+});
+
+// ========================================
+// GET /exam-schedules/:id/learning-attendance
+// Tab "Điểm danh học tập": sessions + attendance của online_class gắn với kỳ thi
+// ========================================
+examSchedules.get('/:id/learning-attendance', async (c) => {
+  try {
+    const user = c.get('user') as any;
+    const denied = requireExamAdmin(user, 'Không có quyền truy cập');
+    if (denied) return denied;
+
+    const { id } = c.req.param();
+    const examId = parseInt(id);
+
+    // 1. Tìm online_class gắn với exam này
+    const onlineClass = await c.env.DB.prepare(`
+      SELECT id, class_name FROM online_classes
+      WHERE source_exam_schedule_id = ?
+        AND COALESCE(status, 'active') != 'cancelled'
+      LIMIT 1
+    `).bind(examId).first<{ id: number; class_name: string }>();
+
+    // 2. Lấy danh sách sessions (tất cả, kể cả khi 0 sessions)
+    const sessionsResult = onlineClass
+      ? await c.env.DB.prepare(`
+          SELECT id, session_date, start_time, end_time, note
+          FROM online_class_sessions
+          WHERE online_class_id = ?
+          ORDER BY session_date ASC, start_time ASC
+        `).bind(onlineClass.id).all()
+      : { results: [] };
+    const sessions = (sessionsResult.results || []) as any[];
+
+    // 3. Lấy danh sách thí sinh đã duyệt
+    const students = await getExamRegistrations(c.env.DB, examId);
+
+    if (sessions.length === 0) {
+      // Không có session nào — chỉ trả về học viên + zoom checkin summary
+      const zoomMap = await getZoomCheckinsForExam(c.env.DB, examId);
+      const rows = students.map((s: any) => {
+        const zoom = zoomMap.get(Number(s.student_id));
+        return {
+          student_id: s.student_id,
+          ho_ten_full: s.ho_ten_full,
+          cccd: s.cccd,
+          zoom_checked_in_at: zoom?.checked_in_at ?? null,
+          zoom_join_source: zoom?.zoom_join_source ?? null,
+          sessions: [],
+        };
+      });
+      return jsonResponse({
+        success: true,
+        data: {
+          online_class_id: onlineClass?.id ?? null,
+          class_name: onlineClass?.class_name ?? null,
+          sessions: [],
+          students: rows,
+        },
+      });
+    }
+
+    const sessionIds = sessions.map((s: any) => s.id);
+
+    // 4. Lấy tất cả attendance records cho các sessions này
+    const placeholders = sessionIds.map(() => '?').join(',');
+    const attResult = await c.env.DB.prepare(`
+      SELECT
+        oca.student_id,
+        oca.session_id,
+        oca.status,
+        oca.checked_in_at,
+        oca.zoom_join_source,
+        oca.note
+      FROM online_class_attendance oca
+      WHERE oca.session_id IN (${placeholders})
+    `).bind(...sessionIds).all();
+    const attRows = (attResult.results || []) as any[];
+
+    // Map: student_id → session_id → record
+    const attMap = new Map<string, any>();
+    for (const row of attRows) {
+      attMap.set(`${row.student_id}_${row.session_id}`, row);
+    }
+
+    // 5. Tổng hợp theo học viên
+    const studentRows = students.map((s: any) => {
+      const sid = Number(s.student_id);
+      const sessionAttendance = sessions.map((sess: any) => {
+        const rec = attMap.get(`${sid}_${sess.id}`);
+        return {
+          session_id: sess.id,
+          session_date: sess.session_date,
+          start_time: sess.start_time,
+          end_time: sess.end_time,
+          status: rec?.status ?? null,            // null = chưa có record
+          checked_in_at: rec?.checked_in_at ?? null,
+          zoom_join_source: rec?.zoom_join_source ?? null,
+        };
+      });
+
+      const presentCount = sessionAttendance.filter((a) => a.status === 'present').length;
+      const absentCount = sessionAttendance.filter((a) => a.status === 'absent').length;
+      const lateCount = sessionAttendance.filter((a) => a.status === 'late').length;
+      const zoomCount = sessionAttendance.filter((a) => a.zoom_join_source === 'zoom_click' || a.status === 'present').length;
+
+      return {
+        student_id: s.student_id,
+        ho_ten_full: s.ho_ten_full,
+        cccd: s.cccd,
+        present_count: presentCount,
+        absent_count: absentCount,
+        late_count: lateCount,
+        zoom_count: zoomCount,
+        sessions: sessionAttendance,
+      };
+    });
+
+    return jsonResponse({
+      success: true,
+      data: {
+        online_class_id: onlineClass.id,
+        class_name: onlineClass.class_name,
+        sessions,
+        students: studentRows,
+      },
+    });
+  } catch (error: any) {
+    return errorResponse('Lỗi lấy điểm danh học tập: ' + error.message, 500);
   }
 });
 

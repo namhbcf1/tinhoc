@@ -25,7 +25,7 @@ import { Input } from '../../../components/ui/Input';
 import { Label } from '../../../components/ui/Label';
 import { Badge } from '../../../components/ui/Badge';
 import {
-  Calendar, Edit, Trash2, Search, PlusCircle, Users, Clock, MapPin, Info, Download, UserX, Phone, Mail, CheckCircle, XCircle, User, CheckCheck, RotateCcw
+  Calendar, Edit, Trash2, Search, PlusCircle, Users, Clock, MapPin, Info, Download, UserX, Phone, Mail, CheckCircle, XCircle, User, CheckCheck, RotateCcw, ClipboardCheck, RefreshCw
 } from 'lucide-react';
 
 import EmptyState from '../../../components/ui/EmptyState';
@@ -621,12 +621,16 @@ export default function ExamSchedulesPage() {
   const [pendingStudents, setPendingStudents] = useState([]);
   const [selectedExamForList, setSelectedExamForList] = useState(null);
   const [studentListLoading, setStudentListLoading] = useState(false);
-  const [studentTab, setStudentTab] = useState('approved'); // 'approved' | 'pending'
+  const [studentTab, setStudentTab] = useState('approved'); // 'approved' | 'pending' | 'attendance'
   const [approving, setApproving] = useState(null); // student_id being approved
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [showStudentDetailModal, setShowStudentDetailModal] = useState(false);
   const [selectedStudentDetail, setSelectedStudentDetail] = useState(null);
   const [showExcelPreviewModal, setShowExcelPreviewModal] = useState(false);
+
+  // Điểm danh học tập
+  const [learningAttendance, setLearningAttendance] = useState<{ online_class_id: number | null; class_name: string | null; sessions: any[]; students: any[] } | null>(null);
+  const [learningAttendanceLoading, setLearningAttendanceLoading] = useState(false);
 
   const formPreviewDate = useMemo(
     () => composePreviewDateTime(formData.exam_date, formData.exam_time),
@@ -842,11 +846,12 @@ export default function ExamSchedulesPage() {
     setStudentList([]);
     setPendingStudents([]);
     setConflictStudentIds(new Set());
+    setLearningAttendance(null); // reset khi đổi sang exam khác
 
     try {
       // Load both approved and pending in parallel
       const [approvedRes, pendingRes] = await Promise.all([
-        api.getExamStudents(exam.id),
+        api.getExamStudents(exam.id, { withZoomCheckin: true }),
         api.getPendingExamStudents(exam.id)
       ]);
 
@@ -883,11 +888,25 @@ export default function ExamSchedulesPage() {
     }
   };
 
+  const loadLearningAttendance = async (examId: number) => {
+    setLearningAttendanceLoading(true);
+    try {
+      const res = await (api as any).getExamLearningAttendance(examId);
+      if (res?.success) {
+        setLearningAttendance(res.data);
+      }
+    } catch (err) {
+      console.error('Error loading learning attendance:', err);
+    } finally {
+      setLearningAttendanceLoading(false);
+    }
+  };
+
   const refreshSelectedExamStudents = async () => {
     if (!selectedExamForList?.id) return;
     try {
       const [approvedRes, pendingRes, conflictsRes, nextExams] = await Promise.all([
-        api.getExamStudents(selectedExamForList.id),
+        api.getExamStudents(selectedExamForList.id, { withZoomCheckin: true }),
         api.getPendingExamStudents(selectedExamForList.id),
         api.getExamRegistrationConflicts().catch(() => null),
         loadExams({ force: true, silent: true }),
@@ -3056,9 +3075,25 @@ export default function ExamSchedulesPage() {
                 <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full ml-1">{pendingStudents.length}</span>
               )}
             </button>
+            <button
+              onClick={() => {
+                setStudentTab('attendance');
+                if (!learningAttendance && selectedExamForList?.id) {
+                  loadLearningAttendance(selectedExamForList.id);
+                }
+              }}
+              className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 border-b-2 transition-colors ${studentTab === 'attendance'
+                ? 'border-emerald-500 text-emerald-600 bg-emerald-50'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+            >
+              <ClipboardCheck size={18} />
+              Điểm danh học tập
+            </button>
           </div>
 
-          {/* Toolbar */}
+          {/* Toolbar — chỉ hiện khi không ở tab điểm danh */}
+          {studentTab !== 'attendance' && (
           <div className="border-b bg-gray-50 px-5 py-3">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="text-sm text-gray-600">
@@ -3135,11 +3170,136 @@ export default function ExamSchedulesPage() {
               </div>
             </div>
           </div>
+          )}
 
           {/* Content - scrollable */}
           <div className="overflow-y-auto p-5 bg-gray-50" style={{ maxHeight: '50vh' }}>
             {studentListLoading ? (
               <div className="flex justify-center py-20"><LoadingSpinner /></div>
+            ) : studentTab === 'attendance' ? (
+              /* ======= TAB ĐIỂM DANH HỌC TẬP ======= */
+              learningAttendanceLoading ? (
+                <div className="flex justify-center py-20"><LoadingSpinner /></div>
+              ) : !learningAttendance ? (
+                <EmptyState
+                  icon={<ClipboardCheck size={48} className="text-gray-300" />}
+                  title="Chưa tải dữ liệu điểm danh"
+                  message="Nhấn vào tab Điểm danh học tập để tải."
+                />
+              ) : learningAttendance.sessions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <ClipboardCheck size={48} className="text-gray-300 mb-3" />
+                  <p className="text-gray-500 font-medium mb-1">
+                    {learningAttendance.online_class_id
+                      ? `Lớp học trực tuyến "${learningAttendance.class_name}" chưa có buổi học nào.`
+                      : 'Kỳ thi này chưa được gắn với lớp học trực tuyến.'}
+                  </p>
+                  <p className="text-xs text-gray-400">Dữ liệu điểm danh sẽ hiển thị ở đây khi có buổi học.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Header thông tin lớp */}
+                  <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+                    <ClipboardCheck size={20} className="text-emerald-600 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-emerald-800">{learningAttendance.class_name || 'Lớp học trực tuyến'}</p>
+                      <p className="text-xs text-emerald-600">{learningAttendance.sessions.length} buổi học · {learningAttendance.students.length} học viên</p>
+                    </div>
+                    <button
+                      onClick={() => loadLearningAttendance(selectedExamForList.id)}
+                      className="ml-auto flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-900 font-medium"
+                    >
+                      <RefreshCw size={14} /> Làm mới
+                    </button>
+                  </div>
+
+                  {/* Bảng điểm danh */}
+                  <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-200">
+                          <th className="sticky left-0 bg-gray-50 z-10 px-4 py-3 text-left font-semibold text-gray-700 min-w-[180px]">Học viên</th>
+                          <th className="px-3 py-3 text-center font-semibold text-gray-700 min-w-[80px]">Tổng<br /><span className="text-xs font-normal text-gray-500">Có mặt</span></th>
+                          {learningAttendance.sessions.map((sess, idx) => (
+                            <th key={sess.id} className="px-3 py-3 text-center font-semibold text-gray-700 min-w-[100px] whitespace-nowrap">
+                              <div className="text-xs text-gray-500">Buổi {idx + 1}</div>
+                              <div className="text-xs font-medium">
+                                {sess.session_date
+                                  ? new Date(sess.session_date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+                                  : '—'}
+                              </div>
+                              {sess.start_time && (
+                                <div className="text-[10px] text-gray-400">{sess.start_time}{sess.end_time ? `–${sess.end_time}` : ''}</div>
+                              )}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {learningAttendance.students.length === 0 ? (
+                          <tr>
+                            <td colSpan={2 + learningAttendance.sessions.length} className="py-10 text-center text-gray-400">
+                              Chưa có học viên nào.
+                            </td>
+                          </tr>
+                        ) : (
+                          learningAttendance.students.map((student, rowIdx) => (
+                            <tr key={student.student_id} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                              {/* Cột tên */}
+                              <td className="sticky left-0 bg-inherit z-10 px-4 py-3 border-r border-gray-100">
+                                <div className="font-medium text-gray-900 truncate max-w-[160px]">{student.ho_ten_full}</div>
+                                {student.cccd && <div className="text-[11px] text-gray-400 font-mono">{student.cccd}</div>}
+                              </td>
+                              {/* Cột tổng có mặt */}
+                              <td className="px-3 py-3 text-center border-r border-gray-100">
+                                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold
+                                  ${student.present_count + student.late_count === learningAttendance.sessions.length
+                                    ? 'bg-green-100 text-green-700'
+                                    : student.present_count + student.late_count === 0
+                                    ? 'bg-red-100 text-red-600'
+                                    : 'bg-yellow-100 text-yellow-700'}`}>
+                                  {student.present_count + student.late_count}/{learningAttendance.sessions.length}
+                                </span>
+                              </td>
+                              {/* Cột từng buổi */}
+                              {student.sessions.map((att) => {
+                                const { bg, icon, title } = att.status === 'present'
+                                  ? { bg: 'bg-green-100 text-green-700', icon: '✓', title: 'Có mặt' }
+                                  : att.status === 'late'
+                                  ? { bg: 'bg-yellow-100 text-yellow-700', icon: '⏰', title: 'Muộn' }
+                                  : att.status === 'absent'
+                                  ? { bg: 'bg-red-100 text-red-600', icon: '✗', title: 'Vắng mặt' }
+                                  : att.zoom_join_source === 'zoom_click'
+                                  ? { bg: 'bg-blue-100 text-blue-600', icon: 'Z', title: 'Check-in Zoom' }
+                                  : { bg: 'bg-gray-100 text-gray-400', icon: '–', title: 'Chưa có dữ liệu' };
+                                return (
+                                  <td key={att.session_id} className="px-3 py-3 text-center">
+                                    <span
+                                      className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${bg}`}
+                                      title={title}
+                                    >
+                                      {icon}
+                                    </span>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Chú thích */}
+                  <div className="flex flex-wrap gap-3 text-xs text-gray-500 pt-1">
+                    <span className="flex items-center gap-1"><span className="inline-flex w-5 h-5 rounded-full bg-green-100 text-green-700 items-center justify-center font-bold text-[10px]">✓</span> Có mặt</span>
+                    <span className="flex items-center gap-1"><span className="inline-flex w-5 h-5 rounded-full bg-yellow-100 text-yellow-700 items-center justify-center font-bold text-[10px]">⏰</span> Muộn</span>
+                    <span className="flex items-center gap-1"><span className="inline-flex w-5 h-5 rounded-full bg-red-100 text-red-600 items-center justify-center font-bold text-[10px]">✗</span> Vắng</span>
+                    <span className="flex items-center gap-1"><span className="inline-flex w-5 h-5 rounded-full bg-blue-100 text-blue-600 items-center justify-center font-bold text-[10px]">Z</span> Zoom</span>
+                    <span className="flex items-center gap-1"><span className="inline-flex w-5 h-5 rounded-full bg-gray-100 text-gray-400 items-center justify-center font-bold text-[10px]">–</span> Chưa ghi nhận</span>
+                  </div>
+                </div>
+              )
             ) : studentTab === 'approved' ? (
               /* Approved Students */
               filteredApprovedStudents.length === 0 ? (
@@ -3216,6 +3376,12 @@ export default function ExamSchedulesPage() {
                           {student.approved_by_name && (
                             <span>Người duyệt: <span className="text-gray-500 font-medium">{student.approved_by_name}</span></span>
                           )}
+                          {student.zoom_checked_in_at ? (
+                            <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                              <span>🎥</span>
+                              <span>Vào Zoom: {formatDateVN(student.zoom_checked_in_at, true)}</span>
+                            </span>
+                          ) : null}
                         </div>
                       </div>
 

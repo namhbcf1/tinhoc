@@ -1,57 +1,99 @@
 # Active Work — vantrangedu
 
-## Current Task
-_Updated automatically by watch-context.sh at 2026-03-23 00:47_
+## Session Update — 2026-03-25 +07 (latest)
 
-## Recently Changed Files
-_Auto-updated at 2026-03-24 11:29 (15 files)_
+### Task: Tab "Điểm danh học tập" trong modal Quản lý thí sinh (ExamSchedulesPage desktop)
 
-- AGENTS.md
-- backend/package-lock.json
-- backend/src/db/attendance-queries.ts
-- backend/src/lib/program-platform/repository.ts
+**Mục tiêu:** Thêm tab thứ 3 "Điểm danh học tập" bên cạnh "Đã duyệt" / "Chờ duyệt" trong modal quản lý thí sinh của kỳ thi. Tab này hiển thị bảng cross-tab: rows = học viên, columns = buổi học của online_class gắn với kỳ thi.
+
+**Các thay đổi:**
+
+1. **backend/src/routes/exam-schedules.ts**
+   - Thêm `GET /exam-schedules/:id/learning-attendance`
+   - Tìm `online_class` gắn với exam qua `source_exam_schedule_id`
+   - Lấy sessions + attendance records từ `online_class_sessions` + `online_class_attendance`
+   - Tổng hợp theo học viên: present_count, late_count, absent_count + chi tiết từng buổi
+   - Trả về `{ online_class_id, class_name, sessions[], students[] }` với `zoom_checked_in_at` cả khi 0 sessions
+
+2. **frontend/src/services/api-exam-schedule-methods.ts**
+   - Thêm `ApiClient.prototype.getExamLearningAttendance(examId)`
+
+3. **frontend/src/pages/admin/desktop/ExamSchedulesPage.tsx**
+   - Import `ClipboardCheck, RefreshCw` từ lucide-react
+   - State: `studentTab` mở rộng 3 giá trị: `'approved' | 'pending' | 'attendance'`
+   - State: `learningAttendance` + `learningAttendanceLoading`
+   - Hàm `loadLearningAttendance(examId)` dùng `(api as any).getExamLearningAttendance()`
+   - Tab "Điểm danh học tập" trong modal → lazy load khi click lần đầu
+   - Bảng điểm danh: sticky cột tên, badge màu per status, chú thích
+   - Toolbar (search/filter) ẩn khi đang ở tab attendance
+
+**Build:** ✅ `npm run build` thành công, 0 lỗi mới (10.74s)
+
+**Files changed:**
 - backend/src/routes/exam-schedules.ts
-- backend/src/test/routes/exam-schedules.test.ts
-- backend/src/utils/rate-limiter.ts
-- CLAUDE.md
-- frontend/package.json
-- frontend/public/_headers
-- frontend/src/features/student/student-hooks.ts
+- frontend/src/services/api-exam-schedule-methods.ts
 - frontend/src/pages/admin/desktop/ExamSchedulesPage.tsx
-- frontend/src/services/api-client-core.ts
-- frontend/src/services/api-request-engine.ts
-- frontend/vite.config.ts
+
+---
+
+## Session Update — 2026-03-25 +07
+
+### Task: Zoom Check-in tracking trong danh sách thí sinh kỳ thi
+
+**Mục tiêu:** Hiển thị thời điểm thí sinh bấm "Vào Zoom" trong Danh sách thí sinh của kỳ thi (cả desktop lẫn mobile), dùng dữ liệu từ `online_class_attendance.zoom_join_source`.
+
+**Các thay đổi:**
+
+1. **backend/src/db/attendance-queries.ts**
+   - Thêm hàm `getZoomCheckinsForExam(db, examScheduleId)`:
+     - Query `online_class_attendance → online_class_sessions → online_classes`
+     - JOIN qua `online_classes.source_exam_schedule_id = examScheduleId`
+     - Filter `zoom_join_source = 'zoom_click'`
+     - Trả về `Map<student_id, { checked_in_at, zoom_join_source }>`
+     - Fallback: catch mọi lỗi (cột chưa migrate) → trả về Map rỗng
+
+2. **backend/src/routes/exam-schedules.ts**
+   - Import `getZoomCheckinsForExam` từ attendance-queries
+   - `GET /:id/students`: nhận query `?with_zoom_checkin=1`
+     → merge `zoom_checked_in_at` và `zoom_join_source` vào mỗi student object
+
+3. **frontend/src/services/api-exam-schedule-methods.ts**
+   - `getExamStudents(examId, { withZoomCheckin = false })`:
+     - Truyền `?with_zoom_checkin=1` khi `withZoomCheckin: true`
+
+4. **frontend/src/pages/admin/desktop/ExamSchedulesPage.tsx**
+   - `handleOpenStudentsModal` + `refreshSelectedExamStudents`:
+     - Gọi `getExamStudents(..., { withZoomCheckin: true })`
+   - Card thí sinh đã duyệt: thêm badge "🎥 Vào Zoom: <datetime>" (màu emerald, chỉ hiện nếu có data)
+
+5. **frontend/src/pages/admin/mobile/MobileExamSchedulesModule.tsx**
+   - `loadStudentLists`: gọi `getExamStudents(..., { withZoomCheckin: true })`
+   - Student card: thêm badge "🎥 Zoom <datetime>" (bg-emerald-100, chỉ hiện cho approved + có data)
+
+**Build:** ✅ `npm run build` thành công, 0 lỗi (7.76s, 2036 modules)
+
+**Files changed:**
+- backend/src/db/attendance-queries.ts
+- backend/src/routes/exam-schedules.ts
+- frontend/src/services/api-exam-schedule-methods.ts
+- frontend/src/pages/admin/desktop/ExamSchedulesPage.tsx
+- frontend/src/pages/admin/mobile/MobileExamSchedulesModule.tsx
+
+---
+
+## Session Update — 2026-03-25 +07 (trước)
+
+### Task: Admin Mobile UX/UI Audit + Fix + Deploy
+
+**Vấn đề phát hiện và đã sửa:**
+
+1. **AdminMobileLayout.css** — scale mobile cực nhỏ gây vỡ layout
+2. **AdminMobileLayout.tsx** — font size, profile navigate
+3. **MobilePaymentsModule.tsx** — nhiều chức năng thiếu so với desktop
+4. **GuidesPage.tsx** + **PostDetailPage.tsx** — hỗ trợ video trực tiếp
+
+**Deployment:**
+- Commit: `a61188255` — fix(admin-mobile): cải thiện UX/scale + đầy đủ chức năng mobile
 
 ## Blockers
-_None detected._
-
-## Completed Items
-_Check git log for recent commits._
-
-## Session Update — 2026-03-23 01:32:52 +07
-- Task completed: Reduced Zoom links to 2 across vantrangedu exam schedule flow (admin form + payload normalization + student display), then deployed backend and frontend.
-- Files changed:
-  - backend/src/routes/exam-schedules.ts
-  - backend/src/test/routes/exam-schedules.test.ts
-  - frontend/src/pages/admin/desktop/ExamSchedulesPage.tsx
-  - frontend/src/features/student/student-hooks.ts
-  - frontend/src/features/student/student-types.ts
-  - frontend/src/features/student/views/StudentExamsView.tsx
-  - .serena/memories/30-active-work.md
-  - .serena/memories/40-decisions.md
-  - .serena/memories/50-verification.md
-- Deployments:
-  - Backend Worker: https://vantrangedu-api.bangachieu2.workers.dev (version `ee1c4120-14bf-4352-900b-ccd8d4463af6`)
-  - Frontend Pages: https://1c756c0d.vantrangedu.pages.dev
-
-## Session Update — 2026-03-23 01:44 +07
-- Task completed: Added backup Zoom Meeting credentials (Meeting ID/Passcode) for the backup link while keeping the max-2-link policy, then migrated DB and redeployed.
-- Files changed:
-  - backend/src/db/attendance-queries.ts
-  - backend/migrations/0030_add_zoom_backup_credentials_to_exam_schedules.sql
-  - backend/package.json
-  - frontend/src/pages/admin/desktop/ExamSchedulesPage.tsx
-- Deployment / migration:
-  - D1 migration executed: `0030_add_zoom_backup_credentials_to_exam_schedules.sql`
-  - Backend Worker: https://vantrangedu-api.bangachieu2.workers.dev (version `c7a78708-5761-4ee2-82d3-dd0fe4735173`)
-  - Frontend Pages: https://9bef87bb.vantrangedu.pages.dev
+_None._

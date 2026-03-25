@@ -584,6 +584,11 @@ const StudentRow = ({ student, pending, conflict, processing, onOpen, onApprove,
                             {student.approved_by_name}
                         </span>
                     )}
+                    {!pending && student.zoom_checked_in_at && (
+                        <span className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-700">
+                            🎥 Zoom {formatDateVN(student.zoom_checked_in_at, true)}
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -1658,7 +1663,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
         setLoading(true);
         try {
             const [approvedRes, pendingRes, conflictRows] = await Promise.all([
-                api.getExamStudents(exam.id),
+                api.getExamStudents(exam.id, { withZoomCheckin: true }),
                 api.getPendingExamStudents(exam.id),
                 fetchConflicts(),
             ]);

@@ -117,6 +117,54 @@ export async function getAttendanceStats(db: D1Database, classId: number) {
 }
 
 // ========================================
+// ZOOM CLICK-THROUGH TRACKING
+// ========================================
+
+/**
+ * Lấy map student_id → zoom check-in mới nhất (từ click 'Vào lớp học')
+ * cho một lịch thi cụ thể, qua chuỗi:
+ *   exam_schedules → online_classes (source_exam_schedule_id)
+ *                  → online_class_sessions → online_class_attendance
+ *
+ * Chỉ lấy bản ghi có zoom_join_source = 'zoom_click' (học viên tự bấm Zoom).
+ * Trả về Map<student_id, { checked_in_at: string; zoom_join_source: string }>
+ */
+export async function getZoomCheckinsForExam(
+  db: D1Database,
+  examScheduleId: number
+): Promise<Map<number, { checked_in_at: string; zoom_join_source: string }>> {
+  try {
+    const result = await db.prepare(`
+      SELECT
+        oca.student_id,
+        MAX(oca.checked_in_at) AS checked_in_at,
+        oca.zoom_join_source
+      FROM online_class_attendance oca
+      JOIN online_class_sessions ocs ON oca.session_id = ocs.id
+      JOIN online_classes oc ON ocs.online_class_id = oc.id
+      WHERE oc.source_exam_schedule_id = ?
+        AND oca.zoom_join_source = 'zoom_click'
+        AND oca.checked_in_at IS NOT NULL
+      GROUP BY oca.student_id
+    `).bind(examScheduleId).all();
+
+    const map = new Map<number, { checked_in_at: string; zoom_join_source: string }>();
+    for (const row of (result.results || []) as any[]) {
+      if (row.student_id && row.checked_in_at) {
+        map.set(Number(row.student_id), {
+          checked_in_at: String(row.checked_in_at),
+          zoom_join_source: String(row.zoom_join_source || 'zoom_click'),
+        });
+      }
+    }
+    return map;
+  } catch {
+    // Nếu cột chưa tồn tại (migration chưa chạy) — trả về map rỗng, không crash
+    return new Map();
+  }
+}
+
+// ========================================
 // EXAM SCHEDULE QUERIES
 // ========================================
 

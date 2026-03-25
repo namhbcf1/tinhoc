@@ -247,8 +247,15 @@ export function applyExamScheduleMethods(ApiClient) {
   };
 
   // Get list of students registered for an exam
-  ApiClient.prototype.getExamStudents = async function(examId) {
-    return this.request(`/exam-schedules/${examId}/students`);
+  // withZoomCheckin: true → thêm cột zoom_checked_in_at từ online_class_attendance
+  ApiClient.prototype.getExamStudents = async function(examId, { withZoomCheckin = false } = {}) {
+    const qs = withZoomCheckin ? '?with_zoom_checkin=1' : '';
+    return this.request(`/exam-schedules/${examId}/students${qs}`);
+  };
+
+  // Tab Điểm danh học tập: sessions + attendance của online_class gắn với kỳ thi
+  ApiClient.prototype.getExamLearningAttendance = async function(examId) {
+    return this.request(`/exam-schedules/${examId}/learning-attendance`);
   };
 
   // Remove a student from an exam

@@ -1,0 +1,1 @@
+import{e}from"./index-DsZJ-8VZ.js";function r(t){if(!t)return null;if(t.startsWith("http://")||t.startsWith("https://")||t.startsWith("data:")||t.startsWith("blob:"))return t;t.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);const a=e().replace(/\/$/,""),s=t.startsWith("/")?t:`/${t}`;return`${a}${s}`}export{r};
