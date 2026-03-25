@@ -104,6 +104,15 @@ const hasConfiguredLinkedClass = (value = {}) => Boolean(
     value.class_seed_start_date
 );
 
+const hasConfiguredZoomMeeting = (value = {}) => Boolean(
+    value.zoom_link ||
+    value.zoom_link_backup ||
+    value.zoom_meeting_id ||
+    value.zoom_passcode ||
+    value.zoom_meeting_id_backup ||
+    value.zoom_passcode_backup
+);
+
 const createExamFormData = (overrides = {}) => ({
     exam_name: '',
     exam_date: '',
@@ -125,6 +134,14 @@ const createExamFormData = (overrides = {}) => ({
     class_seed_start_date: '',
     class_seed_end_date: '',
     class_seed_max_students: DEFAULT_CLASS_SEED_MAX_STUDENTS,
+    // Zoom Meeting fields
+    enable_zoom_meeting: false,
+    zoom_link: '',
+    zoom_link_backup: '',
+    zoom_meeting_id: '',
+    zoom_passcode: '',
+    zoom_meeting_id_backup: '',
+    zoom_passcode_backup: '',
     ...overrides,
 });
 
@@ -747,6 +764,14 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
             class_seed_start_date: formatVietnamDateInputValue(exam.class_seed_start_date || exam.exam_date),
             class_seed_end_date: exam.class_seed_end_date || '',
             class_seed_max_students: exam.class_seed_max_students || DEFAULT_CLASS_SEED_MAX_STUDENTS,
+            // Zoom Meeting
+            enable_zoom_meeting: hasConfiguredZoomMeeting(exam),
+            zoom_link: exam.zoom_link || '',
+            zoom_link_backup: exam.zoom_link_backup || '',
+            zoom_meeting_id: exam.zoom_meeting_id || '',
+            zoom_passcode: exam.zoom_passcode || '',
+            zoom_meeting_id_backup: exam.zoom_meeting_id_backup || '',
+            zoom_passcode_backup: exam.zoom_passcode_backup || '',
         }));
     }, [exam]);
 
@@ -973,6 +998,16 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                         max_students: Math.max(1, Number(formData.class_seed_max_students) || DEFAULT_CLASS_SEED_MAX_STUDENTS),
                     }
                     : null,
+                // Zoom Meeting
+                enable_zoom_meeting: formData.enable_zoom_meeting,
+                zoom_link: formData.enable_zoom_meeting ? (formData.zoom_link?.trim() || null) : null,
+                zoom_link_backup: formData.enable_zoom_meeting ? (formData.zoom_link_backup?.trim() || null) : null,
+                zoom_link_backup_2: null,
+                zoom_link_backup_3: null,
+                zoom_meeting_id: formData.enable_zoom_meeting ? (formData.zoom_meeting_id?.trim() || null) : null,
+                zoom_passcode: formData.enable_zoom_meeting ? (formData.zoom_passcode?.trim() || null) : null,
+                zoom_meeting_id_backup: formData.enable_zoom_meeting ? (formData.zoom_meeting_id_backup?.trim() || null) : null,
+                zoom_passcode_backup: formData.enable_zoom_meeting ? (formData.zoom_passcode_backup?.trim() || null) : null,
             };
 
             const response = exam
@@ -1214,6 +1249,110 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                 VEPT/Versant dùng link riêng, không tạo lớp đào tạo nội bộ. VSTEP và Tin học mới cần linked class để ôn tập.
                             </section>
                         ) : null}
+
+                        {/* ===== ZOOM MEETING SECTION ===== */}
+                        <section className="rounded-[28px] border border-sky-200 bg-gradient-to-br from-sky-50 to-white p-4 shadow-sm">
+                            <div className="mb-4 flex items-start justify-between gap-3">
+                                <div>
+                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-sky-500">Trực tuyến</p>
+                                    <h4 className="mt-1 text-lg font-black text-slate-900">Zoom Meeting</h4>
+                                </div>
+                                <label className="flex items-center gap-2 rounded-full border border-sky-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-sky-700 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(formData.enable_zoom_meeting)}
+                                        onChange={(event) => updateField('enable_zoom_meeting', event.target.checked)}
+                                    />
+                                    Bật Zoom
+                                </label>
+                            </div>
+
+                            {formData.enable_zoom_meeting ? (
+                                <div className="space-y-4">
+                                    {/* Link chính */}
+                                    <div>
+                                        <label className="mb-1.5 block text-sm font-semibold text-slate-700">Link tham gia</label>
+                                        <input
+                                            type="url"
+                                            value={formData.zoom_link}
+                                            onChange={(event) => updateField('zoom_link', event.target.value)}
+                                            placeholder="https://zoom.us/j/..."
+                                            className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                                        />
+                                    </div>
+
+                                    {/* Meeting ID + Passcode chính */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Meeting ID</label>
+                                            <input
+                                                type="text"
+                                                value={formData.zoom_meeting_id}
+                                                onChange={(event) => updateField('zoom_meeting_id', event.target.value)}
+                                                placeholder="123 456 7890"
+                                                className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Passcode</label>
+                                            <input
+                                                type="text"
+                                                value={formData.zoom_passcode}
+                                                onChange={(event) => updateField('zoom_passcode', event.target.value)}
+                                                placeholder="Mật khẩu"
+                                                className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Divider dự phòng */}
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-px flex-1 bg-sky-100" />
+                                        <span className="text-[11px] font-bold uppercase tracking-widest text-sky-400">Dự phòng</span>
+                                        <div className="h-px flex-1 bg-sky-100" />
+                                    </div>
+
+                                    {/* Link dự phòng */}
+                                    <div>
+                                        <label className="mb-1.5 block text-sm font-semibold text-slate-700">Link dự phòng</label>
+                                        <input
+                                            type="url"
+                                            value={formData.zoom_link_backup}
+                                            onChange={(event) => updateField('zoom_link_backup', event.target.value)}
+                                            placeholder="https://zoom.us/j/... (backup)"
+                                            className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                                        />
+                                    </div>
+
+                                    {/* Meeting ID + Passcode dự phòng */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Meeting ID dự phòng</label>
+                                            <input
+                                                type="text"
+                                                value={formData.zoom_meeting_id_backup}
+                                                onChange={(event) => updateField('zoom_meeting_id_backup', event.target.value)}
+                                                placeholder="123 456 7890"
+                                                className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Passcode dự phòng</label>
+                                            <input
+                                                type="text"
+                                                value={formData.zoom_passcode_backup}
+                                                onChange={(event) => updateField('zoom_passcode_backup', event.target.value)}
+                                                placeholder="Mật khẩu"
+                                                className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-slate-500">Bật Zoom để nhập link và thông tin phòng họp cho thí sinh.</p>
+                            )}
+                        </section>
+                        {/* ===== END ZOOM MEETING SECTION ===== */}
 
                         <section className="rounded-[28px] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
                             <div className="mb-4 flex items-start justify-between gap-3">
