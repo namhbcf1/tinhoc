@@ -15,11 +15,11 @@
 
 @media (max-width: 768px) {
     .admin-mobile-layout {
-        --mb-space-scale: 0.42;
-        --mb-font-scale: 0.56;
-        --mb-touch-scale: 0.68;
-        --mb-radius-scale: 0.64;
-        --mb-layout-scale: 0.58;
+        --mb-space-scale: 0.78;
+        --mb-font-scale: 0.88;
+        --mb-touch-scale: 0.92;
+        --mb-radius-scale: 0.84;
+        --mb-layout-scale: 0.82;
     }
 }
 

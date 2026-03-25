@@ -40,7 +40,7 @@ export default function AdminMobileLayout({
 
         const root = document.documentElement;
         const previousFontSize = root.style.getPropertyValue('--vt-mobile-root-font-size');
-        root.style.setProperty('--vt-mobile-root-font-size', '13px');
+        root.style.setProperty('--vt-mobile-root-font-size', '15px');
 
         return () => {
             if (previousFontSize) {
@@ -75,8 +75,8 @@ export default function AdminMobileLayout({
                     <div className="mobile-header-actions">
                         <button
                             className="mobile-header-btn"
-                            aria-label={activeTab === 'profile' ? 'Về tổng quan' : 'Hồ sơ cá nhân'}
-                            onClick={() => setActiveTab(activeTab === 'profile' ? 'dashboard' : 'profile')}
+                            aria-label={activeTab === 'profile' ? 'Về lịch thi' : 'Hồ sơ cá nhân'}
+                            onClick={() => setActiveTab(activeTab === 'profile' ? 'exam-schedules' : 'profile')}
                         >
                             {activeTab === 'profile' ? <Home size={20} /> : <User size={20} />}
                         </button>

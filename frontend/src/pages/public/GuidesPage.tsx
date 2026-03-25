@@ -25,11 +25,18 @@ function getYouTubeThumbnail(url: string): string | null {
     return null;
 }
 
+function isDirectVideo(url: string): boolean {
+    if (!url) return false;
+    return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url);
+}
+
 // Card hiển thị 1 bài hướng dẫn
 function GuideCard({ post }: { post: any }) {
     const [playing, setPlaying] = useState(false);
     const embedUrl = post.video_url ? getYouTubeEmbedUrl(post.video_url) : null;
     const thumbnail = post.video_url ? getYouTubeThumbnail(post.video_url) : null;
+    const directVideo = post.video_url && isDirectVideo(post.video_url) ? post.video_url : null;
+    const hasVideo = !!(embedUrl || directVideo);
     const coverImg = post.featured_image || thumbnail;
 
     return (
@@ -43,6 +50,13 @@ function GuideCard({ post }: { post: any }) {
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                         className="absolute inset-0 w-full h-full border-0"
+                    />
+                ) : playing && directVideo ? (
+                    <video
+                        src={directVideo}
+                        controls
+                        autoPlay
+                        className="absolute inset-0 w-full h-full object-contain bg-black"
                     />
                 ) : (
                     <>
@@ -58,7 +72,7 @@ function GuideCard({ post }: { post: any }) {
                                 <BookOpen size={48} className="text-white/60" />
                             </div>
                         )}
-                        {embedUrl && (
+                        {hasVideo && (
                             <button
                                 onClick={() => setPlaying(true)}
                                 className="absolute inset-0 flex items-center justify-center group"

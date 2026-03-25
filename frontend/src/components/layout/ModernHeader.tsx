@@ -50,6 +50,7 @@ export default function ModernHeader() {
         { to: '/training', label: t('training') },
         { to: '/admissions', label: t('admissions') },
         { to: '/news', label: t('news') },
+        { to: '/guides', label: t('guides') },
         { to: '/contact', label: t('contact') },
     ];
 

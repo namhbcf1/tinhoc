@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     CreditCard, Search, Filter, Check, X, Eye, Clock, RefreshCw,
-    DollarSign, TrendingUp, AlertCircle, CheckCircle, XCircle, Calendar, ChevronRight
+    AlertCircle, CheckCircle, XCircle, Calendar, ChevronDown
 } from 'lucide-react';
 import { useToast } from '../../../components/ui/ToastContainer';
 import { usePaymentsManagement } from '../shared/hooks/usePaymentsManagement';
@@ -75,8 +75,11 @@ const PaymentCard = ({ payment, onView, onConfirm, onReject }) => {
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
             <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-slate-800 truncate">{payment.student_name || payment.ho_ten || 'Học viên'}</h4>
-                    <p className="text-xs text-slate-500">{payment.class_name || payment.ten_lop || 'Lớp học'}</p>
+                    <h4 className="font-bold text-slate-800 truncate">{payment.ho_ten_full || payment.student_name || payment.ho_ten || 'Học viên'}</h4>
+                    <p className="text-xs text-slate-500">{payment.ten_lop || payment.class_name || 'Lớp học'}</p>
+                    {(payment.cccd) && (
+                        <p className="text-[10px] text-slate-400 font-mono">{payment.cccd}</p>
+                    )}
                 </div>
                 <span className={`text-xs font-medium px-2 py-0.5 rounded-md flex items-center gap-1 ${color}`}>
                     <Icon size={10} /> {label}
@@ -90,37 +93,36 @@ const PaymentCard = ({ payment, onView, onConfirm, onReject }) => {
                 </span>
             </div>
 
-            {payment.status === 'pending' && (
-                <div className="flex gap-2 pt-3 border-t border-slate-50">
-                    <button
-                        onClick={() => onConfirm(payment.id)}
-                        className="flex-1 py-2 bg-green-600 text-white font-semibold rounded-xl text-sm active:bg-green-700 flex items-center justify-center gap-1"
-                    >
-                        <Check size={14} /> Xác nhận
-                    </button>
-                    <button
-                        onClick={() => onReject(payment.id)}
-                        className="flex-1 py-2 bg-red-100 text-red-600 font-semibold rounded-xl text-sm active:bg-red-200 flex items-center justify-center gap-1"
-                    >
-                        <X size={14} /> Từ chối
-                    </button>
-                </div>
-            )}
-
-            {payment.status !== 'pending' && (
+            <div className="pt-3 border-t border-slate-50 space-y-2">
+                {payment.status === 'pending' && (
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => onConfirm(payment.id)}
+                            className="flex-1 py-2 bg-green-600 text-white font-semibold rounded-xl text-sm active:bg-green-700 flex items-center justify-center gap-1"
+                        >
+                            <Check size={14} /> Xác nhận
+                        </button>
+                        <button
+                            onClick={() => onReject(payment.id)}
+                            className="flex-1 py-2 bg-red-100 text-red-600 font-semibold rounded-xl text-sm active:bg-red-200 flex items-center justify-center gap-1"
+                        >
+                            <X size={14} /> Từ chối
+                        </button>
+                    </div>
+                )}
                 <button
                     onClick={() => onView(payment)}
-                    className="w-full pt-3 border-t border-slate-50 text-sm text-blue-600 font-medium flex items-center justify-center gap-1"
+                    className="w-full text-sm text-blue-600 font-medium flex items-center justify-center gap-1"
                 >
                     <Eye size={14} /> Xem chi tiết
                 </button>
-            )}
+            </div>
         </div>
     );
 };
 
 // ============= PAYMENT DETAIL SHEET =============
-const PaymentDetailSheet = ({ isOpen, onClose, payment }) => {
+const PaymentDetailSheet = ({ isOpen, onClose, payment, onConfirm, onReject }) => {
     if (!payment) return null;
 
     const { label, color } = getStatusConfig(payment.status);
@@ -138,26 +140,49 @@ const PaymentDetailSheet = ({ isOpen, onClose, payment }) => {
                     </span>
                 </div>
 
-                <div className="bg-slate-50 p-4 rounded-xl space-y-3">
+                <div className="bg-slate-50 p-4 rounded-xl space-y-3 mb-4">
                     <div className="flex justify-between">
                         <span className="text-slate-500">Học viên</span>
-                        <span className="font-medium text-slate-800">{payment.student_name || payment.ho_ten}</span>
+                        <span className="font-medium text-slate-800">{payment.ho_ten_full || payment.student_name || payment.ho_ten}</span>
                     </div>
+                    {payment.cccd && (
+                        <div className="flex justify-between">
+                            <span className="text-slate-500">CCCD</span>
+                            <span className="font-mono text-sm text-slate-800">{payment.cccd}</span>
+                        </div>
+                    )}
                     <div className="flex justify-between">
                         <span className="text-slate-500">Lớp học</span>
-                        <span className="font-medium text-slate-800">{payment.class_name || payment.ten_lop}</span>
+                        <span className="font-medium text-slate-800">{payment.ten_lop || payment.class_name || `Lớp #${payment.class_id}`}</span>
                     </div>
                     <div className="flex justify-between">
-                        <span className="text-slate-500">Ngày thanh toán</span>
+                        <span className="text-slate-500">Ngày tạo</span>
                         <span className="font-medium text-slate-800">{formatDateVN(payment.payment_date || payment.created_at, true)}</span>
                     </div>
-                    {payment.notes && (
+                    {(payment.note || payment.notes) && (
                         <div className="pt-2 border-t border-slate-200">
                             <span className="text-sm text-slate-500">Ghi chú:</span>
-                            <p className="text-slate-700 mt-1">{payment.notes}</p>
+                            <p className="text-slate-700 mt-1">{payment.note || payment.notes}</p>
                         </div>
                     )}
                 </div>
+
+                {payment.status === 'pending' && (
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => { onConfirm(payment.id); onClose(); }}
+                            className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl text-sm active:bg-green-700 flex items-center justify-center gap-2"
+                        >
+                            <Check size={16} /> Xác nhận
+                        </button>
+                        <button
+                            onClick={() => { onReject(payment.id); onClose(); }}
+                            className="flex-1 py-3 bg-red-100 text-red-600 font-bold rounded-xl text-sm active:bg-red-200 flex items-center justify-center gap-2"
+                        >
+                            <X size={16} /> Từ chối
+                        </button>
+                    </div>
+                )}
             </div>
         </BottomSheet>
     );
@@ -189,6 +214,7 @@ export default function MobilePaymentsModule() {
     };
 
     const handleReject = async (paymentId) => {
+        if (!window.confirm('Từ chối thanh toán này?')) return;
         try {
             await rejectPayment(paymentId);
             success('Đã từ chối thanh toán');
@@ -196,6 +222,8 @@ export default function MobilePaymentsModule() {
             error('Lỗi: ' + err.message);
         }
     };
+
+    const hasActiveFilters = searchTerm || filterStatus || filterClass;
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -213,7 +241,7 @@ export default function MobilePaymentsModule() {
                     <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/70" />
                     <input
                         type="text"
-                        placeholder="Tìm theo học viên, lớp..."
+                        placeholder="Tìm theo tên, CCCD, lớp..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-12 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/60"
@@ -228,21 +256,53 @@ export default function MobilePaymentsModule() {
 
                 {/* Filters */}
                 {showFilters && (
-                    <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
-                        {[
-                            { value: '', label: 'Tất cả' },
-                            { value: 'pending', label: 'Chờ duyệt' },
-                            { value: 'confirmed', label: 'Đã xác nhận' },
-                            { value: 'rejected', label: 'Từ chối' },
-                        ].map(f => (
+                    <div className="mt-3 space-y-2">
+                        {/* Status filter chips */}
+                        <div className="flex gap-2 overflow-x-auto pb-1">
+                            {[
+                                { value: '', label: 'Tất cả' },
+                                { value: 'pending', label: 'Chờ duyệt' },
+                                { value: 'confirmed', label: 'Đã xác nhận' },
+                                { value: 'rejected', label: 'Từ chối' },
+                            ].map(f => (
+                                <button
+                                    key={f.value}
+                                    onClick={() => setFilterStatus(f.value)}
+                                    className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap ${filterStatus === f.value ? 'bg-white text-amber-600' : 'bg-white/20 text-white'}`}
+                                >
+                                    {f.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Class filter */}
+                        {classes.length > 0 && (
+                            <div className="relative">
+                                <select
+                                    value={filterClass}
+                                    onChange={(e) => setFilterClass(e.target.value)}
+                                    className="w-full pl-4 pr-8 py-2.5 bg-white/20 border border-white/30 rounded-xl text-white text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-white/60"
+                                    style={{ colorScheme: 'dark' }}
+                                >
+                                    <option value="" className="text-slate-900 bg-white">Tất cả lớp</option>
+                                    {classes.map(cls => (
+                                        <option key={cls.id} value={cls.id} className="text-slate-900 bg-white">
+                                            {cls.ten_lop}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 pointer-events-none" />
+                            </div>
+                        )}
+
+                        {hasActiveFilters && (
                             <button
-                                key={f.value}
-                                onClick={() => setFilterStatus(f.value)}
-                                className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap ${filterStatus === f.value ? 'bg-white text-amber-600' : 'bg-white/20 text-white'}`}
+                                onClick={() => { setSearchTerm(''); setFilterStatus(''); setFilterClass(''); }}
+                                className="flex items-center gap-1 text-white/80 text-sm font-medium"
                             >
-                                {f.label}
+                                <X size={14} /> Xóa bộ lọc
                             </button>
-                        ))}
+                        )}
                     </div>
                 )}
             </div>
@@ -250,18 +310,39 @@ export default function MobilePaymentsModule() {
             {/* Stats */}
             <div className="px-4 -mt-3">
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-                    <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="grid grid-cols-4 gap-2 text-center">
                         <div>
-                            <p className="text-lg font-bold text-amber-600">{formatCurrency(stats.total)}</p>
+                            <p className="text-base font-bold text-amber-600 leading-tight">
+                                {stats.total >= 1000000000
+                                    ? (stats.total / 1000000000).toFixed(1) + 'B'
+                                    : stats.total >= 1000000
+                                    ? (stats.total / 1000000).toFixed(0) + 'M'
+                                    : stats.total >= 1000
+                                    ? (stats.total / 1000).toFixed(0) + 'k'
+                                    : stats.total.toLocaleString('vi-VN')}
+                            </p>
                             <p className="text-[10px] text-slate-500">Tổng thu</p>
                         </div>
-                        <div>
-                            <p className="text-lg font-bold text-orange-600">{stats.pendingCount}</p>
+                        <div
+                            className="cursor-pointer"
+                            onClick={() => setFilterStatus(filterStatus === 'pending' ? '' : 'pending')}
+                        >
+                            <p className={`text-lg font-bold leading-tight ${filterStatus === 'pending' ? 'text-orange-700' : 'text-orange-500'}`}>{stats.pendingCount}</p>
                             <p className="text-[10px] text-slate-500">Chờ duyệt</p>
                         </div>
-                        <div>
-                            <p className="text-lg font-bold text-green-600">{stats.confirmedCount}</p>
+                        <div
+                            className="cursor-pointer"
+                            onClick={() => setFilterStatus(filterStatus === 'confirmed' ? '' : 'confirmed')}
+                        >
+                            <p className={`text-lg font-bold leading-tight ${filterStatus === 'confirmed' ? 'text-green-800' : 'text-green-600'}`}>{stats.confirmedCount}</p>
                             <p className="text-[10px] text-slate-500">Đã xác nhận</p>
+                        </div>
+                        <div
+                            className="cursor-pointer"
+                            onClick={() => setFilterStatus(filterStatus === 'rejected' ? '' : 'rejected')}
+                        >
+                            <p className={`text-lg font-bold leading-tight ${filterStatus === 'rejected' ? 'text-red-800' : 'text-red-500'}`}>{stats.rejectedCount}</p>
+                            <p className="text-[10px] text-slate-500">Từ chối</p>
                         </div>
                     </div>
                 </div>
@@ -269,6 +350,11 @@ export default function MobilePaymentsModule() {
 
             {/* List */}
             <div className="p-4 pb-24">
+                {hasActiveFilters && (
+                    <p className="text-xs text-slate-500 mb-3">
+                        Hiển thị {filteredPayments.length} / {payments.length} khoản
+                    </p>
+                )}
                 {loading ? (
                     <AdminLoadingState
                         title="Đang tải thanh toán"
@@ -292,6 +378,14 @@ export default function MobilePaymentsModule() {
                     <div className="flex flex-col items-center justify-center py-20 opacity-60">
                         <CreditCard size={64} className="text-slate-300 mb-4" />
                         <p className="text-slate-500 font-medium">Không có thanh toán nào</p>
+                        {hasActiveFilters && (
+                            <button
+                                onClick={() => { setSearchTerm(''); setFilterStatus(''); setFilterClass(''); }}
+                                className="mt-3 text-sm text-blue-600 font-medium"
+                            >
+                                Xóa bộ lọc
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
@@ -301,6 +395,8 @@ export default function MobilePaymentsModule() {
                 isOpen={!!selectedPayment}
                 onClose={() => setSelectedPayment(null)}
                 payment={selectedPayment}
+                onConfirm={handleConfirm}
+                onReject={handleReject}
             />
         </div>
     );

@@ -3,13 +3,77 @@ import { useParams, Link } from 'react-router-dom';
 import ModernPublicLayout from '../../components/layout/ModernPublicLayout';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Calendar, User, ArrowLeft, Clock, Tag } from 'lucide-react';
+import { Calendar, User, ArrowLeft, Clock, Tag, Play } from 'lucide-react';
 import SEO, { StructuredData } from '../../components/common/SEO';
 import api from '../../services/api';
 import SocialShare from '../../components/common/SocialShare';
 import LazyImage from '../../components/ui/LazyImage';
 import ScrollToTopButton from '../../components/ui/ScrollToTopButton';
 import { formatDateVN } from '../../utils/dateUtils';
+
+function getYouTubeEmbedUrl(url: string): string | null {
+    if (!url) return null;
+    const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (m) return `https://www.youtube.com/embed/${m[1]}`;
+    if (url.includes('youtube.com/embed/')) return url;
+    return null;
+}
+
+function isDirectVideo(url: string): boolean {
+    return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url);
+}
+
+function VideoPlayer({ url, title }: { url: string; title: string }) {
+    const [playing, setPlaying] = useState(false);
+    const embedUrl = getYouTubeEmbedUrl(url);
+    const direct = isDirectVideo(url);
+
+    if (!embedUrl && !direct) return null;
+
+    if (direct) {
+        return (
+            <div className="mb-8 rounded-2xl overflow-hidden shadow-lg bg-black">
+                <video
+                    src={url}
+                    controls
+                    className="w-full max-h-[520px] object-contain"
+                    preload="metadata"
+                    title={title}
+                />
+            </div>
+        );
+    }
+
+    // YouTube
+    return (
+        <div className="mb-8 rounded-2xl overflow-hidden shadow-lg aspect-video bg-black relative">
+            {playing ? (
+                <iframe
+                    src={`${embedUrl}?autoplay=1`}
+                    title={title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full border-0"
+                />
+            ) : (
+                <button
+                    onClick={() => setPlaying(true)}
+                    className="absolute inset-0 w-full h-full flex items-center justify-center group bg-slate-900"
+                    aria-label="Phát video"
+                >
+                    <img
+                        src={`https://img.youtube.com/vi/${embedUrl.split('/embed/')[1]}/hqdefault.jpg`}
+                        alt={title}
+                        className="absolute inset-0 w-full h-full object-cover opacity-70"
+                    />
+                    <div className="relative z-10 w-20 h-20 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-xl transition-all group-hover:scale-110">
+                        <Play size={36} className="text-emerald-600 ml-1" fill="currentColor" />
+                    </div>
+                </button>
+            )}
+        </div>
+    );
+}
 
 export default function PostDetailPage() {
     const { slug } = useParams();
@@ -226,6 +290,10 @@ export default function PostDetailPage() {
                                         <p className="text-xl text-slate-600 font-medium mb-8 pb-8 border-b border-slate-200 leading-relaxed">
                                             {post.excerpt}
                                         </p>
+                                    )}
+
+                                    {post.video_url && (
+                                        <VideoPlayer url={post.video_url} title={post.title} />
                                     )}
 
                                     <article
