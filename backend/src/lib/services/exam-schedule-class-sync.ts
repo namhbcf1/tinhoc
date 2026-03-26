@@ -286,8 +286,18 @@ export async function syncLinkedOnlineClassForExamSchedule(
   const examCategoryId = await resolveExamCategoryId(db, schedule.exam_category_id, schedule.exam_type);
   const examTypeId = await resolveExamTypeId(db, schedule.exam_type_id, schedule.exam_type);
   const classSeed = buildClassSeed(schedule);
+
+  // Sync zoom link từ exam_schedule → meet_link của online_class
+  const meetLink =
+    normalizeString(schedule.zoom_link) ||
+    normalizeString(schedule.zoom_link_backup) ||
+    normalizeString(schedule.zoom_link_backup_2) ||
+    normalizeString(schedule.zoom_link_backup_3) ||
+    null;
+
   const payload = {
     ...classSeed,
+    meet_link: meetLink,
     source_exam_schedule_id: schedule.id,
     source_kind: 'exam_schedule',
     exam_category_id: examCategoryId,

@@ -228,7 +228,8 @@ export async function createClass(db: D1Database, env: Env, body: any, createdBy
     teacher_name, max_students = 50, source_exam_schedule_id = null,
     source_kind = 'exam_schedule', exam_category_id = null, exam_type_id = null,
     organizer_uuid = null, program_uuid = null, level_uuid = null,
-    custom_field_payload = null, override_payload = null
+    custom_field_payload = null, override_payload = null,
+    meet_link: bodyMeetLink = null,
   } = body;
 
   // Validation
@@ -256,7 +257,7 @@ export async function createClass(db: D1Database, env: Env, body: any, createdBy
     class_name, description, schedule_rule, schedule_time,
     timezone, recurrence: calendarResult?.recurrence ?? null,
     start_date, end_date,
-    meet_link: calendarResult?.meetLink ?? null,
+    meet_link: calendarResult?.meetLink ?? bodyMeetLink ?? null,
     calendar_event_id: calendarResult?.eventId ?? null,
     teacher_name, max_students, created_by: createdBy,
     source_exam_schedule_id, source_kind, exam_category_id, exam_type_id
@@ -294,6 +295,7 @@ export async function updateClassById(db: D1Database, env: Env, id: number | str
   const {
     class_name, description, schedule_rule, schedule_time,
     timezone, start_date, end_date, teacher_name, max_students, status,
+    meet_link,
     source_exam_schedule_id, source_kind, exam_category_id, exam_type_id,
     organizer_uuid, program_uuid, level_uuid, custom_field_payload, override_payload
   } = body;
@@ -309,6 +311,7 @@ export async function updateClassById(db: D1Database, env: Env, id: number | str
   if (teacher_name !== undefined)   fields.teacher_name = teacher_name;
   if (max_students !== undefined)   fields.max_students = max_students;
   if (status !== undefined)         fields.status = status;
+  if (meet_link !== undefined)      fields.meet_link = meet_link;
   if (schedule_rule !== undefined)  fields.schedule_rule = schedule_rule;
   if (schedule_time !== undefined)  fields.schedule_time = schedule_time;
   if (timezone !== undefined)       fields.timezone = timezone || 'Asia/Ho_Chi_Minh';
