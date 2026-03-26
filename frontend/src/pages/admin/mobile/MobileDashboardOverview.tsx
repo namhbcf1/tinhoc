@@ -87,20 +87,23 @@ export default function MobileDashboardOverview({ onNavigate }) {
 
         setLoading(true);
         try {
-            const [students, classes, paymentStats, recentRes] = await Promise.allSettled([
-                api.getStudents(1, 0),
+            const [students, classes, paymentStats] = await Promise.allSettled([
+                api.getStudents(100, 0),
                 api.getClasses(),
                 api.getPaymentStats(),
-                api.getStudents(1, 5, { sort: 'created_at', order: 'desc' }),
             ]);
 
-            const studentCount = students.status === 'fulfilled'
-                ? (students.value?.total ?? students.value?.data?.length ?? 0) : '?';
+            const studentData = students.status === 'fulfilled' ? students.value : null;
+            const studentCount = studentData?.total ?? studentData?.data?.length ?? (students.status === 'fulfilled' ? '?' : '?');
             const classCount = classes.status === 'fulfilled'
                 ? (Array.isArray(classes.value) ? classes.value.length : classes.value?.data?.length ?? 0) : '?';
             const revenue = paymentStats.status === 'fulfilled'
                 ? (paymentStats.value?.data?.total_revenue ?? paymentStats.value?.total_revenue ?? 0) : '?';
-            const recent = recentRes.status === 'fulfilled' ? (recentRes.value?.data || []) : [];
+            // Lấy 5 học viên đăng ký gần nhất từ data đã load
+            const allStudents = studentData?.data ?? [];
+            const recent = [...allStudents]
+                .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+                .slice(0, 5);
 
             setStats({ studentCount, classCount, revenue });
             setRecentStudents(recent);

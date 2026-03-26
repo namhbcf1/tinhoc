@@ -4,6 +4,7 @@ import type { JWTPayload } from '../types/env.js';
 import XLSX from 'xlsx-js-style';
 import { errorResponse, formatDate } from '../utils/helpers.js';
 import { getRegistrationsByClass, getClassById } from '../db/queries.js';
+import { getExamRegistrations } from '../db/attendance-queries.js';
 import { normalizeBirthPlaceValue } from '../utils/birth-place.js';
 
 const exportRoute = new Hono<{ Bindings: Env; Variables: { user: JWTPayload; teacher: JWTPayload } }>();
@@ -94,6 +95,42 @@ function getStudentExportValue(student: any, field: string) {
   if (field === 'don_vi_cong_tac') return cleanStudentWorkplace(student.don_vi_cong_tac);
   if (field === 'dia_chi') return cleanStudentAddress(student.dia_chi);
   return student?.[field] ?? '';
+}
+
+function isTestStudentRecord(student: any) {
+  const fullName = normalizeWhitespace(student?.ho_ten_full).toLowerCase();
+  const email = normalizeWhitespace(student?.email).toLowerCase();
+  const cccd = normalizeWhitespace(student?.cccd).toLowerCase();
+  const isLegacyTestCode = (value: string) => /^\d{3,4}$/.test(value) && Number(value) >= 1 && Number(value) <= 19;
+
+  return (
+    fullName.startsWith('test hoc vien') ||
+    email.endsWith('@student.local') ||
+    cccd.startsWith('test') ||
+    isLegacyTestCode(cccd) ||
+    isLegacyTestCode(fullName)
+  );
+}
+
+function excludeTestStudents<T>(students: T[]) {
+  return students.filter((student: any) => !isTestStudentRecord(student));
+}
+
+function buildExamExportFilename(examName: any) {
+  const normalized = normalizeWhitespace(examName).replace(/["\r\n]/g, '');
+  const baseName = normalized || 'Danh sach ky thi';
+  return `${baseName}.xlsx`;
+}
+
+function buildAttachmentDisposition(filename: string) {
+  const fallback = filename
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7E]/g, '')
+    .replace(/[\\/:*?"<>|]/g, '-')
+    .trim() || 'export.xlsx';
+
+  return `attachment; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
 }
 
 // Border style chuẩn - đường viền đen mỏng 4 góc
@@ -317,6 +354,29 @@ function formatExamDateLine(value: any) {
   const { day, month, year } = getDateParts(value);
   if (!day || !month || !year) return 'Thời gian: Chưa xác định';
   return `Thời gian: ngày ${String(day).padStart(2, '0')} tháng ${String(month).padStart(2, '0')} năm ${year}`;
+}
+
+function clearWorksheetValuesFromRow(worksheet: XLSX.WorkSheet, startRow: number) {
+  const ref = worksheet['!ref'];
+  if (!ref) return;
+
+  const range = XLSX.utils.decode_range(ref);
+  const startRowIndex = Math.max(Number(startRow || 1) - 1, range.s.r);
+
+  for (let row = startRowIndex; row <= range.e.r; row += 1) {
+    for (let col = range.s.c; col <= range.e.c; col += 1) {
+      const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+      const cell = worksheet[cellAddress];
+      if (!cell) continue;
+
+      cell.v = '';
+      cell.t = 's';
+      delete (cell as any).w;
+      delete (cell as any).f;
+      delete (cell as any).h;
+      delete (cell as any).r;
+    }
+  }
 }
 
 function writePtitExamListTemplate(
@@ -582,6 +642,10 @@ function applyMappedTemplate(
   const templateName = String(template?.name || '').toLowerCase();
   const dataStartRow = Number(template?.data_start_row || 10);
 
+  // Template files often contain sample rows. Clear old values first so export
+  // always reflects exactly the current approved list.
+  clearWorksheetValuesFromRow(worksheet, dataStartRow);
+
   if (templateName === 'ptit') {
     writePtitExamListTemplate(worksheet, examInfo, students, dataStartRow);
     return true;
@@ -637,7 +701,7 @@ exportRoute.get('/class/:class_id', async (c) => {
     }
 
     // 2. Lấy danh sách đăng ký
-    const registrations = await getRegistrationsByClass(c.env.DB, classId);
+    const registrations = excludeTestStudents(await getRegistrationsByClass(c.env.DB, classId));
 
     // 3. Tạo workbook
     const workbook = XLSX.utils.book_new();
@@ -772,7 +836,7 @@ exportRoute.get('/class/:class_id/json', async (c) => {
       return errorResponse('Lớp không tồn tại', 404);
     }
 
-    const registrations = await getRegistrationsByClass(c.env.DB, classId);
+    const registrations = excludeTestStudents(await getRegistrationsByClass(c.env.DB, classId));
 
     return new Response(JSON.stringify({
       success: true,
@@ -802,7 +866,7 @@ exportRoute.get('/class/:class_id/csv', async (c) => {
       return errorResponse('Lớp không tồn tại', 404);
     }
 
-    const registrations = await getRegistrationsByClass(c.env.DB, classId);
+    const registrations = excludeTestStudents(await getRegistrationsByClass(c.env.DB, classId));
 
     // Convert to CSV
     const headers = ['STT', 'Số phách', 'Số CMT', 'Họ', 'Tên', 'Ngày sinh', 'Nơi sinh', 'Giới tính', 'Email', 'SĐT', 'Địa chỉ', 'Trạng thái', 'Nộp phí'];
@@ -872,20 +936,8 @@ exportRoute.get('/exam/:exam_id', async (c) => {
       return errorResponse('Kỳ thi không tồn tại', 404);
     }
 
-    // 2. Lấy danh sách thí sinh đã đăng ký (loại bỏ đã hủy)
-    const registrations = await c.env.DB.prepare(`
-      SELECT 
-        s.id, s.ho, s.ten_dem, s.ten, s.ho_ten_full, s.ngay_sinh,
-        s.noi_sinh, s.gioi_tinh, s.dan_toc, s.quoc_tich,
-        s.email, s.sdt, s.cccd, s.dia_chi,
-        s.ngay_cap_cccd, s.don_vi_cong_tac
-      FROM exam_registrations er
-      JOIN students s ON er.student_id = s.id
-      WHERE er.exam_id = ? AND (er.status = 'approved' OR er.status IS NULL)
-      ORDER BY s.ho_ten_full ASC
-    `).bind(examId).all();
-
-    const students = registrations.results || [];
+    // 2. Lấy đúng danh sách đã duyệt như màn hình admin (/exam-schedules/:id/students)
+    const students = await getExamRegistrations(c.env.DB, examId) as any[];
 
     // 3. Tạo workbook
     const workbook = XLSX.utils.book_new();
@@ -1042,8 +1094,7 @@ exportRoute.get('/exam/:exam_id', async (c) => {
 
     // 9. Tạo buffer và return
     const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-    const fileDate = formatDateVN(examInfo.exam_date).replace(/\//g, '-') || 'unknown-date';
-    const filename = `DS-Thi-${examInfo.exam_name.replace(/\s+/g, '-')}-${fileDate}.xlsx`;
+    const filename = buildExamExportFilename(examInfo.exam_name);
 
     // Upload to R2
     try {
@@ -1059,7 +1110,7 @@ exportRoute.get('/exam/:exam_id', async (c) => {
     return new Response(excelBuffer, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+        'Content-Disposition': buildAttachmentDisposition(filename),
         'Access-Control-Allow-Origin': '*',
       },
     });
@@ -1091,20 +1142,8 @@ exportRoute.get('/exam/:exam_id/exam-list', async (c) => {
       return errorResponse('Kỳ thi không tồn tại', 404);
     }
 
-    // 2. Lấy danh sách thí sinh đã DUYỆT (chỉ approved/registered)
-    const registrations = await c.env.DB.prepare(`
-      SELECT 
-        s.id, s.ho, s.ten_dem, s.ten, s.ho_ten_full, s.ngay_sinh,
-        s.noi_sinh, s.gioi_tinh, s.dan_toc, s.quoc_tich,
-        s.email, s.sdt, s.cccd, s.dia_chi,
-        s.ngay_cap_cccd, s.don_vi_cong_tac
-      FROM exam_registrations er
-      JOIN students s ON er.student_id = s.id
-      WHERE er.exam_id = ? AND er.status IN ('approved', 'registered')
-      ORDER BY s.id ASC
-    `).bind(examId).all();
-
-    const students = registrations.results || [];
+    // 2. Lấy đúng danh sách đã duyệt như màn hình admin (/exam-schedules/:id/students)
+    const students = await getExamRegistrations(c.env.DB, examId) as any[];
 
     // 2.1 Sort theo cột TÊN (cột E) nhưng giữ nguyên toàn bộ dòng dữ liệu
     // Ưu tiên: TEN -> HO -> TEN_DEM -> CCCD/ID, dùng localeCompare tiếng Việt để sắp xếp có dấu ổn hơn.
@@ -1130,55 +1169,7 @@ exportRoute.get('/exam/:exam_id/exam-list', async (c) => {
     });
     const { day, month, year } = getDateParts(examInfo.exam_date);
 
-    // 3. CHECK TEMPLATE
-    console.log('Checking template_id:', examInfo.template_id);
-    if (examInfo.template_id) {
-      try {
-        const template = await c.env.DB.prepare(
-          'SELECT * FROM excel_templates WHERE id = ?'
-        ).bind(examInfo.template_id).first() as any;
-
-        console.log('Template found:', template ? template.name : 'null');
-
-        if (template && template.file_key) {
-          console.log('Fetching template from R2:', template.file_key);
-          // Fetch from R2
-          const object = await c.env.R2.get(template.file_key);
-          console.log('R2 object:', object ? 'exists' : 'null');
-
-          if (object) {
-            const arrayBuffer = await object.arrayBuffer();
-            console.log('Template file size:', arrayBuffer.byteLength);
-
-            const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
-            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            console.log('Worksheet loaded:', workbook.SheetNames[0]);
-
-            const applied = applyMappedTemplate(worksheet, template, examInfo, students);
-            console.log('Template applied:', applied, 'for', template.name);
-
-            // Write buffer
-            const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-            const filename = `DS-${String(template.name || 'template').toUpperCase()}-${examInfo.exam_name.replace(/\s+/g, '-')}.xlsx`;
-            console.log('Returning template file:', filename);
-
-            return new Response(excelBuffer, {
-              headers: {
-                'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
-                'Access-Control-Allow-Origin': '*',
-              },
-            });
-          }
-        }
-      } catch (err: any) {
-        console.error('Template export error, falling back to default:', err.message, err.stack);
-      }
-    }
-
-    // ==========================================
-    // DEFAULT LOGIC (VanTrang Form) - Copy lại logic cũ
-    // ==========================================
+    // 3. Export mặc định theo dữ liệu danh sách thực tế đang hiển thị
     const workbook = XLSX.utils.book_new();
 
     // Header rows 
@@ -1276,12 +1267,12 @@ exportRoute.get('/exam/:exam_id/exam-list', async (c) => {
 
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Danh sách dự thi');
     const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-    const filename = `DANHSACHDUTHI-${day}${String(month).padStart(2, '0')}${year}.xlsx`;
+    const filename = buildExamExportFilename(examInfo.exam_name);
 
     return new Response(excelBuffer, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+        'Content-Disposition': buildAttachmentDisposition(filename),
         'Access-Control-Allow-Origin': '*',
       },
     });

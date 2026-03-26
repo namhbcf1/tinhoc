@@ -1308,6 +1308,27 @@ export default function MobileStudentsModule() {
         await fetchStudents({ force: true });
     };
 
+    const handleExportCSV = () => {
+        const list = processedStudents.length > 0 ? processedStudents : students;
+        const header = ['Họ và tên', 'CCCD/CMND', 'Ngày sinh', 'SĐT', 'Email', 'Trạng thái'];
+        const rows = list.map((s) => [
+            s.ho_ten_full || `${s.ho || ''} ${s.ten_dem || ''} ${s.ten || ''}`.trim() || '',
+            s.cccd || '',
+            s.ngay_sinh ? new Date(s.ngay_sinh).toLocaleDateString('vi-VN') : '',
+            s.sdt || '',
+            s.email || '',
+            s.trang_thai === 'active' ? 'Đang học' : s.trang_thai === 'inactive' ? 'Ngưng học' : '',
+        ]);
+        const csv = [header, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `danh-sach-hoc-vien-${Date.now()}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <PullToRefreshWrapper onRefresh={handleRefresh}>
             <div className="min-h-screen bg-[#f3f6fb] pb-6">
@@ -1374,6 +1395,14 @@ export default function MobileStudentsModule() {
                             >
                                 <Filter size={16} />
                                 Bộ lọc
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleExportCSV}
+                                className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-white"
+                            >
+                                <Download size={16} />
+                                CSV
                             </button>
                             <button
                                 type="button"

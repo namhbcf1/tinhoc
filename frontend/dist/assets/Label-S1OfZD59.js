@@ -1,0 +1,1 @@
+import{j as o,c as r}from"./index-VigvW7lt.js";import{r as t}from"./react-vendor--ZG-DebN.js";import{c as l}from"./Button-DqgWrxqj.js";const m=l("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"),i=t.forwardRef(({className:a,...e},s)=>o.jsx("label",{ref:s,className:r(m(),a),...e}));i.displayName="Label";export{i as L};

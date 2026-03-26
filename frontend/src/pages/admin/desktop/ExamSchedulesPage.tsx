@@ -2435,7 +2435,7 @@ export default function ExamSchedulesPage() {
 
                     <div className="flex flex-1 flex-col gap-4 p-5">
                       <div className="flex items-start justify-between gap-3">
-                        <div className="flex min-w-[84px] flex-col items-center rounded-[24px] bg-slate-950 px-3 py-3 text-white shadow-lg shadow-slate-200">
+                        <div className="flex min-w-[84px] flex-col items-center rounded-[24px] border border-blue-200/80 bg-[linear-gradient(135deg,#1d4ed8_0%,#2563eb_55%,#3b82f6_100%)] px-3 py-3 text-white shadow-lg shadow-blue-200/80">
                           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/60">
                             {examDate ? examDate.toLocaleDateString('vi-VN', { weekday: 'short' }) : '---'}
                           </p>
@@ -2458,7 +2458,7 @@ export default function ExamSchedulesPage() {
                       </div>
 
                       <div>
-                        <h3 className="line-clamp-2 text-[20px] font-black leading-tight tracking-tight text-slate-900">
+                        <h3 className="line-clamp-2 text-[20px] font-semibold leading-tight tracking-tight text-[#54657f]">
                           {exam.exam_name}
                         </h3>
                         <div className="mt-2 flex flex-wrap gap-2">
@@ -2485,7 +2485,7 @@ export default function ExamSchedulesPage() {
                         </div>
                       </div>
 
-                      <div className="grid gap-2 text-sm text-slate-600">
+                      <div className="grid gap-2 text-sm text-[#64748b]">
                         <div className="flex items-center gap-2">
                           <Clock size={15} className="shrink-0 text-slate-400" />
                           <span>{formatDateVN(exam.exam_date)} • {formatTime(exam.exam_date)} • {formatDurationLabel(exam.duration_minutes)}</span>
@@ -2495,7 +2495,7 @@ export default function ExamSchedulesPage() {
                           <span className="whitespace-pre-wrap break-words">{exam.location || 'Chưa cập nhật địa điểm'}</span>
                         </div>
                         {exam.notes ? (
-                          <div className="flex items-start gap-2 text-slate-500">
+                          <div className="flex items-start gap-2 text-[#6b7b90]">
                             <Info size={15} className="mt-0.5 shrink-0 text-slate-300" />
                             <span className="whitespace-pre-wrap break-words leading-relaxed">{exam.notes}</span>
                           </div>
@@ -2505,24 +2505,24 @@ export default function ExamSchedulesPage() {
                       <div className="grid grid-cols-2 gap-2">
                         <div className="rounded-[22px] bg-slate-50 px-3 py-3">
                           <div className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Tổng thí sinh</div>
-                          <div className="mt-1 text-2xl font-black leading-none text-slate-900">{totalStudents}</div>
+                          <div className="mt-1 text-2xl font-semibold leading-none text-[#5d6d84]">{totalStudents}</div>
                         </div>
                         <div className="rounded-[22px] bg-slate-50 px-3 py-3">
                           <div className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Đã duyệt</div>
-                          <div className="mt-1 text-2xl font-black leading-none text-slate-900">{approvedCount}</div>
+                          <div className="mt-1 text-2xl font-semibold leading-none text-[#5d6d84]">{approvedCount}</div>
                         </div>
                       </div>
 
                       {exam.class_seed_name ? (
                         <div className="rounded-[22px] border border-emerald-100 bg-emerald-50/70 p-3">
                           <div className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-600">Linked class</div>
-                          <div className="mt-1 text-sm font-semibold text-slate-900">{exam.class_seed_name}</div>
-                          <div className="mt-1 text-sm text-slate-600">{schedulePreview}</div>
+                          <div className="mt-1 text-sm font-semibold text-[#5d6d84]">{exam.class_seed_name}</div>
+                          <div className="mt-1 text-sm text-[#64748b]">{schedulePreview}</div>
                         </div>
                       ) : exam.delivery_mode === 'external_redirect' ? (
                         <div className="rounded-[22px] border border-blue-100 bg-blue-50/70 p-3">
                           <div className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">External redirect</div>
-                          <div className="mt-1 text-sm text-slate-700">
+                          <div className="mt-1 text-sm text-[#64748b]">
                             {exam.redirect_url || 'Program này dùng link riêng, không sinh linked class.'}
                           </div>
                         </div>

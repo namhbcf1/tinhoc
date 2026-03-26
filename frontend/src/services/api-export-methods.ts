@@ -4,6 +4,36 @@
 // ========================================
 
 export function applyExportMethods(ApiClient) {
+  const sanitizeDownloadFilename = (filename) => {
+    if (!filename) return '';
+    return String(filename)
+      .replace(/^["']|["']$/g, '')
+      .replace(/[\\/:*?"<>|]/g, '-')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  const getFilenameFromContentDisposition = (contentDisposition) => {
+    if (!contentDisposition) return '';
+
+    const utf8Match = contentDisposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+    if (utf8Match?.[1]) {
+      try {
+        return sanitizeDownloadFilename(decodeURIComponent(utf8Match[1]));
+      } catch {
+        return sanitizeDownloadFilename(utf8Match[1]);
+      }
+    }
+
+    const quotedMatch = contentDisposition.match(/filename\s*=\s*"([^"]+)"/i);
+    if (quotedMatch?.[1]) return sanitizeDownloadFilename(quotedMatch[1]);
+
+    const plainMatch = contentDisposition.match(/filename\s*=\s*([^;]+)/i);
+    if (plainMatch?.[1]) return sanitizeDownloadFilename(plainMatch[1]);
+
+    return '';
+  };
+
   // Build export URL for a class (used to open in new tab or anchor href)
   ApiClient.prototype.getExportUrl = function(classId) {
     return `${this.baseURL}/export/class/${classId}`;
@@ -26,10 +56,12 @@ export function applyExportMethods(ApiClient) {
     }
 
     const blob = await response.blob();
+    const contentDisposition = response.headers.get('content-disposition') || '';
+    const serverFilename = getFilenameFromContentDisposition(contentDisposition);
     const downloadUrl = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = downloadUrl;
-    a.download = `danh-sach-lop-${classId}.xlsx`;
+    a.download = serverFilename || `danh-sach-lop-${classId}.xlsx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -53,10 +85,12 @@ export function applyExportMethods(ApiClient) {
     }
 
     const blob = await response.blob();
+    const contentDisposition = response.headers.get('content-disposition') || '';
+    const serverFilename = getFilenameFromContentDisposition(contentDisposition);
     const downloadUrl = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = downloadUrl;
-    a.download = `danh-sach-thi-${examId}.xlsx`;
+    a.download = serverFilename || `danh-sach-thi-${examId}.xlsx`;
     document.body.appendChild(a);
     a.click();
     a.remove();

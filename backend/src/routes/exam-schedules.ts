@@ -1744,4 +1744,164 @@ examSchedules.post('/:id/reject/:studentId', async (c) => {
   }
 });
 
+// ========================================
+// POST /exam-schedules/:id/learning-sessions
+// Tạo buổi học mới cho online_class gắn với kỳ thi
+// Body: { session_date, start_time, end_time, note? }
+// ========================================
+examSchedules.post('/:id/learning-sessions', async (c) => {
+  try {
+    const user = c.get('user') as any;
+    const denied = requireExamAdmin(user, 'Không có quyền tạo buổi học');
+    if (denied) return denied;
+
+    const { id } = c.req.param();
+    const examId = parseInt(id);
+    const body = await c.req.json<{
+      session_date: string;
+      start_time: string;
+      end_time: string;
+      note?: string;
+    }>();
+
+    if (!body.session_date || !body.start_time || !body.end_time) {
+      return errorResponse('Thiếu thông tin: session_date, start_time, end_time', 400);
+    }
+
+    // Tìm online_class gắn với exam này
+    const onlineClass = await c.env.DB.prepare(`
+      SELECT id FROM online_classes
+      WHERE source_exam_schedule_id = ?
+        AND COALESCE(status, 'active') != 'cancelled'
+      LIMIT 1
+    `).bind(examId).first<{ id: number }>();
+
+    if (!onlineClass) {
+      return errorResponse('Kỳ thi này chưa có lớp học trực tuyến liên kết', 404);
+    }
+
+    // Tạo session (UNIQUE constraint: online_class_id + session_date)
+    const result = await c.env.DB.prepare(`
+      INSERT INTO online_class_sessions (online_class_id, session_date, start_time, end_time, note, created_by)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(
+      onlineClass.id,
+      body.session_date,
+      body.start_time,
+      body.end_time,
+      body.note ?? null,
+      user.id ?? null,
+    ).run();
+
+    return jsonResponse({
+      success: true,
+      data: { id: result.meta?.last_row_id },
+      message: 'Đã tạo buổi học',
+    });
+  } catch (error: any) {
+    if (error.message?.includes('UNIQUE')) {
+      return errorResponse('Ngày này đã có buổi học rồi', 409);
+    }
+    return errorResponse('Lỗi tạo buổi học: ' + error.message, 500);
+  }
+});
+
+// ========================================
+// DELETE /exam-schedules/:id/learning-sessions/:sessionId
+// Xóa buổi học (và cascade xóa attendance)
+// ========================================
+examSchedules.delete('/:id/learning-sessions/:sessionId', async (c) => {
+  try {
+    const user = c.get('user') as any;
+    const denied = requireExamAdmin(user, 'Không có quyền xóa buổi học');
+    if (denied) return denied;
+
+    const { id, sessionId } = c.req.param();
+    const examId = parseInt(id);
+    const sessId = parseInt(sessionId);
+
+    // Verify session belongs to this exam's online_class
+    const session = await c.env.DB.prepare(`
+      SELECT ocs.id FROM online_class_sessions ocs
+      JOIN online_classes oc ON ocs.online_class_id = oc.id
+      WHERE ocs.id = ? AND oc.source_exam_schedule_id = ?
+    `).bind(sessId, examId).first<{ id: number }>();
+
+    if (!session) {
+      return errorResponse('Buổi học không tồn tại hoặc không thuộc kỳ thi này', 404);
+    }
+
+    await c.env.DB.prepare(`DELETE FROM online_class_sessions WHERE id = ?`).bind(sessId).run();
+
+    return jsonResponse({ success: true, message: 'Đã xóa buổi học' });
+  } catch (error: any) {
+    return errorResponse('Lỗi xóa buổi học: ' + error.message, 500);
+  }
+});
+
+// ========================================
+// PUT /exam-schedules/:id/learning-sessions/:sessionId/attendance/:studentId
+// Chấm/cập nhật điểm danh thủ công cho 1 học viên trong 1 buổi
+// Body: { status: 'present' | 'absent' | 'late', note? }
+// ========================================
+examSchedules.put('/:id/learning-sessions/:sessionId/attendance/:studentId', async (c) => {
+  try {
+    const user = c.get('user') as any;
+    const denied = requireExamAdmin(user, 'Không có quyền chấm điểm danh');
+    if (denied) return denied;
+
+    const { id, sessionId, studentId } = c.req.param();
+    const examId = parseInt(id);
+    const sessId = parseInt(sessionId);
+    const stdId = parseInt(studentId);
+    const body = await c.req.json<{ status: string; note?: string }>();
+
+    const validStatuses = ['present', 'absent', 'late'];
+    if (!body.status || !validStatuses.includes(body.status)) {
+      return errorResponse('status phải là: present | absent | late', 400);
+    }
+
+    // Verify session belongs to this exam
+    const session = await c.env.DB.prepare(`
+      SELECT ocs.id FROM online_class_sessions ocs
+      JOIN online_classes oc ON ocs.online_class_id = oc.id
+      WHERE ocs.id = ? AND oc.source_exam_schedule_id = ?
+    `).bind(sessId, examId).first<{ id: number }>();
+
+    if (!session) {
+      return errorResponse('Buổi học không thuộc kỳ thi này', 404);
+    }
+
+    const now = new Date().toISOString();
+
+    // Upsert attendance record
+    await c.env.DB.prepare(`
+      INSERT INTO online_class_attendance
+        (session_id, student_id, status, note, checked_in_at, marked_by, marked_by_role, zoom_join_source, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', ?)
+      ON CONFLICT(session_id, student_id) DO UPDATE SET
+        status = excluded.status,
+        note = excluded.note,
+        checked_in_at = excluded.checked_in_at,
+        marked_by = excluded.marked_by,
+        marked_by_role = excluded.marked_by_role,
+        zoom_join_source = 'manual',
+        updated_at = excluded.updated_at
+    `).bind(
+      sessId,
+      stdId,
+      body.status,
+      body.note ?? null,
+      body.status === 'present' || body.status === 'late' ? now : null,
+      user.id ?? null,
+      user.role ?? 'admin',
+      now,
+    ).run();
+
+    return jsonResponse({ success: true, message: 'Đã cập nhật điểm danh' });
+  } catch (error: any) {
+    return errorResponse('Lỗi cập nhật điểm danh: ' + error.message, 500);
+  }
+});
+
 export default examSchedules;

@@ -55,11 +55,22 @@ async function setupDatabase() {
   `).run();
 
   await db.prepare(`
+    CREATE TABLE IF NOT EXISTS admins (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      full_name TEXT
+    )
+  `).run();
+
+  await db.prepare(`
     CREATE TABLE IF NOT EXISTS exam_registrations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       exam_id INTEGER NOT NULL,
       student_id INTEGER NOT NULL,
-      status TEXT
+      status TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_by INTEGER,
+      approved_at DATETIME,
+      approved_by INTEGER
     )
   `).run();
 
@@ -80,7 +91,10 @@ async function setupDatabase() {
       cccd TEXT,
       dia_chi TEXT,
       ngay_cap_cccd TEXT,
-      don_vi_cong_tac TEXT
+      don_vi_cong_tac TEXT,
+      image_3x4 TEXT,
+      photo_3x4_image_id TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `).run();
 
@@ -173,7 +187,7 @@ describe('export routes', () => {
     await cleanDatabase();
   });
 
-  it('exports PTIT template with expected header and mapped cells', async () => {
+  it('exports exam-list from live approved list and ignores saved template file', async () => {
     await seedOrganizer('org-ptit', 'Học viện Công nghệ Bưu Chính Viễn thông', 'PTIT');
     await seedTemplate(1, 'ptit', 'templates/MAUPTIT.xlsx', 9);
     await seedExam(101, 1, 'Danh sách dự thi PTIT', 'B1', 'org-ptit');
@@ -213,7 +227,7 @@ describe('export routes', () => {
     const workbook = XLSX.read(new Uint8Array(await response.arrayBuffer()), { type: 'array' });
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
 
-    expect(worksheet.A3?.v).toBe('Danh sách dự thi PTIT');
+    expect(String(worksheet.A3?.v || '')).toContain('DANH SÁCH DỰ THI');
     expect(String(worksheet.F4?.v || '')).toContain('ngày 15 tháng 04 năm 2026');
     expect(worksheet.A9?.v).toBe(1);
     expect(worksheet.C9?.v).toBe('011302003580');
@@ -222,9 +236,64 @@ describe('export routes', () => {
     expect(worksheet.F9?.v).toBe('05/09/2002');
     expect(worksheet.G9?.v).toBe('Điện Biên');
     expect(worksheet.H9?.v).toBe('Nữ');
+    expect(r2.get).not.toHaveBeenCalled();
   });
 
-  it('exports VEPT template with expected mapped cells', async () => {
+  it('does not include stale template sample rows in export output', async () => {
+    await seedOrganizer('org-ptit-clear', 'Học viện Công nghệ Bưu Chính Viễn thông', 'PTIT');
+    await seedTemplate(11, 'ptit', 'templates/PTIT-CLEAR.xlsx', 9);
+    await seedExam(111, 11, 'PTIT clear stale rows', 'B1', 'org-ptit-clear');
+    await seedStudentRegistration(111, {
+      ho: 'Phạm',
+      ten_dem: 'Gia',
+      ten: 'Minh',
+      ho_ten_full: 'Phạm Gia Minh',
+      ngay_sinh: '2003-10-12',
+      noi_sinh: 'Hà Nội',
+      gioi_tinh: 'Nam',
+      cccd: '039300011122',
+    });
+
+    const r2 = {
+      get: vi.fn().mockResolvedValue({
+        arrayBuffer: async () =>
+          createWorkbookBuffer([
+            ['CHỨNG CHỈ ỨNG DỤNG CÔNG NGHỆ THÔNG TIN CƠ BẢN & NÂNG CAO'],
+            ['THEO THÔNG TƯ 03/2014/TT-BTTTT'],
+            ['TEMPLATE TITLE'],
+            ['', '', '', '', '', 'Ngày thi: template'],
+            ['', '', '', '', '', 'Hội đồng thi: template'],
+            [],
+            ['STT', 'SỐ PHÁCH', 'SỐ CMT', 'HỌ', 'TÊN', 'NGÀY SINH', 'NƠI SINH', 'GIỚI TÍNH', 'DÂN TỘC', 'MÔN THI', '', 'KÝ TÊN', 'GHI CHÚ'],
+            ['', '', '', '', '', '', '', '', '', 'LT', 'TH'],
+            [1, '', 'OLD-CCCD-1', 'OLD', 'USER', '01/01/2000', 'OLD', 'Nam', 'Kinh', '', '', '', ''],
+            [2, '', 'OLD-CCCD-2', 'OLD', 'USER2', '02/02/2001', 'OLD', 'Nữ', 'Kinh', '', '', '', ''],
+          ]),
+      }),
+      put: vi.fn().mockResolvedValue(undefined),
+    };
+    const app = createTestApp(r2);
+
+    const response = await app.request('/export/exam/111/exam-list');
+    expect(response.status).toBe(200);
+
+    const workbook = XLSX.read(new Uint8Array(await response.arrayBuffer()), { type: 'array' });
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as Array<Array<string | number>>;
+    const flat = rows.flat().map((value) => String(value || ''));
+
+    expect(worksheet.C9?.v).toBe('039300011122');
+    expect(worksheet.D9?.v).toBe('Phạm Gia');
+    expect(worksheet.E9?.v).toBe('Minh');
+    expect(worksheet.C10?.v ?? '').toBe('');
+    expect(worksheet.D10?.v ?? '').toBe('');
+    expect(worksheet.E10?.v ?? '').toBe('');
+    expect(flat.includes('OLD-CCCD-1')).toBe(false);
+    expect(flat.includes('OLD-CCCD-2')).toBe(false);
+    expect(r2.get).not.toHaveBeenCalled();
+  });
+
+  it('exports approved/registered students in default format', async () => {
     await seedOrganizer('org-edu', 'Edu Global', 'EDUGLOBAL');
     await seedTemplate(2, 'vept', 'templates/MAUVEPT.xlsx', 5);
     await seedExam(202, 2, 'Danh sách dự thi VEPT', 'B2', 'org-edu');
@@ -262,34 +331,97 @@ describe('export routes', () => {
     const workbook = XLSX.read(new Uint8Array(await response.arrayBuffer()), { type: 'array' });
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
 
-    expect(String(worksheet.A2?.v || '')).toContain('Tên Đơn vị/ Trường học đăng ký');
-    expect(String(worksheet.A2?.v || '')).toContain('Edu Global');
-    expect(worksheet.A5?.v).toBe(1);
-    expect(worksheet.B5?.v).toBe('Lê Mai');
-    expect(worksheet.C5?.v).toBe('Phương');
-    expect(worksheet.D5?.v).toBe('Nữ');
-    expect(worksheet.E5?.v).toBe(30);
-    expect(worksheet.F5?.v).toBe(7);
-    expect(worksheet.G5?.v).toBe(2005);
-    expect(worksheet.H5?.v).toBe('019305009484');
-    expect(worksheet.I5?.v).toBe('0988000111');
-    expect(worksheet.J5?.v).toBe('phuong@example.com');
-    expect(worksheet.K5?.v).toBe('PTIT');
-    expect(worksheet.M5?.v).toBe('B2');
-    expect(String(worksheet.N5?.v || '')).toContain('15/04/2026');
-    expect(worksheet.T5?.v).toBe('Phòng A1');
+    expect(String(worksheet.A1?.v || '')).toContain('CHỨNG CHỈ ỨNG DỤNG CÔNG NGHỆ THÔNG TIN');
+    expect(worksheet.A9?.v).toBe(1);
+    expect(worksheet.C9?.v).toBe('019305009484');
+    expect(worksheet.D9?.v).toBe('Lê Mai');
+    expect(worksheet.E9?.v).toBe('Phương');
+    expect(worksheet.F9?.v).toBe('30/07/2005');
+    expect(worksheet.G9?.v).toBe('Hà Nội');
+    expect(worksheet.H9?.v).toBe('Nữ');
+    expect(r2.get).not.toHaveBeenCalled();
   });
 
-  it('falls back to default export when template file is missing', async () => {
-    await seedOrganizer('org-ptit', 'Học viện Công nghệ Bưu Chính Viễn thông', 'PTIT');
-    await seedTemplate(3, 'ptit', 'templates/MAUPTIT.xlsx', 9);
-    await seedExam(303, 3, 'Fallback template test', 'B1', 'org-ptit');
-    await seedStudentRegistration(303);
+  it('excludes test student accounts from exam-list export', async () => {
+    await seedExam(250, null, 'Danh sách lọc test', 'B1');
+    await seedStudentRegistration(250, {
+      ho: 'Lê',
+      ten_dem: 'Thị',
+      ten: 'Thật',
+      ho_ten_full: 'Lê Thị Thật',
+      cccd: '031200011122',
+      email: 'that@example.com',
+    });
+    await seedStudentRegistration(250, {
+      ho: 'Test',
+      ten_dem: 'Hoc',
+      ten: 'Vien',
+      ho_ten_full: 'Test Hoc Vien 01',
+      cccd: 'test-cccd-01',
+      email: 'hv01@student.local',
+    });
+    await seedStudentRegistration(250, {
+      ho: 'Mã',
+      ten_dem: 'Test',
+      ten: '0019',
+      ho_ten_full: 'Mã Test 0019',
+      cccd: '0019',
+      email: 'ma0019@example.com',
+    });
 
     const app = createTestApp({
       get: vi.fn().mockResolvedValue(null),
       put: vi.fn().mockResolvedValue(undefined),
     });
+
+    const response = await app.request('/export/exam/250/exam-list');
+    expect(response.status).toBe(200);
+
+    const workbook = XLSX.read(new Uint8Array(await response.arrayBuffer()), { type: 'array' });
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as Array<Array<string | number>>;
+    const flat = rows.flat().map((value) => String(value || '').toLowerCase());
+
+    expect(worksheet.A9?.v).toBe(1);
+    expect(worksheet.C9?.v).toBe('031200011122');
+    expect(worksheet.C10?.v ?? '').toBe('');
+    expect(flat.some((value) => value.includes('test hoc vien'))).toBe(false);
+    expect(flat.some((value) => value.includes('@student.local'))).toBe(false);
+    expect(flat.some((value) => value.includes('test-cccd'))).toBe(false);
+    expect(flat.includes('0019')).toBe(false);
+  });
+
+  it('uses exam name as exported xlsx filename', async () => {
+    const examName = 'Kỳ thi: TIN HỌC PTIT 29/03/2026';
+    await seedExam(260, null, examName, 'B1');
+    await seedStudentRegistration(260, {
+      cccd: '031200011123',
+      email: 'valid260@example.com',
+    });
+
+    const app = createTestApp({
+      get: vi.fn().mockResolvedValue(null),
+      put: vi.fn().mockResolvedValue(undefined),
+    });
+
+    const response = await app.request('/export/exam/260/exam-list');
+    expect(response.status).toBe(200);
+
+    const disposition = response.headers.get('content-disposition') || '';
+    expect(disposition).toContain(`filename*=UTF-8''${encodeURIComponent(`${examName}.xlsx`)}`);
+  });
+
+  it('still exports default when template is configured', async () => {
+    await seedOrganizer('org-ptit', 'Học viện Công nghệ Bưu Chính Viễn thông', 'PTIT');
+    await seedTemplate(3, 'ptit', 'templates/MAUPTIT.xlsx', 9);
+    await seedExam(303, 3, 'Fallback template test', 'B1', 'org-ptit');
+    await seedStudentRegistration(303);
+
+    const r2 = {
+      get: vi.fn().mockResolvedValue(null),
+      put: vi.fn().mockResolvedValue(undefined),
+    };
+    const app = createTestApp(r2);
 
     const response = await app.request('/export/exam/303/exam-list');
 
@@ -301,5 +433,6 @@ describe('export routes', () => {
     expect(String(worksheet.A1?.v || '')).toContain('CHỨNG CHỈ ỨNG DỤNG CÔNG NGHỆ THÔNG TIN');
     expect(String(worksheet.A3?.v || '')).toContain('DANH SÁCH DỰ THI');
     expect(worksheet.A7?.v).toBe('STT');
+    expect(r2.get).not.toHaveBeenCalled();
   });
 });

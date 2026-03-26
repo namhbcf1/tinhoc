@@ -97,3 +97,16 @@
 
 ## Blockers
 _None._
+
+## Recently Changed Files
+_Auto-updated at 2026-03-26 11:53 (8 files)_
+
+- backend/package.json
+- backend/package-lock.json
+- backend/src/routes/exam-schedules.ts
+- frontend/src/pages/admin/mobile/MobileDashboardOverview.tsx
+- frontend/src/pages/admin/mobile/MobileExamSchedulesModule.tsx
+- frontend/src/pages/admin/mobile/MobileStudentsModule.tsx
+- frontend/src/services/api-exam-schedule-methods.ts
+- frontend/wrangler.toml
+

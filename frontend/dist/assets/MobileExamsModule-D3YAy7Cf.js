@@ -1,0 +1,1 @@
+import{j as o}from"./index-VigvW7lt.js";import{S as r}from"./StudentExamsView-DkGL0Erk.js";import"./react-vendor--ZG-DebN.js";import"./icon-vendor-NQWEj44z.js";import"./Button-DqgWrxqj.js";import"./ToastContainer-CyB6s26r.js";import"./api-HlE1hOG7.js";import"./dateUtils-X8aHK8gW.js";function n({studentData:t}){return o.jsx(r,{studentData:t,compact:!0})}export{n as default};

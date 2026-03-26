@@ -6,6 +6,23 @@ const buildTestStudentFilter = (alias = 's') => `
   NOT (
     LOWER(COALESCE(${alias}.ho_ten_full, '')) LIKE 'test hoc vien%'
     OR LOWER(COALESCE(${alias}.cccd, '')) LIKE 'test%'
+    OR LOWER(COALESCE(${alias}.email, '')) LIKE '%@student.local'
+    OR (
+      TRIM(COALESCE(${alias}.cccd, '')) GLOB '[0-9][0-9][0-9]'
+      AND CAST(TRIM(COALESCE(${alias}.cccd, '')) AS INTEGER) BETWEEN 1 AND 19
+    )
+    OR (
+      TRIM(COALESCE(${alias}.cccd, '')) GLOB '[0-9][0-9][0-9][0-9]'
+      AND CAST(TRIM(COALESCE(${alias}.cccd, '')) AS INTEGER) BETWEEN 1 AND 19
+    )
+    OR (
+      TRIM(COALESCE(${alias}.ho_ten_full, '')) GLOB '[0-9][0-9][0-9]'
+      AND CAST(TRIM(COALESCE(${alias}.ho_ten_full, '')) AS INTEGER) BETWEEN 1 AND 19
+    )
+    OR (
+      TRIM(COALESCE(${alias}.ho_ten_full, '')) GLOB '[0-9][0-9][0-9][0-9]'
+      AND CAST(TRIM(COALESCE(${alias}.ho_ten_full, '')) AS INTEGER) BETWEEN 1 AND 19
+    )
   )
 `;
 
@@ -921,14 +938,20 @@ export async function getExamRegistrations(db: D1Database, examId: number) {
            r.approved_by,
            a.full_name as approved_by_name,
            s.id as student_id,
+           s.ho,
+           s.ten_dem,
+           s.ten,
            s.ho_ten_full,
            s.ngay_sinh,
            s.gioi_tinh,
+           s.dan_toc,
            s.cccd,
            s.sdt,
            s.email,
            s.dia_chi,
            s.noi_sinh,
+           s.ngay_cap_cccd,
+           s.don_vi_cong_tac,
            s.image_3x4,
            s.photo_3x4_image_id,
            s.created_at as student_created_at

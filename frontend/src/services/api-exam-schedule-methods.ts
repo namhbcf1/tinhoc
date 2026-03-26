@@ -15,6 +15,40 @@ function triggerBlobDownload(blob, filename) {
   window.URL.revokeObjectURL(url);
 }
 
+function sanitizeDownloadFilename(filename) {
+  if (!filename) return '';
+  return String(filename)
+    .replace(/^["']|["']$/g, '')
+    .replace(/[\\/:*?"<>|]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getFilenameFromContentDisposition(contentDisposition) {
+  if (!contentDisposition) return '';
+
+  const utf8Match = contentDisposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return sanitizeDownloadFilename(decodeURIComponent(utf8Match[1]));
+    } catch {
+      return sanitizeDownloadFilename(utf8Match[1]);
+    }
+  }
+
+  const quotedMatch = contentDisposition.match(/filename\s*=\s*"([^"]+)"/i);
+  if (quotedMatch?.[1]) {
+    return sanitizeDownloadFilename(quotedMatch[1]);
+  }
+
+  const plainMatch = contentDisposition.match(/filename\s*=\s*([^;]+)/i);
+  if (plainMatch?.[1]) {
+    return sanitizeDownloadFilename(plainMatch[1]);
+  }
+
+  return '';
+}
+
 export function applyExamScheduleMethods(ApiClient) {
   const invalidateExamCache = (client) => {
     client.invalidateCache([
@@ -258,6 +292,31 @@ export function applyExamScheduleMethods(ApiClient) {
     return this.request(`/exam-schedules/${examId}/learning-attendance`);
   };
 
+  // Tạo buổi học mới
+  ApiClient.prototype.createExamLearningSession = async function(examId, body) {
+    return this.request(`/exam-schedules/${examId}/learning-sessions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  };
+
+  // Xóa buổi học
+  ApiClient.prototype.deleteExamLearningSession = async function(examId, sessionId) {
+    return this.request(`/exam-schedules/${examId}/learning-sessions/${sessionId}`, {
+      method: 'DELETE',
+    });
+  };
+
+  // Chấm điểm danh thủ công
+  ApiClient.prototype.updateExamLearningAttendance = async function(examId, sessionId, studentId, body) {
+    return this.request(`/exam-schedules/${examId}/learning-sessions/${sessionId}/attendance/${studentId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  };
+
   // Remove a student from an exam
   ApiClient.prototype.removeStudentFromExam = async function(examId, studentId) {
     const res = await this.request(`/exam-schedules/${examId}/students/${studentId}`, {
@@ -324,7 +383,9 @@ export function applyExamScheduleMethods(ApiClient) {
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     const response = await fetch(url, { headers });
     if (!response.ok) throw new Error('Lỗi tải file danh sách dự thi');
-    triggerBlobDownload(await response.blob(), `DANHSACHDUTHI-${examId}.xlsx`);
+    const contentDisposition = response.headers.get('content-disposition') || '';
+    const serverFilename = getFilenameFromContentDisposition(contentDisposition);
+    triggerBlobDownload(await response.blob(), serverFilename || `DANHSACHDUTHI-${examId}.xlsx`);
   };
 
   // Get pending (awaiting approval) students for an exam

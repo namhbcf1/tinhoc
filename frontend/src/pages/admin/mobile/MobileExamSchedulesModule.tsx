@@ -5,6 +5,7 @@ import {
     Check,
     CheckCircle2,
     ChevronRight,
+    ClipboardCheck,
     Clock,
     Download,
     FileText,
@@ -13,6 +14,7 @@ import {
     MapPin,
     Pencil,
     Plus,
+    RefreshCw,
     Search,
     Sparkles,
     Trash2,
@@ -1549,7 +1551,7 @@ const ExamCard = ({ exam, onOpen }) => {
             className={`relative w-full overflow-hidden rounded-[20px] border bg-white p-3 text-left shadow-sm transition-transform active:scale-[0.98] ${status.cardClass}`}
         >
             <div className="flex items-start gap-3">
-                <div className="flex w-[52px] shrink-0 flex-col items-center rounded-[14px] bg-slate-950 py-2 text-white">
+                <div className="flex w-[52px] shrink-0 flex-col items-center rounded-[14px] border border-blue-200/80 bg-[linear-gradient(135deg,#1d4ed8_0%,#2563eb_55%,#3b82f6_100%)] py-2 text-white">
                     <p className="text-[8px] font-bold uppercase tracking-wider text-white/60">
                         {dateObj.toLocaleDateString('vi-VN', { weekday: 'short' })}
                     </p>
@@ -1569,11 +1571,11 @@ const ExamCard = ({ exam, onOpen }) => {
                         )}
                     </div>
 
-                    <h3 className="mt-1.5 line-clamp-1 text-[14px] font-black leading-snug text-slate-900">
+                    <h3 className="mt-1.5 line-clamp-1 text-[14px] font-semibold leading-snug text-[#54657f]">
                         {title}
                     </h3>
 
-                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#64748b]">
                         <span className="flex items-center gap-1">
                             <Clock size={12} className="text-slate-400" />
                             {formatDateVN(exam.exam_date)} {formatTimeUtil(exam.exam_date)}
@@ -1585,7 +1587,7 @@ const ExamCard = ({ exam, onOpen }) => {
                     </div>
 
                     <div className="mt-2 flex items-center justify-between rounded-[12px] bg-slate-50 px-2.5 py-1.5">
-                        <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700">
+                        <span className="flex items-center gap-1.5 text-[11px] font-semibold text-[#5d6d84]">
                             <Users size={13} className="text-slate-400" />
                             {studentCount} thí sinh
                         </span>
@@ -1624,6 +1626,14 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
     const [historyRows, setHistoryRows] = useState([]);
     const [historyStudent, setHistoryStudent] = useState(null);
     const [showExcelPreviewSheet, setShowExcelPreviewSheet] = useState(false);
+
+    // Điểm danh học tập
+    const [learningAttendance, setLearningAttendance] = useState(null);
+    const [learningAttendanceLoading, setLearningAttendanceLoading] = useState(false);
+    const [showCreateSessionModal, setShowCreateSessionModal] = useState(false);
+    const [createSessionForm, setCreateSessionForm] = useState({ session_date: '', start_time: '07:00', end_time: '11:00', note: '' });
+    const [createSessionLoading, setCreateSessionLoading] = useState(false);
+    const [attendanceSaving, setAttendanceSaving] = useState(null); // `${sessionId}_${studentId}`
 
     useEffect(() => {
         if (!exam) return;
@@ -1920,6 +1930,67 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
     };
 
     const displayList = activeTab === 'approved' ? approvedList : pendingList;
+
+    // ── Điểm danh học tập handlers ──
+    const loadLearningAttendance = async () => {
+        if (!exam?.id) return;
+        setLearningAttendanceLoading(true);
+        try {
+            const res = await api.getExamLearningAttendance(exam.id);
+            if (res?.success) setLearningAttendance(res.data);
+        } catch (err) {
+            console.error('Error loading learning attendance:', err);
+        } finally {
+            setLearningAttendanceLoading(false);
+        }
+    };
+
+    const handleCreateSession = async () => {
+        if (!exam?.id || !createSessionForm.session_date) return;
+        setCreateSessionLoading(true);
+        try {
+            const res = await api.createExamLearningSession(exam.id, createSessionForm);
+            if (res?.success) {
+                setShowCreateSessionModal(false);
+                setCreateSessionForm({ session_date: '', start_time: '07:00', end_time: '11:00', note: '' });
+                await loadLearningAttendance();
+            } else {
+                onError?.(res?.message || 'Lỗi tạo buổi học');
+            }
+        } catch (err) {
+            onError?.('Lỗi: ' + (err?.message || 'Không xác định'));
+        } finally {
+            setCreateSessionLoading(false);
+        }
+    };
+
+    const handleDeleteSession = async (sessionId) => {
+        if (!exam?.id) return;
+        if (!window.confirm('Xóa buổi học này? Tất cả dữ liệu điểm danh của buổi này sẽ bị xóa.')) return;
+        try {
+            const res = await api.deleteExamLearningSession(exam.id, sessionId);
+            if (res?.success) await loadLearningAttendance();
+            else onError?.(res?.message || 'Lỗi xóa buổi học');
+        } catch (err) {
+            onError?.('Lỗi: ' + (err?.message || 'Không xác định'));
+        }
+    };
+
+    const handleToggleAttendance = async (sessionId, studentId, currentStatus) => {
+        const key = `${sessionId}_${studentId}`;
+        if (attendanceSaving === key) return;
+        setAttendanceSaving(key);
+        const nextStatus = currentStatus === 'present' ? 'absent' : 'present';
+        try {
+            await api.updateExamLearningAttendance(exam.id, sessionId, studentId, { status: nextStatus });
+            await loadLearningAttendance();
+        } catch (err) {
+            onError?.('Lỗi cập nhật điểm danh: ' + (err?.message || 'Không xác định'));
+        } finally {
+            setAttendanceSaving(null);
+        }
+    };
+
     const filteredStudents = useMemo(() => {
         const keyword = studentSearch.trim().toLowerCase();
         if (!keyword) return displayList;
@@ -2032,8 +2103,19 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                 count={pendingList.length}
                                 onClick={() => setActiveTab('pending')}
                             />
+                            <FilterChip
+                                active={activeTab === 'attendance'}
+                                label="Điểm danh"
+                                count={null}
+                                onClick={() => {
+                                    setActiveTab('attendance');
+                                    if (!learningAttendance) loadLearningAttendance();
+                                }}
+                            />
                         </div>
 
+                        {activeTab !== 'attendance' && (
+                        <>
                         <div className="relative mt-3">
                             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
@@ -2083,10 +2165,173 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                 <span>Xuất Excel</span>
                             </button>
                         </div>
+                        </>
+                        )}
                     </div>
 
                     <div className="flex-1 overflow-y-auto px-4 py-3">
-                        {loading ? (
+                        {activeTab === 'attendance' ? (
+                            /* ── TAB ĐIỂM DANH HỌC TẬP ── */
+                            learningAttendanceLoading ? (
+                                <div className="flex flex-col items-center justify-center gap-4 py-16">
+                                    <div className="h-11 w-11 animate-spin rounded-full border-[3px] border-emerald-600 border-t-transparent" />
+                                    <p className="text-sm font-medium text-slate-500">Đang tải điểm danh...</p>
+                                </div>
+                            ) : !learningAttendance ? (
+                                <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                                    <ClipboardCheck size={48} className="text-slate-300" />
+                                    <p className="font-semibold text-slate-700">Chưa tải dữ liệu</p>
+                                    <button
+                                        type="button"
+                                        onClick={loadLearningAttendance}
+                                        className="rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white"
+                                    >
+                                        Tải điểm danh học tập
+                                    </button>
+                                </div>
+                            ) : learningAttendance.sessions?.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                                    <ClipboardCheck size={48} className="text-slate-300" />
+                                    <p className="text-sm font-medium text-slate-600">
+                                        {learningAttendance.online_class_id
+                                            ? `Lớp "${learningAttendance.class_name}" chưa có buổi học nào.`
+                                            : 'Kỳ thi này chưa được gắn với lớp học trực tuyến.'}
+                                    </p>
+                                    {learningAttendance.online_class_id ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCreateSessionModal(true)}
+                                            className="flex items-center gap-1.5 rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white"
+                                        >
+                                            <Plus size={16} /> Tạo buổi học đầu tiên
+                                        </button>
+                                    ) : null}
+                                </div>
+                            ) : (
+                                <div className="space-y-4 pb-4">
+                                    {/* Header lớp + actions */}
+                                    <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                                        <ClipboardCheck size={18} className="flex-shrink-0 text-emerald-600" />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-semibold text-emerald-800">
+                                                {learningAttendance.class_name || 'Lớp học trực tuyến'}
+                                            </p>
+                                            <p className="text-xs text-emerald-600">
+                                                {learningAttendance.sessions.length} buổi · {learningAttendance.students?.length ?? 0} HV
+                                            </p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCreateSessionModal(true)}
+                                                className="flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"
+                                            >
+                                                <Plus size={13} /> Buổi học
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={loadLearningAttendance}
+                                                className="rounded-xl border border-emerald-200 bg-white px-2 py-1.5 text-emerald-700"
+                                            >
+                                                <RefreshCw size={13} />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Bảng điểm danh - scroll ngang */}
+                                    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                                        <table className="min-w-full border-collapse text-xs">
+                                            <thead>
+                                                <tr className="border-b border-slate-100 bg-slate-50">
+                                                    <th className="sticky left-0 z-10 bg-slate-50 px-3 py-3 text-left font-bold text-slate-700 min-w-[140px]">
+                                                        Học viên
+                                                    </th>
+                                                    <th className="px-2 py-3 text-center font-bold text-slate-700 min-w-[55px]">
+                                                        <div>Tổng</div>
+                                                        <div className="text-[10px] font-normal text-slate-400">có mặt</div>
+                                                    </th>
+                                                    {learningAttendance.sessions.map((sess, idx) => (
+                                                        <th key={sess.id} className="px-2 py-3 text-center font-semibold text-slate-700 min-w-[72px]">
+                                                            <div className="text-[10px] text-slate-400">Buổi {idx + 1}</div>
+                                                            <div className="font-medium">
+                                                                {sess.session_date
+                                                                    ? new Date(sess.session_date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+                                                                    : '—'}
+                                                            </div>
+                                                            {sess.start_time && (
+                                                                <div className="text-[9px] text-slate-400">{sess.start_time}{sess.end_time ? `–${sess.end_time}` : ''}</div>
+                                                            )}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteSession(sess.id)}
+                                                                className="mt-0.5 text-[9px] font-medium text-red-400 active:text-red-600"
+                                                            >
+                                                                Xóa
+                                                            </button>
+                                                        </th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-50">
+                                                {!learningAttendance.students?.length ? (
+                                                    <tr>
+                                                        <td colSpan={2 + learningAttendance.sessions.length} className="py-10 text-center text-slate-400">
+                                                            Chưa có học viên nào.
+                                                        </td>
+                                                    </tr>
+                                                ) : learningAttendance.students.map((student, rowIdx) => (
+                                                    <tr key={student.student_id} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                                                        <td className="sticky left-0 z-10 bg-inherit px-3 py-2.5 border-r border-slate-100">
+                                                            <div className="font-semibold text-slate-800 truncate max-w-[130px]">{student.ho_ten_full}</div>
+                                                            {student.cccd && <div className="text-[10px] text-slate-400 font-mono">{student.cccd}</div>}
+                                                        </td>
+                                                        <td className="px-2 py-2.5 text-center">
+                                                            <span className={`text-xs font-bold ${
+                                                                student.present_count + (student.late_count ?? 0) === learningAttendance.sessions.length
+                                                                    ? 'text-emerald-600'
+                                                                    : student.present_count + (student.late_count ?? 0) === 0
+                                                                        ? 'text-red-500'
+                                                                        : 'text-amber-600'
+                                                            }`}>
+                                                                {student.present_count + (student.late_count ?? 0)}/{learningAttendance.sessions.length}
+                                                            </span>
+                                                        </td>
+                                                        {learningAttendance.sessions.map((sess) => {
+                                                            const att = student.attendance?.find((a) => a.session_id === sess.id);
+                                                            const status = att?.status ?? null;
+                                                            const key = `${sess.id}_${student.student_id}`;
+                                                            const isSaving = attendanceSaving === key;
+                                                            return (
+                                                                <td key={sess.id} className="px-2 py-2.5 text-center">
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled={isSaving}
+                                                                        onClick={() => handleToggleAttendance(sess.id, student.student_id, status)}
+                                                                        className={`h-8 w-8 rounded-xl text-xs font-bold transition-all active:scale-[0.9] ${
+                                                                            isSaving ? 'animate-pulse bg-slate-100 text-slate-400'
+                                                                            : status === 'present' ? 'bg-emerald-100 text-emerald-700'
+                                                                            : status === 'late' ? 'bg-amber-100 text-amber-700'
+                                                                            : status === 'absent' ? 'bg-red-100 text-red-600'
+                                                                            : 'bg-slate-100 text-slate-400'
+                                                                        }`}
+                                                                    >
+                                                                        {isSaving ? '…'
+                                                                            : status === 'present' ? '✓'
+                                                                            : status === 'late' ? 'T'
+                                                                            : status === 'absent' ? '✗'
+                                                                            : '—'}
+                                                                    </button>
+                                                                </td>
+                                                            );
+                                                        })}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )
+                        ) : loading ? (
                             <div className="flex flex-col items-center justify-center gap-4 py-16">
                                 <div className="h-11 w-11 animate-spin rounded-full border-[3px] border-blue-600 border-t-transparent" />
                                 <p className="text-sm font-medium text-slate-500">Đang tải danh sách thí sinh...</p>
@@ -2441,6 +2686,81 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                     }}
                 />
             ) : null}
+
+            {/* ── Modal tạo buổi học mới ── */}
+            {showCreateSessionModal && (
+                <div className="fixed inset-0 z-[60] flex items-end bg-slate-950/55" onClick={() => setShowCreateSessionModal(false)}>
+                    <div
+                        className="w-full rounded-t-[28px] bg-white p-5 pb-8 shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="mb-4 flex items-center justify-between">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Điểm danh học tập</p>
+                                <h3 className="text-lg font-black text-slate-900">Tạo buổi học mới</h3>
+                            </div>
+                            <button type="button" onClick={() => setShowCreateSessionModal(false)}
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ngày học <span className="text-red-500">*</span></label>
+                                <input
+                                    type="date"
+                                    value={createSessionForm.session_date}
+                                    onChange={(e) => setCreateSessionForm((f) => ({ ...f, session_date: e.target.value }))}
+                                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">Giờ bắt đầu</label>
+                                    <input
+                                        type="time"
+                                        value={createSessionForm.start_time}
+                                        onChange={(e) => setCreateSessionForm((f) => ({ ...f, start_time: e.target.value }))}
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">Giờ kết thúc</label>
+                                    <input
+                                        type="time"
+                                        value={createSessionForm.end_time}
+                                        onChange={(e) => setCreateSessionForm((f) => ({ ...f, end_time: e.target.value }))}
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ghi chú</label>
+                                <input
+                                    type="text"
+                                    value={createSessionForm.note}
+                                    onChange={(e) => setCreateSessionForm((f) => ({ ...f, note: e.target.value }))}
+                                    placeholder="Ghi chú buổi học (tùy chọn)"
+                                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="mt-5 flex gap-3">
+                            <button type="button" onClick={() => setShowCreateSessionModal(false)}
+                                className="flex-1 rounded-2xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700">
+                                Hủy
+                            </button>
+                            <button type="button" onClick={handleCreateSession}
+                                disabled={createSessionLoading || !createSessionForm.session_date}
+                                className="flex-1 rounded-2xl bg-emerald-600 py-3 text-sm font-black text-white disabled:opacity-60">
+                                {createSessionLoading ? 'Đang tạo...' : 'Tạo buổi học'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };
@@ -2755,15 +3075,15 @@ export default function MobileExamSchedulesModule() {
                                             <Sparkles size={14} />
                                             <span>Kỳ thi gần nhất</span>
                                         </div>
-                                        <h2 className="mt-2 line-clamp-2 text-[15px] font-black leading-snug text-slate-900">{getExamTitle(nextExam)}</h2>
+                                        <h2 className="mt-2 line-clamp-2 text-[15px] font-semibold leading-snug text-[#54657f]">{getExamTitle(nextExam)}</h2>
                                         <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
-                                            <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-slate-600 shadow-sm">
+                                            <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-[#64748b] shadow-sm">
                                                 {formatDateVN(nextExam.exam_date)} • {formatTimeUtil(nextExam.exam_date)}
                                             </span>
-                                            <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-slate-600 shadow-sm">
+                                            <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-[#64748b] shadow-sm">
                                                 {formatDurationLabel(nextExam.duration_minutes)}
                                             </span>
-                                            <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-slate-600 shadow-sm">
+                                            <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-[#64748b] shadow-sm">
                                                 {getExamStudentCount(nextExam)} thí sinh
                                             </span>
                                             {getExamPendingCount(nextExam) > 0 ? (
@@ -2776,7 +3096,7 @@ export default function MobileExamSchedulesModule() {
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
+                                        <div className="mt-2 flex items-center gap-1.5 text-xs text-[#64748b]">
                                             <MapPin size={13} />
                                             <span className="truncate">{getExamLocation(nextExam)}</span>
                                         </div>
