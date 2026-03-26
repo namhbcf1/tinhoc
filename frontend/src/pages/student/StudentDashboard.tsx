@@ -12,7 +12,6 @@ import { loadStudentData, STUDENT_SESSION_UPDATED_EVENT } from '../../utils/stud
 
 const StudentExams = lazy(() => import('./desktop/StudentExams'));
 const PersonalInfo = lazy(() => import('./desktop/PersonalInfo'));
-const MyOnlineClasses = lazy(() => import('./desktop/MyOnlineClasses'));
 
 // Mobile dashboard — lazy-loaded only khi cần
 const StudentDashboardMobile = lazy(() => import('./mobile/StudentDashboardMobile'));
@@ -20,7 +19,6 @@ const StudentDashboardMobile = lazy(() => import('./mobile/StudentDashboardMobil
 const TAB_MAP = {
   exams: StudentExams,
   profile: PersonalInfo,
-  classes: MyOnlineClasses,
 };
 
 function getTabFromPath(pathname) {

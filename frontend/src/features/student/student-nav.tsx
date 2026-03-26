@@ -2,7 +2,6 @@ import type { LucideIcon } from 'lucide-react';
 import {
   CalendarCheck,
   GraduationCap,
-  Video,
 } from 'lucide-react';
 import { buildApiUrl } from '../../utils/api-base-url';
 import { getStorageValue } from '../../utils/browser-storage';
@@ -10,7 +9,7 @@ import { getStorageValue } from '../../utils/browser-storage';
 export const STUDY_PLATFORM_URL = 'https://vantrangexam.pages.dev/login#/login';
 
 export interface StudentNavItem {
-  id: 'exams' | 'study' | 'classes';
+  id: 'exams' | 'study';
   label: string;
   icon: LucideIcon;
   path?: string;
@@ -18,15 +17,13 @@ export interface StudentNavItem {
 }
 
 export const STUDENT_MAIN_MENU: StudentNavItem[] = [
-  { id: 'exams',   label: 'Lịch thi',  icon: CalendarCheck, path: '/dashboard/exams' },
-  { id: 'classes', label: 'Lớp học',   icon: Video,         path: '/dashboard/classes' },
-  { id: 'study',   label: 'Học tập',   icon: GraduationCap, external: STUDY_PLATFORM_URL },
+  { id: 'exams', label: 'Lịch thi', icon: CalendarCheck, path: '/dashboard/exams' },
+  { id: 'study', label: 'Học tập', icon: GraduationCap, external: STUDY_PLATFORM_URL },
 ];
 
 export const STUDENT_PAGE_TITLES: Record<string, string> = {
-  exams:   'Lịch thi',
-  classes: 'Lớp học online',
-  study:   'Học tập',
+  exams: 'Lịch thi',
+  study: 'Học tập',
   profile: 'Hồ sơ cá nhân',
 };
 

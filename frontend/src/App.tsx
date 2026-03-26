@@ -66,7 +66,6 @@ function AppRoutes() {
       <Route path="/login" element={<UnifiedLogin />} />
       <Route path="/dashboard" element={<StudentDashboard />} />
       <Route path="/dashboard/my-classes" element={<StudyPlatformRedirect />} />
-      <Route path="/dashboard/classes" element={<StudentDashboard />} />
       <Route path="/dashboard/register-class" element={<StudyPlatformRedirect />} />
       <Route path="/dashboard/payment" element={<Navigate to="/dashboard/exams" replace />} />
       <Route path="/dashboard/schedule" element={<Navigate to="/dashboard/exams" replace />} />
