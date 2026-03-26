@@ -25,7 +25,7 @@ import { Input } from '../../../components/ui/Input';
 import { Label } from '../../../components/ui/Label';
 import { Badge } from '../../../components/ui/Badge';
 import {
-  Calendar, Edit, Trash2, Search, PlusCircle, Users, Clock, MapPin, Info, Download, UserX, Phone, Mail, CheckCircle, XCircle, User, CheckCheck, RotateCcw, ClipboardCheck, RefreshCw
+  Calendar, Edit, Trash2, Search, Plus, PlusCircle, Users, Clock, MapPin, Info, Download, UserX, Phone, Mail, CheckCircle, XCircle, User, CheckCheck, RotateCcw, ClipboardCheck, RefreshCw
 } from 'lucide-react';
 
 import EmptyState from '../../../components/ui/EmptyState';
@@ -631,6 +631,10 @@ export default function ExamSchedulesPage() {
   // Điểm danh học tập
   const [learningAttendance, setLearningAttendance] = useState<{ online_class_id: number | null; class_name: string | null; sessions: any[]; students: any[] } | null>(null);
   const [learningAttendanceLoading, setLearningAttendanceLoading] = useState(false);
+  const [showCreateSessionModal, setShowCreateSessionModal] = useState(false);
+  const [createSessionForm, setCreateSessionForm] = useState({ session_date: '', start_time: '07:00', end_time: '11:00', note: '' });
+  const [createSessionLoading, setCreateSessionLoading] = useState(false);
+  const [attendanceSaving, setAttendanceSaving] = useState<string | null>(null); // `${sessionId}_${studentId}`
 
   const formPreviewDate = useMemo(
     () => composePreviewDateTime(formData.exam_date, formData.exam_time),
@@ -899,6 +903,84 @@ export default function ExamSchedulesPage() {
       console.error('Error loading learning attendance:', err);
     } finally {
       setLearningAttendanceLoading(false);
+    }
+  };
+
+  const handleCreateSession = async () => {
+    if (!selectedExamForList?.id || !createSessionForm.session_date) return;
+    setCreateSessionLoading(true);
+    try {
+      const res = await (api as any).createExamLearningSession(selectedExamForList.id, createSessionForm);
+      if (res?.success) {
+        success('Đã tạo buổi học');
+        setShowCreateSessionModal(false);
+        setCreateSessionForm({ session_date: '', start_time: '07:00', end_time: '11:00', note: '' });
+        await loadLearningAttendance(selectedExamForList.id);
+      } else {
+        error(res?.message || 'Lỗi tạo buổi học');
+      }
+    } catch (err: any) {
+      error('Lỗi: ' + err.message);
+    } finally {
+      setCreateSessionLoading(false);
+    }
+  };
+
+  const handleDeleteSession = async (sessionId: number) => {
+    if (!selectedExamForList?.id) return;
+    if (!window.confirm('Xóa buổi học này? Tất cả dữ liệu điểm danh của buổi này sẽ bị xóa.')) return;
+    try {
+      const res = await (api as any).deleteExamLearningSession(selectedExamForList.id, sessionId);
+      if (res?.success) {
+        success('Đã xóa buổi học');
+        await loadLearningAttendance(selectedExamForList.id);
+      } else {
+        error(res?.message || 'Lỗi xóa buổi học');
+      }
+    } catch (err: any) {
+      error('Lỗi: ' + err.message);
+    }
+  };
+
+  const handleToggleAttendance = async (sessionId: number, studentId: number, currentStatus: string | null) => {
+    if (!selectedExamForList?.id) return;
+    const key = `${sessionId}_${studentId}`;
+    if (attendanceSaving === key) return; // debounce
+
+    // Cycle: null → present → late → absent → null (xóa)
+    const next = currentStatus === null ? 'present'
+      : currentStatus === 'present' ? 'late'
+      : currentStatus === 'late' ? 'absent'
+      : 'present'; // absent → back to present (không xóa để tránh nhầm)
+
+    setAttendanceSaving(key);
+    try {
+      await (api as any).updateExamLearningAttendance(
+        selectedExamForList.id, sessionId, studentId,
+        { status: next }
+      );
+      // Optimistic update
+      setLearningAttendance((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          students: prev.students.map((s) => {
+            if (s.student_id !== studentId) return s;
+            const newSessions = s.sessions.map((att: any) => {
+              if (att.session_id !== sessionId) return att;
+              return { ...att, status: next, zoom_join_source: 'manual' };
+            });
+            const presentCount = newSessions.filter((a: any) => a.status === 'present').length;
+            const lateCount = newSessions.filter((a: any) => a.status === 'late').length;
+            const absentCount = newSessions.filter((a: any) => a.status === 'absent').length;
+            return { ...s, sessions: newSessions, present_count: presentCount, late_count: lateCount, absent_count: absentCount };
+          }),
+        };
+      });
+    } catch (err: any) {
+      error('Lỗi cập nhật: ' + err.message);
+    } finally {
+      setAttendanceSaving(null);
     }
   };
 
@@ -3194,7 +3276,15 @@ export default function ExamSchedulesPage() {
                       ? `Lớp học trực tuyến "${learningAttendance.class_name}" chưa có buổi học nào.`
                       : 'Kỳ thi này chưa được gắn với lớp học trực tuyến.'}
                   </p>
-                  <p className="text-xs text-gray-400">Dữ liệu điểm danh sẽ hiển thị ở đây khi có buổi học.</p>
+                  <p className="text-xs text-gray-400 mb-4">Dữ liệu điểm danh sẽ hiển thị ở đây khi có buổi học.</p>
+                  {learningAttendance.online_class_id && (
+                    <button
+                      onClick={() => setShowCreateSessionModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 active:bg-emerald-800 transition-colors"
+                    >
+                      <Plus size={16} /> Tạo buổi học đầu tiên
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -3205,12 +3295,20 @@ export default function ExamSchedulesPage() {
                       <p className="text-sm font-semibold text-emerald-800">{learningAttendance.class_name || 'Lớp học trực tuyến'}</p>
                       <p className="text-xs text-emerald-600">{learningAttendance.sessions.length} buổi học · {learningAttendance.students.length} học viên</p>
                     </div>
-                    <button
-                      onClick={() => loadLearningAttendance(selectedExamForList.id)}
-                      className="ml-auto flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-900 font-medium"
-                    >
-                      <RefreshCw size={14} /> Làm mới
-                    </button>
+                    <div className="ml-auto flex items-center gap-2">
+                      <button
+                        onClick={() => setShowCreateSessionModal(true)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 transition-colors"
+                      >
+                        <Plus size={14} /> Thêm buổi học
+                      </button>
+                      <button
+                        onClick={() => loadLearningAttendance(selectedExamForList.id)}
+                        className="flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-900 font-medium"
+                      >
+                        <RefreshCw size={14} /> Làm mới
+                      </button>
+                    </div>
                   </div>
 
                   {/* Bảng điểm danh */}
@@ -3231,6 +3329,13 @@ export default function ExamSchedulesPage() {
                               {sess.start_time && (
                                 <div className="text-[10px] text-gray-400">{sess.start_time}{sess.end_time ? `–${sess.end_time}` : ''}</div>
                               )}
+                              <button
+                                onClick={() => handleDeleteSession(sess.id)}
+                                className="mt-1 text-[10px] text-red-400 hover:text-red-600 font-medium transition-colors"
+                                title="Xóa buổi học này"
+                              >
+                                Xóa
+                              </button>
                             </th>
                           ))}
                         </tr>
@@ -3263,23 +3368,26 @@ export default function ExamSchedulesPage() {
                               </td>
                               {/* Cột từng buổi */}
                               {student.sessions.map((att) => {
+                                const isSaving = attendanceSaving === `${att.session_id}_${student.student_id}`;
                                 const { bg, icon, title } = att.status === 'present'
-                                  ? { bg: 'bg-green-100 text-green-700', icon: '✓', title: 'Có mặt' }
+                                  ? { bg: 'bg-green-100 text-green-700 hover:bg-green-200', icon: '✓', title: 'Có mặt — Click để đổi sang Muộn' }
                                   : att.status === 'late'
-                                  ? { bg: 'bg-yellow-100 text-yellow-700', icon: '⏰', title: 'Muộn' }
+                                  ? { bg: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200', icon: '⏰', title: 'Muộn — Click để đổi sang Vắng' }
                                   : att.status === 'absent'
-                                  ? { bg: 'bg-red-100 text-red-600', icon: '✗', title: 'Vắng mặt' }
+                                  ? { bg: 'bg-red-100 text-red-600 hover:bg-red-200', icon: '✗', title: 'Vắng mặt — Click để đổi sang Có mặt' }
                                   : att.zoom_join_source === 'zoom_click'
-                                  ? { bg: 'bg-blue-100 text-blue-600', icon: 'Z', title: 'Check-in Zoom' }
-                                  : { bg: 'bg-gray-100 text-gray-400', icon: '–', title: 'Chưa có dữ liệu' };
+                                  ? { bg: 'bg-blue-100 text-blue-600 hover:bg-blue-200', icon: 'Z', title: 'Check-in Zoom — Click để chấm Có mặt' }
+                                  : { bg: 'bg-gray-100 text-gray-400 hover:bg-gray-200', icon: '–', title: 'Chưa có dữ liệu — Click để chấm Có mặt' };
                                 return (
                                   <td key={att.session_id} className="px-3 py-3 text-center">
-                                    <span
-                                      className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${bg}`}
+                                    <button
+                                      onClick={() => handleToggleAttendance(att.session_id, student.student_id, att.status)}
+                                      disabled={isSaving}
+                                      className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-all cursor-pointer ${bg} ${isSaving ? 'opacity-50 cursor-wait' : ''}`}
                                       title={title}
                                     >
-                                      {icon}
-                                    </span>
+                                      {isSaving ? '…' : icon}
+                                    </button>
                                   </td>
                                 );
                               })}
@@ -3297,6 +3405,7 @@ export default function ExamSchedulesPage() {
                     <span className="flex items-center gap-1"><span className="inline-flex w-5 h-5 rounded-full bg-red-100 text-red-600 items-center justify-center font-bold text-[10px]">✗</span> Vắng</span>
                     <span className="flex items-center gap-1"><span className="inline-flex w-5 h-5 rounded-full bg-blue-100 text-blue-600 items-center justify-center font-bold text-[10px]">Z</span> Zoom</span>
                     <span className="flex items-center gap-1"><span className="inline-flex w-5 h-5 rounded-full bg-gray-100 text-gray-400 items-center justify-center font-bold text-[10px]">–</span> Chưa ghi nhận</span>
+                    <span className="text-gray-400 ml-2">· Click ô để chấm điểm danh thủ công (vòng tua: Có mặt → Muộn → Vắng → Có mặt)</span>
                   </div>
                 </div>
               )
@@ -3863,6 +3972,75 @@ export default function ExamSchedulesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Modal tạo buổi học */}
+      {showCreateSessionModal && (
+        <div className="fixed inset-0 z-[1100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreateSessionModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="bg-emerald-600 px-6 py-4">
+              <h3 className="text-lg font-bold text-white">Tạo buổi học mới</h3>
+              <p className="text-xs text-emerald-100 mt-0.5">{learningAttendance?.class_name}</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1.5">Ngày học *</label>
+                <input
+                  type="date"
+                  value={createSessionForm.session_date}
+                  onChange={(e) => setCreateSessionForm((f) => ({ ...f, session_date: e.target.value }))}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-1.5">Giờ bắt đầu</label>
+                  <input
+                    type="time"
+                    value={createSessionForm.start_time}
+                    onChange={(e) => setCreateSessionForm((f) => ({ ...f, start_time: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-1.5">Giờ kết thúc</label>
+                  <input
+                    type="time"
+                    value={createSessionForm.end_time}
+                    onChange={(e) => setCreateSessionForm((f) => ({ ...f, end_time: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1.5">Ghi chú (tuỳ chọn)</label>
+                <input
+                  type="text"
+                  value={createSessionForm.note}
+                  onChange={(e) => setCreateSessionForm((f) => ({ ...f, note: e.target.value }))}
+                  placeholder="Ví dụ: Học bù, thi thử..."
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                />
+              </div>
+            </div>
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={() => setShowCreateSessionModal(false)}
+                className="flex-1 py-2.5 border border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors text-sm"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleCreateSession}
+                disabled={createSessionLoading || !createSessionForm.session_date}
+                className="flex-1 py-2.5 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors text-sm flex items-center justify-center gap-2"
+              >
+                {createSessionLoading ? <><span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" /> Đang tạo...</> : 'Tạo buổi học'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
