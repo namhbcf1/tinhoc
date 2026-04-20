@@ -8,6 +8,7 @@ import { formatDateVN } from '../../../utils/dateUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
+import OverlayPortal from '../../../components/ui/OverlayPortal';
 import { Calendar, Clock, MapPin, Video, Info, ChevronLeft, ChevronRight, Hash, BookOpen } from 'lucide-react';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
 
@@ -277,8 +278,9 @@ export default function MySchedulePage({ toast }) {
 
       {/* Modal chi ti\u1ebft l\u1ecbch h\u1ecdc */}
       {showDetailModal && selectedSchedule && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowDetailModal(false)}>
-          <Card className="glass-card max-w-lg w-full overflow-hidden shadow-2xl anim-scale border-0" onClick={(e) => e.stopPropagation()}>
+        <OverlayPortal>
+          <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowDetailModal(false)}>
+            <Card className="glass-card max-w-lg w-full overflow-hidden shadow-2xl anim-scale border-0" onClick={(e) => e.stopPropagation()}>
             <CardHeader className="bg-gradient-to-br from-teal-600 to-emerald-600 text-white p-6">
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-4">
@@ -350,8 +352,9 @@ export default function MySchedulePage({ toast }) {
                 </Button>
               </div>
             </CardContent>
-          </Card>
-        </div>
+            </Card>
+          </div>
+        </OverlayPortal>
       )}
     </div>
   );

@@ -21,6 +21,7 @@ import {
     RotateCcw,
     UserPlus,
     Users,
+    Upload,
     X,
     XCircle,
 } from 'lucide-react';
@@ -32,8 +33,11 @@ import { useToast } from '../../../components/ui/ToastContainer';
 import ToastContainer from '../../../components/ui/ToastContainer';
 import PullToRefreshWrapper from '../../../components/ui/PullToRefreshWrapper';
 import AdminLoadingState from '../../../components/admin/AdminLoadingState';
+import OverlayPortal from '../../../components/ui/OverlayPortal';
 import { ADMIN_CACHE_KEYS, ADMIN_CACHE_TTL, clearAdminCache, getAdminCache, invalidateAdminData, setAdminCache } from '../shared/admin-cache';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
+import { canAccessExamFeeStatus, getStoredAdmin } from '../../../utils/adminSession';
+import { MobileAdminHeroCard, MobileAdminPrimaryButton, MobileAdminSearchField, MobileAdminSecondaryButton, MobileAdminStatCard } from '../shared/mobileAdminUi';
 
 const SCHEDULE_PRESETS = [
     {
@@ -77,6 +81,60 @@ const getErrorMessage = (error, fallback) => {
 
 const formatTime = (dateStr) => formatTimeUtil(dateStr);
 
+const EXAM_PAYMENT_STATUS_OPTIONS = [
+    { value: 'unknown', label: 'Chưa xác định' },
+    { value: 'paid', label: 'Đã nộp học phí' },
+    { value: 'unpaid', label: 'Chưa nộp học phí' },
+];
+const APPROVED_EXAM_PAYMENT_STATUS_OPTIONS = EXAM_PAYMENT_STATUS_OPTIONS.filter((option) => option.value !== 'unknown');
+
+const normalizeExamPaymentStatus = (value) => (
+    value === 'paid' ? 'paid' : value === 'unpaid' ? 'unpaid' : 'unknown'
+);
+
+const normalizeApprovedExamPaymentStatus = (value) => (
+    normalizeExamPaymentStatus(value) === 'paid' ? 'paid' : 'unpaid'
+);
+
+const getExamPaymentStatusMeta = (value) => {
+    const status = normalizeExamPaymentStatus(value);
+    if (status === 'paid') {
+        return {
+            status,
+            label: 'Đã nộp học phí',
+            title: 'Đã nộp học phí',
+            className: 'border-emerald-200 bg-white text-emerald-700',
+        };
+    }
+
+    if (status === 'unpaid') {
+        return {
+            status,
+            label: 'Chưa nộp học phí',
+            title: 'Chưa nộp học phí',
+            className: 'border-rose-200 bg-rose-50 text-rose-700',
+        };
+    }
+
+    return {
+        status,
+        label: 'Chưa xác định',
+        title: 'Chưa xác định học phí',
+        className: 'border-slate-200 bg-slate-100 text-slate-600',
+    };
+};
+
+const EXAM_PAYMENT_FILTER_OPTIONS = [
+    { value: 'all', label: 'Tất cả' },
+    { value: 'paid', label: 'Đã nộp' },
+    { value: 'unpaid', label: 'Chưa nộp' },
+];
+
+const matchesApprovedStudentPaymentFilter = (student, filter) => {
+    if (filter === 'all') return true;
+    return normalizeApprovedExamPaymentStatus(student?.payment_status) === filter;
+};
+
 const formatLongDate = (value) => {
     if (!value) return 'Chưa chọn ngày thi';
     const d = toVietnamDate(value);
@@ -97,6 +155,27 @@ const formatDurationLabel = (value) => {
     }
 
     return 'Chưa khai báo thời lượng';
+};
+
+const IMPORT_ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const IMPORT_TIME_RE = /^(\d{2}):(\d{2})$/;
+
+const isValidImportDate = (value) => {
+    const match = IMPORT_ISO_DATE_RE.exec(String(value || '').trim());
+    if (!match) return false;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const dt = new Date(year, month - 1, day);
+    return dt.getFullYear() === year && dt.getMonth() === month - 1 && dt.getDate() === day;
+};
+
+const isValidImportTime = (value) => {
+    const match = IMPORT_TIME_RE.exec(String(value || '').trim());
+    if (!match) return false;
+    const hour = Number(match[1]);
+    const minute = Number(match[2]);
+    return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
 };
 
 const hasConfiguredLinkedClass = (value = {}) => Boolean(
@@ -121,6 +200,7 @@ const createExamFormData = (overrides = {}) => ({
     exam_time: '',
     duration_minutes: '',
     location: '',
+    google_map_url: '',
     notes: '',
     organizer_uuid: '',
     program_uuid: '',
@@ -209,6 +289,12 @@ const detectExcelPreviewFormat = (exam) => {
     return 'default-exam-list';
 };
 
+const buildExamStudentSheetTitle = (examName) => {
+    const normalized = String(examName || '').trim();
+    if (!normalized) return 'DANH SÁCH THÍ SINH';
+    return `DANH SÁCH THÍ SINH - ${normalized}`;
+};
+
 const buildExcelPreviewData = ({ exam, students }) => {
     const sortedStudents = [...(students || [])].sort(compareStudentsForExcelPreview);
     const previewFormat = detectExcelPreviewFormat(exam);
@@ -256,11 +342,12 @@ const buildExcelPreviewData = ({ exam, students }) => {
 
     return {
         kind: 'exam-list',
-        formatLabel: previewFormat === 'ptit' ? 'PTIT / Tin học' : 'Danh sách dự thi mặc định',
+        formatLabel: previewFormat === 'ptit' ? 'PTIT / Tin học' : 'Danh sách thí sinh mặc định',
+        sheetTitle: buildExamStudentSheetTitle(exam?.exam_name),
         titleLines: [
             'CHỨNG CHỈ ỨNG DỤNG CÔNG NGHỆ THÔNG TIN CƠ BẢN & NÂNG CAO',
             'THEO THÔNG TƯ 03/2014/TT-BTTTT',
-            previewFormat === 'ptit' && exam?.exam_name ? `DANH SÁCH DỰ THI - ${exam.exam_name}` : 'DANH SÁCH DỰ THI',
+            buildExamStudentSheetTitle(exam?.exam_name),
         ],
         infoLines: [
             `Thời gian: ${examDateLabel}`,
@@ -409,6 +496,57 @@ const MobileExcelPreviewExamList = ({ preview }) => (
     </div>
 );
 
+const MobileExcelPreviewFullInfo = ({ preview }) => {
+    const centerIndexes = new Set(Array.isArray(preview?.centerColumnIndexes) ? preview.centerColumnIndexes : []);
+    const totalColumns = Array.isArray(preview?.headers) ? preview.headers.length : 0;
+
+    return (
+        <div className="min-w-[1120px] overflow-hidden rounded-[24px] border border-slate-300 bg-white shadow-sm">
+            <table className="min-w-full border-collapse text-[11px] text-slate-700">
+                <tbody>
+                    <tr>
+                        <th colSpan={Math.max(totalColumns, 1)} className="border border-slate-300 bg-emerald-50 px-3 py-3 text-center text-sm font-black uppercase tracking-[0.08em] text-slate-900">
+                            {preview?.sheetTitle || 'DANH SÁCH THÍ SINH'}
+                        </th>
+                    </tr>
+                    {(preview?.infoLines || []).map((line, index) => (
+                        <tr key={`mobile-full-info-line-${index}`}>
+                            <td colSpan={Math.max(totalColumns, 1)} className="border border-slate-200 px-2 py-2 text-slate-600">
+                                {line}
+                            </td>
+                        </tr>
+                    ))}
+                    <tr className="bg-blue-600">
+                        {(preview?.headers || []).map((header) => (
+                            <th key={header} className="border border-slate-300 px-2 py-2 text-center font-bold text-white">
+                                {header}
+                            </th>
+                        ))}
+                    </tr>
+                    {(preview?.rows || []).length ? preview.rows.map((row, rowIndex) => (
+                        <tr key={`mobile-full-info-row-${rowIndex}`} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                            {row.map((value, columnIndex) => (
+                                <td
+                                    key={`mobile-full-info-cell-${rowIndex}-${columnIndex}`}
+                                    className={`border border-slate-200 px-2 py-2 align-top ${centerIndexes.has(columnIndex) ? 'text-center' : 'text-left'}`}
+                                >
+                                    {renderPreviewCell(value)}
+                                </td>
+                            ))}
+                        </tr>
+                    )) : (
+                        <tr>
+                            <td colSpan={Math.max(totalColumns, 1)} className="border border-slate-200 px-4 py-8 text-center text-slate-500">
+                                Không có dữ liệu để preview.
+                            </td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
 const getExamTitle = (exam) => exam?.exam_name || exam?.title || exam?.ten_lich_thi || exam?.ten || 'Chưa có tên kỳ thi';
 
 const getExamLocation = (exam) => exam?.location || exam?.room || exam?.dia_diem || exam?.phong_thi || 'Chưa xếp địa điểm';
@@ -466,14 +604,14 @@ const SummaryStat = ({ label, value, icon: Icon, tone = 'slate' }) => {
     };
 
     return (
-        <div className={`rounded-[20px] border px-3 py-2.5 ${styles[tone] || styles.slate}`}>
+        <div className={`rounded-xl border px-2.5 py-2 ${styles[tone] || styles.slate}`}>
             <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/85 shadow-sm">
-                    <Icon size={16} />
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/85 shadow-sm">
+                    <Icon size={15} />
                 </div>
                 <div className="min-w-0">
-                    <div className="text-[10px] font-black uppercase tracking-[0.16em] opacity-75">{label}</div>
-                    <div className="mt-0.5 text-lg font-black leading-none tracking-tight">{value}</div>
+                    <div className="text-[9px] font-black uppercase tracking-[0.1em] opacity-75">{label}</div>
+                    <div className="mt-0.5 text-base font-black leading-none tracking-tight">{value}</div>
                 </div>
             </div>
         </div>
@@ -484,7 +622,7 @@ const FilterChip = ({ active, label, count, onClick }) => (
     <button
         type="button"
         onClick={onClick}
-        className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-black transition-all ${
+        className={`shrink-0 rounded-full border px-2.5 py-1.5 text-[11px] font-black transition-all ${
             active
                 ? 'border-slate-900 bg-slate-900 text-white shadow-md shadow-slate-200'
                 : 'border-slate-200 bg-white text-slate-600'
@@ -507,7 +645,7 @@ const SheetActionButton = ({ icon: Icon, label, tone = 'slate', onClick }) => {
         <button
             type="button"
             onClick={onClick}
-            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-black uppercase tracking-[0.12em] backdrop-blur-sm transition-transform active:scale-95 ${tones[tone] || tones.slate}`}
+            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-black uppercase tracking-[0.08em] backdrop-blur-sm transition-transform active:scale-95 ${tones[tone] || tones.slate}`}
         >
             <Icon size={14} />
             <span>{label}</span>
@@ -515,7 +653,17 @@ const SheetActionButton = ({ icon: Icon, label, tone = 'slate', onClick }) => {
     );
 };
 
-const StudentRow = ({ student, pending, conflict, processing, onOpen, onApprove, onReject, onRemove, onHistory }) => (
+const StudentRow = ({ student, pending, conflict, processing, paymentProcessing, canManagePaymentStatus, onOpen, onApprove, onReject, onRemove, onHistory, onChangePaymentStatus }) => {
+    const avatarUrl = getImageUrl(
+      student.image_3x4 ||
+      student.photo_3x4_image_id ||
+      student.image_cccd_front ||
+      student.cccd_front_image_id
+    );
+    const paymentStatusMeta = getExamPaymentStatusMeta(
+        pending ? 'unknown' : normalizeApprovedExamPaymentStatus(student.payment_status)
+    );
+    return (
     <div className={`rounded-[24px] border bg-white p-3 shadow-sm ${pending ? 'border-amber-200/80' : 'border-slate-200/80'}`}>
         <div className="flex items-start gap-2.5">
             <button
@@ -527,9 +675,9 @@ const StudentRow = ({ student, pending, conflict, processing, onOpen, onApprove,
                         : 'border-emerald-200 bg-gradient-to-br from-emerald-500 to-teal-500 text-white'
                 }`}
             >
-                {student.image_3x4 ? (
+                {avatarUrl ? (
                     <img
-                        src={getImageUrl(student.image_3x4)}
+                        src={avatarUrl}
                         alt={student.ho_ten_full}
                         className="h-full w-full object-cover"
                         onError={(event) => {
@@ -540,7 +688,7 @@ const StudentRow = ({ student, pending, conflict, processing, onOpen, onApprove,
                     />
                 ) : null}
                 <span
-                    style={{ display: student.image_3x4 ? 'none' : 'flex' }}
+                    style={{ display: avatarUrl ? 'none' : 'flex' }}
                     className="h-full w-full items-center justify-center"
                 >
                     {student.ho_ten_full?.charAt(0)?.toUpperCase() || 'U'}
@@ -567,6 +715,42 @@ const StudentRow = ({ student, pending, conflict, processing, onOpen, onApprove,
                     }`}>
                         {pending ? 'Chờ duyệt' : 'Đã duyệt'}
                     </span>
+                    {canManagePaymentStatus ? (
+                        pending ? (
+                            <span
+                                title={paymentStatusMeta.title}
+                                className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${paymentStatusMeta.className}`}
+                            >
+                                {paymentStatusMeta.label}
+                            </span>
+                        ) : (
+                            <div
+                                className={`inline-flex items-center rounded-full border bg-white p-1 ${paymentProcessing ? 'opacity-60' : ''}`}
+                                onClick={(event) => event.stopPropagation()}
+                                onMouseDown={(event) => event.stopPropagation()}
+                            >
+                                {APPROVED_EXAM_PAYMENT_STATUS_OPTIONS.map((option) => {
+                                    const optionMeta = getExamPaymentStatusMeta(option.value);
+                                    const active = option.value === paymentStatusMeta.status;
+                                    return (
+                                        <button
+                                            key={option.value}
+                                            type="button"
+                                            disabled={paymentProcessing}
+                                            title={option.label}
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                onChangePaymentStatus(option.value);
+                                            }}
+                                            className={`rounded-full px-2 py-1 text-[10px] font-semibold transition active:scale-95 ${active ? optionMeta.className : 'border-transparent bg-white text-slate-500'}`}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )
+                    ) : null}
                     {conflict ? (
                         <button
                             type="button"
@@ -630,7 +814,8 @@ const StudentRow = ({ student, pending, conflict, processing, onOpen, onApprove,
             </div>
         </div>
     </div>
-);
+    );
+};
 
 const OverlaySheet = ({ open, onClose, title, description, tone = 'slate', children, footer }) => {
     if (!open) return null;
@@ -643,11 +828,12 @@ const OverlaySheet = ({ open, onClose, title, description, tone = 'slate', child
     };
 
     return (
-        <div className="fixed inset-0 z-[70] flex items-end bg-slate-950/55" onClick={onClose}>
-            <div
-                className="flex max-h-[82vh] w-full flex-col overflow-hidden rounded-t-[32px] bg-slate-50 shadow-2xl"
-                onClick={(event) => event.stopPropagation()}
-            >
+        <OverlayPortal>
+            <div className="fixed inset-0 z-[100000] flex items-end bg-slate-950/55" onClick={onClose}>
+                <div
+                    className="flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden bg-slate-50 shadow-2xl"
+                    onClick={(event) => event.stopPropagation()}
+                >
                 <div className={`bg-gradient-to-r px-5 pb-4 pt-5 ${toneMap[tone] || toneMap.slate}`}>
                     <div className="flex items-start justify-between gap-3">
                         <div>
@@ -671,8 +857,9 @@ const OverlaySheet = ({ open, onClose, title, description, tone = 'slate', child
                         {footer}
                     </div>
                 ) : null}
+                </div>
             </div>
-        </div>
+        </OverlayPortal>
     );
 };
 
@@ -756,6 +943,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
             exam_time: formatTimeUtil(exam.exam_date),
             duration_minutes: exam.duration_minutes != null ? String(exam.duration_minutes) : '',
             location: getExamLocation(exam) === 'Chưa xếp địa điểm' ? '' : getExamLocation(exam),
+            google_map_url: exam.google_map_url || '',
             notes: exam.notes || '',
             organizer_uuid: exam.organizer_uuid || '',
             program_uuid: exam.program_uuid || '',
@@ -985,6 +1173,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                 exam_date: examDatePayload,
                 duration_minutes: durationMinutes,
                 location: formData.location,
+                google_map_url: formData.google_map_url?.trim() || null,
                 notes: formData.notes,
                 organizer_uuid: formData.organizer_uuid || null,
                 program_uuid: formData.program_uuid || null,
@@ -1036,31 +1225,32 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-end bg-slate-950/55" onClick={onClose}>
-            <div
-                className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[32px] bg-slate-50 shadow-2xl"
-                onClick={(event) => event.stopPropagation()}
-            >
-                <div className="bg-[linear-gradient(135deg,#0f172a_0%,#1d4ed8_55%,#3b82f6_100%)] px-5 pb-5 pt-6 text-white">
-                    <div className="mb-4 flex items-start justify-between gap-3">
+        <OverlayPortal>
+            <div className="fixed inset-0 z-[100000] flex items-end bg-slate-950/55" onClick={onClose}>
+                <div
+                    className="flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden bg-slate-50 shadow-2xl"
+                    onClick={(event) => event.stopPropagation()}
+                >
+                <div className="bg-[linear-gradient(135deg,#0f172a_0%,#1d4ed8_55%,#3b82f6_100%)] px-4 pb-3 pt-4 text-white">
+                    <div className="mb-3 flex items-start justify-between gap-3">
                         <div>
-                            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-blue-100">
+                            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-blue-100">
                                 {exam ? 'Chỉnh sửa kỳ thi' : 'Tạo kỳ thi mới'}
                             </p>
-                            <h3 className="mt-2 text-2xl font-black tracking-tight">
+                            <h3 className="mt-1.5 text-xl font-black tracking-tight">
                                 {exam ? 'Cập nhật lịch thi' : 'Tạo kỳ thi mới'}
                             </h3>
                         </div>
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm"
+                            className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm"
                         >
-                            <X size={20} />
+                            <X size={18} />
                         </button>
                     </div>
 
-                        <div className="rounded-[28px] border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
+                        <div className="rounded-xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm">
                         <h4 className="text-lg font-black leading-tight">
                             {formData.exam_name || '...'}
                         </h4>
@@ -1084,6 +1274,9 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                             {formData.location ? (
                                 <span className="rounded-full bg-white/15 px-3 py-1.5 font-semibold">{formData.location}</span>
                             ) : null}
+                            {formData.google_map_url ? (
+                                <span className="rounded-full bg-cyan-100 px-3 py-1.5 font-semibold text-cyan-800">Google Maps</span>
+                            ) : null}
                             {linkedClassEnabled && formData.class_seed_name ? (
                                 <span className="rounded-full bg-white/15 px-3 py-1.5 font-semibold">Linked lớp ôn tập</span>
                             ) : null}
@@ -1093,9 +1286,9 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
 
                 <div className="flex-1 overflow-y-auto px-4 pb-6 pt-4">
                     <form id="mobile-exam-form" onSubmit={handleSubmit} className="space-y-4">
-                        <section className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
+                        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                             <div className="mb-4">
-                                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Khung chính</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Khung chính</p>
                                 <h4 className="mt-1 text-lg font-black text-slate-900">Thông tin kỳ thi</h4>
                             </div>
 
@@ -1239,6 +1432,18 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                 </div>
 
                                 <div>
+                                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">Link Google Maps (tuỳ chọn)</label>
+                                    <input
+                                        type="url"
+                                        value={formData.google_map_url}
+                                        onChange={(event) => updateField('google_map_url', event.target.value)}
+                                        placeholder="https://maps.app.goo.gl/... hoặc google.com/maps..."
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                    />
+                                    <p className="mt-1.5 text-xs text-slate-500">Học viên sẽ có nút mở bản đồ trực tiếp.</p>
+                                </div>
+
+                                <div>
                                     <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ghi chú</label>
                                     <textarea
                                         value={formData.notes}
@@ -1252,19 +1457,19 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                         </section>
 
                         {usesExternalExamLink ? (
-                            <section className="rounded-[28px] border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 shadow-sm">
+                            <section className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 shadow-sm">
                                 VEPT/Versant dùng link riêng, không tạo lớp đào tạo nội bộ. VSTEP và Tin học mới cần linked class để ôn tập.
                             </section>
                         ) : null}
 
                         {/* ===== ZOOM MEETING SECTION ===== */}
-                        <section className="rounded-[28px] border border-sky-200 bg-gradient-to-br from-sky-50 to-white p-4 shadow-sm">
+                        <section className="rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white p-4 shadow-sm">
                             <div className="mb-4 flex items-start justify-between gap-3">
                                 <div>
-                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-sky-500">Trực tuyến</p>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-sky-500">Trực tuyến</p>
                                     <h4 className="mt-1 text-lg font-black text-slate-900">Zoom Meeting</h4>
                                 </div>
-                                <label className="flex items-center gap-2 rounded-full border border-sky-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-sky-700 cursor-pointer">
+                                <label className="flex items-center gap-2 rounded-full border border-sky-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.1em] text-sky-700 cursor-pointer">
                                     <input
                                         type="checkbox"
                                         checked={Boolean(formData.enable_zoom_meeting)}
@@ -1361,14 +1566,14 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                         </section>
                         {/* ===== END ZOOM MEETING SECTION ===== */}
 
-                        <section className="rounded-[28px] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
+                        <section className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
                             <div className="mb-4 flex items-start justify-between gap-3">
                                 <div>
-                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-500">Tự động hóa</p>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-500">Tự động hóa</p>
                                     <h4 className="mt-1 text-lg font-black text-slate-900">Lớp ôn tập linked</h4>
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
-                                    <label className="flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
+                                    <label className="flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.1em] text-emerald-700">
                                         <input
                                             type="checkbox"
                                             checked={linkedClassEnabled}
@@ -1379,7 +1584,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                     <button
                                         type="button"
                                         onClick={() => setShowAdvanced((current) => !current)}
-                                        className="shrink-0 rounded-full border border-emerald-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700"
+                                        className="shrink-0 rounded-full border border-emerald-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.1em] text-emerald-700"
                                     >
                                         {showAdvanced ? 'Thu gọn' : 'Mở rộng'}
                                     </button>
@@ -1531,8 +1736,9 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                         {loading ? 'Đang lưu lịch thi...' : programPlatformLoading ? 'Đang tải danh mục...' : exam ? 'Lưu thay đổi' : 'Tạo lịch thi'}
                     </button>
                 </div>
+                </div>
             </div>
-        </div>
+        </OverlayPortal>
     );
 };
 
@@ -1548,47 +1754,47 @@ const ExamCard = ({ exam, onOpen }) => {
         <button
             type="button"
             onClick={() => onOpen(exam)}
-            className={`relative w-full overflow-hidden rounded-[20px] border bg-white p-3 text-left shadow-sm transition-transform active:scale-[0.98] ${status.cardClass}`}
+            className={`relative w-full overflow-hidden rounded-[24px] border bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-3.5 text-left shadow-[0_20px_46px_-30px_rgba(15,23,42,0.34)] transition-transform active:scale-[0.98] ${status.cardClass}`}
         >
-            <div className="flex items-start gap-3">
-                <div className="flex w-[52px] shrink-0 flex-col items-center rounded-[14px] border border-blue-200/80 bg-[linear-gradient(135deg,#1d4ed8_0%,#2563eb_55%,#3b82f6_100%)] py-2 text-white">
+            <div className="flex items-start gap-3.5">
+                <div className="flex w-[58px] shrink-0 flex-col items-center rounded-[18px] border border-blue-200/80 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_26%),linear-gradient(135deg,#1d4ed8_0%,#2563eb_55%,#3b82f6_100%)] py-2.5 text-white shadow-[0_18px_34px_-20px_rgba(37,99,235,0.6)]">
                     <p className="text-[8px] font-bold uppercase tracking-wider text-white/60">
                         {dateObj.toLocaleDateString('vi-VN', { weekday: 'short' })}
                     </p>
-                    <p className="text-[22px] font-black leading-none">{String(dateObj.getDate()).padStart(2, '0')}</p>
+                    <p className="text-[24px] font-black leading-none tracking-[-0.04em]">{String(dateObj.getDate()).padStart(2, '0')}</p>
                     <p className="text-[9px] font-semibold text-white/60">T{dateObj.getMonth() + 1}/{dateObj.getFullYear()}</p>
                 </div>
 
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1">
-                        <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wide ${status.badgeClass}`}>
+                        <span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-wide shadow-sm ${status.badgeClass}`}>
                             {status.label}
                         </span>
                         {pendingCount > 0 && (
-                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-semibold text-amber-700">
+                            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[9px] font-semibold text-amber-700 shadow-sm">
                                 {pendingCount} chờ duyệt
                             </span>
                         )}
                     </div>
 
-                    <h3 className="mt-1.5 line-clamp-1 text-[14px] font-semibold leading-snug text-[#54657f]">
+                    <h3 className="mt-2 line-clamp-2 text-[16px] font-black leading-snug tracking-[-0.03em] text-slate-900">
                         {title}
                     </h3>
 
-                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#64748b]">
-                        <span className="flex items-center gap-1">
-                            <Clock size={12} className="text-slate-400" />
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#64748b]">
+                        <span className="flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1 shadow-sm">
+                            <Clock size={12} className="text-blue-500" />
                             {formatDateVN(exam.exam_date)} {formatTimeUtil(exam.exam_date)}
                         </span>
-                        <span className="flex items-center gap-1">
-                            <MapPin size={12} className="text-slate-400" />
+                        <span className="flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1 shadow-sm">
+                            <MapPin size={12} className="text-blue-500" />
                             <span className="max-w-[120px] truncate">{location}</span>
                         </span>
                     </div>
 
-                    <div className="mt-2 flex items-center justify-between rounded-[12px] bg-slate-50 px-2.5 py-1.5">
+                    <div className="mt-3 flex items-center justify-between rounded-[18px] border border-slate-100 bg-white px-3 py-2 shadow-sm">
                         <span className="flex items-center gap-1.5 text-[11px] font-semibold text-[#5d6d84]">
-                            <Users size={13} className="text-slate-400" />
+                            <Users size={13} className="text-blue-500" />
                             {studentCount} thí sinh
                         </span>
                         <span className="flex items-center gap-0.5 text-[10px] font-bold text-slate-400">
@@ -1602,6 +1808,9 @@ const ExamCard = ({ exam, onOpen }) => {
 };
 
 const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }) => {
+    const toast = useToast();
+    const currentAdmin = getStoredAdmin();
+    const canManagePaymentStatus = canAccessExamFeeStatus(currentAdmin);
     const [activeTab, setActiveTab] = useState('approved');
     const [approvedList, setApprovedList] = useState([]);
     const [pendingList, setPendingList] = useState([]);
@@ -1609,7 +1818,9 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [showStudentDetail, setShowStudentDetail] = useState(false);
     const [studentSearch, setStudentSearch] = useState('');
+    const [studentPaymentFilter, setStudentPaymentFilter] = useState('all');
     const [processingStudentId, setProcessingStudentId] = useState(null);
+    const [paymentProcessingStudentId, setPaymentProcessingStudentId] = useState(null);
     const [conflictStudentIds, setConflictStudentIds] = useState(new Set());
     const [conflicts, setConflicts] = useState([]);
     const [conflictsLoading, setConflictsLoading] = useState(false);
@@ -1626,6 +1837,8 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
     const [historyRows, setHistoryRows] = useState([]);
     const [historyStudent, setHistoryStudent] = useState(null);
     const [showExcelPreviewSheet, setShowExcelPreviewSheet] = useState(false);
+    const [excelPreviewLoading, setExcelPreviewLoading] = useState(false);
+    const [excelPreviewData, setExcelPreviewData] = useState(null);
 
     // Điểm danh học tập
     const [learningAttendance, setLearningAttendance] = useState(null);
@@ -1634,9 +1847,16 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
     const [createSessionForm, setCreateSessionForm] = useState({ session_date: '', start_time: '07:00', end_time: '11:00', note: '' });
     const [createSessionLoading, setCreateSessionLoading] = useState(false);
     const [attendanceSaving, setAttendanceSaving] = useState(null); // `${sessionId}_${studentId}`
+    const [showImportScheduleModal, setShowImportScheduleModal] = useState(false);
+    const [importScheduleStep, setImportScheduleStep] = useState('upload');
+    const [importScheduleFile, setImportScheduleFile] = useState<File | null>(null);
+    const [importScheduleRows, setImportScheduleRows] = useState<any[]>([]);
+    const [importScheduleLoading, setImportScheduleLoading] = useState(false);
+    const [importScheduleSubmitting, setImportScheduleSubmitting] = useState(false);
 
     useEffect(() => {
         if (!exam) return;
+        setStudentPaymentFilter('all');
         loadStudentLists();
     }, [exam]);
 
@@ -1671,6 +1891,9 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
 
     const loadStudentLists = async () => {
         setLoading(true);
+        setExcelPreviewData(null);
+        setExcelPreviewLoading(false);
+        setShowExcelPreviewSheet(false);
         try {
             const [approvedRes, pendingRes, conflictRows] = await Promise.all([
                 api.getExamStudents(exam.id, { withZoomCheckin: true }),
@@ -1776,6 +1999,48 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
         }
     };
 
+    const syncStudentPaymentStatus = (studentId, paymentStatus) => {
+        const normalizedStatus = normalizeExamPaymentStatus(paymentStatus);
+        const applyStatus = (students) => students.map((student) => (
+            Number(student.student_id || student.id) === Number(studentId)
+                ? { ...student, payment_status: normalizedStatus }
+                : student
+        ));
+
+        setApprovedList((prev) => applyStatus(prev));
+        setPendingList((prev) => applyStatus(prev));
+        setSelectedStudent((prev) => (
+            prev && Number(prev.student_id || prev.id) === Number(studentId)
+                ? { ...prev, payment_status: normalizedStatus }
+                : prev
+        ));
+    };
+
+    const handleStudentPaymentStatusChange = async (student, nextStatus) => {
+        if (!canManagePaymentStatus) return;
+
+        const studentId = Number(student.student_id || student.id);
+        const normalizedNextStatus = normalizeExamPaymentStatus(nextStatus);
+        if (normalizeExamPaymentStatus(student.payment_status) === normalizedNextStatus) return;
+        setPaymentProcessingStudentId(studentId);
+
+        try {
+            const response = await (api as any).updateExamStudentPaymentStatus(exam.id, studentId, normalizedNextStatus);
+            if (!response?.success) {
+                onError?.(response?.message || 'Không thể cập nhật học phí');
+                return;
+            }
+
+            syncStudentPaymentStatus(studentId, response?.data?.payment_status || normalizedNextStatus);
+            toast.success(`Đã cập nhật học phí của ${student.ho_ten_full} thành ${getExamPaymentStatusMeta(normalizedNextStatus).label.toLowerCase()}`);
+        } catch (error) {
+            console.error('Failed to update payment status', error);
+            onError?.(getErrorMessage(error, 'Không thể cập nhật học phí'));
+        } finally {
+            setPaymentProcessingStudentId(null);
+        }
+    };
+
     const handleExportExcel = async () => {
         try {
             await api.downloadExamListExcel(exam.id);
@@ -1785,13 +2050,35 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
         }
     };
 
-    const handleOpenExcelPreview = () => {
+    const loadExcelPreviewFromBackend = async () => {
+        setExcelPreviewLoading(true);
+        try {
+            const response = await api.getExamListExcelPreview(exam.id);
+            if (!response?.success) {
+                onError?.(response?.message || 'Không thể tải preview Excel');
+                return false;
+            }
+            setExcelPreviewData(response.data || null);
+            return true;
+        } catch (error) {
+            console.error('Failed to load preview', error);
+            onError?.(getErrorMessage(error, 'Không thể tải preview Excel'));
+            return false;
+        } finally {
+            setExcelPreviewLoading(false);
+        }
+    };
+
+    const handleOpenExcelPreview = async () => {
         if (!approvedList.length) {
             onError?.('Không có dữ liệu để preview Excel');
             return;
         }
 
-        setShowExcelPreviewSheet(true);
+        const loaded = await loadExcelPreviewFromBackend();
+        if (loaded) {
+            setShowExcelPreviewSheet(true);
+        }
     };
 
     const handleOpenStudentDetail = async (student) => {
@@ -1976,9 +2263,9 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
         }
     };
 
-    const handleToggleAttendance = async (sessionId, studentId, currentStatus) => {
+    const handleToggleAttendance = async (sessionId, studentId, currentStatus, isCounted = true) => {
         const key = `${sessionId}_${studentId}`;
-        if (attendanceSaving === key) return;
+        if (attendanceSaving === key || !isCounted) return;
         setAttendanceSaving(key);
         const nextStatus = currentStatus === 'present' ? 'absent' : 'present';
         try {
@@ -1991,16 +2278,144 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
         }
     };
 
+    const resetImportScheduleModal = () => {
+        setImportScheduleStep('upload');
+        setImportScheduleFile(null);
+        setImportScheduleRows([]);
+        setImportScheduleLoading(false);
+        setImportScheduleSubmitting(false);
+    };
+
+    const openImportScheduleModal = () => {
+        resetImportScheduleModal();
+        setShowImportScheduleModal(true);
+    };
+
+    const closeImportScheduleModal = () => {
+        setShowImportScheduleModal(false);
+        resetImportScheduleModal();
+    };
+
+    const handlePreviewImportSchedule = async () => {
+        if (!exam?.id) return;
+        if (!importScheduleFile) {
+            onError?.('Vui lòng chọn ảnh lịch học');
+            return;
+        }
+
+        setImportScheduleLoading(true);
+        try {
+            const res = await (api as any).previewExamLearningSessionsImport(exam.id, importScheduleFile);
+            if (!res?.success) {
+                onError?.(res?.message || res?.error || 'Không thể OCR ảnh');
+                return;
+            }
+
+            const rows = Array.isArray(res?.data?.rows) ? res.data.rows : [];
+            setImportScheduleRows(rows);
+            setImportScheduleStep('preview');
+
+            if (!rows.length) {
+                onError?.('Chưa nhận diện được dòng lịch học nào');
+            }
+        } catch (err: any) {
+            onError?.(err?.message || 'Lỗi OCR preview');
+        } finally {
+            setImportScheduleLoading(false);
+        }
+    };
+
+    const handleImportRowFieldChange = (index, field, value) => {
+        setImportScheduleRows((prev) => prev.map((row, rowIndex) => {
+            if (rowIndex !== index) return row;
+
+            const next = { ...row, [field]: value };
+            const dateOk = isValidImportDate(next.session_date);
+            const startOk = isValidImportTime(next.start_time);
+            const endOk = isValidImportTime(next.end_time);
+            const timeOrderOk = startOk && endOk ? String(next.start_time) < String(next.end_time) : false;
+            const editedFromDuplicate =
+                row.status === 'duplicate' &&
+                (field === 'session_date' || field === 'start_time' || field === 'end_time');
+            const nextStatus = dateOk && startOk && endOk && timeOrderOk
+                ? (editedFromDuplicate ? 'ready' : (row.status === 'duplicate' ? 'duplicate' : 'ready'))
+                : 'needs_review';
+
+            return {
+                ...next,
+                status: nextStatus,
+                warnings: nextStatus === 'needs_review'
+                    ? ['Cần kiểm tra lại ngày/giờ']
+                    : [],
+            };
+        }));
+    };
+
+    const handleCommitImportSchedule = async () => {
+        if (!exam?.id) return;
+        if (!importScheduleRows.length) {
+            onError?.('Không có dòng để import');
+            return;
+        }
+        if (importScheduleRows.some((row) => row.status === 'needs_review')) {
+            onError?.('Vẫn còn dòng needs_review');
+            return;
+        }
+
+        setImportScheduleSubmitting(true);
+        try {
+            const payloadRows = importScheduleRows.map((row) => ({
+                row_id: row.row_id,
+                session_date: row.session_date,
+                start_time: row.start_time,
+                end_time: row.end_time,
+                note: row.note || null,
+                status: row.status,
+            }));
+            const res = await (api as any).commitExamLearningSessionsImport(exam.id, payloadRows);
+            if (!res?.success) {
+                onError?.(res?.message || res?.error || 'Không thể import');
+                return;
+            }
+
+            await loadLearningAttendance();
+            await onRefresh?.();
+            closeImportScheduleModal();
+        } catch (err: any) {
+            onError?.(err?.message || 'Lỗi xác nhận import');
+        } finally {
+            setImportScheduleSubmitting(false);
+        }
+    };
+
     const filteredStudents = useMemo(() => {
         const keyword = studentSearch.trim().toLowerCase();
-        if (!keyword) return displayList;
-
         return displayList.filter((student) => {
             const name = (student.ho_ten_full || '').toLowerCase();
             const cccd = (student.cccd || '').toLowerCase();
-            return name.includes(keyword) || cccd.includes(keyword);
+            const matchesSearch = !keyword || name.includes(keyword) || cccd.includes(keyword);
+            if (!matchesSearch) return false;
+
+            if (activeTab !== 'approved' || !canManagePaymentStatus) {
+                return true;
+            }
+
+            return matchesApprovedStudentPaymentFilter(student, studentPaymentFilter);
         });
-    }, [displayList, studentSearch]);
+    }, [activeTab, canManagePaymentStatus, displayList, studentPaymentFilter, studentSearch]);
+
+    const studentSummary = useMemo(() => {
+        const paid = approvedList.reduce((total, student) => (
+            normalizeApprovedExamPaymentStatus(student?.payment_status) === 'paid' ? total + 1 : total
+        ), 0);
+
+        return {
+            total: approvedList.length + pendingList.length,
+            approved: approvedList.length,
+            pending: pendingList.length,
+            paid,
+        };
+    }, [approvedList, pendingList]);
 
     const currentConflictCount = useMemo(() => {
         const ids = new Set(
@@ -2015,9 +2430,9 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
         return total;
     }, [approvedList, pendingList, conflictStudentIds]);
 
-    const excelPreviewData = useMemo(
-        () => buildExcelPreviewData({ exam, students: approvedList }),
-        [exam, approvedList]
+    const hasImportNeedsReviewRows = useMemo(
+        () => importScheduleRows.some((row) => row.status === 'needs_review'),
+        [importScheduleRows]
     );
 
     const examDate = getExamDate(exam);
@@ -2025,53 +2440,65 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
 
     return (
         <>
-            <div className="fixed inset-0 z-50 flex items-end bg-slate-950/55" onClick={onClose}>
-                <div
-                    className="flex max-h-[95vh] w-full flex-col overflow-hidden rounded-t-[28px] bg-slate-50 shadow-2xl"
-                    onClick={(event) => event.stopPropagation()}
-                >
-                    <div className="bg-[linear-gradient(135deg,#0f172a_0%,#1d4ed8_60%,#2563eb_100%)] px-4 pb-4 pt-4 text-white">
+            <OverlayPortal>
+                <div className="fixed inset-0 z-[100000] flex items-end bg-slate-950/55 sm:items-center sm:justify-center sm:p-4 lg:p-6" onClick={onClose}>
+                    <div
+                        className="flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden bg-slate-50 shadow-2xl sm:h-[min(94dvh,940px)] sm:max-h-[94dvh] sm:max-w-[1080px] sm:rounded-[32px]"
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                    <div className="bg-[linear-gradient(135deg,#0f172a_0%,#1d4ed8_60%,#2563eb_100%)] px-4 pb-2.5 pt-2.5 text-white sm:px-6 sm:pb-4 sm:pt-4">
                         <div className="flex items-start justify-between gap-3">
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100">Chi tiết lịch thi</p>
-                                <h2 className="mt-1.5 line-clamp-2 text-xl font-black leading-snug">{getExamTitle(exam)}</h2>
+                                <p className="text-[9px] font-black uppercase tracking-[0.1em] text-blue-100">Chi tiết lịch thi</p>
+                                <h2 className="mt-1 line-clamp-2 text-[14px] font-black leading-snug sm:text-[1.25rem]">{getExamTitle(exam)}</h2>
                             </div>
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="flex h-10 w-10 items-center justify-center rounded-[18px] bg-white/15"
+                                className="flex h-8 w-8 items-center justify-center rounded-2xl bg-white/15 sm:h-10 sm:w-10"
                             >
-                                <X size={18} />
+                                <X size={16} />
                             </button>
                         </div>
 
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                            <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${status.badgeClass}`}>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                            <span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.1em] ${status.badgeClass}`}>
                                 {status.label}
                             </span>
-                            <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold">
+                            <span className="rounded-full bg-white/15 px-2.5 py-1 text-[9px] font-semibold">
                                 {formatDateVN(exam.exam_date)} • {formatTimeUtil(exam.exam_date)}
                             </span>
-                            <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold">
+                            <span className="rounded-full bg-white/15 px-2.5 py-1 text-[9px] font-semibold">
                                 {formatDurationLabel(exam.duration_minutes)}
                             </span>
-                            <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold">
+                            <span className="rounded-full bg-white/15 px-2.5 py-1 text-[9px] font-semibold">
                                 {getExamLocation(exam)}
                             </span>
                         </div>
 
-                        <div className="mt-3 grid grid-cols-3 gap-2">
-                            <div className="rounded-[18px] border border-white/15 bg-white/10 p-2.5 backdrop-blur-sm">
-                                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-100">Tổng số</div>
-                                <div className="mt-1.5 text-xl font-black">{approvedList.length + pendingList.length}</div>
+                        <div className={`mt-2.5 grid gap-2 ${canManagePaymentStatus ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-2 lg:grid-cols-4'}`}>
+                            <div className="rounded-2xl border border-white/15 bg-white/10 p-2 backdrop-blur-sm sm:p-3">
+                                <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-blue-100">Tổng số</div>
+                                <div className="mt-1 text-[15px] font-black sm:text-lg">{studentSummary.total}</div>
                             </div>
-                            <div className="rounded-[18px] border border-white/15 bg-white/10 p-2.5 backdrop-blur-sm">
-                                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-100">Đã duyệt</div>
-                                <div className="mt-1.5 text-xl font-black">{approvedList.length}</div>
+                            <div className="rounded-2xl border border-white/15 bg-white/10 p-2 backdrop-blur-sm sm:p-3">
+                                <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-blue-100">Đã duyệt</div>
+                                <div className="mt-1 text-[15px] font-black sm:text-lg">{studentSummary.approved}</div>
                             </div>
-                            <div className="rounded-[18px] border border-white/15 bg-white/10 p-2.5 backdrop-blur-sm">
-                                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-100">Chờ duyệt</div>
-                                <div className="mt-1.5 text-xl font-black">{pendingList.length}</div>
+                            <div className="rounded-2xl border border-white/15 bg-white/10 p-2 backdrop-blur-sm sm:p-3">
+                                <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-blue-100">Chờ duyệt</div>
+                                <div className="mt-1 text-[15px] font-black sm:text-lg">{studentSummary.pending}</div>
+                            </div>
+                            <div className="rounded-2xl border border-white/15 bg-white/10 p-2 backdrop-blur-sm sm:p-3">
+                                <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-blue-100">{canManagePaymentStatus ? 'Học phí' : 'Địa điểm'}</div>
+                                {canManagePaymentStatus ? (
+                                    <>
+                                        <div className="mt-1 text-[15px] font-black sm:text-lg">{studentSummary.paid}/{studentSummary.approved}</div>
+                                        <div className="mt-1 text-[10px] text-blue-100/80">đã nộp / đã duyệt</div>
+                                    </>
+                                ) : (
+                                    <div className="mt-1 line-clamp-2 text-[11px] font-semibold sm:text-sm">{getExamLocation(exam)}</div>
+                                )}
                             </div>
                         </div>
 
@@ -2081,7 +2508,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                             </div>
                         ) : null}
 
-                        <div className="mt-3 flex flex-wrap gap-2">
+                        <div className="mt-2.5 flex flex-wrap gap-1.5">
                             <SheetActionButton icon={UserPlus} label="Thêm HV" onClick={openAddStudentsSheet} />
                             <SheetActionButton icon={Info} label="Kiểm tra trùng" onClick={handleOpenConflicts} />
                             <SheetActionButton icon={Pencil} label="Sửa" onClick={onEdit} />
@@ -2089,7 +2516,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                         </div>
                     </div>
 
-                    <div className="border-b border-slate-200 bg-white px-4 py-3">
+                    <div className="border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
                         <div className="flex gap-2 overflow-x-auto pb-1">
                             <FilterChip
                                 active={activeTab === 'approved'}
@@ -2123,7 +2550,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                 value={studentSearch}
                                 onChange={(event) => setStudentSearch(event.target.value)}
                                 placeholder="Tìm thí sinh theo tên hoặc CCCD"
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-10 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-11 pr-10 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                             />
                             {studentSearch ? (
                                 <button
@@ -2136,12 +2563,33 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                             ) : null}
                         </div>
 
+                        {activeTab === 'approved' && canManagePaymentStatus ? (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                {EXAM_PAYMENT_FILTER_OPTIONS.map((option) => {
+                                    const active = studentPaymentFilter === option.value;
+                                    return (
+                                        <button
+                                            key={option.value}
+                                            type="button"
+                                            onClick={() => setStudentPaymentFilter(option.value)}
+                                            className={`rounded-full border px-3 py-1.5 text-[11px] font-bold transition ${active
+                                                ? 'border-blue-200 bg-blue-50 text-blue-700'
+                                                : 'border-slate-200 bg-white text-slate-600'
+                                            }`}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        ) : null}
+
                         <div className="mt-3 flex gap-2">
                             {activeTab === 'pending' && pendingList.length ? (
                                 <button
                                     type="button"
                                     onClick={handleApproveAll}
-                                    className="flex-1 rounded-2xl bg-amber-500 px-4 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-white shadow-lg shadow-amber-100 transition-transform active:scale-[0.985]"
+                                    className="flex-1 rounded-xl bg-amber-500 px-4 py-2 text-[11px] font-black uppercase tracking-[0.08em] text-white shadow-sm transition-transform active:scale-[0.985]"
                                 >
                                     Duyệt tất cả
                                 </button>
@@ -2150,16 +2598,17 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                 <button
                                     type="button"
                                     onClick={handleOpenExcelPreview}
-                                    className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-slate-700 shadow-sm transition-transform active:scale-[0.985]"
+                                    disabled={excelPreviewLoading}
+                                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.08em] text-slate-700 shadow-sm transition-transform active:scale-[0.985] disabled:opacity-60"
                                 >
                                     <Info size={15} />
-                                    <span>Preview Excel</span>
+                                    <span>{excelPreviewLoading ? 'Đang tải preview...' : 'Preview Excel'}</span>
                                 </button>
                             ) : null}
                             <button
                                 type="button"
                                 onClick={handleExportExcel}
-                                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-white shadow-lg shadow-slate-200 transition-transform active:scale-[0.985]"
+                                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-[11px] font-black uppercase tracking-[0.08em] text-white shadow-sm transition-transform active:scale-[0.985]"
                             >
                                 <Download size={15} />
                                 <span>Xuất Excel</span>
@@ -2198,13 +2647,22 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                             : 'Kỳ thi này chưa được gắn với lớp học trực tuyến.'}
                                     </p>
                                     {learningAttendance.online_class_id ? (
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowCreateSessionModal(true)}
-                                            className="flex items-center gap-1.5 rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white"
-                                        >
-                                            <Plus size={16} /> Tạo buổi học đầu tiên
-                                        </button>
+                                        <div className="flex flex-wrap items-center justify-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCreateSessionModal(true)}
+                                                className="flex items-center gap-1.5 rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white"
+                                            >
+                                                <Plus size={16} /> Tạo buổi học đầu tiên
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={openImportScheduleModal}
+                                                className="flex items-center gap-1.5 rounded-2xl border border-emerald-200 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-700"
+                                            >
+                                                <Upload size={16} /> Import ảnh
+                                            </button>
+                                        </div>
                                     ) : null}
                                 </div>
                             ) : (
@@ -2227,6 +2685,13 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                                 className="flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"
                                             >
                                                 <Plus size={13} /> Buổi học
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={openImportScheduleModal}
+                                                className="flex items-center gap-1 rounded-xl border border-emerald-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-emerald-700"
+                                            >
+                                                <Upload size={13} /> Import
                                             </button>
                                             <button
                                                 type="button"
@@ -2287,17 +2752,18 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                                         </td>
                                                         <td className="px-2 py-2.5 text-center">
                                                             <span className={`text-xs font-bold ${
-                                                                student.present_count + (student.late_count ?? 0) === learningAttendance.sessions.length
+                                                                student.present_count + (student.late_count ?? 0) === (student.expected_session_count ?? learningAttendance.sessions.length)
                                                                     ? 'text-emerald-600'
                                                                     : student.present_count + (student.late_count ?? 0) === 0
                                                                         ? 'text-red-500'
                                                                         : 'text-amber-600'
                                                             }`}>
-                                                                {student.present_count + (student.late_count ?? 0)}/{learningAttendance.sessions.length}
+                                                                {student.present_count + (student.late_count ?? 0)}/{student.expected_session_count ?? learningAttendance.sessions.length}
                                                             </span>
                                                         </td>
                                                         {learningAttendance.sessions.map((sess) => {
-                                                            const att = student.attendance?.find((a) => a.session_id === sess.id);
+                                                            const att = student.sessions?.find((a) => a.session_id === sess.id);
+                                                            const isCounted = att?.is_counted !== false;
                                                             const status = att?.status ?? null;
                                                             const key = `${sess.id}_${student.student_id}`;
                                                             const isSaving = attendanceSaving === key;
@@ -2305,15 +2771,17 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                                                 <td key={sess.id} className="px-2 py-2.5 text-center">
                                                                     <button
                                                                         type="button"
-                                                                        disabled={isSaving}
-                                                                        onClick={() => handleToggleAttendance(sess.id, student.student_id, status)}
+                                                                        disabled={isSaving || !isCounted}
+                                                                        onClick={() => handleToggleAttendance(sess.id, student.student_id, status, isCounted)}
                                                                         className={`h-8 w-8 rounded-xl text-xs font-bold transition-all active:scale-[0.9] ${
                                                                             isSaving ? 'animate-pulse bg-slate-100 text-slate-400'
+                                                                            : !isCounted ? 'bg-slate-100 text-slate-300'
                                                                             : status === 'present' ? 'bg-emerald-100 text-emerald-700'
                                                                             : status === 'late' ? 'bg-amber-100 text-amber-700'
                                                                             : status === 'absent' ? 'bg-red-100 text-red-600'
                                                                             : 'bg-slate-100 text-slate-400'
                                                                         }`}
+                                                                        title={isCounted ? undefined : 'Buổi này nằm trước ngày đăng ký hoặc ngoài cửa sổ tính điểm danh'}
                                                                     >
                                                                         {isSaving ? '…'
                                                                             : status === 'present' ? '✓'
@@ -2348,11 +2816,14 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                             pending={activeTab === 'pending'}
                                             conflict={hasConflict}
                                             processing={processingStudentId === student.student_id}
+                                            paymentProcessing={paymentProcessingStudentId === studentId}
+                                            canManagePaymentStatus={canManagePaymentStatus}
                                             onOpen={() => handleOpenStudentDetail(student)}
                                             onApprove={() => handleApproveStudent(student)}
                                             onReject={() => handleRejectStudent(student)}
                                             onRemove={() => handleRemoveStudent(student)}
                                             onHistory={() => handleViewDuplicateHistory(student)}
+                                            onChangePaymentStatus={(nextStatus) => handleStudentPaymentStatusChange(student, nextStatus)}
                                         />
                                     );
                                 })}
@@ -2381,8 +2852,9 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                             </div>
                         )}
                     </div>
+                    </div>
                 </div>
-            </div>
+            </OverlayPortal>
 
             <OverlaySheet
                 open={showAddStudentsSheet}
@@ -2634,7 +3106,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                 open={showExcelPreviewSheet}
                 onClose={() => setShowExcelPreviewSheet(false)}
                 title="Preview Excel"
-                description={`${excelPreviewData?.formatLabel || 'Danh sách thí sinh'}${exam?.exam_name ? ` • ${exam.exam_name}` : ''}`}
+                description={excelPreviewData?.sheetTitle || excelPreviewData?.titleLines?.[2] || buildExamStudentSheetTitle(exam?.exam_name)}
                 tone="blue"
                 footer={
                     <div className="flex gap-2">
@@ -2668,8 +3140,21 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                         Preview theo bố cục file xuất
                     </div>
 
-                    {excelPreviewData?.kind === 'vept' ? (
+                    {excelPreviewLoading ? (
+                        <div className="flex min-h-[220px] items-center justify-center rounded-[24px] border border-dashed border-slate-300 bg-white">
+                            <div className="flex items-center gap-2 text-sm font-semibold text-slate-600">
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+                                Đang tải preview từ dữ liệu export...
+                            </div>
+                        </div>
+                    ) : !excelPreviewData ? (
+                        <div className="flex min-h-[220px] items-center justify-center rounded-[24px] border border-dashed border-slate-300 bg-white text-sm font-semibold text-slate-500">
+                            Không có dữ liệu để preview.
+                        </div>
+                    ) : excelPreviewData.kind === 'vept' ? (
                         <MobileExcelPreviewVept preview={excelPreviewData} />
+                    ) : excelPreviewData.kind === 'vantrang_full' ? (
+                        <MobileExcelPreviewFullInfo preview={excelPreviewData} />
                     ) : (
                         <MobileExcelPreviewExamList preview={excelPreviewData} />
                     )}
@@ -2687,16 +3172,180 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                 />
             ) : null}
 
-            {/* ── Modal tạo buổi học mới ── */}
-            {showCreateSessionModal && (
-                <div className="fixed inset-0 z-[60] flex items-end bg-slate-950/55" onClick={() => setShowCreateSessionModal(false)}>
-                    <div
-                        className="w-full rounded-t-[28px] bg-white p-5 pb-8 shadow-2xl"
-                        onClick={(e) => e.stopPropagation()}
-                    >
+            {showImportScheduleModal && (
+                <OverlayPortal>
+                    <div className="fixed inset-0 z-[100000] flex items-end bg-slate-950/55" onClick={closeImportScheduleModal}>
+                        <div
+                            className="w-full h-[100dvh] max-h-[100dvh] overflow-y-auto bg-white p-5 pb-8 shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
                         <div className="mb-4 flex items-center justify-between">
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Điểm danh học tập</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-600">Điểm danh học tập</p>
+                                <h3 className="text-lg font-black text-slate-900">Import lịch từ ảnh</h3>
+                                <p className="text-[11px] text-slate-500">{importScheduleStep === 'upload' ? 'Bước 1/2' : 'Bước 2/2'}</p>
+                            </div>
+                            <button type="button" onClick={closeImportScheduleModal}
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {importScheduleStep === 'upload' ? (
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ảnh lịch học</label>
+                                    <input
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp"
+                                        onChange={(e) => setImportScheduleFile(e.target.files?.[0] || null)}
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+                                    />
+                                    {importScheduleFile ? (
+                                        <p className="mt-1 text-xs text-slate-500">{importScheduleFile.name}</p>
+                                    ) : null}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                <div className="flex flex-wrap gap-2 text-[11px] font-semibold">
+                                    <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-1 text-emerald-800">
+                                        ready: {importScheduleRows.filter((row) => row.status === 'ready').length}
+                                    </span>
+                                    <span className="rounded-full border border-amber-200 bg-amber-100 px-2.5 py-1 text-amber-800">
+                                        needs_review: {importScheduleRows.filter((row) => row.status === 'needs_review').length}
+                                    </span>
+                                    <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-slate-700">
+                                        duplicate: {importScheduleRows.filter((row) => row.status === 'duplicate').length}
+                                    </span>
+                                </div>
+
+                                {importScheduleRows.length === 0 ? (
+                                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">
+                                        Không có dòng lịch học.
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {importScheduleRows.map((row, index) => (
+                                            <div key={row.row_id || `import_row_${index}`} className="rounded-2xl border border-slate-200 bg-white p-3">
+                                                <div className="mb-2 flex flex-wrap items-center gap-2">
+                                                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                                                        row.status === 'ready'
+                                                            ? 'border border-emerald-200 bg-emerald-100 text-emerald-800'
+                                                            : row.status === 'duplicate'
+                                                                ? 'border border-slate-200 bg-slate-100 text-slate-700'
+                                                                : 'border border-amber-200 bg-amber-100 text-amber-800'
+                                                    }`}>
+                                                        {row.status}
+                                                    </span>
+                                                    {row.auto_corrected ? (
+                                                        <span className="rounded-full border border-sky-200 bg-sky-100 px-2.5 py-1 text-[11px] font-semibold text-sky-800">
+                                                            auto-corrected
+                                                        </span>
+                                                    ) : null}
+                                                </div>
+
+                                                {Array.isArray(row.warnings) && row.warnings.length > 0 ? (
+                                                    <p className="mb-2 text-[11px] text-amber-700">{row.warnings[0]}</p>
+                                                ) : null}
+                                                {Array.isArray(row.corrections) && row.corrections.length > 0 ? (
+                                                    <p className="mb-2 text-[11px] text-sky-700">{row.corrections[0]}</p>
+                                                ) : null}
+
+                                                <div className="space-y-2">
+                                                    <div>
+                                                        <label className="mb-1 block text-[11px] font-semibold text-slate-600">Ngày</label>
+                                                        <input
+                                                            type="date"
+                                                            value={row.session_date || ''}
+                                                            onChange={(e) => handleImportRowFieldChange(index, 'session_date', e.target.value)}
+                                                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <div>
+                                                            <label className="mb-1 block text-[11px] font-semibold text-slate-600">Bắt đầu</label>
+                                                            <input
+                                                                type="time"
+                                                                value={row.start_time || ''}
+                                                                onChange={(e) => handleImportRowFieldChange(index, 'start_time', e.target.value)}
+                                                                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="mb-1 block text-[11px] font-semibold text-slate-600">Kết thúc</label>
+                                                            <input
+                                                                type="time"
+                                                                value={row.end_time || ''}
+                                                                onChange={(e) => handleImportRowFieldChange(index, 'end_time', e.target.value)}
+                                                                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="mb-1 block text-[11px] font-semibold text-slate-600">Ghi chú</label>
+                                                        <input
+                                                            type="text"
+                                                            value={row.note || ''}
+                                                            onChange={(e) => handleImportRowFieldChange(index, 'note', e.target.value)}
+                                                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+                                                        />
+                                                    </div>
+                                                    {row.source_text ? (
+                                                        <p className="text-[10px] text-slate-400">{row.source_text}</p>
+                                                    ) : null}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="mt-5 flex gap-3">
+                            <button
+                                type="button"
+                                onClick={importScheduleStep === 'upload' ? closeImportScheduleModal : () => setImportScheduleStep('upload')}
+                                className="flex-1 rounded-2xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700"
+                            >
+                                {importScheduleStep === 'upload' ? 'Đóng' : 'Quay lại'}
+                            </button>
+                            {importScheduleStep === 'upload' ? (
+                                <button
+                                    type="button"
+                                    onClick={handlePreviewImportSchedule}
+                                    disabled={importScheduleLoading || !importScheduleFile}
+                                    className="flex-1 rounded-2xl bg-emerald-600 py-3 text-sm font-black text-white disabled:opacity-60"
+                                >
+                                    {importScheduleLoading ? 'Đang OCR...' : 'OCR & preview'}
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={handleCommitImportSchedule}
+                                    disabled={importScheduleSubmitting || importScheduleRows.length === 0 || hasImportNeedsReviewRows}
+                                    className="flex-1 rounded-2xl bg-emerald-600 py-3 text-sm font-black text-white disabled:opacity-60"
+                                >
+                                    {importScheduleSubmitting ? 'Đang lưu...' : 'Xác nhận'}
+                                </button>
+                            )}
+                        </div>
+                        </div>
+                    </div>
+                </OverlayPortal>
+            )}
+
+            {/* ── Modal tạo buổi học mới ── */}
+            {showCreateSessionModal && (
+                <OverlayPortal>
+                    <div className="fixed inset-0 z-[100000] flex items-end bg-slate-950/55" onClick={() => setShowCreateSessionModal(false)}>
+                        <div
+                            className="w-full h-[100dvh] max-h-[100dvh] overflow-y-auto bg-white p-5 pb-8 shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                        <div className="mb-4 flex items-center justify-between">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-600">Điểm danh học tập</p>
                                 <h3 className="text-lg font-black text-slate-900">Tạo buổi học mới</h3>
                             </div>
                             <button type="button" onClick={() => setShowCreateSessionModal(false)}
@@ -2758,8 +3407,9 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                 {createSessionLoading ? 'Đang tạo...' : 'Tạo buổi học'}
                             </button>
                         </div>
+                        </div>
                     </div>
-                </div>
+                </OverlayPortal>
             )}
         </>
     );
@@ -3031,128 +3681,46 @@ export default function MobileExamSchedulesModule() {
             return fetchExams({ force: true });
         }}>
             <div className="min-h-screen bg-[#f3f6fb] pb-6">
-                <div className="px-4 pt-3">
-                    <div className="rounded-[28px] border border-slate-200/80 bg-white p-3.5 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
-                        <div className="flex items-start justify-between gap-3">
-                            <div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Điều hành lịch thi</p>
-                                <h1 className="mt-1 text-[22px] font-black leading-none text-slate-900">Lịch thi</h1>
-                            </div>
-
-                            <div className="flex shrink-0 gap-2">
-                                <button
-                                    type="button"
-                                    onClick={handleOpenTrash}
-                                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-slate-700 shadow-sm transition-transform active:scale-[0.98]"
-                                >
-                                    <Trash2 size={14} />
-                                    <span>Rác</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleOpenGlobalConflicts}
-                                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-slate-700 shadow-sm transition-transform active:scale-[0.98]"
-                                >
-                                    <Info size={14} />
-                                    <span>Trùng</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsCreating(true)}
-                                    className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3.5 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-white shadow-sm transition-transform active:scale-[0.98]"
-                                >
-                                    <Plus size={14} />
-                                    <span>Tạo</span>
-                                </button>
-                            </div>
+                <MobileAdminHeroCard
+                    eyebrow="Quản lý học tập"
+                    icon={Calendar}
+                    tone="blue"
+                    title="Lịch thi"
+                    description="Giữ tìm kiếm, bộ lọc, kỳ thi sắp tới và số liệu xử lý trong cùng một hero để thao tác trên mobile nhanh hơn như desktop."
+                    actions={(
+                        <>
+                            <MobileAdminSecondaryButton onClick={handleOpenTrash} className="px-3.5">
+                                <Trash2 size={16} />
+                                Rác
+                            </MobileAdminSecondaryButton>
+                            <MobileAdminSecondaryButton onClick={handleOpenGlobalConflicts} className="px-3.5">
+                                <Info size={16} />
+                                Trùng
+                            </MobileAdminSecondaryButton>
+                            <MobileAdminPrimaryButton onClick={() => setIsCreating(true)} className="px-3.5">
+                                <Plus size={16} />
+                                Tạo
+                            </MobileAdminPrimaryButton>
+                        </>
+                    )}
+                    stats={(
+                        <div className="grid grid-cols-2 gap-2">
+                            <MobileAdminStatCard label="Tổng kỳ thi" value={filterCounts.all} tone="blue" />
+                            <MobileAdminStatCard label="Hôm nay" value={filterCounts.today} tone="violet" />
+                            <MobileAdminStatCard label="Sắp tới" value={filterCounts.upcoming} tone="emerald" />
+                            <MobileAdminStatCard label="Hồ sơ chờ" value={totalPendingStudents} tone="amber" />
                         </div>
-
-                        <div className="mt-3 rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,#eff6ff_0%,#f8fafc_65%,#ffffff_100%)] p-3">
-                            {nextExam ? (
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-blue-600">
-                                            <Sparkles size={14} />
-                                            <span>Kỳ thi gần nhất</span>
-                                        </div>
-                                        <h2 className="mt-2 line-clamp-2 text-[15px] font-semibold leading-snug text-[#54657f]">{getExamTitle(nextExam)}</h2>
-                                        <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
-                                            <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-[#64748b] shadow-sm">
-                                                {formatDateVN(nextExam.exam_date)} • {formatTimeUtil(nextExam.exam_date)}
-                                            </span>
-                                            <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-[#64748b] shadow-sm">
-                                                {formatDurationLabel(nextExam.duration_minutes)}
-                                            </span>
-                                            <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-[#64748b] shadow-sm">
-                                                {getExamStudentCount(nextExam)} thí sinh
-                                            </span>
-                                            {getExamPendingCount(nextExam) > 0 ? (
-                                                <span className="rounded-full bg-amber-100 px-2.5 py-1 font-semibold text-amber-700">
-                                                    {getExamPendingCount(nextExam)} chờ duyệt
-                                                </span>
-                                            ) : (
-                                                <span className="rounded-full bg-emerald-100 px-2.5 py-1 font-semibold text-emerald-700">
-                                                    Sẵn sàng
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="mt-2 flex items-center gap-1.5 text-xs text-[#64748b]">
-                                            <MapPin size={13} />
-                                            <span className="truncate">{getExamLocation(nextExam)}</span>
-                                        </div>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedExam(nextExam)}
-                                        className="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-900 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-white"
-                                    >
-                                        Mở
-                                        <ChevronRight size={12} />
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="rounded-[20px] border border-dashed border-slate-300 bg-white px-3.5 py-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-slate-100 text-slate-500">
-                                            <Calendar size={20} />
-                                        </div>
-                                        <div>
-                                            <div className="text-sm font-black text-slate-900">Chưa có kỳ thi sắp tới</div>
-                                            <div className="mt-1 text-[13px] text-slate-500">Tạo lịch mới để bắt đầu.</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="mt-3 grid grid-cols-2 gap-2">
-                            <SummaryStat label="Tổng kỳ thi" value={filterCounts.all} icon={FileText} tone="slate" />
-                            <SummaryStat label="Hôm nay" value={filterCounts.today} icon={Calendar} tone="blue" />
-                            <SummaryStat label="Sắp tới" value={filterCounts.upcoming} icon={CheckCircle2} tone="emerald" />
-                            <SummaryStat label="Hồ sơ chờ" value={totalPendingStudents} icon={AlertCircle} tone="amber" />
-                        </div>
-
-                        <div className="relative mt-3">
-                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input
-                                type="text"
-                                value={searchTerm}
-                                onChange={(event) => setSearchTerm(event.target.value)}
-                                placeholder="Tìm theo tên kỳ thi hoặc địa điểm"
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-10 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
-                            />
-                            {searchTerm ? (
-                                <button
-                                    type="button"
-                                    onClick={() => setSearchTerm('')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-slate-200 p-1 text-slate-500"
-                                >
-                                    <X size={14} />
-                                </button>
-                            ) : null}
-                        </div>
-
-                        <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
+                    )}
+                    search={(
+                        <MobileAdminSearchField
+                            value={searchTerm}
+                            onChange={setSearchTerm}
+                            onClear={() => setSearchTerm('')}
+                            placeholder="Tìm theo tên kỳ thi hoặc địa điểm"
+                        />
+                    )}
+                    filters={(
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1">
                             {filterOptions.map((option) => (
                                 <FilterChip
                                     key={option.id}
@@ -3163,8 +3731,51 @@ export default function MobileExamSchedulesModule() {
                                 />
                             ))}
                         </div>
-                    </div>
-                </div>
+                    )}
+                    footer={<span>{activeFilterMeta.label} • Hiển thị {filteredExams.length} / {filterCounts.all} kỳ thi</span>}
+                >
+                    {nextExam ? (
+                        <div className="rounded-[24px] border border-white/12 bg-white/[0.10] p-3 backdrop-blur-sm">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-white/70">
+                                        <Sparkles size={14} />
+                                        <span>Kỳ thi gần nhất</span>
+                                    </div>
+                                    <h2 className="mt-2 line-clamp-2 text-[15px] font-bold leading-snug text-white">{getExamTitle(nextExam)}</h2>
+                                    <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
+                                        <span className="rounded-full bg-white/12 px-2.5 py-1 font-semibold text-white/90">
+                                            {formatDateVN(nextExam.exam_date)} • {formatTimeUtil(nextExam.exam_date)}
+                                        </span>
+                                        <span className="rounded-full bg-white/12 px-2.5 py-1 font-semibold text-white/90">
+                                            {formatDurationLabel(nextExam.duration_minutes)}
+                                        </span>
+                                        <span className="rounded-full bg-white/12 px-2.5 py-1 font-semibold text-white/90">
+                                            {getExamStudentCount(nextExam)} thí sinh
+                                        </span>
+                                    </div>
+                                    <div className="mt-2 flex items-center gap-1.5 text-[11px] text-white/78">
+                                        <MapPin size={13} />
+                                        <span className="truncate">{getExamLocation(nextExam)}</span>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedExam(nextExam)}
+                                    className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-blue-700"
+                                >
+                                    Mở
+                                    <ChevronRight size={12} />
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="rounded-[24px] border border-white/12 bg-white/[0.10] p-3 text-white/88 backdrop-blur-sm">
+                            <div className="text-sm font-black text-white">Chưa có kỳ thi sắp tới</div>
+                            <div className="mt-1 text-[13px] text-white/70">Tạo lịch mới để bắt đầu.</div>
+                        </div>
+                    )}
+                </MobileAdminHeroCard>
 
                 <div className="px-4 pb-[calc(var(--mb-bottom-nav-height)+24px)] pt-3">
                     <div className="mb-2 flex items-end justify-between gap-3">

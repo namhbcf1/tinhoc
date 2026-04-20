@@ -171,7 +171,7 @@ export default function AboutPage() {
         {/* ── Stats Section ── */}
         <section className="stats-section py-24 container mx-auto px-4 relative z-10">
           <div className="glass-panel max-w-6xl mx-auto rounded-[3rem] p-12 bg-white/60">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-slate-200/60">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-8 text-center divide-x divide-slate-200/60">
               <div className="stat-item px-4">
                 <div className="text-5xl font-black heading-gradient mb-3">100%</div>
                 <div className="text-slate-600 font-bold uppercase tracking-wider text-sm">Cam kết chất lượng</div>
@@ -439,7 +439,7 @@ export default function AboutPage() {
               <Link to="/training" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors shadow-sm">
                 Xem chương trình đào tạo <ArrowRight size={14} />
               </Link>
-              <Link to="/admissions" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white border border-emerald-300 text-emerald-700 text-sm font-semibold hover:bg-emerald-50 transition-colors shadow-sm">
+              <Link to="/register" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white border border-emerald-300 text-emerald-700 text-sm font-semibold hover:bg-emerald-50 transition-colors shadow-sm">
                 Đăng ký tuyển sinh <ArrowRight size={14} />
               </Link>
               <Link to="/contact" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors shadow-sm">

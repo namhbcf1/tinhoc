@@ -14,6 +14,34 @@ import QuickConsultForm from '../../components/forms/QuickConsultForm';
 
 export default function HomePage() {
   const container = useRef();
+  const homepageStructuredData = [
+    {
+      '@type': 'Organization',
+      name: 'Van Trang Education',
+      alternateName: 'VanTrangEdu',
+      url: 'https://vantrangedu.com',
+      logo: 'https://vantrangedu.com/logo.jpg',
+      contactPoint: {
+        '@type': 'ContactPoint',
+        telephone: '+84-962-445-963',
+        contactType: 'customer support',
+        areaServed: 'VN',
+        availableLanguage: ['vi', 'en'],
+      },
+    },
+    {
+      '@type': 'WebSite',
+      name: 'VanTrangEdu',
+      url: 'https://vantrangedu.com',
+      inLanguage: 'vi-VN',
+    },
+    {
+      '@type': 'EducationalOrganization',
+      name: 'Van Trang Education',
+      url: 'https://vantrangedu.com',
+      description: 'Đơn vị đào tạo ngoại ngữ, luyện thi chứng chỉ và tư vấn giáo dục với lộ trình thực chiến, rõ ràng và dễ tiếp cận.',
+    },
+  ];
 
   useGSAP(() => {
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
@@ -51,23 +79,33 @@ export default function HomePage() {
       ease: 'power3.out'
     });
 
-    // 3D Tilt Effect
-    const tiltCards = document.querySelectorAll('.bento-hero-img');
+    // 3D Tilt Effect — cleaned up automatically by useGSAP's context revert on unmount
+    const tiltCards = document.querySelectorAll<HTMLElement>('.bento-hero-img');
+    const handleMouseMove = function(this: HTMLElement, e: Event) {
+      const me = e as MouseEvent;
+      const rect = this.getBoundingClientRect();
+      const x = me.clientX - rect.left;
+      const y = me.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const rotateX = (y - centerY) / 12;
+      const rotateY = (centerX - x) / 12;
+      gsap.to(this, { rotateX, rotateY, duration: 0.5, ease: 'power2.out' });
+    };
+    const handleMouseLeave = function(this: HTMLElement) {
+      gsap.to(this, { rotateX: 0, rotateY: 0, duration: 0.5, ease: 'power2.out' });
+    };
     tiltCards.forEach(card => {
-      card.addEventListener('mousemove', (e) => {
-        const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-        const rotateX = (y - centerY) / 12;
-        const rotateY = (centerX - x) / 12;
-        gsap.to(card, { rotateX, rotateY, duration: 0.5, ease: 'power2.out' });
-      });
-      card.addEventListener('mouseleave', () => {
-        gsap.to(card, { rotateX: 0, rotateY: 0, duration: 0.5, ease: 'power2.out' });
-      });
+      card.addEventListener('mousemove', handleMouseMove);
+      card.addEventListener('mouseleave', handleMouseLeave);
     });
+    return () => {
+      tiltCards.forEach(card => {
+        card.removeEventListener('mousemove', handleMouseMove);
+        card.removeEventListener('mouseleave', handleMouseLeave);
+      });
+      ScrollTrigger.getAll().forEach(t => t.kill());
+    };
   }, { scope: container });
 
   return (
@@ -76,9 +114,13 @@ export default function HomePage() {
         title="Trang chủ"
         description="Van Trang Education - Đơn vị đào tạo ngoại ngữ cấp tốc và tư vấn giáo dục."
         url="/"
+        structuredData={homepageStructuredData}
       />
 
       <div ref={container}>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-emerald-600 focus:text-white focus:rounded-xl focus:font-bold focus:shadow-lg">
+          Bỏ qua đến nội dung
+        </a>
         {/* HERO SECTION - Bento Style Base */}
         <section className="relative pt-32 pb-20 overflow-hidden">
           {/* Animated Background Orbs */}
@@ -89,7 +131,7 @@ export default function HomePage() {
           <div aria-hidden="true" className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] opacity-20 pointer-events-none"
             style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.8) 0%, rgba(255,255,255,0) 70%)' }} />
 
-          <div className="container relative z-10 px-4 mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          <div id="main-content" className="container relative z-10 px-4 mx-auto grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
             <div className="max-w-2xl">
               <div className="hero-badge inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-100/50 text-emerald-700 font-medium text-sm mb-6 shadow-sm">
@@ -112,7 +154,7 @@ export default function HomePage() {
                     Khám phá khóa học <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </Link>
-                <Link to="/admissions">
+                <Link to="/register">
                   <Button size="lg" variant="outline" className="w-full sm:w-auto bg-white/50 backdrop-blur-md border-slate-200 text-slate-700 hover:bg-slate-50 text-base h-12 px-8 rounded-xl transition-all">
                     Đăng ký tuyển sinh
                   </Button>
@@ -124,7 +166,7 @@ export default function HomePage() {
             <div className="grid grid-cols-2 gap-4 h-[500px]">
               <div className="bento-hero-img glass-card rounded-3xl overflow-hidden relative group">
                 <div className="absolute inset-0 bg-emerald-500/10 group-hover:bg-transparent transition-colors duration-500 z-10" />
-                <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop" alt="Students learning" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop" alt="Students learning" loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
               </div>
               <div className="grid grid-rows-2 gap-4">
                 <div className="bento-hero-img glass-card rounded-3xl p-6 flex flex-col justify-between bg-gradient-to-br from-emerald-50 to-white">
@@ -138,7 +180,7 @@ export default function HomePage() {
                 </div>
                 <div className="bento-hero-img glass-card rounded-3xl overflow-hidden relative group">
                   <div className="absolute inset-0 bg-blue-500/10 group-hover:bg-transparent transition-colors duration-500 z-10" />
-                  <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=800&auto=format&fit=crop" alt="Modern campus" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                  <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=800&auto=format&fit=crop" alt="Modern campus" loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 </div>
               </div>
             </div>
@@ -292,7 +334,7 @@ export default function HomePage() {
                   Hotline: 096.244.5963
                 </Button>
               </a>
-              <Link to="/admissions">
+              <Link to="/register">
                 <Button size="lg" variant="outline" className="bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white hover:text-slate-900 w-full sm:w-auto font-bold rounded-xl h-14 px-8 text-lg transition-colors">
                   Phân Tích Năng Lực
                 </Button>

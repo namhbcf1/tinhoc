@@ -68,7 +68,7 @@ describe('extractRegistrationPrefillFromImage', () => {
     vi.unstubAllGlobals();
   });
 
-  it('uses OCR.space engine 2 in Vietnamese when extraction succeeds', async () => {
+  it('uses OCR.space engine 3 with auto language first when extraction succeeds', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -110,14 +110,16 @@ describe('extractRegistrationPrefillFromImage', () => {
     expect(result.model).toBe('OCR.space');
     expect(result.debug.ocrSpaceAttempts).toHaveLength(1);
     expect(result.debug.ocrSpaceAttempts[0]).toMatchObject({
-      engine: '2',
-      language: 'eng',
+      engine: '3',
+      language: 'auto',
       status: 'success',
+      transport: 'base64',
+      parseStatus: 'useful',
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('retries OCR.space with engine 1 in Vietnamese if engine 2 fails', async () => {
+  it('falls back from engine 3 auto to engine 2 auto when the first OCR.space attempt fails', async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce({
@@ -125,7 +127,7 @@ describe('extractRegistrationPrefillFromImage', () => {
         json: async () => ({
           OCRExitCode: 3,
           IsErroredOnProcessing: true,
-          ErrorMessage: ['engine 2 failed'],
+          ErrorMessage: ['engine 3 failed'],
         }),
       })
       .mockResolvedValueOnce({
@@ -166,19 +168,21 @@ describe('extractRegistrationPrefillFromImage', () => {
       placeOfOrigin: 'Hà Nội',
       placeOfResidence: 'Cầu Giấy, Hà Nội',
     });
-    expect(result.debug.ocrSpaceAttempts).toEqual([
-      {
-        engine: '2',
-        language: 'eng',
-        status: 'failed',
-        error: 'OCR.space: engine 2 failed',
-      },
-      {
-        engine: '1',
-        language: 'eng',
-        status: 'success',
-      },
-    ]);
+    expect(result.debug.ocrSpaceAttempts).toHaveLength(2);
+    expect(result.debug.ocrSpaceAttempts[0]).toMatchObject({
+      engine: '3',
+      language: 'auto',
+      status: 'failed',
+      error: 'OCR.space: engine 3 failed',
+      transport: 'base64',
+    });
+    expect(result.debug.ocrSpaceAttempts[1]).toMatchObject({
+      engine: '2',
+      language: 'auto',
+      status: 'success',
+      transport: 'base64',
+      parseStatus: 'useful',
+    });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -203,11 +207,27 @@ describe('extractRegistrationPrefillFromImage', () => {
     );
 
     await expect(promise).rejects.toThrow('OCR.space timeout');
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(6);
   });
 
-  it('rejects oversized images before calling OCR.space', async () => {
-    const fetchMock = vi.fn();
+  it('uses OCR.space url mode for oversized images instead of rejecting them immediately', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        OCRExitCode: 1,
+        IsErroredOnProcessing: false,
+        ParsedResults: [
+          {
+            ParsedText: [
+              'CĂN CƯỚC CÔNG DÂN',
+              'Số 079203001234',
+              'Họ và tên: NGUYỄN VĂN A',
+              'Ngày sinh: 09/12/2002',
+            ].join('\n'),
+          },
+        ],
+      }),
+    });
     vi.stubGlobal('fetch', fetchMock);
     const env = {
       R2: {
@@ -217,10 +237,24 @@ describe('extractRegistrationPrefillFromImage', () => {
       },
     } as any;
 
-    await expect(
-      extractRegistrationPrefillFromImage(env, 'cccd-uploads/cccd_front/test.jpg', 'cccd_front')
-    ).rejects.toThrow('Ảnh quá lớn');
-    expect(fetchMock).not.toHaveBeenCalled();
+    const result = await extractRegistrationPrefillFromImage(
+      env,
+      'cccd-uploads/cccd_front/test.jpg',
+      'cccd_front',
+    );
+
+    expect(result.prefill).toMatchObject({
+      cccd: '079203001234',
+      fullName: 'NGUYỄN VĂN A',
+      dateOfBirth: '09/12/2002',
+    });
+    expect(result.debug.ocrSpaceAttempts[0]).toMatchObject({
+      engine: '3',
+      language: 'auto',
+      status: 'success',
+      transport: 'url',
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('treats OCR text without recognizable fields as failure', async () => {
@@ -245,7 +279,7 @@ describe('extractRegistrationPrefillFromImage', () => {
     await expect(
       extractRegistrationPrefillFromImage(env, 'cccd-uploads/cccd_front/test.jpg', 'cccd_front')
     ).rejects.toThrow('OCR đọc được text nhưng không nhận diện được trường CCCD nào');
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(6);
   });
 
   it('parses useful back-side data without requiring cccd or full name', async () => {
@@ -385,6 +419,138 @@ describe('extractRegistrationPrefillFromImage', () => {
     expect(result.prefill).toMatchObject({
       cccd: '',
       fullName: '',
+      issueDate: '27/06/2021',
+    });
+  });
+
+  it('extracts female gender when sex and nationality share the same line', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        OCRExitCode: 1,
+        IsErroredOnProcessing: false,
+        ParsedResults: [
+          {
+            ParsedText: [
+              'CAN CUOC CONG DAN',
+              'So / No.: 034303004393',
+              'Ho va ten / Full name:',
+              'TRAN THI LINH',
+              'Ngay sinh / Date of birth: 08/09/2003',
+              'Gioi tinh / Sex: Nu Quoc tich / Nationality: Viet Nam',
+              'Que quan / Place of origin:',
+              'Tan Le, Hung Ha, Thai Binh',
+            ].join('\n'),
+          },
+        ],
+      }),
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+    const env = {
+      R2: {
+        get: vi.fn().mockResolvedValue({
+          arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+        }),
+      },
+    } as any;
+
+    const result = await extractRegistrationPrefillFromImage(
+      env,
+      'cccd-uploads/cccd_front/test-female.jpg',
+      'cccd_front'
+    );
+
+    expect(result.prefill).toMatchObject({
+      cccd: '034303004393',
+      fullName: 'TRAN THI LINH',
+      dateOfBirth: '08/09/2003',
+      gender: 'Nữ',
+      nationality: 'Viet Nam',
+      placeOfOrigin: 'Tan Le, Hung Ha, Thai Binh',
+    });
+  });
+
+  it('extracts date of birth when OCR splits the label and date across lines', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        OCRExitCode: 1,
+        IsErroredOnProcessing: false,
+        ParsedResults: [
+          {
+            ParsedText: [
+              'CAN CUOC CONG DAN',
+              'So / No.: 034303004393',
+              'Ho va ten / Full name:',
+              'TRAN THI LINH',
+              'Ngay sinh / Date of birth:',
+              '08 09 2003',
+              'Gioi tinh / Sex: Nu',
+            ].join('\n'),
+          },
+        ],
+      }),
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+    const env = {
+      R2: {
+        get: vi.fn().mockResolvedValue({
+          arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+        }),
+      },
+    } as any;
+
+    const result = await extractRegistrationPrefillFromImage(
+      env,
+      'cccd-uploads/cccd_front/test-split-dob.jpg',
+      'cccd_front'
+    );
+
+    expect(result.prefill).toMatchObject({
+      cccd: '034303004393',
+      fullName: 'TRAN THI LINH',
+      dateOfBirth: '08/09/2003',
+      gender: 'Nữ',
+    });
+  });
+
+  it('extracts issue date when OCR returns spaces instead of slashes', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        OCRExitCode: 1,
+        IsErroredOnProcessing: false,
+        ParsedResults: [
+          {
+            ParsedText: [
+              'Dac diem nhan dang / Personal identification:',
+              'Ngay, thang, nam / Date, month, year',
+              '27 06 2021',
+              'Pham Cong Nguyen',
+            ].join('\n'),
+          },
+        ],
+      }),
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+    const env = {
+      R2: {
+        get: vi.fn().mockResolvedValue({
+          arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+        }),
+      },
+    } as any;
+
+    const result = await extractRegistrationPrefillFromImage(
+      env,
+      'cccd-uploads/cccd_back/test-split-issue-date.jpg',
+      'cccd_back'
+    );
+
+    expect(result.prefill).toMatchObject({
       issueDate: '27/06/2021',
     });
   });

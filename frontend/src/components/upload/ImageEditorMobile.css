@@ -11,7 +11,8 @@
     right: 0;
     bottom: 0;
     width: 100vw;
-    height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
+    height: 100dvh;
     background: #000;
     z-index: 999999;
     display: flex;
@@ -79,6 +80,7 @@
     background:
         radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 38%),
         #000;
+    overscroll-behavior: contain;
 }
 
 .image-editor-mobile-canvas-element {
@@ -245,6 +247,13 @@
 .image-editor-mobile-action-confirm:active {
     background: #059669;
     transform: translateY(-1px);
+}
+
+.image-editor-mobile-action-confirm:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    background: #64748b;
+    transform: none;
 }
 
 @media (max-width: 480px) {

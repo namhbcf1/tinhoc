@@ -32,6 +32,16 @@ type SetValue = (
   options?: { shouldDirty?: boolean; shouldTouch?: boolean }
 ) => void;
 
+const REQUIRED_CCCD_FRONT_FIELDS = [
+  { key: 'fullName', label: 'họ tên' },
+  { key: 'cccd', label: 'số CCCD' },
+  { key: 'dateOfBirth', label: 'ngày sinh' },
+] as const;
+
+const REQUIRED_CCCD_BACK_FIELDS = [
+  { key: 'issueDate', label: 'ngay cap' },
+] as const;
+
 function splitName(fullName: string) {
   const parts = fullName.trim().replace(/\s+/g, ' ').split(' ').filter(Boolean);
   if (parts.length === 0) {
@@ -73,6 +83,26 @@ function cleanPrefillPlace(value?: string) {
     .trim();
 }
 
+function normalizeOCRGender(value?: string): 'Nam' | 'Nữ' | '' {
+  if (!value) return '';
+
+  const folded = value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+  if (!folded) return '';
+  if (folded === 'nam' || folded === 'male' || folded === 'm') return 'Nam';
+  if (folded === 'nu' || folded === 'female' || folded === 'f') return 'Nữ';
+
+  if (folded.includes('nam')) return 'Nam';
+  if (folded.includes('nu') || folded.includes('female')) return 'Nữ';
+
+  return '';
+}
+
 function setIfEmpty(
   currentValue: string | undefined,
   field: keyof RegistrationFormValues,
@@ -84,7 +114,6 @@ function setIfEmpty(
     return;
   }
 
-  // Only skip if current value has meaningful content (not empty/whitespace)
   const hasExistingValue = currentValue && (currentValue || '').trim().length > 0;
   if (hasExistingValue) {
     return;
@@ -92,6 +121,28 @@ function setIfEmpty(
 
   setValue(field, nextValue, { shouldDirty: true });
   appliedFields.push(field);
+}
+
+export function validateCCCDFrontOCRPrefill(prefill: OCRPrefillPayload) {
+  const missingFields = REQUIRED_CCCD_FRONT_FIELDS
+    .filter(({ key }) => !(prefill[key] || '').trim())
+    .map(({ label }) => label);
+
+  return {
+    isValid: missingFields.length === 0,
+    missingFields,
+  };
+}
+
+export function validateCCCDBackOCRPrefill(prefill: OCRPrefillPayload) {
+  const missingFields = REQUIRED_CCCD_BACK_FIELDS
+    .filter(({ key }) => !(prefill[key] || '').trim())
+    .map(({ label }) => label);
+
+  return {
+    isValid: missingFields.length === 0,
+    missingFields,
+  };
 }
 
 export function applyOCRPrefillToRegistrationForm(
@@ -102,12 +153,11 @@ export function applyOCRPrefillToRegistrationForm(
   const appliedFields: string[] = [];
   const notes: string[] = [];
 
-  // Handle gender - apply regardless of current value if OCR provides it
-  if (prefill.gender && (prefill.gender === 'Nam' || prefill.gender === 'Nữ')) {
-    const currentGender = currentValues.gioi_tinh;
-    // Only update if different from current (which defaults to 'Nam')
-    if (currentGender !== prefill.gender) {
-      setValue('gioi_tinh', prefill.gender as 'Nam' | 'Nữ', { shouldDirty: true });
+  const normalizedGender = normalizeOCRGender(prefill.gender);
+  if (normalizedGender) {
+    const currentGender = normalizeOCRGender(currentValues.gioi_tinh);
+    if (currentGender !== normalizedGender) {
+      setValue('gioi_tinh', normalizedGender, { shouldDirty: true });
       appliedFields.push('gioi_tinh');
     }
   }
@@ -136,14 +186,17 @@ export function applyOCRPrefillToRegistrationForm(
     setIfEmpty(currentValues.ngay_cap_nam, 'ngay_cap_nam', issueDate.year, setValue, appliedFields);
   }
 
-  const sanitizedOrigin = normalizeBirthPlaceValue(cleanPrefillPlace(prefill.placeOfOrigin));
-  if (sanitizedOrigin) {
-    setIfEmpty(currentValues.noi_sinh, 'noi_sinh', sanitizedOrigin, setValue, appliedFields);
-    if (!currentValues.noi_sinh.trim()) {
-      notes.push('Mục "Nơi sinh" đang được điền tạm từ "Quê quán" trên CCCD, bạn nên kiểm tra lại.');
-    }
+  const sanitizedOrigin = cleanPrefillPlace(prefill.placeOfOrigin);
+  const sanitizedResidence = cleanPrefillPlace(prefill.placeOfResidence);
+  if (sanitizedOrigin && !currentValues.noi_sinh.trim()) {
+    notes.push('Mục "Nơi sinh" không tự điền từ ảnh CCCD. Bạn vui lòng tự chọn hoặc tự nhập.');
+  }
+
+  if (sanitizedResidence && !currentValues.dia_chi_hien_nay.trim()) {
+    setValue('dia_chi_hien_nay', sanitizedResidence, { shouldDirty: true });
+    appliedFields.push('dia_chi_hien_nay');
+    notes.push('Địa chỉ hiện nay được điền tạm từ mục nơi thường trú trên CCCD. Bạn kiểm tra lại nếu địa chỉ hiện tại khác.');
   }
 
   return { appliedFields, notes };
 }
-import { normalizeBirthPlaceValue } from '../../utils/birthPlaceOptions';

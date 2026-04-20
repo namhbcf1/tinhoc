@@ -8,7 +8,7 @@ workers_dev = true
 [[d1_databases]]
 binding = "DB"
 database_name = "vantrangedu_db"
-database_id = "ae59b4c6-0c72-4e7c-856c-d2106da89004"
+database_id = "dbf089c2-f2ec-4535-9b0b-d2e535bceecb"
 
 # R2 Storage binding (để lưu file Excel)
 [[r2_buckets]]
@@ -23,6 +23,16 @@ bucket_name = "class-videos"
 # Environment variables
 [vars]
 ENVIRONMENT = "production"
+READ_ONLY_MODE = "false"
+PHOTO_3X4_AI_ENABLED = "true"
+PHOTO_3X4_GENERATIVE_ENABLED = "true"
+PHOTO_3X4_PIPELINE_VERSION = "v2-generate-first"
+PHOTO_3X4_PIPELINE_PROVIDER = "queue-r2-transform-ai"
+PHOTO_3X4_ALWAYS_GENERATE_FINAL = "false"
+PHOTO_3X4_ZONE_HOST = "vantrangedu.com"
+PHOTO_3X4_MODEL_PRIMARY = "@cf/black-forest-labs/flux-2-dev"
+PHOTO_3X4_VARIANT_COUNT = "3"
+PHOTO_3X4_STYLE_REFERENCE_URL = "https://vantrangedu.com/photo-guides/photo-3x4-valid.jpg"
 
 # MUST BE SET VIA: wrangler secret put JWT_SECRET
 # JWT_SECRET = ""
@@ -46,7 +56,8 @@ CLOUDFLARE_ACCOUNT_ID = "5b62d10947844251d23e0eac532531dd"
 # ========================================
 # CLOUDFLARE IMAGES CONFIGURATION
 # ========================================
-# Required for CCCD/Photo uploads in student registration
+# Optional for legacy Cloudflare Images-backed uploads.
+# The photo_3x4 pipeline now runs on R2 + Transformations + Workers AI.
 #
 # IMPORTANT: Set this using wrangler secrets for security:
 #   wrangler secret put CLOUDFLARE_IMAGES_API_TOKEN
@@ -74,6 +85,13 @@ GOOGLE_ADMIN_EMAIL = "vantrang@vantrangedu.com"
 [ai]
 binding = "AI"
 
+[[queues.producers]]
+binding = "PHOTO_3X4_QUEUE"
+queue = "photo-3x4-pipeline"
+
+[[queues.consumers]]
+queue = "photo-3x4-pipeline"
+
 # ========================================
 # LOCAL DEVELOPMENT ENVIRONMENT
 # ========================================
@@ -97,6 +115,16 @@ bucket_name = "class-videos-dev"
 
 [env.development.vars]
 ENVIRONMENT = "development"
+READ_ONLY_MODE = "false"
+PHOTO_3X4_AI_ENABLED = "true"
+PHOTO_3X4_GENERATIVE_ENABLED = "true"
+PHOTO_3X4_PIPELINE_VERSION = "v2-generate-first"
+PHOTO_3X4_PIPELINE_PROVIDER = "queue-r2-transform-ai"
+PHOTO_3X4_ALWAYS_GENERATE_FINAL = "false"
+PHOTO_3X4_ZONE_HOST = "vantrangedu.com"
+PHOTO_3X4_MODEL_PRIMARY = "@cf/black-forest-labs/flux-2-dev"
+PHOTO_3X4_VARIANT_COUNT = "3"
+PHOTO_3X4_STYLE_REFERENCE_URL = "https://vantrangedu.com/photo-guides/photo-3x4-valid.jpg"
 CLOUDFLARE_ACCOUNT_ID = "5b62d10947844251d23e0eac532531dd"
 GOOGLE_ADMIN_EMAIL = "vantrang@vantrangedu.com"
 # Secrets below must still be set locally via: wrangler secret put <KEY> --env development
@@ -108,3 +136,10 @@ GOOGLE_PRIVATE_KEY = ""
 
 [env.development.ai]
 binding = "AI"
+
+[[env.development.queues.producers]]
+binding = "PHOTO_3X4_QUEUE"
+queue = "photo-3x4-pipeline-dev"
+
+[[env.development.queues.consumers]]
+queue = "photo-3x4-pipeline-dev"

@@ -26,6 +26,7 @@ const PUBLIC_ENDPOINTS = [
   '/programs',
   '/program-levels',
   '/templates',
+  '/public/student-feedbacks',
 ];
 
 /** Protected path prefixes that warrant a console warning when token missing */
@@ -65,7 +66,9 @@ export async function executeRequest(url, endpoint, options, token, authRole = n
   const fetchOptions = { ...(options || {}) };
   const method = String(fetchOptions.method || 'GET').toUpperCase();
   const maxRetries = fetchOptions.retries || 0;
+  const timeoutMs = Number(fetchOptions.timeoutMs) > 0 ? Number(fetchOptions.timeoutMs) : 30000;
   delete fetchOptions.retries;
+  delete fetchOptions.timeoutMs;
   delete fetchOptions.cacheTTL;
   delete fetchOptions.cacheKey;
   delete fetchOptions.useCache;
@@ -91,7 +94,7 @@ export async function executeRequest(url, endpoint, options, token, authRole = n
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const response = await fetch(url, { ...fetchOptions, headers, signal: controller.signal });
@@ -165,7 +168,7 @@ export async function executeRequest(url, endpoint, options, token, authRole = n
       clearTimeout(timeoutId);
       // Timeout — surface a user-friendly message and do not retry
       if (error.name === 'AbortError') {
-        throw new Error('Yêu cầu quá thời gian. Vui lòng thử lại.');
+        throw new Error(`Yêu cầu quá thời gian sau ${Math.round(timeoutMs / 1000)} giây. Vui lòng thử lại.`);
       }
       // Network-level errors — retry
       if ((error.message.includes('fetch') || error.message.includes('Network')) && attempt < maxRetries) {

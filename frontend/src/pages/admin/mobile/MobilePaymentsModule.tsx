@@ -7,50 +7,16 @@ import { useToast } from '../../../components/ui/ToastContainer';
 import { usePaymentsManagement } from '../shared/hooks/usePaymentsManagement';
 import { formatDateVN } from '../../../utils/dateUtils';
 import AdminLoadingState from '../../../components/admin/AdminLoadingState';
+import {
+    MobileAdminBottomSheet,
+    MobileAdminHeroCard,
+    MobileAdminSearchField,
+    MobileAdminSecondaryButton,
+    MobileAdminStatCard,
+    mobileAdminContentPadding,
+} from '../shared/mobileAdminUi';
 
-// ============= BOTTOM SHEET =============
-const BottomSheet = ({ isOpen, onClose, title, children, height = 'auto' }) => {
-    const [isVisible, setIsVisible] = useState(false);
-
-    useEffect(() => {
-        if (isOpen) {
-            setIsVisible(true);
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-            const timer = setTimeout(() => setIsVisible(false), 300);
-            return () => clearTimeout(timer);
-        }
-    }, [isOpen]);
-
-    if (!isVisible && !isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-50">
-            <div
-                className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
-                onClick={onClose}
-            />
-            <div
-                className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
-                style={{ maxHeight: height === 'auto' ? '90vh' : height }}
-            >
-                <div className="flex justify-center pt-3 pb-2">
-                    <div className="w-12 h-1.5 bg-slate-300 rounded-full" />
-                </div>
-                <div className="flex items-center justify-between px-5 pb-3 border-b border-slate-100">
-                    <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full">
-                        <X size={20} className="text-slate-500" />
-                    </button>
-                </div>
-                <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 100px)' }}>
-                    {children}
-                </div>
-            </div>
-        </div>
-    );
-};
+const BottomSheet = MobileAdminBottomSheet;
 
 const formatCurrency = (value) => {
     if (!value) return '0 đ';
@@ -72,10 +38,10 @@ const PaymentCard = ({ payment, onView, onConfirm, onReject }) => {
     const { label, color, icon: Icon } = getStatusConfig(payment.status);
 
     return (
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+        <div className="rounded-[26px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf2_100%)] p-4 shadow-[0_20px_44px_-30px_rgba(15,23,42,0.34)]">
             <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-slate-800 truncate">{payment.ho_ten_full || payment.student_name || payment.ho_ten || 'Học viên'}</h4>
+                    <h4 className="truncate text-[17px] font-black tracking-[-0.03em] text-slate-900">{payment.ho_ten_full || payment.student_name || payment.ho_ten || 'Học viên'}</h4>
                     <p className="text-xs text-slate-500">{payment.ten_lop || payment.class_name || 'Lớp học'}</p>
                     {(payment.cccd) && (
                         <p className="text-[10px] text-slate-400 font-mono">{payment.cccd}</p>
@@ -86,25 +52,25 @@ const PaymentCard = ({ payment, onView, onConfirm, onReject }) => {
                 </span>
             </div>
 
-            <div className="flex items-center justify-between mb-3">
-                <span className="text-2xl font-bold text-blue-600">{formatCurrency(payment.amount)}</span>
+            <div className="mb-3 flex items-center justify-between">
+                <span className="text-[26px] font-black tracking-[-0.03em] text-amber-600">{formatCurrency(payment.amount)}</span>
                 <span className="text-xs text-slate-400 flex items-center gap-1">
                     <Calendar size={12} /> {formatDateVN(payment.payment_date || payment.created_at, true)}
                 </span>
             </div>
 
-            <div className="pt-3 border-t border-slate-50 space-y-2">
+            <div className="space-y-2 border-t border-slate-100 pt-3">
                 {payment.status === 'pending' && (
                     <div className="flex gap-2">
                         <button
                             onClick={() => onConfirm(payment.id)}
-                            className="flex-1 py-2 bg-green-600 text-white font-semibold rounded-xl text-sm active:bg-green-700 flex items-center justify-center gap-1"
+                            className="flex flex-1 items-center justify-center gap-1 rounded-2xl bg-green-600 py-2.5 text-sm font-semibold text-white active:bg-green-700"
                         >
                             <Check size={14} /> Xác nhận
                         </button>
                         <button
                             onClick={() => onReject(payment.id)}
-                            className="flex-1 py-2 bg-red-100 text-red-600 font-semibold rounded-xl text-sm active:bg-red-200 flex items-center justify-center gap-1"
+                            className="flex flex-1 items-center justify-center gap-1 rounded-2xl border border-red-100 bg-red-50 py-2.5 text-sm font-semibold text-red-600 active:bg-red-100"
                         >
                             <X size={14} /> Từ chối
                         </button>
@@ -112,7 +78,7 @@ const PaymentCard = ({ payment, onView, onConfirm, onReject }) => {
                 )}
                 <button
                     onClick={() => onView(payment)}
-                    className="w-full text-sm text-blue-600 font-medium flex items-center justify-center gap-1"
+                    className="flex w-full items-center justify-center gap-1 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2.5 text-sm font-semibold text-amber-700"
                 >
                     <Eye size={14} /> Xem chi tiết
                 </button>
@@ -227,129 +193,103 @@ export default function MobilePaymentsModule() {
 
     return (
         <div className="min-h-screen bg-slate-50">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-4 pt-4 pb-6 safe-area-inset-top">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-white">Quản lý Thanh toán</h2>
-                    <button onClick={() => loadPayments({ force: true })} className="p-2 bg-white/20 rounded-xl text-white">
-                        <RefreshCw size={20} />
-                    </button>
-                </div>
-
-                {/* Search */}
-                <div className="relative">
-                    <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/70" />
-                    <input
-                        type="text"
-                        placeholder="Tìm theo tên, CCCD, lớp..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-12 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/60"
-                    />
-                    <button
-                        onClick={() => setShowFilters(!showFilters)}
-                        className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg ${showFilters ? 'bg-white/30' : ''}`}
-                    >
-                        <Filter size={18} className="text-white/80" />
-                    </button>
-                </div>
-
-                {/* Filters */}
-                {showFilters && (
-                    <div className="mt-3 space-y-2">
-                        {/* Status filter chips */}
+            <MobileAdminHeroCard
+                eyebrow="Tài chính"
+                icon={CreditCard}
+                tone="amber"
+                title="Thanh toán"
+                description="Giữ tìm kiếm, lọc và số liệu xử lý trong cùng một cụm để duyệt học phí nhanh hơn trên mobile."
+                actions={(
+                    <MobileAdminSecondaryButton onClick={() => loadPayments({ force: true })} className="px-3.5">
+                        <RefreshCw size={16} />
+                        Làm mới
+                    </MobileAdminSecondaryButton>
+                )}
+                stats={(
+                    <div className="grid grid-cols-2 gap-2">
+                        <MobileAdminStatCard
+                            label="Tổng thu"
+                            value={stats.total >= 1000000000
+                                ? (stats.total / 1000000000).toFixed(1) + 'B'
+                                : stats.total >= 1000000
+                                ? (stats.total / 1000000).toFixed(0) + 'M'
+                                : stats.total >= 1000
+                                ? (stats.total / 1000).toFixed(0) + 'k'
+                                : stats.total.toLocaleString('vi-VN')}
+                            tone="amber"
+                        />
+                        <MobileAdminStatCard label="Chờ duyệt" value={stats.pendingCount} tone="amber" />
+                        <MobileAdminStatCard label="Đã xác nhận" value={stats.confirmedCount} tone="emerald" />
+                        <MobileAdminStatCard label="Từ chối" value={stats.rejectedCount} tone="rose" />
+                    </div>
+                )}
+                search={(
+                    <div className="flex gap-2">
+                        <MobileAdminSearchField
+                            value={searchTerm}
+                            onChange={setSearchTerm}
+                            onClear={() => setSearchTerm('')}
+                            placeholder="Tìm theo tên, CCCD, lớp..."
+                        />
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[20px] border shadow-sm ${showFilters ? 'border-amber-200 bg-amber-500 text-white' : 'border-white/10 bg-white/[0.96] text-slate-500'}`}
+                        >
+                            <Filter size={18} />
+                        </button>
+                    </div>
+                )}
+                filters={showFilters ? (
+                    <div className="space-y-2">
                         <div className="flex gap-2 overflow-x-auto pb-1">
                             {[
                                 { value: '', label: 'Tất cả' },
                                 { value: 'pending', label: 'Chờ duyệt' },
                                 { value: 'confirmed', label: 'Đã xác nhận' },
                                 { value: 'rejected', label: 'Từ chối' },
-                            ].map(f => (
+                            ].map((f) => (
                                 <button
                                     key={f.value}
                                     onClick={() => setFilterStatus(f.value)}
-                                    className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap ${filterStatus === f.value ? 'bg-white text-amber-600' : 'bg-white/20 text-white'}`}
+                                    className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${filterStatus === f.value ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-700'}`}
                                 >
                                     {f.label}
                                 </button>
                             ))}
                         </div>
 
-                        {/* Class filter */}
                         {classes.length > 0 && (
                             <div className="relative">
                                 <select
                                     value={filterClass}
                                     onChange={(e) => setFilterClass(e.target.value)}
-                                    className="w-full pl-4 pr-8 py-2.5 bg-white/20 border border-white/30 rounded-xl text-white text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-white/60"
-                                    style={{ colorScheme: 'dark' }}
+                                    className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 pr-8 text-sm text-slate-900 appearance-none focus:outline-none focus:ring-2 focus:ring-amber-200"
                                 >
-                                    <option value="" className="text-slate-900 bg-white">Tất cả lớp</option>
-                                    {classes.map(cls => (
-                                        <option key={cls.id} value={cls.id} className="text-slate-900 bg-white">
+                                    <option value="">Tất cả lớp</option>
+                                    {classes.map((cls) => (
+                                        <option key={cls.id} value={cls.id}>
                                             {cls.ten_lop}
                                         </option>
                                     ))}
                                 </select>
-                                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 pointer-events-none" />
+                                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                             </div>
                         )}
 
-                        {hasActiveFilters && (
+                        {hasActiveFilters ? (
                             <button
                                 onClick={() => { setSearchTerm(''); setFilterStatus(''); setFilterClass(''); }}
-                                className="flex items-center gap-1 text-white/80 text-sm font-medium"
+                                className="flex items-center gap-1 text-sm font-medium text-slate-500"
                             >
                                 <X size={14} /> Xóa bộ lọc
                             </button>
-                        )}
+                        ) : null}
                     </div>
-                )}
-            </div>
-
-            {/* Stats */}
-            <div className="px-4 -mt-3">
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-                    <div className="grid grid-cols-4 gap-2 text-center">
-                        <div>
-                            <p className="text-base font-bold text-amber-600 leading-tight">
-                                {stats.total >= 1000000000
-                                    ? (stats.total / 1000000000).toFixed(1) + 'B'
-                                    : stats.total >= 1000000
-                                    ? (stats.total / 1000000).toFixed(0) + 'M'
-                                    : stats.total >= 1000
-                                    ? (stats.total / 1000).toFixed(0) + 'k'
-                                    : stats.total.toLocaleString('vi-VN')}
-                            </p>
-                            <p className="text-[10px] text-slate-500">Tổng thu</p>
-                        </div>
-                        <div
-                            className="cursor-pointer"
-                            onClick={() => setFilterStatus(filterStatus === 'pending' ? '' : 'pending')}
-                        >
-                            <p className={`text-lg font-bold leading-tight ${filterStatus === 'pending' ? 'text-orange-700' : 'text-orange-500'}`}>{stats.pendingCount}</p>
-                            <p className="text-[10px] text-slate-500">Chờ duyệt</p>
-                        </div>
-                        <div
-                            className="cursor-pointer"
-                            onClick={() => setFilterStatus(filterStatus === 'confirmed' ? '' : 'confirmed')}
-                        >
-                            <p className={`text-lg font-bold leading-tight ${filterStatus === 'confirmed' ? 'text-green-800' : 'text-green-600'}`}>{stats.confirmedCount}</p>
-                            <p className="text-[10px] text-slate-500">Đã xác nhận</p>
-                        </div>
-                        <div
-                            className="cursor-pointer"
-                            onClick={() => setFilterStatus(filterStatus === 'rejected' ? '' : 'rejected')}
-                        >
-                            <p className={`text-lg font-bold leading-tight ${filterStatus === 'rejected' ? 'text-red-800' : 'text-red-500'}`}>{stats.rejectedCount}</p>
-                            <p className="text-[10px] text-slate-500">Từ chối</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                ) : null}
+            />
 
             {/* List */}
-            <div className="p-4 pb-24">
+            <div className="p-4 pt-3" style={{ paddingBottom: mobileAdminContentPadding(20) }}>
                 {hasActiveFilters && (
                     <p className="text-xs text-slate-500 mb-3">
                         Hiển thị {filteredPayments.length} / {payments.length} khoản

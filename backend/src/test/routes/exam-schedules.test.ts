@@ -32,6 +32,18 @@ async function createAdminToken() {
   );
 }
 
+async function createTeacherCodeAdminToken() {
+  return generateJWT(
+    {
+      id: 8,
+      role: 'admin',
+      teacher_code: 'GV001',
+      exp: Math.floor(Date.now() / 1000) + 60 * 60,
+    },
+    JWT_SECRET
+  );
+}
+
 async function createLegacyTeacherToken() {
   return generateJWT(
     {
@@ -170,6 +182,13 @@ async function setupDatabase() {
   `).run();
 
   await db.prepare(`
+    CREATE TABLE IF NOT EXISTS admins (
+      id INTEGER PRIMARY KEY,
+      full_name TEXT
+    )
+  `).run();
+
+  await db.prepare(`
     CREATE TABLE IF NOT EXISTS exam_schedules (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       class_id INTEGER,
@@ -177,6 +196,7 @@ async function setupDatabase() {
       exam_date TEXT NOT NULL,
       duration_minutes INTEGER DEFAULT 120,
       location TEXT,
+      google_map_url TEXT,
       notes TEXT,
       template_id INTEGER,
       zoom_link TEXT,
@@ -273,12 +293,87 @@ async function setupDatabase() {
       override_payload TEXT
     )
   `).run();
+
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS online_class_enrollments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      online_class_id INTEGER NOT NULL,
+      student_id INTEGER NOT NULL,
+      status TEXT NOT NULL,
+      enrolled_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      approved_at TEXT,
+      approved_by INTEGER,
+      rejection_reason TEXT,
+      UNIQUE (online_class_id, student_id)
+    )
+  `).run();
+
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS online_class_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      online_class_id INTEGER NOT NULL,
+      session_date TEXT NOT NULL,
+      start_time TEXT,
+      end_time TEXT,
+      note TEXT,
+      created_by INTEGER,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (online_class_id, session_date)
+    )
+  `).run();
+
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS online_class_attendance (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id INTEGER NOT NULL,
+      student_id INTEGER NOT NULL,
+      status TEXT,
+      note TEXT,
+      checked_in_at TEXT,
+      marked_by INTEGER,
+      marked_by_role TEXT,
+      zoom_join_source TEXT,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (session_id, student_id)
+    )
+  `).run();
+
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS students (
+      id INTEGER PRIMARY KEY,
+      ho TEXT,
+      ten_dem TEXT,
+      ten TEXT,
+      ho_ten_full TEXT,
+      ngay_sinh TEXT,
+      gioi_tinh TEXT,
+      dan_toc TEXT,
+      cccd TEXT,
+      sdt TEXT,
+      email TEXT,
+      dia_chi TEXT,
+      noi_sinh TEXT,
+      ngay_cap_cccd TEXT,
+      don_vi_cong_tac TEXT,
+      image_3x4 TEXT,
+      photo_3x4_image_id INTEGER,
+      image_cccd_front TEXT,
+      cccd_front_image_id INTEGER,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
 }
 
 async function cleanDatabase() {
+  await env.DB.prepare('DELETE FROM online_class_attendance').run();
+  await env.DB.prepare('DELETE FROM online_class_sessions').run();
+  await env.DB.prepare('DELETE FROM online_class_enrollments').run();
   await env.DB.prepare('DELETE FROM online_classes').run();
   await env.DB.prepare('DELETE FROM exam_registrations').run();
   await env.DB.prepare('DELETE FROM exam_schedules').run();
+  await env.DB.prepare('DELETE FROM students').run();
+  await env.DB.prepare('DELETE FROM admins').run();
   await env.DB.prepare('DELETE FROM registrations').run();
   await env.DB.prepare('DELETE FROM classes').run();
   await env.DB.prepare('DELETE FROM exam_types').run();
@@ -424,6 +519,66 @@ async function insertExamSchedule() {
   return Number(result.meta.last_row_id);
 }
 
+async function insertStudent(studentId: number, fullName: string, cccd: string) {
+  await env.DB.prepare(`
+    INSERT INTO students (id, ho_ten_full, cccd)
+    VALUES (?, ?, ?)
+  `).bind(studentId, fullName, cccd).run();
+}
+
+async function insertLinkedExamScheduleForAttendanceWindow() {
+  const result = await env.DB.prepare(`
+    INSERT INTO exam_schedules (
+      exam_name,
+      exam_date,
+      duration_minutes,
+      exam_type,
+      exam_category_id,
+      exam_type_id,
+      organizer_uuid,
+      program_uuid,
+      class_seed_name,
+      class_seed_schedule_rule,
+      class_seed_schedule_time,
+      class_seed_start_date
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    'TOEFL ITP A2 HCM G8',
+    '2026-04-10 07:00:00',
+    240,
+    'Tin hoc co ban',
+    1,
+    1,
+    'org-ptit',
+    'program-tinhoc',
+    'TOEFL ITP A2 HCM G8 - Lớp ôn tập',
+    'DAILY',
+    '07:00-11:00',
+    '2026-04-02'
+  ).run();
+
+  return Number(result.meta.last_row_id);
+}
+
+async function insertApprovedExamRegistration(examId: number, studentId: number, createdAt: string) {
+  await env.DB.prepare(`
+    INSERT INTO exam_registrations (exam_id, student_id, status, created_at, approved_at)
+    VALUES (?, ?, 'approved', ?, ?)
+  `).bind(examId, studentId, createdAt, createdAt).run();
+}
+
+async function ensureExamRegistrationPaymentStatusColumn() {
+  try {
+    await env.DB.prepare(`
+      ALTER TABLE exam_registrations
+      ADD COLUMN payment_status TEXT
+    `).run();
+  } catch {
+    // Column already exists in this test DB instance.
+  }
+}
+
 describe('exam schedules routes', () => {
   beforeEach(async () => {
     await setupDatabase();
@@ -445,6 +600,7 @@ describe('exam schedules routes', () => {
         exam_name: 'Tin hoc PTIT 23/03/2026',
         exam_date: '2026-03-23T09:00:00.000Z',
         duration_minutes: null,
+        google_map_url: 'https://maps.app.goo.gl/test-location',
         organizer_uuid: 'org-ptit',
         program_uuid: 'program-tinhoc',
         enable_linked_class: false,
@@ -455,18 +611,20 @@ describe('exam schedules routes', () => {
     expect(response.status).toBe(201);
 
     const saved = await env.DB.prepare(`
-      SELECT duration_minutes, class_seed_name, zoom_link
+      SELECT duration_minutes, class_seed_name, zoom_link, google_map_url
       FROM exam_schedules
       WHERE exam_name = ?
     `).bind('Tin hoc PTIT 23/03/2026').first<{
       duration_minutes: number | null;
       class_seed_name: string | null;
       zoom_link: string | null;
+      google_map_url: string | null;
     }>();
 
     expect(saved?.duration_minutes ?? null).toBeNull();
     expect(saved?.class_seed_name ?? null).toBeNull();
     expect(saved?.zoom_link ?? null).toBeNull();
+    expect(saved?.google_map_url ?? null).toBe('https://maps.app.goo.gl/test-location');
   });
 
   it('auto assigns PTIT template when request omits template_id', async () => {
@@ -701,6 +859,90 @@ describe('exam schedules routes', () => {
     expect(saved?.template_id ?? null).toBe(2);
   });
 
+  it('prioritizes VEPT template when program is VEPT even if organizer label contains PTIT', async () => {
+    await env.DB.prepare(`
+      INSERT INTO programs (
+        uuid, organizer_uuid, name, code, delivery_mode,
+        linked_class_enabled, visible_on_exam_teacher, visible_on_exam_student,
+        legacy_exam_category_id, legacy_exam_type_id, assessment_mode, schedule_model
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      'program-vept-ptit',
+      'org-ptit',
+      'VEPT PTIT',
+      'VEPT',
+      'external_redirect',
+      0,
+      1,
+      1,
+      2,
+      2,
+      'official_exam',
+      'session_based'
+    ).run();
+
+    const app = createTestApp();
+    const token = await createAdminToken();
+
+    const response = await app.request('/exam-schedules', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        exam_name: 'Thi VEPT PTIT uu tien program',
+        exam_date: '2026-03-24T09:00:00.000Z',
+        organizer_uuid: 'org-ptit',
+        program_uuid: 'program-vept-ptit',
+        enable_linked_class: false,
+        enable_zoom_meeting: false,
+      }),
+    });
+
+    expect(response.status).toBe(201);
+
+    const saved = await env.DB.prepare(`
+      SELECT template_id
+      FROM exam_schedules
+      WHERE exam_name = ?
+    `).bind('Thi VEPT PTIT uu tien program').first<{ template_id: number | null }>();
+
+    expect(saved?.template_id ?? null).toBe(2);
+  });
+
+  it('auto assigns PTIT template for tin hoc programs even when organizer is not PTIT', async () => {
+    const app = createTestApp();
+    const token = await createAdminToken();
+
+    const response = await app.request('/exam-schedules', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        exam_name: 'Thi Tin hoc Edu Global auto template',
+        exam_date: '2026-03-24T09:00:00.000Z',
+        organizer_uuid: 'org-eduglobal',
+        program_uuid: 'program-th-edu',
+        enable_linked_class: false,
+        enable_zoom_meeting: false,
+      }),
+    });
+
+    expect(response.status).toBe(201);
+
+    const saved = await env.DB.prepare(`
+      SELECT template_id
+      FROM exam_schedules
+      WHERE exam_name = ?
+    `).bind('Thi Tin hoc Edu Global auto template').first<{ template_id: number | null }>();
+
+    expect(saved?.template_id ?? null).toBe(1);
+  });
+
   it('accepts organizer and program identifiers by code or name when creating an exam schedule', async () => {
     const app = createTestApp();
     const token = await createAdminToken();
@@ -807,7 +1049,7 @@ describe('exam schedules routes', () => {
     expect(saved?.template_id ?? null).toBe(1);
   });
 
-  it('keeps template_id null when no auto rule matches', async () => {
+  it('auto assigns PTIT template for non-PTIT organizers when the selected program is tin hoc', async () => {
     const app = createTestApp();
     const token = await createAdminToken();
 
@@ -818,7 +1060,7 @@ describe('exam schedules routes', () => {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        exam_name: 'Thi khong auto template',
+        exam_name: 'Thi tin hoc auto template theo program',
         exam_date: '2026-03-26T09:00:00.000Z',
         organizer_uuid: 'org-eduglobal',
         program_uuid: 'program-th-edu',
@@ -833,9 +1075,9 @@ describe('exam schedules routes', () => {
       SELECT template_id
       FROM exam_schedules
       WHERE exam_name = ?
-    `).bind('Thi khong auto template').first<{ template_id: number | null }>();
+    `).bind('Thi tin hoc auto template theo program').first<{ template_id: number | null }>();
 
-    expect(saved?.template_id ?? null).toBeNull();
+    expect(saved?.template_id ?? null).toBe(1);
   });
 
   it('rejects legacy teacher sessions on admin exam schedule routes', async () => {
@@ -850,6 +1092,113 @@ describe('exam schedules routes', () => {
     });
 
     expect(response.status).toBe(403);
+  });
+
+  it('hides exam payment status from teacher-code admins on student list routes', async () => {
+    const app = createTestApp();
+    const token = await createTeacherCodeAdminToken();
+    const examId = await insertExamSchedule();
+
+    await ensureExamRegistrationPaymentStatusColumn();
+    await insertStudent(201, 'Nguyen Van Approved', '999001');
+    await insertStudent(202, 'Nguyen Van Pending', '999002');
+
+    await env.DB.prepare(`
+      INSERT INTO exam_registrations (exam_id, student_id, status, payment_status, created_at, approved_at)
+      VALUES (?, ?, 'approved', 'paid', ?, ?)
+    `).bind(examId, 201, '2026-03-01 09:00:00', '2026-03-01 09:30:00').run();
+
+    await env.DB.prepare(`
+      INSERT INTO exam_registrations (exam_id, student_id, status, payment_status)
+      VALUES (?, ?, 'pending', 'unpaid')
+    `).bind(examId, 202).run();
+
+    const approvedResponse = await app.request(`/exam-schedules/${examId}/students`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    expect(approvedResponse.status).toBe(200);
+    const approvedPayload = await approvedResponse.json() as any;
+    expect(approvedPayload.data[0]?.payment_status).toBeUndefined();
+
+    const pendingResponse = await app.request(`/exam-schedules/${examId}/pending`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    expect(pendingResponse.status).toBe(200);
+    const pendingPayload = await pendingResponse.json() as any;
+    expect(pendingPayload.data[0]?.payment_status).toBeUndefined();
+  });
+
+  it('allows full admins to view and update exam payment status', async () => {
+    const app = createTestApp();
+    const token = await createAdminToken();
+    const examId = await insertExamSchedule();
+
+    await ensureExamRegistrationPaymentStatusColumn();
+    await insertStudent(301, 'Nguyen Van Admin', '999101');
+    await env.DB.prepare(`
+      INSERT INTO exam_registrations (exam_id, student_id, status, payment_status)
+      VALUES (?, ?, 'approved', 'unpaid')
+    `).bind(examId, 301).run();
+
+    const listResponse = await app.request(`/exam-schedules/${examId}/students`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    expect(listResponse.status).toBe(200);
+    const listPayload = await listResponse.json() as any;
+    expect(listPayload.data[0]?.payment_status).toBe('unpaid');
+
+    const updateResponse = await app.request(`/exam-schedules/${examId}/students/301/payment-status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ payment_status: 'paid' }),
+    });
+
+    expect(updateResponse.status).toBe(200);
+    const saved = await env.DB.prepare(`
+      SELECT payment_status
+      FROM exam_registrations
+      WHERE exam_id = ? AND student_id = ?
+    `).bind(examId, 301).first<{ payment_status?: string | null }>();
+    expect(saved?.payment_status).toBe('paid');
+  });
+
+  it('blocks teacher-code admins from updating exam payment status', async () => {
+    const app = createTestApp();
+    const token = await createTeacherCodeAdminToken();
+    const examId = await insertExamSchedule();
+
+    await ensureExamRegistrationPaymentStatusColumn();
+    await insertStudent(302, 'Nguyen Van Teacher', '999102');
+    await env.DB.prepare(`
+      INSERT INTO exam_registrations (exam_id, student_id, status, payment_status)
+      VALUES (?, ?, 'approved', 'unpaid')
+    `).bind(examId, 302).run();
+
+    const response = await app.request(`/exam-schedules/${examId}/students/302/payment-status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ payment_status: 'paid' }),
+    });
+
+    expect(response.status).toBe(403);
+    const saved = await env.DB.prepare(`
+      SELECT payment_status
+      FROM exam_registrations
+      WHERE exam_id = ? AND student_id = ?
+    `).bind(examId, 302).first<{ payment_status?: string | null }>();
+    expect(saved?.payment_status).toBe('unpaid');
   });
 
   it('ignores invalid linked class fields when linked class is explicitly disabled on update', async () => {
@@ -892,6 +1241,188 @@ describe('exam schedules routes', () => {
     expect(saved?.class_seed_name ?? null).toBeNull();
     expect(saved?.class_seed_schedule_rule ?? null).toBeNull();
     expect(saved?.zoom_link ?? null).toBeNull();
+  });
+
+  it('generates daily linked-class sessions from first registration date until the day before exam', async () => {
+    const app = createTestApp();
+    const token = await createAdminToken();
+    const examId = await insertLinkedExamScheduleForAttendanceWindow();
+
+    await insertStudent(101, 'Hà Thanh Liêm', '111111111111');
+    await insertApprovedExamRegistration(examId, 101, '2026-04-02 08:00:00');
+
+    const response = await app.request('/exam-schedules/resync-classes', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    expect(response.status).toBe(200);
+
+    const sessions = await env.DB.prepare(`
+      SELECT ocs.session_date
+      FROM online_class_sessions ocs
+      JOIN online_classes oc ON oc.id = ocs.online_class_id
+      WHERE oc.source_exam_schedule_id = ?
+      ORDER BY ocs.session_date ASC
+    `).bind(examId).all<{ session_date?: string | null }>();
+
+    expect((sessions.results || []).map((row) => row.session_date)).toEqual([
+      '2026-04-02',
+      '2026-04-03',
+      '2026-04-04',
+      '2026-04-05',
+      '2026-04-06',
+      '2026-04-07',
+      '2026-04-08',
+      '2026-04-09',
+    ]);
+  });
+
+  it('returns expected_session_count and is_counted per student registration date', async () => {
+    const app = createTestApp();
+    const token = await createAdminToken();
+    const examId = await insertLinkedExamScheduleForAttendanceWindow();
+
+    await insertStudent(101, 'Hà Thanh Liêm', '111111111111');
+    await insertStudent(102, 'Phạm Thanh Bình', '222222222222');
+    await insertApprovedExamRegistration(examId, 101, '2026-04-02 08:00:00');
+    await insertApprovedExamRegistration(examId, 102, '2026-04-05 09:00:00');
+
+    await app.request('/exam-schedules/resync-classes', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const response = await app.request(`/exam-schedules/${examId}/learning-attendance`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+    const students = payload?.data?.students || [];
+    const firstStudent = students.find((item: any) => Number(item.student_id) === 101);
+    const secondStudent = students.find((item: any) => Number(item.student_id) === 102);
+
+    expect(firstStudent?.registration_date).toBe('2026-04-02');
+    expect(firstStudent?.expected_session_count).toBe(8);
+    expect(firstStudent?.sessions?.[0]?.is_counted).toBe(true);
+
+    expect(secondStudent?.registration_date).toBe('2026-04-05');
+    expect(secondStudent?.expected_session_count).toBe(5);
+    expect(secondStudent?.sessions?.[0]?.session_date).toBe('2026-04-02');
+    expect(secondStudent?.sessions?.[0]?.is_counted).toBe(false);
+    expect(secondStudent?.sessions?.[3]?.session_date).toBe('2026-04-05');
+    expect(secondStudent?.sessions?.[3]?.is_counted).toBe(true);
+  });
+
+  it('blocks manual attendance updates for sessions before a student registration date', async () => {
+    const app = createTestApp();
+    const token = await createAdminToken();
+    const examId = await insertLinkedExamScheduleForAttendanceWindow();
+
+    await insertStudent(101, 'Hà Thanh Liêm', '111111111111');
+    await insertStudent(102, 'Phạm Thanh Bình', '222222222222');
+    await insertApprovedExamRegistration(examId, 101, '2026-04-02 08:00:00');
+    await insertApprovedExamRegistration(examId, 102, '2026-04-05 09:00:00');
+
+    await app.request('/exam-schedules/resync-classes', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const earlySession = await env.DB.prepare(`
+      SELECT ocs.id
+      FROM online_class_sessions ocs
+      JOIN online_classes oc ON oc.id = ocs.online_class_id
+      WHERE oc.source_exam_schedule_id = ?
+        AND ocs.session_date = '2026-04-02'
+      LIMIT 1
+    `).bind(examId).first<{ id?: number | null }>();
+
+    const invalidResponse = await app.request(`/exam-schedules/${examId}/learning-sessions/${earlySession?.id}/attendance/102`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status: 'present' }),
+    });
+
+    expect(invalidResponse.status).toBe(400);
+  });
+
+  it('shrinks future auto sessions when removing earliest student but keeps sessions with attendance history', async () => {
+    const app = createTestApp();
+    const token = await createAdminToken();
+    const examId = await insertLinkedExamScheduleForAttendanceWindow();
+
+    await insertStudent(101, 'Hà Thanh Liêm', '111111111111');
+    await insertStudent(102, 'Phạm Thanh Bình', '222222222222');
+    await insertApprovedExamRegistration(examId, 101, '2026-04-02 08:00:00');
+    await insertApprovedExamRegistration(examId, 102, '2026-04-05 09:00:00');
+
+    await app.request('/exam-schedules/resync-classes', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const linkedClass = await env.DB.prepare(`
+      SELECT id
+      FROM online_classes
+      WHERE source_exam_schedule_id = ?
+      LIMIT 1
+    `).bind(examId).first<{ id?: number | null }>();
+    const firstSession = await env.DB.prepare(`
+      SELECT id
+      FROM online_class_sessions
+      WHERE online_class_id = ?
+        AND session_date = '2026-04-02'
+      LIMIT 1
+    `).bind(linkedClass?.id ?? null).first<{ id?: number | null }>();
+
+    await env.DB.prepare(`
+      INSERT INTO online_class_attendance (
+        session_id, student_id, status, checked_in_at, zoom_join_source
+      )
+      VALUES (?, ?, 'present', '2026-04-02T01:00:00.000Z', 'zoom_click')
+    `).bind(firstSession?.id ?? null, 101).run();
+
+    const response = await app.request(`/exam-schedules/${examId}/students/101`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    expect(response.status).toBe(200);
+
+    const sessions = await env.DB.prepare(`
+      SELECT ocs.session_date
+      FROM online_class_sessions ocs
+      JOIN online_classes oc ON oc.id = ocs.online_class_id
+      WHERE oc.source_exam_schedule_id = ?
+      ORDER BY ocs.session_date ASC
+    `).bind(examId).all<{ session_date?: string | null }>();
+
+    expect((sessions.results || []).map((row) => row.session_date)).toEqual([
+      '2026-04-02',
+      '2026-04-05',
+      '2026-04-06',
+      '2026-04-07',
+      '2026-04-08',
+      '2026-04-09',
+    ]);
   });
 
   it('clears every Zoom backup link when zoom meeting is disabled on update', async () => {

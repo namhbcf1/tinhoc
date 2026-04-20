@@ -23,6 +23,7 @@ bucket_name = "class-videos"
 # Environment variables
 [vars]
 ENVIRONMENT = "production"
+READ_ONLY_MODE = "false"
 
 # MUST BE SET VIA: wrangler secret put JWT_SECRET
 JWT_SECRET = ""

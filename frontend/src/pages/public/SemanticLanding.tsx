@@ -96,6 +96,7 @@ export default function SemanticLanding({
                 title={title}
                 description={description}
                 url={typeof window !== 'undefined' ? window.location.pathname : ''}
+                lang={lang}
                 structuredData={combinedSchema}
             />
 

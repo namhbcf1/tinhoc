@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import ModernPublicLayout from '../../components/layout/ModernPublicLayout';
 import { Calendar, Play, BookOpen, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
@@ -68,7 +68,7 @@ function GuideCard({ post }: { post: any }) {
                                 loading="lazy"
                             />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-600 to-teal-700">
+                            <div role="img" aria-label="Hình thu nhỏ video" className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-600 to-teal-700">
                                 <BookOpen size={48} className="text-white/60" />
                             </div>
                         )}
@@ -146,6 +146,31 @@ export default function GuidesPage() {
 
     const totalPages = Math.ceil(posts.length / postsPerPage);
     const currentPosts = posts.slice((currentPage - 1) * postsPerPage, currentPage * postsPerPage);
+    const guidesStructuredData = useMemo(() => {
+        return [
+            {
+                '@type': 'CollectionPage',
+                name: 'Hướng dẫn - Video clip VanTrangEdu',
+                description: 'Video hướng dẫn đăng ký thi, nộp hồ sơ, sử dụng hệ thống và các clip học thuật từ Van Trang Education.',
+                url: 'https://vantrangedu.com/guides'
+            },
+            ...(posts.length > 0 ? [{
+                '@type': 'ItemList',
+                itemListElement: posts.slice(0, 12).map((post: any, index: number) => ({
+                    '@type': 'ListItem',
+                    position: index + 1,
+                    item: {
+                        '@type': post.video_url ? 'VideoObject' : 'Article',
+                        name: post.title,
+                        description: post.excerpt || post.title,
+                        url: `https://vantrangedu.com/news/${post.slug || post.id}`,
+                        thumbnailUrl: post.featured_image || getYouTubeThumbnail(post.video_url || ''),
+                        uploadDate: post.publish_at || post.created_at,
+                    }
+                }))
+            }] : [])
+        ];
+    }, [posts]);
 
     const paginate = (page: number) => {
         setCurrentPage(page);
@@ -158,6 +183,7 @@ export default function GuidesPage() {
                 title="Hướng dẫn - Video clip"
                 description="Video hướng dẫn đăng ký thi, nộp hồ sơ, sử dụng hệ thống và các clip học thuật từ Van Trang Education."
                 url="/guides"
+                structuredData={guidesStructuredData}
             />
             <div ref={container} className="bg-slate-50 min-h-screen pb-24">
                 {/* Hero */}

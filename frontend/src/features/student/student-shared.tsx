@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react';
-import { X } from 'lucide-react';
+import { RefreshCw, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import OverlayPortal from '../../components/ui/OverlayPortal';
+
+// ─── Page Shell ───────────────────────────────────────────────────────────────
+// Giống admin: white top-bar với icon + title + badge stats + action button
 
 export function StudentPageShell({
   icon,
@@ -9,6 +13,8 @@ export function StudentPageShell({
   stats = [],
   action,
   compact = false,
+  /** Đặt false khi dùng trong mobile layout có header riêng — tránh double sticky */
+  stickyHeader = true,
   children,
 }: {
   icon: ReactNode;
@@ -17,48 +23,77 @@ export function StudentPageShell({
   stats?: Array<{ label: string; value: string | number }>;
   action?: ReactNode;
   compact?: boolean;
+  stickyHeader?: boolean;
   children: ReactNode;
 }) {
   return (
-    <div className={cn('space-y-5', compact && 'space-y-4')}>
-      <section className={cn(
-        'relative overflow-hidden rounded-[28px] border border-emerald-200/60 bg-[radial-gradient(circle_at_top_right,_rgba(16,185,129,0.24),_transparent_35%),linear-gradient(135deg,#0f172a_0%,#065f46_50%,#022c22_100%)] p-6 text-white shadow-[0_24px_60px_-32px_rgba(6,95,70,0.7)]',
-        compact && 'rounded-[24px] p-5'
+    <div className={cn('w-full', compact ? 'space-y-0' : 'space-y-0')}>
+      {/* Header bar */}
+      <div className={cn(
+        'bg-white border-b border-slate-200/70',
+        stickyHeader && 'sticky top-0 z-10',
+        compact ? 'px-4 py-3' : 'px-6 py-4'
       )}>
-        <div className="absolute -right-8 -top-8 h-36 w-36 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute bottom-0 left-0 h-28 w-28 rounded-full bg-emerald-300/10 blur-3xl" />
-        <div className={cn('relative z-10 flex items-start justify-between gap-4', compact && 'flex-col')}>
-          <div className="flex items-start gap-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
             <div className={cn(
-              'flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white shadow-lg backdrop-blur',
-              compact && 'h-12 w-12'
+              'flex items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100',
+              compact ? 'w-9 h-9' : 'w-10 h-10'
             )}>
               {icon}
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-100/80">Student Area</p>
-              <h1 className={cn('mt-1 text-3xl font-black tracking-tight', compact && 'text-2xl')}>{title}</h1>
-              <p className={cn('mt-2 max-w-2xl text-sm text-emerald-50/80', compact && 'text-[13px]')}>{subtitle}</p>
+              <h1 className={cn(
+                'font-extrabold tracking-tight text-slate-900',
+                compact ? 'text-base' : 'text-lg'
+              )}>{title}</h1>
+              {!compact && (
+                <p className="text-xs text-slate-400 mt-0.5 max-w-lg">{subtitle}</p>
+              )}
             </div>
           </div>
-          {action ? <div className={cn('shrink-0', compact && 'w-full')}>{action}</div> : null}
-        </div>
-        {!!stats.length && (
-          <div className={cn('relative z-10 mt-5 grid gap-3', compact ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-4')}>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Stats pills */}
             {stats.map((stat) => (
-              <div key={stat.label} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-50/60">{stat.label}</p>
-                <p className="mt-1 text-xl font-black tracking-tight text-white">{stat.value}</p>
+              <div
+                key={stat.label}
+                className="hidden sm:flex items-center gap-1.5 rounded-xl bg-slate-50 border border-slate-200 px-3 py-1.5"
+              >
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{stat.label}</span>
+                <span className="text-sm font-extrabold text-slate-800">{stat.value}</span>
+              </div>
+            ))}
+            {/* Action */}
+            {action}
+          </div>
+        </div>
+
+        {/* Mobile stats row */}
+        {!!stats.length && (
+          <div className="sm:hidden mt-3 flex gap-2 overflow-x-auto pb-0.5 no-scrollbar">
+            {stats.map((stat) => (
+              <div
+                key={stat.label}
+                className="flex items-center gap-1.5 rounded-lg bg-slate-50 border border-slate-200 px-2.5 py-1.5 shrink-0"
+              >
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{stat.label}</span>
+                <span className="text-sm font-extrabold text-slate-700">{stat.value}</span>
               </div>
             ))}
           </div>
         )}
-      </section>
+      </div>
 
-      {children}
+      {/* Content */}
+      <div className={cn(compact ? 'p-4 space-y-4' : 'p-6 space-y-5')}>
+        {children}
+      </div>
     </div>
   );
 }
+
+// ─── Filter Bar ───────────────────────────────────────────────────────────────
 
 export function StudentFilterBar({
   filters,
@@ -70,27 +105,25 @@ export function StudentFilterBar({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-1.5">
       {filters.map((filter) => (
         <button
           key={filter.id}
           type="button"
           onClick={() => onChange(filter.id)}
           className={cn(
-            'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition-colors',
+            'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-all duration-150',
             activeFilter === filter.id
-              ? 'border-emerald-600 bg-emerald-600 text-white'
-              : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-200 hover:text-emerald-700'
+              ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm'
+              : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
           )}
         >
           <span>{filter.label}</span>
           {typeof filter.count === 'number' ? (
-            <span
-              className={cn(
-                'rounded-full px-2 py-0.5 text-xs font-black',
-                activeFilter === filter.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-              )}
-            >
+            <span className={cn(
+              'rounded-md px-1.5 py-0.5 text-[10px] font-extrabold',
+              activeFilter === filter.id ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-500'
+            )}>
               {filter.count}
             </span>
           ) : null}
@@ -99,6 +132,8 @@ export function StudentFilterBar({
     </div>
   );
 }
+
+// ─── Section ─────────────────────────────────────────────────────────────────
 
 export function StudentSection({
   title,
@@ -113,10 +148,12 @@ export function StudentSection({
 }) {
   return (
     <section className="space-y-3">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-black tracking-tight text-slate-900">{title}</h2>
-          {description ? <p className="mt-1 text-sm text-slate-500">{description}</p> : null}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-[15px] font-extrabold tracking-tight text-slate-800">{title}</h2>
+          {description ? (
+            <span className="hidden md:block text-xs text-slate-400 font-medium">— {description}</span>
+          ) : null}
         </div>
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>
@@ -124,6 +161,8 @@ export function StudentSection({
     </section>
   );
 }
+
+// ─── Empty State ──────────────────────────────────────────────────────────────
 
 export function StudentEmptyState({
   title,
@@ -135,13 +174,15 @@ export function StudentEmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-10 text-center shadow-sm">
-      <h3 className="text-base font-black text-slate-800">{title}</h3>
-      <p className="mx-auto mt-2 max-w-xl text-sm text-slate-500">{description}</p>
+    <div className="rounded-xl border border-dashed border-slate-200 bg-white px-6 py-10 text-center">
+      <h3 className="text-sm font-extrabold text-slate-700">{title}</h3>
+      <p className="mx-auto mt-1.5 max-w-sm text-xs text-slate-400 leading-relaxed">{description}</p>
       {action ? <div className="mt-4">{action}</div> : null}
     </div>
   );
 }
+
+// ─── Info Card ────────────────────────────────────────────────────────────────
 
 export function StudentInfoCard({
   children,
@@ -151,11 +192,16 @@ export function StudentInfoCard({
   className?: string;
 }) {
   return (
-    <div className={cn('rounded-[28px] border border-slate-200/70 bg-white p-5 shadow-[0_18px_50px_-32px_rgba(15,23,42,0.35)]', className)}>
+    <div className={cn(
+      'rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200',
+      className
+    )}>
       {children}
     </div>
   );
 }
+
+// ─── Pill / Badge ─────────────────────────────────────────────────────────────
 
 export function StudentPill({
   children,
@@ -165,19 +211,24 @@ export function StudentPill({
   tone?: 'slate' | 'emerald' | 'amber' | 'red' | 'blue';
 }) {
   const toneClasses: Record<string, string> = {
-    slate: 'border-slate-200 bg-slate-50 text-slate-600',
+    slate:   'border-slate-200   bg-slate-50   text-slate-600',
     emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-    amber: 'border-amber-200 bg-amber-50 text-amber-700',
-    red: 'border-red-200 bg-red-50 text-red-700',
-    blue: 'border-blue-200 bg-blue-50 text-blue-700',
+    amber:   'border-amber-200   bg-amber-50   text-amber-700',
+    red:     'border-red-200     bg-red-50     text-red-700',
+    blue:    'border-blue-200    bg-blue-50    text-blue-700',
   };
 
   return (
-    <span className={cn('inline-flex items-center rounded-full border px-3 py-1 text-xs font-black', toneClasses[tone] || toneClasses.slate)}>
+    <span className={cn(
+      'inline-flex items-center rounded-lg border px-2 py-0.5 text-[11px] font-extrabold',
+      toneClasses[tone] ?? toneClasses.slate
+    )}>
       {children}
     </span>
   );
 }
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
 
 export function StudentModal({
   open,
@@ -197,30 +248,99 @@ export function StudentModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm" onClick={onClose}>
+    <OverlayPortal>
       <div
-        className={cn(
-          'absolute left-1/2 top-1/2 flex w-[min(920px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-2xl',
-          compact && 'bottom-0 left-0 top-auto w-full translate-x-0 translate-y-0 rounded-b-none rounded-t-[28px]'
-        )}
-        onClick={(event) => event.stopPropagation()}
+        className="fixed inset-0 z-[100000] bg-slate-950/50 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4"
+        onClick={onClose}
       >
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+        <div
+          className={cn(
+            'flex w-full flex-col overflow-hidden bg-white shadow-2xl',
+            compact
+              /* mobile: bottom sheet cố định 90dvh, desktop: auto */
+              ? 'rounded-t-2xl h-[90dvh] md:h-auto md:max-h-[85vh] md:rounded-2xl md:w-[min(680px,calc(100vw-2rem))]'
+              : 'rounded-t-2xl h-[90dvh] md:h-auto md:max-h-[85vh] md:rounded-2xl md:w-[min(900px,calc(100vw-2rem))]'
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+        {/* Drag handle — chỉ hiện trên mobile */}
+        <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0">
+          <div className="w-10 h-1 rounded-full bg-slate-200" />
+        </div>
+
+        {/* Modal header */}
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5 shrink-0">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Chi tiết</p>
-            <h3 className="mt-1 text-lg font-black tracking-tight text-slate-900">{title}</h3>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Chi tiết</p>
+            <h3 className="mt-0.5 text-base font-extrabold tracking-tight text-slate-900">{title}</h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
-        <div className={cn('max-h-[70vh] overflow-y-auto p-5', compact && 'max-h-[68vh]')}>{children}</div>
-        {footer ? <div className="border-t border-slate-100 px-5 py-4">{footer}</div> : null}
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {children}
+        </div>
+
+        {/* Footer */}
+        {footer ? (
+          <div className="border-t border-slate-100 px-5 py-3.5 shrink-0 bg-slate-50/50">
+            {footer}
+          </div>
+        ) : null}
+        </div>
       </div>
+    </OverlayPortal>
+  );
+}
+
+// ─── Loading Skeleton ─────────────────────────────────────────────────────────
+
+export function StudentCardSkeleton({ count = 3 }: { count?: number }) {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="rounded-xl border border-slate-200 bg-white p-4 animate-pulse">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="h-5 w-20 rounded-lg bg-slate-100" />
+            <div className="h-5 w-16 rounded-lg bg-slate-100" />
+          </div>
+          <div className="h-5 w-48 rounded bg-slate-200 mb-2" />
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <div className="h-14 rounded-lg bg-slate-50" />
+            <div className="h-14 rounded-lg bg-slate-50" />
+          </div>
+        </div>
+      ))}
     </div>
+  );
+}
+
+// ─── Refresh Button ───────────────────────────────────────────────────────────
+
+export function StudentRefreshButton({
+  onClick,
+  loading,
+  label = 'Làm mới',
+}: {
+  onClick: () => void;
+  loading?: boolean;
+  label?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all duration-150 shadow-sm"
+    >
+      <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+      {label}
+    </button>
   );
 }

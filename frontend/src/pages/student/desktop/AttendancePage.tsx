@@ -1,87 +1,163 @@
-import { useState, useEffect, useRef } from 'react';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
-import { ClipboardList, CheckCircle, XCircle, Calendar, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle,
+  ChevronDown,
+  ChevronUp,
+  ClipboardList,
+  XCircle,
+} from 'lucide-react';
 import api from '../../../services/api';
+import {
+  StudentCardSkeleton,
+  StudentEmptyState,
+  StudentInfoCard,
+  StudentPageShell,
+  StudentPill,
+  StudentRefreshButton,
+  StudentSection,
+} from '../../../features/student/student-shared';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const fmtDate = (d) => { try { return new Date(d).toLocaleDateString('vi-VN'); } catch { return d || '—'; } };
-
-const STATUS_MAP = {
-  present: { label: 'Có mặt', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
-  co_mat:  { label: 'Có mặt', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
-  absent:  { label: 'Vắng',   color: 'text-red-700 bg-red-50 border-red-200' },
-  vang:    { label: 'Vắng',   color: 'text-red-700 bg-red-50 border-red-200' },
-  late:    { label: 'Muộn',   color: 'text-amber-700 bg-amber-50 border-amber-200' },
-  muon:    { label: 'Muộn',   color: 'text-amber-700 bg-amber-50 border-amber-200' },
-  excused: { label: 'Có phép', color: 'text-blue-700 bg-blue-50 border-blue-200' },
+const fmtDate = (d: any) => {
+  try { return new Date(d).toLocaleDateString('vi-VN'); } catch { return d || '—'; }
 };
-const mapStatus = (raw) => STATUS_MAP[(raw || '').toLowerCase()] || { label: raw || '—', color: 'text-slate-500 bg-slate-50 border-slate-200' };
-const barColor  = (pct) => pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-amber-500' : 'bg-red-500';
-const isPresent = (r) => ['present', 'co_mat'].includes((r.status || r.trang_thai || '').toLowerCase());
+const fmtDateTime = (d: any) => {
+  try { return new Date(d).toLocaleString('vi-VN'); } catch { return d || '—'; }
+};
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
+type StatusTone = 'emerald' | 'red' | 'amber' | 'blue' | 'slate';
 
-const Skeleton = () => (
-  <div className="space-y-4 animate-pulse">
-    {[1, 2, 3].map(i => (
-      <div key={i} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-        <div className="h-5 bg-slate-200 rounded w-48 mb-3" />
-        <div className="h-2.5 bg-slate-100 rounded-full w-full mb-2" />
-        <div className="h-3 bg-slate-100 rounded w-24" />
+const STATUS_MAP: Record<string, { label: string; tone: StatusTone }> = {
+  present:  { label: 'Có mặt',   tone: 'emerald' },
+  co_mat:   { label: 'Có mặt',   tone: 'emerald' },
+  absent:   { label: 'Vắng',     tone: 'red'     },
+  vang:     { label: 'Vắng',     tone: 'red'     },
+  late:     { label: 'Muộn',     tone: 'amber'   },
+  muon:     { label: 'Muộn',     tone: 'amber'   },
+  excused:  { label: 'Có phép',  tone: 'blue'    },
+};
+const mapStatus = (raw: string) =>
+  STATUS_MAP[(raw || '').toLowerCase()] ?? { label: raw || '—', tone: 'slate' as StatusTone };
+
+const isPresent = (r: any) =>
+  ['present', 'co_mat', 'late', 'muon'].includes((r.status || r.trang_thai || '').toLowerCase());
+
+const mapJoinSource = (raw: any) => ({
+  zoom_click:        'Vào Zoom',
+  meet_click:        'Vào Meet',
+  manual:            'Điểm danh tay',
+}[String(raw || '').toLowerCase()] ?? null);
+
+// ─── Progress Bar ─────────────────────────────────────────────────────────────
+
+function ProgressBar({ pct }: { pct: number }) {
+  const color = pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-amber-500' : 'bg-red-500';
+  const textColor = pct >= 80 ? 'text-emerald-600' : pct >= 60 ? 'text-amber-600' : 'text-red-600';
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-700 ${color}`}
+          style={{ width: `${pct}%` }}
+        />
       </div>
-    ))}
-  </div>
-);
+      <span className={`text-[11px] font-extrabold tabular-nums shrink-0 ${textColor}`}>{pct}%</span>
+    </div>
+  );
+}
 
 // ─── Class Card ───────────────────────────────────────────────────────────────
 
-const ClassCard = ({ classItem: { className, records, presentCount, totalCount } }) => {
+function ClassCard({
+  classItem: { className, records, presentCount, totalCount, sourceLabel, teacherName },
+}: {
+  classItem: {
+    className: string;
+    records: any[];
+    presentCount: number;
+    totalCount: number;
+    sourceLabel: string | null;
+    teacherName: string | null;
+  };
+}) {
   const [open, setOpen] = useState(false);
   const pct = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
-  const pctColor = pct >= 80 ? 'text-emerald-600' : pct >= 60 ? 'text-amber-600' : 'text-red-600';
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden anim-fade-up hover:-translate-y-1.5 hover:shadow-xl transition-transform duration-300 cursor-default">
-      <button className="w-full p-5 flex items-center justify-between text-left hover:bg-slate-50 transition-colors" onClick={() => setOpen(o => !o)}>
-        <div className="flex-1 min-w-0 pr-4">
-          <h3 className="font-bold text-slate-800 truncate mb-2">{className}</h3>
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
-              <div className={`h-full rounded-full transition-all duration-700 ${barColor(pct)}`} style={{ width: `${pct}%` }} />
-            </div>
-            <span className={`text-xs font-bold whitespace-nowrap ${pctColor}`}>{pct}% ({presentCount}/{totalCount})</span>
+    <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+      {/* Header row */}
+      <button
+        type="button"
+        className="w-full px-4 py-3.5 flex items-center gap-3 text-left hover:bg-slate-50/80 transition-colors"
+        onClick={() => setOpen((o) => !o)}
+      >
+        {/* Class info */}
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-[14px] font-extrabold text-slate-900 truncate">{className}</p>
+            {sourceLabel ? (
+              <StudentPill tone="blue">{sourceLabel}</StudentPill>
+            ) : null}
+            {teacherName ? (
+              <span className="text-[11px] text-slate-400">{teacherName}</span>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-2">
+            <ProgressBar pct={pct} />
+            <span className="text-[11px] text-slate-400 shrink-0">
+              {presentCount}/{totalCount} buổi
+            </span>
           </div>
         </div>
-        {open ? <ChevronUp size={18} className="text-slate-400 flex-shrink-0" /> : <ChevronDown size={18} className="text-slate-400 flex-shrink-0" />}
+        {/* Chevron */}
+        <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 text-slate-400">
+          {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </div>
       </button>
 
-      {open && (
+      {/* Expandable table */}
+      {open ? (
         <div className="border-t border-slate-100 overflow-x-auto">
           {records.length === 0 ? (
-            <p className="text-slate-400 text-sm text-center py-6">Chưa có buổi học nào</p>
+            <p className="text-center text-xs text-slate-400 py-6 font-medium">
+              Chưa có buổi học nào
+            </p>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-[12px]">
               <thead>
-                <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                  <th className="px-5 py-3 text-left font-semibold">Ngày</th>
-                  <th className="px-5 py-3 text-left font-semibold">Trạng thái</th>
-                  <th className="px-5 py-3 text-left font-semibold">Ghi chú</th>
+                <tr className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider">
+                  <th className="px-4 py-2.5 text-left font-bold">Ngày</th>
+                  <th className="px-4 py-2.5 text-left font-bold">Trạng thái</th>
+                  <th className="px-4 py-2.5 text-left font-bold">Ghi chú</th>
                 </tr>
               </thead>
               <tbody>
-                {records.map((rec, idx) => {
-                  const { label, color } = mapStatus(rec.status || rec.trang_thai);
+                {records.map((rec: any, idx: number) => {
+                  const { label, tone } = mapStatus(rec.status || rec.trang_thai);
+                  const joinSource = mapJoinSource(rec.join_source);
+                  const meta = rec.checked_in_at
+                    ? `Điểm danh: ${fmtDateTime(rec.checked_in_at)}`
+                    : joinSource;
                   return (
-                    <tr key={idx} className="border-t border-slate-50 hover:bg-slate-50/60 transition-colors">
-                      <td className="px-5 py-3 text-slate-700 whitespace-nowrap">
-                        <span className="flex items-center gap-1.5"><Calendar size={13} className="text-slate-400" />{fmtDate(rec.date || rec.session_date || rec.ngay)}</span>
+                    <tr
+                      key={idx}
+                      className="border-t border-slate-50 hover:bg-slate-50/60 transition-colors"
+                    >
+                      <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">
+                        <span className="flex items-center gap-1.5">
+                          <Calendar size={11} className="text-slate-400" />
+                          {fmtDate(rec.date || rec.session_date || rec.ngay)}
+                        </span>
                       </td>
-                      <td className="px-5 py-3">
-                        <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${color}`}>{label}</span>
+                      <td className="px-4 py-2.5">
+                        <StudentPill tone={tone}>{label}</StudentPill>
                       </td>
-                      <td className="px-5 py-3 text-slate-400 text-xs font-bold">{rec.notes || rec.ghi_chu || '—'}</td>
+                      <td className="px-4 py-2.5 text-slate-400 text-[11px]">
+                        {rec.notes || rec.ghi_chu || meta || '—'}
+                      </td>
                     </tr>
                   );
                 })}
@@ -89,111 +165,164 @@ const ClassCard = ({ classItem: { className, records, presentCount, totalCount }
             </table>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
-};
+}
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-export default function AttendancePage({ studentData }) {
-  const [classes, setClasses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const containerRef = useRef(null);
-
-  useGSAP(() => {
-    gsap.fromTo('.anim-fade-up', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: 'power3.out' });
-    gsap.fromTo('.anim-scale',   { opacity: 0, scale: 0.95 }, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.5)', delay: 0.2 });
-  }, [classes]);
-
-  useEffect(() => { if (studentData) fetchAttendance(); }, [studentData]);
+export default function AttendancePage({
+  studentData,
+  /** Pass true khi render bên trong StudentMobileLayout (đã có header) để tránh double sticky */
+  insideMobileLayout = false,
+}: {
+  studentData: any;
+  insideMobileLayout?: boolean;
+}) {
+  const [classes, setClasses]   = useState<any[]>([]);
+  const [loading, setLoading]   = useState(true);
 
   const fetchAttendance = async () => {
     setLoading(true);
     try {
-      const regs = studentData.registrations || [];
-      if (!regs.length) { setClasses([]); return; }
-      const results = await Promise.all(regs.map(async (reg) => {
-        try {
-          const [classRes, attendRes] = await Promise.all([
-            api.getClass(reg.class_id),
-            api.getAttendanceByRegistration(reg.registration_id),
-          ]);
-          const records = Array.isArray(attendRes?.data) ? attendRes.data : [];
-          return {
-            className: classRes.data?.ten_lop || classRes.data?.class_name || `Lớp #${reg.class_id}`,
-            records,
-            presentCount: records.filter(isPresent).length,
-            totalCount: records.length,
-          };
-        } catch { return null; }
-      }));
-      setClasses(results.filter(Boolean));
-    } catch (err) {
-      console.error('Không thể tải điểm danh:', err);
+      const regs       = studentData?.registrations ?? [];
+      const studentId  = Number(studentData?.id);
+
+      const [offlineResults, onlineRes] = await Promise.all([
+        regs.length
+          ? Promise.all(regs.map(async (reg: any) => {
+              try {
+                const [classRes, attendRes] = await Promise.all([
+                  api.getClass(reg.class_id),
+                  api.getAttendanceByRegistration(reg.registration_id),
+                ]);
+                const records = Array.isArray(attendRes?.data) ? attendRes.data : [];
+                return {
+                  classKey:     `offline-${reg.registration_id}`,
+                  className:    classRes.data?.ten_lop || classRes.data?.class_name || `Lớp #${reg.class_id}`,
+                  sourceLabel:  reg.class_type === 'thi' ? 'Lịch thi' : 'Lớp học',
+                  teacherName:  null,
+                  records,
+                  presentCount: records.filter(isPresent).length,
+                  totalCount:   records.length,
+                };
+              } catch { return null; }
+            }))
+          : Promise.resolve([]),
+        Number.isFinite(studentId) && studentId > 0
+          ? api.getOnlineAttendanceByStudent(studentId, 'student').catch(() => null)
+          : Promise.resolve(null),
+      ]);
+
+      const onlineItems   = Array.isArray(onlineRes?.data) ? onlineRes.data : [];
+      const onlineResults = onlineItems.map((item: any) => {
+        const records = Array.isArray(item.records) ? item.records : [];
+        return {
+          classKey:     `online-${item.online_class_id}`,
+          className:    item.class_name || `Lớp online #${item.online_class_id}`,
+          sourceLabel:  'Lớp online',
+          teacherName:  item.teacher_name ?? null,
+          records,
+          presentCount: Number(item.present_count || 0),
+          totalCount:   Number(item.total_sessions || records.length),
+        };
+      });
+
+      setClasses([...offlineResults.filter(Boolean), ...onlineResults]);
+    } catch {
       setClasses([]);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const totalSessions = classes.reduce((s, c) => s + c.totalCount, 0);
-  const totalPresent  = classes.reduce((s, c) => s + c.presentCount, 0);
-  const overallPct    = totalSessions > 0 ? Math.round((totalPresent / totalSessions) * 100) : 0;
-  const lowAttendance = classes.filter(c => c.totalCount > 0 && Math.round((c.presentCount / c.totalCount) * 100) < 80);
+  useEffect(() => { if (studentData) fetchAttendance(); }, [studentData]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const totalSessions  = classes.reduce((s, c) => s + c.totalCount,   0);
+  const totalPresent   = classes.reduce((s, c) => s + c.presentCount, 0);
+  const overallPct     = totalSessions > 0 ? Math.round((totalPresent / totalSessions) * 100) : 0;
+  const lowAttendance  = classes.filter((c) => c.totalCount > 0 && Math.round((c.presentCount / c.totalCount) * 100) < 80);
 
   return (
-    <div className="space-y-6" ref={containerRef}>
-      {/* Hero */}
-      <div className="bg-gradient-to-r from-teal-600 to-cyan-600 rounded-3xl p-7 text-white shadow-xl anim-fade-up relative overflow-hidden">
-        <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10" />
-        <div className="absolute -bottom-10 -left-6 w-32 h-32 rounded-full bg-white/10" />
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-1">
-            <ClipboardList size={20} className="text-white/80" />
-            <p className="text-white/80 text-sm font-semibold uppercase">Điểm danh</p>
+    <StudentPageShell
+      icon={<ClipboardList size={20} />}
+      title="Điểm danh"
+      subtitle="Theo dõi chuyên cần của bạn qua từng lớp học."
+      stickyHeader={!insideMobileLayout}
+      stats={[
+        { label: 'Tổng buổi',  value: totalSessions },
+        { label: 'Có mặt',     value: totalPresent  },
+        { label: 'Chuyên cần', value: `${overallPct}%` },
+      ]}
+      action={<StudentRefreshButton onClick={fetchAttendance} loading={loading} />}
+    >
+      {/* Overall progress card */}
+      <StudentInfoCard>
+        <div className="flex items-center gap-4">
+          {/* Big percent */}
+          <div className="shrink-0 w-16 h-16 rounded-xl bg-emerald-50 border border-emerald-100 flex flex-col items-center justify-center">
+            <span className={[
+              'text-2xl font-black leading-none',
+              overallPct >= 80 ? 'text-emerald-600' : overallPct >= 60 ? 'text-amber-600' : 'text-red-600',
+            ].join(' ')}>
+              {overallPct}
+            </span>
+            <span className="text-[9px] font-bold text-slate-400 mt-0.5">%</span>
           </div>
-          <p className="text-7xl font-extrabold text-white leading-none mb-1">{overallPct}%</p>
-          <p className="text-white/70 text-sm mb-5">Tỷ lệ chuyên cần tổng thể ({totalPresent}/{totalSessions} buổi)</p>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: 'Tổng buổi học', value: totalSessions, icon: Calendar },
-              { label: 'Có mặt',        value: totalPresent,  icon: CheckCircle },
-              { label: 'Vắng / Muộn',   value: totalSessions - totalPresent, icon: XCircle },
-            ].map(({ label, value, icon: Icon }) => (
-              <div key={label} className="bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/25">
-                <div className="flex items-center gap-1.5 mb-1"><Icon size={13} className="text-white/70" /><p className="text-white/70 text-xs font-medium font-bold">{label}</p></div>
-                <p className="text-white font-bold text-xl">{value}</p>
-              </div>
-            ))}
+          {/* Stats */}
+          <div className="flex-1 space-y-1.5">
+            <p className="text-sm font-extrabold text-slate-900">Tổng quan chuyên cần</p>
+            <ProgressBar pct={overallPct} />
+            <div className="flex gap-4 text-[11px] text-slate-500">
+              <span className="flex items-center gap-1">
+                <CheckCircle size={11} className="text-emerald-500" />
+                Có mặt: <strong className="text-slate-700">{totalPresent}</strong>
+              </span>
+              <span className="flex items-center gap-1">
+                <XCircle size={11} className="text-red-400" />
+                Vắng: <strong className="text-slate-700">{totalSessions - totalPresent}</strong>
+              </span>
+              <span className="flex items-center gap-1">
+                <Calendar size={11} className="text-slate-400" />
+                Tổng: <strong className="text-slate-700">{totalSessions}</strong>
+              </span>
+            </div>
           </div>
         </div>
-      </div>
+      </StudentInfoCard>
 
       {/* Low-attendance warning */}
-      {!loading && lowAttendance.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex gap-3 items-start anim-scale">
-          <AlertTriangle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+      {!loading && lowAttendance.length > 0 ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5 flex items-start gap-3">
+          <AlertTriangle size={16} className="text-amber-500 shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-red-700 text-sm">Cảnh báo chuyên cần</p>
-            <p className="text-red-600 text-xs mt-0.5 font-bold">
-              {lowAttendance.length} lớp có tỷ lệ điểm danh dưới 80%:{' '}
-              <span className="font-semibold">{lowAttendance.map(c => c.className).join(', ')}</span>
+            <p className="text-[13px] font-extrabold text-amber-800">Cảnh báo chuyên cần</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              {lowAttendance.length} lớp dưới 80%:{' '}
+              <span className="font-bold">{lowAttendance.map((c) => c.className).join(', ')}</span>
             </p>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* Content */}
-      {loading ? <Skeleton /> : classes.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 py-20 text-center">
-          <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-4">
-            <ClipboardList size={36} className="text-slate-300" />
+      {/* Class list */}
+      <StudentSection title="Chi tiết từng lớp" description="Bấm vào lớp để xem lịch sử buổi học">
+        {loading ? (
+          <StudentCardSkeleton count={3} />
+        ) : classes.length === 0 ? (
+          <StudentEmptyState
+            title="Chưa có dữ liệu điểm danh"
+            description="Bạn chưa đăng ký lớp học nào hoặc chưa có buổi học nào được ghi nhận."
+          />
+        ) : (
+          <div className="space-y-2">
+            {classes.map((c) => (
+              <ClassCard key={c.classKey || c.className} classItem={c} />
+            ))}
           </div>
-          <p className="text-slate-500 font-semibold text-lg">Chưa có dữ liệu điểm danh</p>
-          <p className="text-slate-400 text-sm mt-1">Bạn chưa đăng ký lớp học nào</p>
-        </div>
-      ) : (
-        <div className="space-y-4">{classes.map((c, i) => <ClassCard key={i} classItem={c} />)}</div>
-      )}
-    </div>
+        )}
+      </StudentSection>
+    </StudentPageShell>
   );
 }

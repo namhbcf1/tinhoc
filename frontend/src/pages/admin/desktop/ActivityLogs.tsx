@@ -7,6 +7,7 @@ import api from '../../../services/api';
 import { formatDateVN } from '../../../utils/dateUtils';
 import '../../../styles/admin/AdminModern.css';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
+import { AdminPageHeader, AdminSummaryPill } from '../shared/AdminPageHeader';
 
 export default function ActivityLogs({ toast }) {
   const [logs, setLogs] = useState([]);
@@ -59,10 +60,18 @@ export default function ActivityLogs({ toast }) {
 
   return (
     <div className="admin-page">
-      <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
-        <div><h1><Activity size={32} /> Nhật ký hoạt động</h1><p>Theo dõi tất cả hoạt động trong hệ thống</p></div>
-        <button onClick={loadLogs} className="admin-btn admin-btn-outline" style={{ padding: '10px 16px' }}><RefreshCw size={18} /> Làm mới</button>
-      </div>
+      <AdminPageHeader
+        icon={Activity}
+        title="Nhật ký hoạt động"
+        description="Theo dõi các hành động quan trọng để tìm nguyên nhân lỗi và kiểm soát thay đổi trong hệ thống."
+        pills={(
+          <>
+            <AdminSummaryPill>Tổng log {logs.length}</AdminSummaryPill>
+            <AdminSummaryPill>Đang lọc {filteredLogs.length}</AdminSummaryPill>
+          </>
+        )}
+        actions={<button onClick={loadLogs} className="admin-btn admin-btn-outline" style={{ padding: '10px 16px' }}><RefreshCw size={18} /> Làm mới</button>}
+      />
 
       {/* Stats */}
       <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>

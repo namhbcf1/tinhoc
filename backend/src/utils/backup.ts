@@ -2,66 +2,106 @@
 // DATABASE BACKUP UTILITY
 // ========================================
 
+interface BackupTableDefinition {
+  name: string;
+  schema: string | null;
+}
+
+interface R2ObjectManifestEntry {
+  key: string;
+  size: number;
+  uploaded: string;
+  etag?: string;
+  httpEtag?: string;
+}
+
+interface BucketInventory {
+  bucketName: string;
+  objectCount: number;
+  objects: R2ObjectManifestEntry[];
+}
+
+interface FullDatabaseBackup {
+  export_date: string;
+  version: string;
+  table_order: string[];
+  table_schemas: Record<string, string | null>;
+  tables: Record<string, unknown[]>;
+}
+
+function quoteIdentifier(identifier: string): string {
+  return `"${identifier.replace(/"/g, '""')}"`;
+}
+
+export async function listDatabaseTables(db: D1Database): Promise<BackupTableDefinition[]> {
+  const result = await db.prepare(
+    `
+      SELECT name, sql
+      FROM sqlite_master
+      WHERE type = 'table'
+        AND (name NOT LIKE 'sqlite_%' OR name = 'sqlite_sequence')
+      ORDER BY CASE WHEN name = 'sqlite_sequence' THEN 1 ELSE 0 END, name
+    `,
+  ).all<{ name: string; sql: string | null }>();
+
+  return (result.results || []).map((table) => ({
+    name: table.name,
+    schema: table.sql ?? null,
+  }));
+}
+
+async function listBucketInventory(bucketName: string, bucket: R2Bucket): Promise<BucketInventory> {
+  const objects: R2ObjectManifestEntry[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const page = await bucket.list({ cursor });
+    for (const object of page.objects) {
+      objects.push({
+        key: object.key,
+        size: object.size,
+        uploaded: object.uploaded.toISOString(),
+        etag: object.etag,
+        httpEtag: object.httpEtag,
+      });
+    }
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
+
+  return {
+    bucketName,
+    objectCount: objects.length,
+    objects,
+  };
+}
+
 /**
- * Export database to JSON format
+ * Export database to JSON format, including every actual table discovered
+ * from sqlite_master so backups do not drift behind schema changes.
  */
 export async function exportDatabaseToJSON(db: D1Database): Promise<string> {
   try {
-    const tables = [
-      // Core registration data
-      'students',
-      'classes',
-      'registrations',
-      'payments',
-      'certificates',
-      // Admin & auth
-      'admins',
-      'password_reset_tokens',
-      'admin_activity_logs',
-      // Content
-      'posts',
-      'documents',
-      'document_folders',
-      'document_permissions',
-      'document_downloads',
-      'notifications',
-      // Teachers & scheduling
-      'teachers',
-      'class_teachers',
-      'class_schedules',
-      'attendance',
-      // Assignments
-      'assignments',
-      'assignment_submissions',
-      // Exam system
-      'exam_tests',
-      'exam_questions',
-      'exam_answers',
-      'exam_attempts',
-      'exam_attempt_answers',
-      'exam_schedules',
-      // Online classes / videos
-      'online_classes',
-      'class_videos',
-      'video_views',
-      // Messaging
-      'messages',
-      'message_threads',
-    ];
+    const tables = await listDatabaseTables(db);
 
-    const data: { export_date: string; version: string; tables: Record<string, unknown[]> } = {
+    const data: FullDatabaseBackup = {
       export_date: new Date().toISOString(),
-      version: '1.0',
+      version: '2.0',
+      table_order: [],
+      table_schemas: {},
       tables: {},
     };
 
     for (const table of tables) {
       try {
-        const result = await db.prepare(`SELECT * FROM ${table}`).all();
-        data.tables[table] = result.results || [];
+        const result = await db.prepare(`SELECT * FROM ${quoteIdentifier(table.name)}`).all();
+        data.table_order.push(table.name);
+        data.table_schemas[table.name] = table.schema;
+        data.tables[table.name] = result.results || [];
       } catch (error) {
-        console.error(`Error exporting table ${table}:`, error);
-        data.tables[table] = [];
+        console.error(`Error exporting table ${table.name}:`, error);
+        data.table_order.push(table.name);
+        data.table_schemas[table.name] = table.schema;
+        data.tables[table.name] = [];
       }
     }
 
@@ -77,7 +117,7 @@ export async function exportDatabaseToJSON(db: D1Database): Promise<string> {
  */
 export async function exportTableToCSV(db: D1Database, tableName: string): Promise<string> {
   try {
-    const result = await db.prepare(`SELECT * FROM ${tableName}`).all();
+    const result = await db.prepare(`SELECT * FROM ${quoteIdentifier(tableName)}`).all();
     const rows = result.results || [];
 
     if (rows.length === 0) {
@@ -120,10 +160,17 @@ export async function createBackup(
   db: D1Database,
   r2Bucket: R2Bucket,
   env: unknown
-): Promise<{ success: boolean; backupKey: string; timestamp: string; size: number }> {
+): Promise<{
+  success: boolean;
+  backupKey: string;
+  manifestKey: string | null;
+  timestamp: string;
+  size: number;
+}> {
   try {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupKey = `backups/database-${timestamp}.json`;
+    const manifestKey = `backups/r2-manifest-${timestamp}.json`;
 
     // Export database to JSON
     const jsonData = await exportDatabaseToJSON(db);
@@ -139,12 +186,44 @@ export async function createBackup(
       },
     });
 
+    const bucketInventories: BucketInventory[] = [
+      await listBucketInventory('vantrangedu-files', r2Bucket),
+    ];
+
+    const maybeVideoBucket = (env as { VIDEO_BUCKET?: R2Bucket } | null)?.VIDEO_BUCKET;
+    if (maybeVideoBucket) {
+      bucketInventories.push(await listBucketInventory('class-videos', maybeVideoBucket));
+    }
+
+    await r2Bucket.put(
+      manifestKey,
+      JSON.stringify(
+        {
+          export_date: new Date().toISOString(),
+          version: '1.0',
+          buckets: bucketInventories,
+        },
+        null,
+        2,
+      ),
+      {
+        httpMetadata: {
+          contentType: 'application/json',
+        },
+        customMetadata: {
+          'backup-date': new Date().toISOString(),
+          'backup-type': 'r2-manifest',
+        },
+      },
+    );
+
     // Keep only last 30 backups (optional cleanup)
     // This would require listing R2 objects, which we can do if needed
 
     return {
       success: true,
       backupKey,
+      manifestKey,
       timestamp,
       size: jsonData.length,
     };
@@ -193,11 +272,19 @@ export async function restoreFromBackup(
     }
 
     const jsonData = await object.text();
-    const backup = JSON.parse(jsonData) as { tables: Record<string, Record<string, unknown>[]> };
+    const backup = JSON.parse(jsonData) as {
+      table_order?: string[];
+      tables: Record<string, Record<string, unknown>[]>;
+    };
 
     // Restore each table
     const results: Record<string, unknown> = {};
-    for (const [tableName, rows] of Object.entries(backup.tables)) {
+    const orderedTables = Array.isArray(backup.table_order) && backup.table_order.length > 0
+      ? backup.table_order
+      : Object.keys(backup.tables);
+
+    for (const tableName of orderedTables) {
+      const rows = backup.tables[tableName] || [];
       if (rows.length === 0) continue;
 
       try {
@@ -207,12 +294,12 @@ export async function restoreFromBackup(
         // Insert data
         const columns = Object.keys(rows[0]);
         const placeholders = columns.map(() => '?').join(', ');
-        const values = columns.join(', ');
+        const values = columns.map(quoteIdentifier).join(', ');
 
         for (const row of rows) {
           const rowValues = columns.map(col => row[col]);
           await db.prepare(
-            `INSERT OR REPLACE INTO ${tableName} (${values}) VALUES (${placeholders})`
+            `INSERT OR REPLACE INTO ${quoteIdentifier(tableName)} (${values}) VALUES (${placeholders})`
           ).bind(...rowValues).run();
         }
 

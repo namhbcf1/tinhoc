@@ -9,7 +9,11 @@ import { getStorageValue, removeStorageValue } from '../../../utils/browser-stor
 import { loadStudentData, STUDENT_SESSION_UPDATED_EVENT } from '../../../utils/studentDataLoader';
 
 const MobileExamsModule = lazy(() => import('./MobileExamsModule'));
+const AttendancePage = lazy(() => import('../desktop/AttendancePage'));
 const MobileProfileModule = lazy(() => import('./MobileProfileModule'));
+const StudentReviewsMobileView = lazy(() => import('./StudentReviewsMobileView'));
+const StudentFeedbackMobileView = lazy(() => import('./StudentFeedbackMobileView'));
+const MobileMyOnlineClassesModule = lazy(() => import('./MobileMyOnlineClassesModule'));
 
 function readStudentData() {
     try {
@@ -61,12 +65,13 @@ export default function StudentDashboardMobile() {
 
         const updateTab = () => {
             const hash = window.location.hash.replace('#', '');
+            const pathname = window.location.pathname;
             if (hash === 'dashboard') {
                 window.location.hash = 'exams';
                 return;
             }
 
-            if (hash === 'schedule' || hash === 'payment' || hash === 'my-classes' || hash === 'register-class') {
+            if (hash === 'schedule' || hash === 'payment' || hash === 'register-class') {
                 window.location.hash = 'exams';
                 return;
             }
@@ -74,6 +79,12 @@ export default function StudentDashboardMobile() {
             const validTabs = [...STUDENT_MAIN_MENU.filter((item) => !item.external).map((item) => item.id), 'profile'];
             if (hash && validTabs.includes(hash)) {
                 setActiveTab(hash);
+                return;
+            }
+
+            const matchedPathTab = validTabs.find((tabId) => pathname.includes(`/${tabId}`));
+            if (matchedPathTab) {
+                setActiveTab(matchedPathTab);
                 return;
             }
 
@@ -133,6 +144,14 @@ export default function StudentDashboardMobile() {
         switch (activeTab) {
             case 'exams':
                 return <MobileExamsModule {...props} />;
+            case 'my-classes':
+                return <MobileMyOnlineClassesModule />;
+            case 'attendance':
+                return <AttendancePage {...props} insideMobileLayout />;
+            case 'reviews':
+                return <StudentReviewsMobileView />;
+            case 'feedback':
+                return <StudentFeedbackMobileView />;
             case 'profile':
                 return <MobileProfileModule studentData={studentData} onUpdate={handleProfileUpdate} />;
             default:

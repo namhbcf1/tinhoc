@@ -13,8 +13,10 @@ const CCCDUploader = lazy(() => import('../../../components/upload/CCCDUploader'
 const getImageUrl = resolveImageUrl;
 
 function normalizeProfileGender(value) {
-    if (value === 'male' || value === 'Male' || value === 'Nam' || value === 'nam') return 'Nam';
-    if (value === 'female' || value === 'Female' || value === 'Nữ' || value === 'nữ' || value === 'nu') return 'Nữ';
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === 'male' || normalized === 'nam') return 'Nam';
+    if (normalized === 'female' || normalized === 'nữ' || normalized === 'nu') return 'Nữ';
+    if (normalized === 'khác' || normalized === 'khac' || normalized === 'other') return 'Khác';
     return '';
 }
 
@@ -75,7 +77,7 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const uploaderFallback = (
         <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
-            Äang táº£i trÃ¬nh upload...
+            Đang tải trình upload...
         </div>
     );
 
@@ -161,6 +163,17 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                 cccd_front_image_id: imageFrontId,
                 cccd_back_image_id: imageBackId,
             };
+
+            const currentGender = normalizeProfileGender(studentData?.gioi_tinh);
+            const nextGender = normalizeProfileGender(updateData.gioi_tinh);
+
+            // Compatibility guard for old backend deployment:
+            // avoid sending unchanged gender so other fields can still be updated.
+            if (!nextGender || nextGender === currentGender) {
+                delete updateData.gioi_tinh;
+            } else {
+                updateData.gioi_tinh = nextGender;
+            }
 
             const response = await api.updateStudentByCCCD(studentData.cccd, updateData);
             if (response && response.success) {
@@ -276,51 +289,43 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
     return (
         <div className="min-h-screen bg-slate-50 pb-28">
             <ToastContainer toasts={toasts} removeToast={removeToast} />
-            {/* Header */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 pt-5 pb-8" style={{ overflow: 'clip' }}>
-                <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-violet-500/10 blur-2xl opacity-60" />
-                <div className="absolute bottom-0 left-4 w-32 h-32 rounded-full bg-purple-500/10 blur-2xl opacity-60" />
-                <div className="relative z-10 flex gap-4 items-center">
-                    <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-2xl font-black text-white shadow-lg overflow-hidden tracking-tight border-2 border-violet-400/30">
-                        {avatarUrl ? (
-                            <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" onError={(e) => {
-                                e.target.style.display = 'none';
-                                if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
-                            }} />
-                        ) : null}
-                        {!avatarUrl && (
-                            <span>{displayName.charAt(0) || 'H'}</span>
-                        )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Học viên</p>
-                        <h2 className="text-xl font-black text-white tracking-tight leading-tight">{displayName}</h2>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-violet-500/20 text-violet-300 mt-1.5 border border-violet-500/30">
-                            {studentData?.cccd || 'Học viên'}
-                        </span>
-                    </div>
+            {/* Profile identity strip — emerald brand, no dark gradient */}
+            <div className="bg-white border-b border-slate-100 px-4 py-3 flex items-center gap-3">
+                <div className="h-11 w-11 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center overflow-hidden shrink-0">
+                    {avatarUrl ? (
+                        <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                        <span className="text-lg font-extrabold text-emerald-600">{displayName.charAt(0) || 'H'}</span>
+                    )}
                 </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-extrabold text-slate-900 truncate leading-tight">{displayName}</p>
+                    <p className="text-[11px] text-slate-400 font-mono mt-0.5">{studentData?.cccd || ''}</p>
+                </div>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                    Học viên
+                </span>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-slate-200 px-4 bg-white sticky z-10 overflow-x-auto" style={{ top: 'var(--mb-header-height)' }}>
+            <div className="flex border-b border-slate-200 bg-white sticky z-10 overflow-x-auto" style={{ top: 'var(--mb-header-height)' }}>
                 <button
                     onClick={() => setActiveTab('info')}
-                    className={`flex-1 pb-3 pt-3 font-black text-sm transition-colors border-b-2 whitespace-nowrap ${activeTab === 'info' ? 'text-violet-700 border-violet-600' : 'text-slate-500 border-transparent'}`}
+                    className={`flex-1 pb-3 pt-3 font-bold text-sm transition-colors border-b-2 whitespace-nowrap ${activeTab === 'info' ? 'text-emerald-700 border-emerald-600' : 'text-slate-500 border-transparent'}`}
                 >
                     Thông tin
                 </button>
                 <button
                     onClick={() => setActiveTab('photos')}
-                    className={`flex-1 pb-3 pt-3 font-black text-sm transition-colors border-b-2 whitespace-nowrap ${activeTab === 'photos' ? 'text-violet-700 border-violet-600' : 'text-slate-500 border-transparent'}`}
+                    className={`flex-1 pb-3 pt-3 font-bold text-sm transition-colors border-b-2 whitespace-nowrap ${activeTab === 'photos' ? 'text-emerald-700 border-emerald-600' : 'text-slate-500 border-transparent'}`}
                 >
                     Ảnh hồ sơ
                 </button>
                 <button
                     onClick={() => setActiveTab('password')}
-                    className={`flex-1 pb-3 pt-3 font-black text-sm transition-colors border-b-2 whitespace-nowrap ${activeTab === 'password' ? 'text-violet-700 border-violet-600' : 'text-slate-500 border-transparent'}`}
+                    className={`flex-1 pb-3 pt-3 font-bold text-sm transition-colors border-b-2 whitespace-nowrap ${activeTab === 'password' ? 'text-emerald-700 border-emerald-600' : 'text-slate-500 border-transparent'}`}
                 >
-                    Đổi mật khẩu
+                    Đăng nhập
                 </button>
             </div>
 
@@ -330,7 +335,7 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                     <form onSubmit={handleProfileSubmit} className="space-y-6 py-6">
                         {/* Thông tin cá nhân */}
                         <div>
-                            <h3 className="text-xs font-black text-violet-700 uppercase tracking-widest mb-3">Thông tin cá nhân</h3>
+                            <h3 className="text-xs font-extrabold text-emerald-700 uppercase tracking-widest mb-3">Thông tin cá nhân</h3>
                             <div className="space-y-3">
                                 <FormField
                                     label="Họ *"
@@ -471,12 +476,17 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
 
                 {activeTab === 'photos' && (
                     <div className="py-6 space-y-6">
+                        <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                            Đổi ảnh CCCD ở đây chỉ để thay ảnh và kiểm tra độ rõ. Hệ thống không OCR lại và không tự đổi thông tin hồ sơ.
+                        </div>
+
                         {/* Ảnh 3x4 */}
                         <div>
                             <p className="text-sm font-bold text-slate-700 mb-3">Ảnh thẻ 3x4</p>
                             <Suspense fallback={uploaderFallback}>
                                 <CCCDUploader
                                     type="photo_3x4"
+                                    photoGenderHint={profileForm.gioi_tinh}
                                     onUploadSuccess={handleImageUploadSuccess('3x4')}
                                     onUploadError={handleImageUploadError}
                                     existingImageUrl={image3x4}

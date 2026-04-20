@@ -27,6 +27,13 @@ export function applyAttendanceMethods(ApiClient) {
     return this.request(`/attendance/registration/${registrationId}`);
   };
 
+  // Get online learning attendance records for a student
+  ApiClient.prototype.getOnlineAttendanceByStudent = async function(studentId, tokenType = null) {
+    return this.request(`/attendance/student/${studentId}/online`, {
+      tokenType: tokenType || this.getCurrentRole(),
+    });
+  };
+
   // Get attendance records for a class on a specific date (optional)
   ApiClient.prototype.getAttendanceByClass = async function(classId, date = null, tokenType = null) {
     const url = date

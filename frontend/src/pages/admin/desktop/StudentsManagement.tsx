@@ -6,45 +6,48 @@ import { formatDateVN } from '../../../utils/dateUtils';
 import { resolveImageUrl } from '../../../utils/imageUrl';
 import '../../../styles/admin/AdminModern.css';
 import AdminLoadingState from '../../../components/admin/AdminLoadingState';
-import StudentStatsBar    from './students/StudentStatsBar';
 import StudentTableView   from './students/StudentTableView';
 import StudentGridView    from './students/StudentGridView';
 import StudentDetailModal from './students/StudentDetailModal';
 import StudentFormModal   from './students/StudentFormModal';
 import { ADMIN_CACHE_KEYS, ADMIN_CACHE_TTL, getAdminCache, invalidateAdminData, setAdminCache } from '../shared/admin-cache';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
+import OverlayPortal from '../../../components/ui/OverlayPortal';
+import { LearningInfoPill, LearningWorkspaceHeader } from '../shared/LearningWorkspaceHeader';
 
 // ─── Bulk Delete Confirm Dialog ────────────────────────────────────────────────
 function BulkDeleteDialog({ count, onConfirm, onCancel }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 animate-[fadeIn_0.2s_ease-out]">
-        <div className="flex items-center gap-4 mb-5">
-          <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-            <AlertTriangle size={24} className="text-red-600" />
+    <OverlayPortal>
+      <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full animate-[fadeIn_0.2s_ease-out]">
+          <div className="flex items-center gap-4 mb-5">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+              <AlertTriangle size={24} className="text-red-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Xác nhận xóa hàng loạt</h3>
+              <p className="text-sm text-slate-500 mt-0.5">Thao tác này không thể hoàn tác</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">Xác nhận xóa hàng loạt</h3>
-            <p className="text-sm text-slate-500 mt-0.5">Thao tác này không thể hoàn tác</p>
+          <p className="text-sm text-slate-700 mb-6 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+            Bạn sắp xóa <span className="font-bold text-red-600">{count} học viên</span> đã chọn.
+            Tất cả dữ liệu liên quan (đăng ký, học phí) sẽ bị xóa vĩnh viễn.
+          </p>
+          <div className="flex gap-3 justify-end">
+            <button onClick={onCancel} className="admin-btn admin-btn-outline px-5 py-2.5">
+              Hủy
+            </button>
+            <button
+              onClick={onConfirm}
+              className="admin-btn px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold flex items-center gap-2"
+            >
+              <Trash2 size={16} /> Xóa {count} học viên
+            </button>
           </div>
-        </div>
-        <p className="text-sm text-slate-700 mb-6 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
-          Bạn sắp xóa <span className="font-bold text-red-600">{count} học viên</span> đã chọn.
-          Tất cả dữ liệu liên quan (đăng ký, học phí) sẽ bị xóa vĩnh viễn.
-        </p>
-        <div className="flex gap-3 justify-end">
-          <button onClick={onCancel} className="admin-btn admin-btn-outline px-5 py-2.5">
-            Hủy
-          </button>
-          <button
-            onClick={onConfirm}
-            className="admin-btn px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold flex items-center gap-2"
-          >
-            <Trash2 size={16} /> Xóa {count} học viên
-          </button>
         </div>
       </div>
-    </div>
+    </OverlayPortal>
   );
 }
 
@@ -171,26 +174,18 @@ export default function StudentsManagement({ toast }) {
       if (force) {
         api.invalidateCache(['/students']);
       }
-      const pageLimit = 100;
-      const firstPage = await api.getStudents(pageLimit, 0);
+      const firstPage = await api.getStudents();
       const firstBatch = Array.isArray(firstPage?.data) ? firstPage.data : [];
-      const total = Number(firstPage?.meta?.total || firstBatch.length || 0);
       const nextStats = firstPage?.meta?.stats || null;
-      const batches = [firstBatch];
-
-      for (let offset = firstBatch.length; offset < total; offset += pageLimit) {
-        const page = await api.getStudents(pageLimit, offset);
-        batches.push(Array.isArray(page?.data) ? page.data : []);
-      }
 
       const nextStudents = Array.from(
-        new Map(batches.flat().map((student) => [student.id, student])).values()
+        new Map(firstBatch.map((student) => [student.id, student])).values()
       );
       setStudents(nextStudents);
       setStudentStats(nextStats);
       setAdminCache(ADMIN_CACHE_KEYS.students, { students: nextStudents, studentStats: nextStats });
       return nextStudents;
-    } catch { toast?.error('Lỗi tải dữ liệu'); setStudents([]); }
+    } catch (err) { console.error('[StudentsManagement] loadStudents error:', err); toast?.error('Lỗi tải dữ liệu học viên'); setStudents([]); }
     finally { setLoading(false); }
   };
 
@@ -309,8 +304,9 @@ export default function StudentsManagement({ toast }) {
       try { await api.deleteStudent(id); success++; }
       catch { failed++; }
     }
-    if (success > 0) toast?.success(`Đã xóa ${success} học viên`);
-    if (failed  > 0) toast?.error(`Không xóa được ${failed} học viên`);
+    if (success > 0 && failed > 0) toast?.warning(`Đã xóa ${success} học viên (${failed} lỗi)`);
+    else if (success > 0) toast?.success(`Đã xóa thành công ${success} học viên`);
+    else if (failed  > 0) toast?.error(`Không xóa được ${failed} học viên`);
     invalidateAdminData({
       keys: [ADMIN_CACHE_KEYS.students, ADMIN_CACHE_KEYS.dashboardOverview, ADMIN_CACHE_KEYS.mobileDashboardOverview],
       source: 'students-management',
@@ -371,56 +367,69 @@ export default function StudentsManagement({ toast }) {
   const paged       = filteredStudents.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const totalPages  = Math.max(1, Math.ceil(filteredStudents.length / pageSize));
   const bulkCount   = selectedIds.size;
+  const totalStudentsCount = studentStats?.totalStudents ?? students.length;
 
   return (
     <div className="admin-page">
-
-      {/* Page header */}
-      <div className="admin-header flex flex-wrap items-start justify-between gap-5">
-        <div>
-          <h1 className="flex items-center gap-3"><Users size={30} /> Quản lý Học viên</h1>
-          <p>Quản lý thông tin và hồ sơ của tất cả học viên trong hệ thống</p>
-        </div>
-        <div className="admin-header-actions">
-          <button onClick={() => loadStudents({ force: true })} className="admin-btn admin-btn-outline p-2.5">
-            <RefreshCw size={18} />
-          </button>
-          <button onClick={handleAdd} className="admin-btn admin-btn-primary">
-            <Plus size={18} /> Thêm học viên
-          </button>
-        </div>
-      </div>
+      <LearningWorkspaceHeader
+        icon={Users}
+        tone="emerald"
+        title="Học viên"
+        description="Rà soát hồ sơ, liên hệ, đăng ký lớp học và lịch sử học tập của học viên trong một workspace gọn, dễ quét và ưu tiên thao tác quản trị thường xuyên."
+        actions={(
+          <>
+            <button onClick={() => loadStudents({ force: true })} className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 px-4 text-slate-600 shadow-sm transition hover:bg-slate-50">
+              <RefreshCw size={18} />
+            </button>
+            <button onClick={handleAdd} className="inline-flex h-11 items-center gap-2 rounded-2xl bg-emerald-600 px-5 text-sm font-semibold text-white shadow-[0_18px_36px_-22px_rgba(16,185,129,0.55)] transition hover:bg-emerald-700">
+              <Plus size={18} />
+              Thêm học viên
+            </button>
+          </>
+        )}
+        pills={(
+          <>
+            <LearningInfoPill>Tổng {totalStudentsCount} học viên</LearningInfoPill>
+            <LearningInfoPill>Trang {currentPage}/{totalPages}</LearningInfoPill>
+            {normalizedSearch ? <LearningInfoPill>Kết quả lọc {filteredStudents.length}</LearningInfoPill> : null}
+            {bulkCount > 0 ? <LearningInfoPill>Đang chọn {bulkCount}</LearningInfoPill> : null}
+          </>
+        )}
+        stats={[
+          { label: 'Tổng học viên', value: totalStudentsCount, hint: 'Toàn bộ hồ sơ hiện có trong hệ thống.' },
+          { label: 'Đang học', value: studentStats?.activeStudents ?? students.filter((s) => s.registrations?.some((r) => ['studying', 'active', 'approved'].includes(r.status))).length, hint: 'Học viên đang có lớp hoặc trạng thái hoạt động.' },
+          { label: 'Chờ duyệt', value: studentStats?.pendingStudents ?? students.filter((s) => s.registrations?.some((r) => r.status === 'pending')).length, hint: 'Học viên còn hồ sơ đăng ký chưa được xử lý.' },
+          { label: 'Có chứng chỉ', value: studentStats?.certifiedStudents ?? students.filter((s) => s.registrations?.some((r) => r.status === 'certified')).length, hint: 'Học viên đã hoàn thành và có chứng chỉ liên quan.' },
+        ]}
+      />
 
       {/* Main card */}
-      <div className="admin-card p-0 overflow-hidden border border-slate-200 shadow-sm rounded-2xl">
-
-        {/* Stats bar */}
-        <StudentStatsBar students={students} stats={studentStats} />
+      <div className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_24px_64px_-44px_rgba(15,23,42,0.28)]">
 
         {/* Toolbar */}
         <div className="admin-toolbar-unified">
           <div className="flex flex-1 flex-wrap items-center gap-3">
-            <div className="relative min-w-[280px] flex-1 max-w-[460px]">
-              <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <div className="admin-search-shell min-w-[300px] max-w-[520px]">
+              <Search size={18} className="text-slate-400" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Tìm theo tên, CCCD, email, số điện thoại..."
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-10 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                className="admin-search-input"
               />
               {searchTerm ? (
                 <button
                   type="button"
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                  className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
                 >
                   <X size={14} />
                 </button>
               ) : null}
             </div>
             <span className="admin-toolbar-meta">
-              {searching ? 'Đang tìm học viên...' : `Hiển thị ${paged.length} / ${filteredStudents.length} học viên`}
+              {searching ? 'Đang tìm học viên...' : `Đang xem ${paged.length} / ${filteredStudents.length} học viên`}
             </span>
           </div>
           {/* View toggle */}

@@ -7,6 +7,7 @@ import api from '../../../services/api';
 import { formatDateVN } from '../../../utils/dateUtils';
 import '../../../styles/admin/AdminModern.css';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
+import { AdminPageHeader, AdminSummaryPill } from '../shared/AdminPageHeader';
 
 export default function PostsManagement({ toast }) {
   const [posts, setPosts] = useState([]);
@@ -184,10 +185,23 @@ export default function PostsManagement({ toast }) {
 
   return (
     <div className="admin-page">
-      <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
-        <div><h1><Newspaper size={32} /> Quản lý Bài viết</h1><p>Tạo và quản lý các bài viết, tin tức trên website</p></div>
-        <div style={{ display: 'flex', gap: 12 }}><button onClick={loadPosts} className="admin-btn admin-btn-outline" style={{ padding: '10px 16px' }}><RefreshCw size={18} /></button><button onClick={handleCreate} className="admin-btn admin-btn-primary"><Plus size={18} /> Tạo bài viết</button></div>
-      </div>
+      <AdminPageHeader
+        icon={Newspaper}
+        title="Bài viết"
+        description="Quản lý nội dung, trạng thái đăng và luồng xuất bản cho website công khai."
+        pills={(
+          <>
+            <AdminSummaryPill>Tổng {posts.length} bài</AdminSummaryPill>
+            <AdminSummaryPill>Đã đăng {posts.filter((post) => post.status === 'published').length}</AdminSummaryPill>
+          </>
+        )}
+        actions={(
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button onClick={loadPosts} className="admin-btn admin-btn-outline" style={{ padding: '10px 16px' }}><RefreshCw size={18} /> Làm mới</button>
+            <button onClick={handleCreate} className="admin-btn admin-btn-primary"><Plus size={18} /> Tạo bài viết</button>
+          </div>
+        )}
+      />
 
       {/* Stats */}
       <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>

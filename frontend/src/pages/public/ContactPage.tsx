@@ -15,7 +15,7 @@ import { apiPost } from '../../lib/api';
 const contactSchema = z.object({
     name: z.string().min(2, 'Vui lòng nhập họ tên đầy đủ'),
     email: z.string().email('Email không hợp lệ'),
-    phone: z.string().regex(/^(0|\+84)\d{9}$/, 'Số điện thoại không hợp lệ'),
+    phone: z.string().regex(/^(0[3-9]\d{8}|\+84[3-9]\d{8})$/, 'Số điện thoại không hợp lệ (VD: 0962445963)'),
     subject: z.string().min(5, 'Vui lòng nhập tiêu đề'),
     message: z.string().min(10, 'Nội dung tin nhắn quá ngắn'),
 });
@@ -64,6 +64,7 @@ export default function ContactPage() {
     });
 
     const onSubmit = async (data) => {
+        if (isSubmitting) return;
         setIsSubmitting(true);
         try {
             await apiPost('/contact', {

@@ -7,10 +7,19 @@ import { useToast } from '../../../components/ui/ToastContainer';
 import PullToRefreshWrapper from '../../../components/ui/PullToRefreshWrapper';
 import ToastContainer from '../../../components/ui/ToastContainer';
 import AdminLoadingState from '../../../components/admin/AdminLoadingState';
-import { resolveImageUrl } from '../../../utils/imageUrl.js';
+import { applyImageFallback, resolveImageUrl } from '../../../utils/imageUrl.js';
+import { useOverlayLayer } from '../../../components/ui/overlay-lock';
 import { ADMIN_CACHE_KEYS, ADMIN_CACHE_TTL, clearAdminCache, getAdminCache, invalidateAdminData, setAdminCache } from '../shared/admin-cache';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
 import BirthPlaceField from '../../../components/forms/BirthPlaceField';
+import {
+    MobileAdminHeroCard,
+    MobileAdminPrimaryButton,
+    MobileAdminSecondaryButton,
+    MobileAdminSearchField,
+    MobileAdminStatCard,
+    mobileAdminContentPadding,
+} from '../shared/mobileAdminUi';
 
 const CCCDUploader = lazy(() => import('../../../components/upload/CCCDUploader'));
 
@@ -26,6 +35,14 @@ export const formatDate = (date) => {
 const formatDateTime = (date) => {
     if (!date) return '';
     return formatDateVN(date, true) || '';
+};
+
+const normalizeGenderValue = (value) => {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === 'male' || normalized === 'nam') return 'Nam';
+    if (normalized === 'female' || normalized === 'nữ' || normalized === 'nu') return 'Nữ';
+    if (normalized === 'khác' || normalized === 'khac' || normalized === 'other') return 'Khác';
+    return 'Nam';
 };
 
 function useBodyScrollLock(isOpen) {
@@ -45,6 +62,7 @@ const StudentCard = ({ student, onView, onEdit }) => {
     const rawName = student.ho_ten_full || `${student.ho || ''} ${student.ten_dem || ''} ${student.ten || ''}`.trim();
     const displayName = rawName || 'Chưa có tên';
     const initial = displayName.charAt(0)?.toUpperCase() || 'U';
+    const avatarUrl = getImageUrl(student.image_3x4 || student.photo_3x4_image_id);
     const isActive = student.trang_thai === 'active' || student.is_active !== false;
 
     const hasUnpaidFees = student.payment_status === 'pending' || student.cong_no > 0;
@@ -52,16 +70,16 @@ const StudentCard = ({ student, onView, onEdit }) => {
 
     return (
         <div
-            className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-3 transition-all duration-200 hover:shadow-md"
+            className="mb-3 rounded-[26px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 shadow-[0_20px_44px_-30px_rgba(15,23,42,0.34)] transition-all duration-200 active:scale-[0.98]"
             onClick={() => onView(student)}
         >
             <div className="flex items-start gap-4">
                 <div className="relative">
-                    <div className={`h-14 w-14 rounded-2xl flex items-center justify-center text-lg font-bold shadow-sm overflow-hidden ${isActive ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white' : 'bg-slate-100 text-slate-500'
+                    <div className={`h-16 w-16 rounded-[22px] flex items-center justify-center text-lg font-bold shadow-[0_18px_34px_-22px_rgba(37,99,235,0.55)] overflow-hidden ${isActive ? 'bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 text-white' : 'bg-slate-100 text-slate-500'
                         }`}>
-                        {student.image_3x4 ? (
+                        {avatarUrl ? (
                             <img
-                                src={getImageUrl(student.image_3x4)}
+                                src={avatarUrl}
                                 alt={displayName}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
@@ -71,7 +89,7 @@ const StudentCard = ({ student, onView, onEdit }) => {
                                 }}
                             />
                         ) : null}
-                        <span style={{ display: student.image_3x4 ? 'none' : 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>{initial}</span>
+                        <span style={{ display: avatarUrl ? 'none' : 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>{initial}</span>
                     </div>
                     {isActive && (
                         <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-emerald-500 ring-2 ring-white shadow-sm flex items-center justify-center">
@@ -82,7 +100,7 @@ const StudentCard = ({ student, onView, onEdit }) => {
 
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-bold text-slate-800 text-base truncate pr-2">{displayName}</h3>
+                        <h3 className="pr-2 text-[17px] font-black tracking-[-0.03em] text-slate-900 truncate">{displayName}</h3>
                         <ChevronRight size={18} className="text-slate-300 flex-shrink-0" />
                     </div>
 
@@ -104,7 +122,7 @@ const StudentCard = ({ student, onView, onEdit }) => {
                         )}
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs text-slate-400">
+                    <div className="mt-2 flex items-center gap-3 text-xs text-slate-400">
                         {student.sdt && (
                             <span className="flex items-center gap-1">
                                 <Phone size={10} />
@@ -120,6 +138,18 @@ const StudentCard = ({ student, onView, onEdit }) => {
                     </div>
                 </div>
             </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+                <div className="rounded-2xl border border-slate-100 bg-white px-3 py-2.5 shadow-sm">
+                    <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Trạng thái</div>
+                    <div className={`mt-1 text-sm font-semibold ${isActive ? 'text-emerald-600' : 'text-slate-500'}`}>{isActive ? 'Đang học' : 'Ngưng học'}</div>
+                </div>
+                <div className="rounded-2xl border border-slate-100 bg-white px-3 py-2.5 shadow-sm">
+                    <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Lớp đang học</div>
+                    <div className="mt-1 text-sm font-semibold text-slate-700">{enrolledClasses || 0} lớp</div>
+                </div>
+            </div>
+
             <div className="mt-4 flex gap-2">
                 <button
                     type="button"
@@ -127,7 +157,7 @@ const StudentCard = ({ student, onView, onEdit }) => {
                         event.stopPropagation();
                         onView(student);
                     }}
-                    className="flex-1 rounded-xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 active:scale-[0.98] transition-transform"
+                    className="flex-1 rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2.5 text-sm font-semibold text-blue-700 active:scale-[0.98] transition-transform"
                 >
                     Xem chi tiết
                 </button>
@@ -137,7 +167,7 @@ const StudentCard = ({ student, onView, onEdit }) => {
                         event.stopPropagation();
                         onEdit(student);
                     }}
-                    className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 active:scale-[0.98] transition-transform"
+                    className="rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2.5 text-sm font-semibold text-emerald-700 active:scale-[0.98] transition-transform"
                 >
                     Sửa
                 </button>
@@ -303,37 +333,41 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
     const email = displayStudent.email || '';
     const dob = formatDate(displayStudent.ngay_sinh);
     const address = displayStudent.dia_chi || '';
+    const portraitUrl = getImageUrl(displayStudent.image_3x4 || displayStudent.photo_3x4_image_id);
+    const cccdFrontUrl = getImageUrl(displayStudent.image_cccd_front || displayStudent.cccd_front_image_id);
+    const cccdBackUrl = getImageUrl(displayStudent.image_cccd_back || displayStudent.cccd_back_image_id);
+    const overlayLayer = useOverlayLayer(true);
 
     if (typeof document === 'undefined') {
         return null;
     }
 
     return createPortal((
-        <div className="fixed inset-0 z-[10020] flex items-end bg-black/60 backdrop-blur-[1px]" onClick={onClose}>
+        <div className="fixed inset-0 z-[10020] flex items-end bg-black/60 backdrop-blur-[1px]" style={{ zIndex: overlayLayer }} onClick={onClose}>
             <div
-                className="bg-white w-full max-h-[92vh] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col animate-slide-up"
+                className="bg-white w-full h-[100dvh] max-h-[100dvh] shadow-2xl overflow-hidden flex flex-col animate-slide-up"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="relative bg-gradient-to-r from-blue-600 to-blue-700 px-5 pt-6 pb-5">
-                    <div className="mb-4 flex items-center justify-end gap-2">
+                <div className="relative bg-gradient-to-r from-blue-600 to-blue-700 px-4 pt-2 pb-2">
+                    <div className="mb-2 flex items-center justify-end gap-1.5">
                         <button
                             onClick={() => refreshDetail()}
                             disabled={refreshing}
-                            className="rounded-full bg-white/20 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm transition-transform active:scale-95 disabled:opacity-50"
+                            className="rounded-full bg-white/20 px-2.5 py-1 text-[9px] font-semibold text-white backdrop-blur-sm transition-transform active:scale-95 disabled:opacity-50"
                         >
                             <span className="flex items-center gap-1.5">
-                                <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+                                <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
                                 Làm mới
                             </span>
                         </button>
                         {onEdit ? (
                             <button
                                 onClick={() => onEdit(displayStudent)}
-                                className="rounded-full bg-emerald-500 px-3 py-2 text-xs font-semibold text-white transition-transform active:scale-95"
+                            className="rounded-full bg-emerald-500 px-2.5 py-1 text-[9px] font-semibold text-white transition-transform active:scale-95"
                             >
                                 <span className="flex items-center gap-1.5">
-                                    <Edit2 size={14} />
+                                    <Edit2 size={13} />
                                     Sửa
                                 </span>
                             </button>
@@ -341,112 +375,112 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                         {onDelete ? (
                             <button
                                 onClick={() => onDelete(displayStudent)}
-                                className="rounded-full bg-rose-500 px-3 py-2 text-xs font-semibold text-white transition-transform active:scale-95"
+                            className="rounded-full bg-rose-500 px-2.5 py-1 text-[9px] font-semibold text-white transition-transform active:scale-95"
                             >
                                 <span className="flex items-center gap-1.5">
-                                    <Trash2 size={14} />
+                                    <Trash2 size={13} />
                                     Xóa
                                 </span>
                             </button>
                         ) : null}
                         <button
                             onClick={onClose}
-                            className="p-2 rounded-full bg-white/20 backdrop-blur-sm active:scale-95 transition-transform"
+                            className="rounded-full bg-white/20 p-2 backdrop-blur-sm transition-transform active:scale-95"
                         >
-                            <X size={20} className="text-white" />
+                            <X size={18} className="text-white" />
                         </button>
                     </div>
 
-                    <div className="flex gap-4 items-center">
-                        <div className="h-16 w-16 rounded-2xl bg-white flex items-center justify-center text-2xl font-bold text-blue-600 shadow-lg overflow-hidden">
-                            {displayStudent.image_3x4 ? (
-                                <img src={getImageUrl(displayStudent.image_3x4)} alt="Avatar" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+                    <div className="flex items-center gap-2.5">
+                        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-white text-base font-bold text-blue-600 shadow-lg">
+                            {portraitUrl ? (
+                                <img src={portraitUrl} alt="Avatar" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
                             ) : null}
-                            {!displayStudent.image_3x4 && (
+                            {!portraitUrl && (
                                 <span>{displayName.charAt(0)}</span>
                             )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <h2 className="text-2xl font-bold text-white">{displayName}</h2>
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white mt-2 border border-white/30">
+                        <div className="min-w-0 flex-1">
+                            <h2 className="line-clamp-2 text-xl font-bold leading-tight text-white">{displayName}</h2>
+                            <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-white/30 bg-white/20 px-2 py-0.5 text-[10px] font-medium text-white">
                                 {displayStudent.student_code || displayStudent.cccd || 'Học viên mới'}
                             </span>
                         </div>
                     </div>
 
                     {/* Quick Actions */}
-                    <div className="grid grid-cols-3 gap-3 mt-4">
+                    <div className="mt-2 grid grid-cols-3 gap-1.5">
                         <button
                             onClick={() => phone && (window.location.href = `tel:${phone}`)}
                             disabled={!phone}
-                            className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all active:scale-95 ${phone ? 'bg-white/20 backdrop-blur-sm border-white/30 text-white' : 'bg-slate-500/20 border-slate-500/30 text-white/50'}`}
+                            className={`flex flex-col items-center gap-1 rounded-lg border p-1.5 transition-all active:scale-95 ${phone ? 'bg-white/20 backdrop-blur-sm border-white/30 text-white' : 'bg-slate-500/20 border-slate-500/30 text-white/50'}`}
                         >
-                            <Phone size={20} />
-                            <span className="text-xs font-medium">Gọi</span>
+                            <Phone size={16} />
+                            <span className="text-[9px] font-medium">Gọi</span>
                         </button>
 
                         <button
                             onClick={() => phone && (window.location.href = `sms:${phone}`)}
                             disabled={!phone}
-                            className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all active:scale-95 ${phone ? 'bg-white/20 backdrop-blur-sm border-white/30 text-white' : 'bg-slate-500/20 border-slate-500/30 text-white/50'}`}
+                            className={`flex flex-col items-center gap-1 rounded-lg border p-1.5 transition-all active:scale-95 ${phone ? 'bg-white/20 backdrop-blur-sm border-white/30 text-white' : 'bg-slate-500/20 border-slate-500/30 text-white/50'}`}
                         >
-                            <Mail size={20} />
-                            <span className="text-xs font-medium">SMS</span>
+                            <Mail size={16} />
+                            <span className="text-[9px] font-medium">SMS</span>
                         </button>
 
                         <button
                             onClick={() => email && (window.location.href = `mailto:${email}`)}
                             disabled={!email}
-                            className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all active:scale-95 ${email ? 'bg-white/20 backdrop-blur-sm border-white/30 text-white' : 'bg-slate-500/20 border-slate-500/30 text-white/50'}`}
+                            className={`flex flex-col items-center gap-1 rounded-lg border p-1.5 transition-all active:scale-95 ${email ? 'bg-white/20 backdrop-blur-sm border-white/30 text-white' : 'bg-slate-500/20 border-slate-500/30 text-white/50'}`}
                         >
-                            <Mail size={20} />
-                            <span className="text-xs font-medium">Email</span>
+                            <Mail size={16} />
+                            <span className="text-[9px] font-medium">Email</span>
                         </button>
                     </div>
 
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                        <div className="rounded-2xl border border-white/20 bg-white/15 px-3 py-3 text-white backdrop-blur-sm">
-                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/75">Tổng đăng ký</p>
-                            <p className="mt-1 text-2xl font-black leading-none">{registrations.length}</p>
+                    <div className="mt-2 grid grid-cols-2 gap-1.5">
+                        <div className="rounded-xl border border-white/20 bg-white/15 px-2.5 py-1.5 text-white backdrop-blur-sm">
+                            <p className="text-[9px] font-black uppercase tracking-[0.12em] text-white/75">Tổng đăng ký</p>
+                            <p className="mt-1 text-base font-black leading-none">{registrations.length}</p>
                         </div>
-                        <div className="rounded-2xl border border-white/20 bg-white/15 px-3 py-3 text-white backdrop-blur-sm">
-                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/75">Đang hiệu lực</p>
-                            <p className="mt-1 text-2xl font-black leading-none">{activeRegistrations.length}</p>
+                        <div className="rounded-xl border border-white/20 bg-white/15 px-2.5 py-1.5 text-white backdrop-blur-sm">
+                            <p className="text-[9px] font-black uppercase tracking-[0.12em] text-white/75">Đang hiệu lực</p>
+                            <p className="mt-1 text-base font-black leading-none">{activeRegistrations.length}</p>
                         </div>
-                        <div className="rounded-2xl border border-white/20 bg-white/15 px-3 py-3 text-white backdrop-blur-sm">
-                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/75">Chờ duyệt</p>
-                            <p className="mt-1 text-2xl font-black leading-none">{pendingRegistrations.length}</p>
+                        <div className="rounded-xl border border-white/20 bg-white/15 px-2.5 py-1.5 text-white backdrop-blur-sm">
+                            <p className="text-[9px] font-black uppercase tracking-[0.12em] text-white/75">Chờ duyệt</p>
+                            <p className="mt-1 text-base font-black leading-none">{pendingRegistrations.length}</p>
                         </div>
-                        <div className="rounded-2xl border border-white/20 bg-white/15 px-3 py-3 text-white backdrop-blur-sm">
-                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/75">Lịch sử sửa</p>
-                            <p className="mt-1 text-2xl font-black leading-none">{editHistory.length}</p>
+                        <div className="rounded-xl border border-white/20 bg-white/15 px-2.5 py-1.5 text-white backdrop-blur-sm">
+                            <p className="text-[9px] font-black uppercase tracking-[0.12em] text-white/75">Lịch sử sửa</p>
+                            <p className="mt-1 text-base font-black leading-none">{editHistory.length}</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b border-slate-200 px-5 bg-white sticky top-0 z-10">
+                <div className="sticky top-0 z-10 flex border-b border-slate-200 bg-white px-4">
                     <button
                         onClick={() => setActiveTab('info')}
-                        className={`flex-1 pb-3 pt-3 font-medium text-sm transition-colors border-b-2 ${activeTab === 'info' ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent'}`}
+                        className={`flex-1 pb-2 pt-2 font-medium text-[12px] transition-colors border-b-2 ${activeTab === 'info' ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent'}`}
                     >
                         Thông tin
                     </button>
                     <button
                         onClick={() => setActiveTab('photos')}
-                        className={`flex-1 pb-3 pt-3 font-medium text-sm transition-colors border-b-2 ${activeTab === 'photos' ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent'}`}
+                        className={`flex-1 pb-2 pt-2 font-medium text-[12px] transition-colors border-b-2 ${activeTab === 'photos' ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent'}`}
                     >
                         Ảnh hồ sơ
                     </button>
                     <button
                         onClick={() => setActiveTab('classes')}
-                        className={`flex-1 pb-3 pt-3 font-medium text-sm transition-colors border-b-2 ${activeTab === 'classes' ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent'}`}
+                        className={`flex-1 pb-2 pt-2 font-medium text-[12px] transition-colors border-b-2 ${activeTab === 'classes' ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent'}`}
                     >
                         Lớp học/Thi
                     </button>
                     <button
                         onClick={() => setActiveTab('payments')}
-                        className={`flex-1 pb-3 pt-3 font-medium text-sm transition-colors border-b-2 ${activeTab === 'payments' ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent'}`}
+                        className={`flex-1 pb-2 pt-2 font-medium text-[12px] transition-colors border-b-2 ${activeTab === 'payments' ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent'}`}
                     >
                         Học phí
                     </button>
@@ -462,7 +496,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                                 <div className="space-y-3">
                                     <InfoRow icon={<User size={16} />} label="Họ và tên" value={`${displayStudent.ho || ''} ${displayStudent.ten_dem || ''} ${displayStudent.ten || ''}`.trim()} />
                                     <InfoRow icon={<Calendar size={16} />} label="Ngày sinh" value={dob} />
-                                    <InfoRow icon={<User size={16} />} label="Giới tính" value={displayStudent.gioi_tinh === 'male' ? 'Nam' : displayStudent.gioi_tinh === 'female' ? 'Nữ' : displayStudent.gioi_tinh} />
+                                    <InfoRow icon={<User size={16} />} label="Giới tính" value={normalizeGenderValue(displayStudent.gioi_tinh)} />
                                     <InfoRow icon={<MapPin size={16} />} label="Nơi sinh" value={displayStudent.noi_sinh} />
                                     <InfoRow icon={<User size={16} />} label="Dân tộc" value={displayStudent.dan_toc || 'Kinh'} />
                                     <InfoRow icon={<User size={16} />} label="Quốc tịch" value={displayStudent.quoc_tich || 'Việt Nam'} />
@@ -546,9 +580,9 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                             <div>
                                 <div className="flex items-center justify-between mb-3">
                                     <p className="text-sm font-bold text-slate-700">Ảnh thẻ 3x4</p>
-                                    {displayStudent.image_3x4 && (
+                                    {portraitUrl && (
                                         <button
-                                            onClick={() => downloadImage(getImageUrl(displayStudent.image_3x4), `${displayStudent.ho_ten_full || displayName || 'student'}_3x4.jpg`)}
+                                            onClick={() => downloadImage(portraitUrl, `${displayStudent.ho_ten_full || displayName || 'student'}_3x4.jpg`)}
                                             className="text-xs text-blue-600 font-medium flex items-center gap-1"
                                         >
                                             <Download size={14} />
@@ -556,19 +590,17 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                                         </button>
                                     )}
                                 </div>
-                                {displayStudent.image_3x4 ? (
+                                {portraitUrl ? (
                                     <div
                                         className="relative aspect-[3/4] max-w-[240px] mx-auto rounded-xl overflow-hidden shadow-lg border-2 border-slate-200 cursor-pointer active:scale-95 transition-transform bg-white"
-                                        onClick={() => setFullImageView(getImageUrl(displayStudent.image_3x4))}
+                                        onClick={() => setFullImageView(portraitUrl)}
                                     >
                                         <img
-                                            src={getImageUrl(displayStudent.image_3x4)}
+                                            src={portraitUrl}
                                             alt="Ảnh 3x4"
                                             className="w-full h-full object-contain"
                                             onError={(e) => {
-                                                e.target.style.display = 'none';
-                                                const placeholder = e.target.parentElement.querySelector('.placeholder');
-                                                if (placeholder) placeholder.style.display = 'flex';
+                                                applyImageFallback(e, displayStudent.ho_ten_full || displayName || 'Hoc vien');
                                             }}
                                         />
                                         <div className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors flex items-center justify-center">
@@ -592,22 +624,22 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
                                         <p className="text-xs font-bold text-slate-600 text-center flex-1">CCCD MẶT TRƯỚC</p>
-                                        {displayStudent.image_cccd_front && (
+                                        {cccdFrontUrl && (
                                             <button
-                                                onClick={() => downloadImage(getImageUrl(displayStudent.image_cccd_front), `${displayStudent.ho_ten_full || displayName || 'student'}_cccd_front.jpg`)}
+                                                onClick={() => downloadImage(cccdFrontUrl, `${displayStudent.ho_ten_full || displayName || 'student'}_cccd_front.jpg`)}
                                                 className="text-[10px] text-blue-600"
                                             >
                                                 <Download size={12} />
                                             </button>
                                         )}
                                     </div>
-                                    {displayStudent.image_cccd_front ? (
+                                    {cccdFrontUrl ? (
                                         <div
                                             className="relative aspect-[16/10] rounded-lg overflow-hidden shadow-md border-2 border-slate-200 cursor-pointer active:scale-95 transition-transform bg-white"
-                                            onClick={() => setFullImageView(getImageUrl(displayStudent.image_cccd_front))}
+                                            onClick={() => setFullImageView(cccdFrontUrl)}
                                         >
                                             <img
-                                                src={getImageUrl(displayStudent.image_cccd_front)}
+                                                src={cccdFrontUrl}
                                                 alt="CCCD Front"
                                                 className="w-full h-full object-contain"
                                                 onError={(e) => {
@@ -633,22 +665,22 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
                                         <p className="text-xs font-bold text-slate-600 text-center flex-1">CCCD MẶT SAU</p>
-                                        {displayStudent.image_cccd_back && (
+                                        {cccdBackUrl && (
                                             <button
-                                                onClick={() => downloadImage(getImageUrl(displayStudent.image_cccd_back), `${displayStudent.ho_ten_full || displayName || 'student'}_cccd_back.jpg`)}
+                                                onClick={() => downloadImage(cccdBackUrl, `${displayStudent.ho_ten_full || displayName || 'student'}_cccd_back.jpg`)}
                                                 className="text-[10px] text-blue-600"
                                             >
                                                 <Download size={12} />
                                             </button>
                                         )}
                                     </div>
-                                    {displayStudent.image_cccd_back ? (
+                                    {cccdBackUrl ? (
                                         <div
                                             className="relative aspect-[16/10] rounded-lg overflow-hidden shadow-md border-2 border-slate-200 cursor-pointer active:scale-95 transition-transform bg-white"
-                                            onClick={() => setFullImageView(getImageUrl(displayStudent.image_cccd_back))}
+                                            onClick={() => setFullImageView(cccdBackUrl)}
                                         >
                                             <img
-                                                src={getImageUrl(displayStudent.image_cccd_back)}
+                                                src={cccdBackUrl}
                                                 alt="CCCD Back"
                                                 className="w-full h-full object-contain"
                                                 onError={(e) => {
@@ -899,13 +931,14 @@ const HistoryEntryCard = ({ item }) => (
 const StudentEditModal = ({ student, onClose, onSave }) => {
     useBodyScrollLock(true);
     const toast = useToast();
+    const overlayLayer = useOverlayLayer(true);
     const isEditMode = Boolean(student?.id);
     const buildInitialFormData = (studentData) => ({
         ho: studentData?.ho || '',
         ten_dem: studentData?.ten_dem || '',
         ten: studentData?.ten || '',
         ngay_sinh: studentData?.ngay_sinh || '',
-        gioi_tinh: studentData?.gioi_tinh || 'male',
+        gioi_tinh: normalizeGenderValue(studentData?.gioi_tinh),
         noi_sinh: studentData?.noi_sinh || '',
         dan_toc: studentData?.dan_toc || 'Kinh',
         quoc_tich: studentData?.quoc_tich || 'Việt Nam',
@@ -994,9 +1027,9 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
     }
 
     return createPortal((
-        <div className="fixed inset-0 z-[10020] bg-black/60 flex items-end" onClick={onClose}>
+        <div className="fixed inset-0 z-[10020] bg-black/60 flex items-end" style={{ zIndex: overlayLayer }} onClick={onClose}>
             <div
-                className="bg-white w-full max-h-[95vh] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
+                className="bg-white w-full h-[100dvh] max-h-[100dvh] shadow-2xl overflow-hidden flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -1026,8 +1059,9 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                                     onChange={(e) => setFormData({ ...formData, gioi_tinh: e.target.value })}
                                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                 >
-                                    <option value="male">Nam</option>
-                                    <option value="female">Nữ</option>
+                                    <option value="Nam">Nam</option>
+                                    <option value="Nữ">Nữ</option>
+                                    <option value="Khác">Khác</option>
                                 </select>
                             </div>
                             <BirthPlaceField
@@ -1073,6 +1107,10 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                     <div>
                         <h3 className="text-xs font-bold text-purple-600 uppercase tracking-wide mb-3">Ảnh hồ sơ</h3>
                         <div className="space-y-4">
+                            <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                                Admin có thể đổi ảnh CCCD/3x4 trực tiếp trên mobile. Ảnh mới sẽ được lưu khi bấm nút lưu ở cuối form.
+                            </div>
+
                             {/* Ảnh 3x4 */}
                             <div>
                                 <p className="text-xs font-medium text-slate-600 mb-2">Ảnh thẻ 3x4</p>
@@ -1196,7 +1234,7 @@ export default function MobileStudentsModule() {
             if (force) {
                 api.invalidateCache(['/students']);
             }
-            const res = await api.getStudents(500, 0);
+            const res = await api.getStudents();
             const studentList = Array.isArray(res) ? res : (res?.data || res?.results || []);
             setStudents(studentList);
             setStudentStats(res?.meta?.stats || null);
@@ -1332,132 +1370,100 @@ export default function MobileStudentsModule() {
     return (
         <PullToRefreshWrapper onRefresh={handleRefresh}>
             <div className="min-h-screen bg-[#f3f6fb] pb-6">
-                <div className="px-4 pt-3">
-                    <div className="rounded-[28px] border border-slate-200/80 bg-white p-3.5 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
-                        <div className="flex items-start justify-between gap-3">
-                            <div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Điều hành học viên</p>
-                                <h1 className="mt-1 text-[22px] font-black leading-none text-slate-900">Học viên</h1>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={handleCreateStudent}
-                                className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-slate-900 px-3.5 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-white shadow-sm transition-transform active:scale-[0.98]"
-                            >
-                                <UserPlus size={14} />
-                                <span>Tạo</span>
-                            </button>
-                        </div>
-
-                        <div className="mt-3 grid grid-cols-3 gap-2">
-                            <div className="rounded-[20px] border border-blue-100 bg-blue-50 px-3 py-3 text-blue-700">
-                                <p className="text-[10px] font-black uppercase tracking-[0.16em] opacity-75">Tổng HV</p>
-                                <p className="mt-1 text-2xl font-black leading-none">{totalStudents}</p>
-                            </div>
-                            <div className="rounded-[20px] border border-emerald-100 bg-emerald-50 px-3 py-3 text-emerald-700">
-                                <p className="text-[10px] font-black uppercase tracking-[0.16em] opacity-75">Đang học</p>
-                                <p className="mt-1 text-2xl font-black leading-none">{activeStudents}</p>
-                            </div>
-                            <div className="rounded-[20px] border border-amber-100 bg-amber-50 px-3 py-3 text-amber-700">
-                                <p className="text-[10px] font-black uppercase tracking-[0.16em] opacity-75">Công nợ</p>
-                                <p className="mt-1 text-2xl font-black leading-none">{debtStudents}</p>
-                            </div>
-                        </div>
-
-                        <div className="relative mt-3">
-                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input
-                                type="text"
-                                placeholder="Tìm theo tên, SĐT, email hoặc CCCD"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-10 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
-                            />
-                            {searchTerm ? (
-                                <button
-                                    type="button"
-                                    onClick={() => setSearchTerm('')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-slate-200 p-1 text-slate-500"
-                                >
-                                    <X size={14} />
-                                </button>
-                            ) : null}
-                        </div>
-
-                        <div className="mt-3 flex gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setShowFilters(!showFilters)}
-                                className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-[0.12em] transition ${
-                                    showFilters ? 'bg-blue-600 text-white shadow-md shadow-blue-100' : 'bg-slate-100 text-slate-700'
-                                }`}
-                            >
-                                <Filter size={16} />
-                                Bộ lọc
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleExportCSV}
-                                className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-white"
-                            >
-                                <Download size={16} />
-                                CSV
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleRefresh}
-                                className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-white"
-                            >
+                <MobileAdminHeroCard
+                    eyebrow="Quản lý học tập"
+                    icon={User}
+                    tone="emerald"
+                    title="Học viên"
+                    description="Giữ số liệu, tìm kiếm và bộ lọc trong cùng một cụm để admin không phải quét qua nhiều block đầu trang."
+                    actions={(
+                        <>
+                            <MobileAdminSecondaryButton onClick={handleRefresh} className="px-3.5">
                                 <RefreshCw size={16} />
                                 Làm mới
-                            </button>
+                            </MobileAdminSecondaryButton>
+                            <MobileAdminPrimaryButton onClick={handleCreateStudent} className="px-3.5">
+                                <UserPlus size={16} />
+                                Tạo học viên
+                            </MobileAdminPrimaryButton>
+                        </>
+                    )}
+                    stats={(
+                        <div className="grid grid-cols-3 gap-2">
+                            <MobileAdminStatCard label="Tổng HV" value={totalStudents} tone="blue" />
+                            <MobileAdminStatCard label="Đang học" value={activeStudents} tone="emerald" />
+                            <MobileAdminStatCard label="Công nợ" value={debtStudents} tone="amber" />
                         </div>
+                    )}
+                    search={(
+                        <MobileAdminSearchField
+                            value={searchTerm}
+                            onChange={setSearchTerm}
+                            onClear={() => setSearchTerm('')}
+                            placeholder="Tìm theo tên, SĐT, email hoặc CCCD"
+                        />
+                    )}
+                    filters={(
+                        <div className="space-y-3">
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-[11px] font-black uppercase tracking-[0.1em] transition ${
+                                        showFilters ? 'bg-blue-600 text-white shadow-md shadow-blue-100' : 'bg-slate-100 text-slate-700'
+                                    }`}
+                                >
+                                    <Filter size={16} />
+                                    Bộ lọc
+                                </button>
+                                <MobileAdminSecondaryButton type="button" onClick={handleExportCSV} className="border-emerald-200 bg-emerald-50 text-emerald-700 px-3.5 text-[11px] font-black uppercase tracking-[0.1em]">
+                                    <Download size={16} />
+                                    CSV
+                                </MobileAdminSecondaryButton>
+                            </div>
 
-                        {showFilters && (
-                            <div className="mt-3 rounded-[24px] bg-slate-50 p-3 space-y-3">
-                                <div>
-                                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2 block">Trạng thái</label>
-                                    <div className="flex gap-2 flex-wrap">
-                                        {['all', 'active', 'inactive', 'debt'].map((status) => (
-                                            <button
-                                                key={status}
-                                                onClick={() => setFilterStatus(status)}
-                                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                                                    filterStatus === status
-                                                        ? 'bg-blue-600 text-white shadow-sm'
-                                                        : 'bg-white text-slate-600 border border-slate-200'
-                                                }`}
-                                            >
-                                                {status === 'all' && 'Tất cả'}
-                                                {status === 'active' && 'Đang học'}
-                                                {status === 'inactive' && 'Ngưng học'}
-                                                {status === 'debt' && 'Có công nợ'}
-                                            </button>
-                                        ))}
+                            {showFilters ? (
+                                <div className="rounded-[24px] bg-slate-50 p-3 space-y-3">
+                                    <div>
+                                        <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600">Trạng thái</label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {['all', 'active', 'inactive', 'debt'].map((status) => (
+                                                <button
+                                                    key={status}
+                                                    onClick={() => setFilterStatus(status)}
+                                                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                                                        filterStatus === status
+                                                            ? 'bg-blue-600 text-white shadow-sm'
+                                                            : 'border border-slate-200 bg-white text-slate-600'
+                                                    }`}
+                                                >
+                                                    {status === 'all' && 'Tất cả'}
+                                                    {status === 'active' && 'Đang học'}
+                                                    {status === 'inactive' && 'Ngưng học'}
+                                                    {status === 'debt' && 'Có công nợ'}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600">Sắp xếp</label>
+                                        <select
+                                            value={sortBy}
+                                            onChange={(e) => setSortBy(e.target.value)}
+                                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700"
+                                        >
+                                            <option value="name">Tên A-Z</option>
+                                            <option value="recent">Mới nhất</option>
+                                        </select>
                                     </div>
                                 </div>
-                                <div>
-                                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2 block">Sắp xếp</label>
-                                    <select
-                                        value={sortBy}
-                                        onChange={(e) => setSortBy(e.target.value)}
-                                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700"
-                                    >
-                                        <option value="name">Tên A-Z</option>
-                                        <option value="recent">Mới nhất</option>
-                                    </select>
-                                </div>
-                            </div>
-                        )}
+                            ) : null}
+                        </div>
+                    )}
+                    footer={<span>Hiển thị {processedStudents.length} / {students.length} học viên</span>}
+                />
 
-                        <p className="mt-3 text-xs text-slate-500 font-medium">
-                            Hiển thị {processedStudents.length} / {students.length} học viên
-                        </p>
-                    </div>
-                </div>
-
-                <div className="px-4 pb-[calc(var(--mb-bottom-nav-height)+24px)] pt-3">
+                <div className="px-4 pt-3" style={{ paddingBottom: mobileAdminContentPadding(24) }}>
                     {loading ? (
                         <AdminLoadingState
                             title="Đang tải danh sách học viên"

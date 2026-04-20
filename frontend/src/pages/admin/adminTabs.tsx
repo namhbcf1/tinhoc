@@ -125,8 +125,8 @@ export const ADMIN_TABS: AdminTabDefinition[] = [
     title: 'Quản lý lớp học',
     icon: BookOpen,
     group: 'learning',
-    desktop: false,
-    mobile: false,
+    desktop: true,
+    mobile: true,
   },
   {
     id: 'exam-schedules',

@@ -20,16 +20,16 @@
 .student-dashboard-top-bar {
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   color: white;
-  padding: 10px 0;
-  font-size: 13px;
+  padding: clamp(8px, 1.2vw, 10px) 0;
+  font-size: clamp(11px, 1.4vw, 13px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   width: 100%;
 }
 
 .student-dashboard-top-bar-container {
   max-width: 100%;
-  padding-left: 32px;
-  padding-right: 32px;
+  padding-left: clamp(16px, 3vw, 32px);
+  padding-right: clamp(16px, 3vw, 32px);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -37,7 +37,7 @@
 
 .student-dashboard-top-bar-left {
   display: flex;
-  gap: 30px;
+  gap: clamp(12px, 2.5vw, 30px);
   align-items: center;
 }
 
@@ -46,9 +46,9 @@
   text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: clamp(5px, 0.8vw, 8px);
   transition: all 0.3s ease;
-  padding: 4px 8px;
+  padding: clamp(3px, 0.4vw, 4px) clamp(5px, 0.8vw, 8px);
   border-radius: 4px;
   font-weight: 500;
 }
@@ -60,20 +60,20 @@
 }
 
 .student-dashboard-top-bar-link .icon {
-  font-size: 14px;
+  font-size: clamp(12px, 1.4vw, 14px);
   opacity: 0.9;
 }
 
 .student-dashboard-top-bar-right {
   display: flex;
-  gap: 12px;
+  gap: clamp(8px, 1.2vw, 12px);
   align-items: center;
 }
 
 .student-dashboard-top-bar-btn {
-  padding: 8px 18px;
+  padding: clamp(6px, 0.8vw, 8px) clamp(12px, 1.5vw, 18px);
   border-radius: 6px;
-  font-size: 13px;
+  font-size: clamp(11px, 1.3vw, 13px);
   font-weight: 700;
   text-decoration: none;
   transition: all 0.3s ease;
@@ -111,22 +111,22 @@
 
 .student-dashboard-lang-separator {
   width: 1px;
-  height: 20px;
+  height: clamp(16px, 2vw, 20px);
   background: rgba(255, 255, 255, 0.2);
-  margin: 0 8px;
+  margin: 0 clamp(5px, 0.8vw, 8px);
 }
 
 .student-dashboard-lang-btn {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.8);
-  padding: 6px 14px;
+  padding: clamp(4px, 0.6vw, 6px) clamp(10px, 1.4vw, 14px);
   border-radius: 6px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: clamp(10px, 1.2vw, 12px);
   font-weight: 700;
   transition: all 0.3s ease;
-  min-width: 40px;
+  min-width: clamp(32px, 4vw, 40px);
   text-align: center;
 }
 
@@ -160,12 +160,12 @@
 
 .student-dashboard-navbar-container {
   max-width: 100%;
-  padding-left: 32px;
-  padding-right: 32px;
+  padding-left: clamp(16px, 3vw, 32px);
+  padding-right: clamp(16px, 3vw, 32px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 90px;
+  height: clamp(65px, 9vw, 90px);
 }
 
 .student-dashboard-navbar-logo {
@@ -182,7 +182,7 @@
 .student-dashboard-navbar-menu {
   display: flex;
   list-style: none;
-  gap: 8px;
+  gap: clamp(4px, 0.8vw, 8px);
   margin: 0;
   padding: 0;
   flex: 1;
@@ -198,12 +198,12 @@
   color: #2c3e50;
   text-decoration: none;
   font-weight: 600;
-  font-size: 14px;
+  font-size: clamp(12px, 1.3vw, 14px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: 14px 18px;
+  padding: clamp(10px, 1.4vw, 14px) clamp(12px, 1.5vw, 18px);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: clamp(4px, 0.6vw, 6px);
   border-radius: 8px;
   white-space: nowrap;
   position: relative;
@@ -212,7 +212,7 @@
 .student-dashboard-navbar-menu li a::before {
   content: '';
   position: absolute;
-  bottom: 8px;
+  bottom: clamp(5px, 0.8vw, 8px);
   left: 50%;
   transform: translateX(-50%) scaleX(0);
   width: 60%;
@@ -236,7 +236,7 @@
 
 .student-dashboard-navbar-actions {
   display: flex;
-  gap: 14px;
+  gap: clamp(10px, 1.4vw, 14px);
   align-items: center;
 }
 
@@ -244,16 +244,16 @@
 .student-dashboard-mobile-menu-toggle {
   display: none;
   flex-direction: column;
-  gap: 5px;
+  gap: clamp(4px, 0.5vw, 5px);
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 8px;
+  padding: clamp(6px, 0.8vw, 8px);
 }
 
 .student-dashboard-mobile-menu-toggle span {
-  width: 25px;
-  height: 3px;
+  width: clamp(20px, 2.5vw, 25px);
+  height: clamp(2px, 0.3vw, 3px);
   background: #333;
   border-radius: 2px;
   transition: all 0.3s;
@@ -429,5 +429,3 @@
     /* 100/0.4 */
   }
 }
-
-

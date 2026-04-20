@@ -4,15 +4,58 @@ import type { JWTPayload } from '../types/env.js';
 import XLSX from 'xlsx-js-style';
 import { errorResponse, formatDate } from '../utils/helpers.js';
 import { getRegistrationsByClass, getClassById } from '../db/queries.js';
-import { getExamRegistrations } from '../db/attendance-queries.js';
+import {
+  getExamRegistrations,
+  getExamRegistrationsForExport,
+  type ExamRegistrationExportScope,
+} from '../db/attendance-queries.js';
 import { normalizeBirthPlaceValue } from '../utils/birth-place.js';
 
 const exportRoute = new Hono<{ Bindings: Env; Variables: { user: JWTPayload; teacher: JWTPayload } }>();
+
+const EXAM_EXPORT_SCOPE_LABELS: Record<ExamRegistrationExportScope, string> = {
+  approved: 'Chỉ đã duyệt',
+  all: 'Tất cả',
+};
 
 // Format date as DD/MM/YYYY for Vietnamese locale Excel export
 function normalizeWhitespace(value: any) {
   if (value === undefined || value === null) return '';
   return String(value).replace(/\s+/g, ' ').trim();
+}
+
+function toUpperVi(value: any) {
+  return normalizeWhitespace(value).toLocaleUpperCase('vi-VN');
+}
+
+function normalizeEmail(value: any) {
+  return normalizeWhitespace(value).toLowerCase();
+}
+
+function normalizeStudentForExport(student: any) {
+  const s = { ...student };
+  s.ho = toUpperVi(s.ho);
+  s.ten_dem = toUpperVi(s.ten_dem);
+  s.ten = toUpperVi(s.ten);
+  s.ho_ten_full = toUpperVi(s.ho_ten_full || [s.ho, s.ten_dem, s.ten].filter(Boolean).join(' '));
+  s.gioi_tinh = normalizeGenderLabel(s.gioi_tinh);
+  s.dan_toc = toUpperVi(s.dan_toc);
+  s.quoc_tich = toUpperVi(s.quoc_tich);
+  s.noi_sinh = toUpperVi(s.noi_sinh);
+  s.dia_chi = toUpperVi(s.dia_chi);
+  s.don_vi_cong_tac = toUpperVi(s.don_vi_cong_tac);
+  s.email = normalizeEmail(s.email);
+  return s;
+}
+
+function normalizeStudentsForExport(students: any[]) {
+  return (students || []).map((student) => normalizeStudentForExport(student));
+}
+
+function resolveExamExportScope(rawScope: string | undefined | null): ExamRegistrationExportScope | null {
+  if (!rawScope) return 'approved';
+  if (rawScope === 'approved' || rawScope === 'all') return rawScope;
+  return null;
 }
 
 function parseDateParts(value: any): { day: number; month: number; year: number } | null {
@@ -67,9 +110,9 @@ function formatDateVN(date: any) {
 function normalizeGenderLabel(value: any) {
   const normalized = normalizeWhitespace(value).toLowerCase();
   if (!normalized) return '';
-  if (['nam', 'male', 'm'].includes(normalized)) return 'Nam';
-  if (['nữ', 'nu', 'female', 'f'].includes(normalized)) return 'Nữ';
-  return normalizeWhitespace(value);
+  if (['nam', 'male', 'm'].includes(normalized)) return 'NAM';
+  if (['nữ', 'nu', 'female', 'f'].includes(normalized)) return 'NỮ';
+  return toUpperVi(value);
 }
 
 function cleanStudentPlace(value: any) {
@@ -78,15 +121,15 @@ function cleanStudentPlace(value: any) {
     .replace(/^[/:;,\-.\s]+/, '')
     .trim();
 
-  return normalizeBirthPlaceValue(cleaned);
+  return toUpperVi(normalizeBirthPlaceValue(cleaned));
 }
 
 function cleanStudentWorkplace(value: any) {
-  return normalizeWhitespace(value);
+  return toUpperVi(value);
 }
 
 function cleanStudentAddress(value: any) {
-  return normalizeWhitespace(value);
+  return toUpperVi(value);
 }
 
 function getStudentExportValue(student: any, field: string) {
@@ -94,7 +137,10 @@ function getStudentExportValue(student: any, field: string) {
   if (field === 'noi_sinh') return cleanStudentPlace(student.noi_sinh);
   if (field === 'don_vi_cong_tac') return cleanStudentWorkplace(student.don_vi_cong_tac);
   if (field === 'dia_chi') return cleanStudentAddress(student.dia_chi);
-  return student?.[field] ?? '';
+  if (field === 'email') return normalizeEmail(student?.email);
+  const value = student?.[field];
+  if (typeof value === 'string') return toUpperVi(value);
+  return value ?? '';
 }
 
 function isTestStudentRecord(student: any) {
@@ -340,6 +386,80 @@ function buildVeptStyles() {
   };
 }
 
+function normalizeTemplateToken(value: any) {
+  return normalizeWhitespace(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase();
+}
+
+function detectExamListTemplateName(input: {
+  templateName?: string | null;
+  templateDisplayName?: string | null;
+  organizerCode?: string | null;
+  organizerName?: string | null;
+  programCode?: string | null;
+  programName?: string | null;
+  examName?: string | null;
+  examType?: string | null;
+}) {
+  const templateTokens = [input.templateName, input.templateDisplayName]
+    .map(normalizeTemplateToken)
+    .filter(Boolean);
+
+  if (
+    templateTokens.some(
+      (value) =>
+        value.includes('VANTRANG') ||
+        value.includes('MAC DINH') ||
+        value.includes('DEFAULT'),
+    )
+  ) {
+    return 'vantrang_full';
+  }
+
+  const tokens = [
+    input.templateName,
+    input.templateDisplayName,
+    input.programCode,
+    input.programName,
+    input.organizerCode,
+    input.organizerName,
+    input.examName,
+    input.examType,
+  ]
+    .map(normalizeTemplateToken)
+    .filter(Boolean);
+
+  if (tokens.some((value) => value.includes('VEPT') || value.includes('VSTEP') || value.includes('VERSANT'))) {
+    return 'vept';
+  }
+
+  if (
+    tokens.some(
+      (value) =>
+        value.includes('PTIT') ||
+        value.includes('TIN HOC') ||
+        value.includes('TINHOC') ||
+        value.includes('CNTT') ||
+        value.includes('TH-')
+    )
+  ) {
+    return 'ptit';
+  }
+
+  return null;
+}
+
+function formatDateTimeVN(value: any) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return formatDateVN(value);
+  }
+  return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
 function getDateParts(value: any) {
   const parts = parseDateParts(value);
   return {
@@ -388,9 +508,9 @@ function writePtitExamListTemplate(
   const styles = buildPtitStyles();
   const title1 = 'CHỨNG CHỈ ỨNG DỤNG CÔNG NGHỆ THÔNG TIN CƠ BẢN & NÂNG CAO';
   const title2 = 'THEO THÔNG TƯ 03/2014/TT-BTTTT';
-  const title3 = String(examInfo.exam_name || 'DANH SÁCH DỰ THI').trim();
+  const title3 = toUpperVi(examInfo.exam_name || 'DANH SÁCH DỰ THI');
   const examDateLine = formatExamDateLine(examInfo.exam_date);
-  const organizerLine = `Hội đồng thi: ${examInfo.organizer_name || examInfo.location || 'Chưa xác định'}`;
+  const organizerLine = `Hội đồng thi: ${toUpperVi(examInfo.organizer_name || examInfo.location || 'Chưa xác định')}`;
   const headers = ['STT', 'SỐ PHÁCH', 'SỐ CMT', 'HỌ', 'TÊN', 'NGÀY SINH', 'NƠI SINH', 'GIỚI TÍNH', 'DÂN TỘC', 'MÔN THI', '', 'KÝ TÊN', 'GHI CHÚ'];
   const cols = 'ABCDEFGHIJKLM'.split('');
 
@@ -427,12 +547,12 @@ function writePtitExamListTemplate(
     ensureWorksheetCell(worksheet, `A${row}`, index + 1, 'n');
     ensureWorksheetCell(worksheet, `B${row}`, '');
     ensureWorksheetCell(worksheet, `C${row}`, student.cccd || '');
-    ensureWorksheetCell(worksheet, `D${row}`, [student.ho, student.ten_dem].filter(Boolean).join(' '));
-    ensureWorksheetCell(worksheet, `E${row}`, student.ten || '');
+    ensureWorksheetCell(worksheet, `D${row}`, toUpperVi([student.ho, student.ten_dem].filter(Boolean).join(' ')));
+    ensureWorksheetCell(worksheet, `E${row}`, toUpperVi(student.ten || ''));
     ensureWorksheetCell(worksheet, `F${row}`, formatDateVN(student.ngay_sinh));
     ensureWorksheetCell(worksheet, `G${row}`, cleanStudentPlace(student.noi_sinh));
     ensureWorksheetCell(worksheet, `H${row}`, normalizeGenderLabel(student.gioi_tinh));
-    ensureWorksheetCell(worksheet, `I${row}`, student.dan_toc || '');
+    ensureWorksheetCell(worksheet, `I${row}`, toUpperVi(student.dan_toc || ''));
     ensureWorksheetCell(worksheet, `J${row}`, '');
     ensureWorksheetCell(worksheet, `K${row}`, '');
     ensureWorksheetCell(worksheet, `L${row}`, '');
@@ -524,7 +644,7 @@ function writeVeptExamListTemplate(
   const headersRight = ['Kiểm tra hồ sơ dự thi', 'Ngày thi', 'Giờ thi', 'Địa điểm thi'];
 
   ensureWorksheetCell(worksheet, 'A1', 'DANH SÁCH ĐĂNG KÝ THI VERSANT ENGLISH PLACEMENT TEST (VEPT)');
-  ensureWorksheetCell(worksheet, 'A2', `Tên Đơn vị/ Trường học đăng ký: ${examInfo.organizer_name || ''}`);
+  ensureWorksheetCell(worksheet, 'A2', `Tên Đơn vị/ Trường học đăng ký: ${toUpperVi(examInfo.organizer_name || '')}`);
   ensureWorksheetCell(worksheet, 'A3', 'Đại diện đăng ký: ');
   ensureWorksheetCell(worksheet, 'E3', 'Số điện thoại:');
   ensureWorksheetCell(worksheet, 'Q3', 'Phần dành cho trung tâm');
@@ -555,20 +675,20 @@ function writeVeptExamListTemplate(
     const year = birthDate.year || '';
 
     ensureWorksheetCell(worksheet, `A${row}`, index + 1, 'n');
-    ensureWorksheetCell(worksheet, `B${row}`, [student.ho, student.ten_dem].filter(Boolean).join(' '));
-    ensureWorksheetCell(worksheet, `C${row}`, student.ten || '');
+    ensureWorksheetCell(worksheet, `B${row}`, toUpperVi([student.ho, student.ten_dem].filter(Boolean).join(' ')));
+    ensureWorksheetCell(worksheet, `C${row}`, toUpperVi(student.ten || ''));
     ensureWorksheetCell(worksheet, `D${row}`, normalizeGenderLabel(student.gioi_tinh));
     ensureWorksheetCell(worksheet, `E${row}`, day, day === '' ? 's' : 'n');
     ensureWorksheetCell(worksheet, `F${row}`, month, month === '' ? 's' : 'n');
     ensureWorksheetCell(worksheet, `G${row}`, year, year === '' ? 's' : 'n');
     ensureWorksheetCell(worksheet, `H${row}`, student.cccd || '');
     ensureWorksheetCell(worksheet, `I${row}`, student.sdt || '');
-    ensureWorksheetCell(worksheet, `J${row}`, student.email || '');
+    ensureWorksheetCell(worksheet, `J${row}`, normalizeEmail(student.email || ''));
     ensureWorksheetCell(worksheet, `K${row}`, cleanStudentWorkplace(student.don_vi_cong_tac));
     ensureWorksheetCell(worksheet, `L${row}`, '');
-    ensureWorksheetCell(worksheet, `M${row}`, examInfo.exam_level || '');
+    ensureWorksheetCell(worksheet, `M${row}`, toUpperVi(examInfo.exam_level || ''));
     ensureWorksheetCell(worksheet, `N${row}`, formatDateVN(examInfo.exam_date));
-    ensureWorksheetCell(worksheet, `T${row}`, examInfo.location || '');
+    ensureWorksheetCell(worksheet, `T${row}`, toUpperVi(examInfo.location || ''));
 
     applyCellStyle(worksheet, `A${row}`, styles.dataCenter);
     applyCellStyle(worksheet, `B${row}`, styles.dataLeft);
@@ -633,6 +753,138 @@ function writeVeptExamListTemplate(
   setWorksheetFreeze(worksheet, { xSplit: 0, ySplit: 4, topLeftCell: 'A5', activePane: 'bottomLeft', state: 'frozen' });
 }
 
+function buildVanTrangFullTitle(examInfo: any) {
+  const examName = toUpperVi(examInfo?.exam_name || '');
+  if (!examName) return 'DANH SÁCH THÍ SINH';
+  return `DANH SÁCH THÍ SINH - ${examName}`;
+}
+
+function getVanTrangFullColumns() {
+  return [
+    { header: 'STT', width: 6, value: (_s: any, index: number) => index + 1, center: true },
+    { header: 'Họ', width: 18, value: (s: any) => toUpperVi(s.ho || '') },
+    { header: 'Tên đệm', width: 18, value: (s: any) => toUpperVi(s.ten_dem || '') },
+    { header: 'Tên', width: 12, value: (s: any) => toUpperVi(s.ten || '') },
+    { header: 'Họ và tên', width: 24, value: (s: any) => toUpperVi(s.ho_ten_full || [s.ho, s.ten_dem, s.ten].filter(Boolean).join(' ')) },
+    { header: 'Ngày sinh', width: 14, value: (s: any) => formatDateVN(s.ngay_sinh), center: true },
+    { header: 'Giới tính', width: 10, value: (s: any) => normalizeGenderLabel(s.gioi_tinh), center: true },
+    { header: 'Dân tộc', width: 12, value: (s: any) => toUpperVi(s.dan_toc || ''), center: true },
+    { header: 'CCCD', width: 18, value: (s: any) => s.cccd || '', center: true },
+    { header: 'Ngày cấp CCCD', width: 14, value: (s: any) => formatDateVN(s.ngay_cap_cccd), center: true },
+    { header: 'SĐT', width: 14, value: (s: any) => s.sdt || '', center: true },
+    { header: 'Email', width: 26, value: (s: any) => normalizeEmail(s.email || '') },
+    { header: 'Nơi sinh', width: 20, value: (s: any) => cleanStudentPlace(s.noi_sinh) },
+    { header: 'Địa chỉ', width: 34, value: (s: any) => cleanStudentAddress(s.dia_chi) },
+    { header: 'Đơn vị công tác', width: 24, value: (s: any) => cleanStudentWorkplace(s.don_vi_cong_tac) },
+  ];
+}
+
+function writeVanTrangFullExamListTemplate(
+  worksheet: XLSX.WorkSheet,
+  examInfo: any,
+  students: any[],
+) {
+  const titleStyle = {
+    font: { name: 'Times New Roman', bold: true, sz: 14, color: { rgb: '1F4E78' } },
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+    fill: { fgColor: { rgb: 'E7F3FF' } },
+  };
+  const infoStyle = {
+    font: { name: 'Times New Roman', sz: 11, italic: true },
+    alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+  };
+  const headerStyle = {
+    font: { name: 'Times New Roman', bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+    fill: { fgColor: { rgb: '2F75B5' } },
+    border: {
+      top: { style: 'thin', color: { rgb: 'FFFFFF' } },
+      bottom: { style: 'thin', color: { rgb: 'FFFFFF' } },
+      left: { style: 'thin', color: { rgb: 'FFFFFF' } },
+      right: { style: 'thin', color: { rgb: 'FFFFFF' } },
+    },
+  };
+  const dataStyle = {
+    font: { name: 'Times New Roman', sz: 11 },
+    alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+    border: {
+      top: { style: 'thin', color: { rgb: 'D9D9D9' } },
+      bottom: { style: 'thin', color: { rgb: 'D9D9D9' } },
+      left: { style: 'thin', color: { rgb: 'D9D9D9' } },
+      right: { style: 'thin', color: { rgb: 'D9D9D9' } },
+    },
+  };
+  const dataCenterStyle = {
+    ...dataStyle,
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+  };
+
+  const fullColumns = getVanTrangFullColumns();
+
+  const examDate = formatDateVN(examInfo.exam_date);
+  const examTime = (() => {
+    const date = new Date(examInfo.exam_date);
+    if (Number.isNaN(date.getTime())) return '';
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  })();
+
+  ensureWorksheetCell(worksheet, 'A1', buildVanTrangFullTitle(examInfo));
+  ensureWorksheetCell(worksheet, 'A2', `Kỳ thi: ${examInfo.exam_name || ''}`);
+  ensureWorksheetCell(worksheet, 'A3', `Ngày thi: ${examDate}${examTime ? ` • ${examTime}` : ''}`);
+  ensureWorksheetCell(worksheet, 'A4', `Địa điểm: ${examInfo.location || 'Chưa xác định'}`);
+  ensureWorksheetCell(worksheet, 'A5', `Tổng thí sinh đã duyệt: ${students.length}`);
+
+  applyCellStyle(worksheet, 'A1', titleStyle);
+  applyCellStyle(worksheet, 'A2', infoStyle);
+  applyCellStyle(worksheet, 'A3', infoStyle);
+  applyCellStyle(worksheet, 'A4', infoStyle);
+  applyCellStyle(worksheet, 'A5', infoStyle);
+
+  const headerRow = 6;
+  fullColumns.forEach((column, index) => {
+    const address = `${XLSX.utils.encode_col(index)}${headerRow}`;
+    ensureWorksheetCell(worksheet, address, column.header);
+    applyCellStyle(worksheet, address, headerStyle);
+  });
+
+  students.forEach((student, index) => {
+    const row = headerRow + 1 + index;
+    fullColumns.forEach((column, colIndex) => {
+      const value = column.value(student, index);
+      const address = `${XLSX.utils.encode_col(colIndex)}${row}`;
+      ensureWorksheetCell(worksheet, address, value, typeof value === 'number' ? 'n' : 's');
+      applyCellStyle(worksheet, address, column.center ? dataCenterStyle : dataStyle);
+    });
+  });
+
+  const lastCol = XLSX.utils.encode_col(fullColumns.length - 1);
+  setWorksheetMerges(worksheet, [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: fullColumns.length - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: fullColumns.length - 1 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: fullColumns.length - 1 } },
+    { s: { r: 3, c: 0 }, e: { r: 3, c: fullColumns.length - 1 } },
+    { s: { r: 4, c: 0 }, e: { r: 4, c: fullColumns.length - 1 } },
+  ]);
+  setWorksheetColumns(worksheet, fullColumns.map((column) => ({ wch: column.width })));
+  setWorksheetRows(worksheet, [
+    { hpt: 26 },
+    { hpt: 18 },
+    { hpt: 18 },
+    { hpt: 18 },
+    { hpt: 18 },
+    { hpt: 24 },
+    ...students.map(() => ({ hpt: 20 })),
+  ]);
+  setWorksheetFreeze(worksheet, {
+    xSplit: 0,
+    ySplit: headerRow,
+    topLeftCell: `A${headerRow + 1}`,
+    activePane: 'bottomLeft',
+    state: 'frozen',
+  });
+  worksheet['!autofilter'] = { ref: `A${headerRow}:${lastCol}${headerRow}` };
+}
+
 function applyMappedTemplate(
   worksheet: XLSX.WorkSheet,
   template: any,
@@ -674,7 +926,7 @@ function applyMappedTemplate(
 
       let value: any = '';
       if (field === 'stt') value = index + 1;
-      else if (field === 'ho_ten') value = student.ho_ten_full || [student.ho, student.ten_dem, student.ten].filter(Boolean).join(' ');
+      else if (field === 'ho_ten') value = toUpperVi(student.ho_ten_full || [student.ho, student.ten_dem, student.ten].filter(Boolean).join(' '));
       else if (field === 'ngay_sinh') value = formatDateVN(student.ngay_sinh);
       else if (field === 'ma_sv') value = student.cccd || student.id || '';
       else if (field === 'ho_so') value = '';
@@ -685,6 +937,216 @@ function applyMappedTemplate(
   });
 
   return true;
+}
+
+type ResolvedExamListTemplateName = 'ptit' | 'vept' | 'vantrang_full';
+
+function sortStudentsForExamList(students: any[]) {
+  students.sort((a: any, b: any) => {
+    const aTen = normalizeWhitespace(a.ten);
+    const bTen = normalizeWhitespace(b.ten);
+    const cmpTen = aTen.localeCompare(bTen, 'vi', { sensitivity: 'base' });
+    if (cmpTen !== 0) return cmpTen;
+
+    const aHo = normalizeWhitespace(a.ho);
+    const bHo = normalizeWhitespace(b.ho);
+    const cmpHo = aHo.localeCompare(bHo, 'vi', { sensitivity: 'base' });
+    if (cmpHo !== 0) return cmpHo;
+
+    const aTenDem = normalizeWhitespace(a.ten_dem);
+    const bTenDem = normalizeWhitespace(b.ten_dem);
+    const cmpTenDem = aTenDem.localeCompare(bTenDem, 'vi', { sensitivity: 'base' });
+    if (cmpTenDem !== 0) return cmpTenDem;
+
+    const aKey = normalizeWhitespace(a.cccd || a.id || '');
+    const bKey = normalizeWhitespace(b.cccd || b.id || '');
+    return aKey.localeCompare(bKey, 'vi', { sensitivity: 'base' });
+  });
+}
+
+async function loadExamListExportContext(
+  db: any,
+  examId: number,
+  scope: ExamRegistrationExportScope = 'approved',
+) {
+  const examInfo = await db.prepare(
+    `
+      SELECT
+        e.*,
+        org.name as organizer_name,
+        org.code as organizer_code,
+        p.name as program_name,
+        p.code as program_code,
+        t.name as template_name,
+        t.display_name as template_display_name
+      FROM exam_schedules e
+      LEFT JOIN program_organizers org ON org.uuid = e.organizer_uuid
+      LEFT JOIN programs p ON p.uuid = e.program_uuid
+      LEFT JOIN excel_templates t ON t.id = e.template_id
+      WHERE e.id = ?
+    `
+  ).bind(examId).first() as any;
+
+  if (!examInfo) return null;
+
+  const students = normalizeStudentsForExport(await getExamRegistrationsForExport(db, examId, scope) as any[]);
+  sortStudentsForExamList(students);
+
+  const resolvedTemplateName = (detectExamListTemplateName({
+    templateName: examInfo.template_name,
+    templateDisplayName: examInfo.template_display_name,
+    organizerCode: examInfo.organizer_code,
+    organizerName: examInfo.organizer_name,
+    programCode: examInfo.program_code,
+    programName: examInfo.program_name,
+    examName: examInfo.exam_name,
+    examType: examInfo.exam_type,
+  }) || 'ptit') as ResolvedExamListTemplateName;
+
+  return {
+    examInfo,
+    students,
+    scope,
+    scopeLabel: EXAM_EXPORT_SCOPE_LABELS[scope],
+    resolvedTemplateName,
+  };
+}
+
+function buildVeptExamListPreview(examInfo: any, students: any[]) {
+  return {
+    kind: 'vept',
+    formatLabel: 'VEPT / VSTEP',
+    sheetTitle: 'DANH SÁCH ĐĂNG KÝ THI VERSANT ENGLISH PLACEMENT TEST (VEPT)',
+    organizationLine: `Tên Đơn vị/ Trường học đăng ký: ${toUpperVi(examInfo.organizer_name || '')}`,
+    representativeLine: 'Đại diện đăng ký:',
+    phoneLine: 'Số điện thoại:',
+    centerLine: 'Phần dành cho trung tâm',
+    leftHeaders: [
+      'STT',
+      'Họ và tên đệm',
+      'Tên',
+      'Giới tính',
+      'Ngày sinh',
+      'Tháng sinh ',
+      'Năm sinh',
+      'Số CMND/ Hộ chiếu',
+      'Điện thoại',
+      'Email (Thí sinh điền đúng thông tin để nhận kết quả thi)',
+      'Đơn vị công tác/ Trường học',
+      'Vị trí công tác',
+      'Nhu cầu đăng ký trình độ (A1, A2, B1, B2, C1, C2)',
+      'Nhu cầu đăng ký thi ngày',
+      'Mục đích tham dự thi (Ghi rõ làm đầu vào, đầu ra sinh viên, thạc sĩ, tiến sĩ…)',
+      'Nguồn đăng kí ',
+    ],
+    rightHeaders: ['Kiểm tra hồ sơ dự thi', 'Ngày thi', 'Giờ thi', 'Địa điểm thi'],
+    rows: students.map((student: any, index: number) => {
+      const birthDate = getDateParts(student.ngay_sinh);
+      return [
+        index + 1,
+        toUpperVi([student.ho, student.ten_dem].filter(Boolean).join(' ')),
+        toUpperVi(student.ten || ''),
+        normalizeGenderLabel(student.gioi_tinh),
+        birthDate.day || '',
+        birthDate.month || '',
+        birthDate.year || '',
+        student.cccd || '',
+        student.sdt || '',
+        normalizeEmail(student.email || ''),
+        cleanStudentWorkplace(student.don_vi_cong_tac),
+        '',
+        toUpperVi(examInfo.exam_level || ''),
+        formatDateVN(examInfo.exam_date),
+        '',
+        '',
+        '',
+        '',
+        '',
+        toUpperVi(examInfo.location || ''),
+      ];
+    }),
+  };
+}
+
+function buildPtitExamListPreview(examInfo: any, students: any[]) {
+  return {
+    kind: 'exam-list',
+    formatLabel: 'PTIT / Tin học',
+    titleLines: [
+      'CHỨNG CHỈ ỨNG DỤNG CÔNG NGHỆ THÔNG TIN CƠ BẢN & NÂNG CAO',
+      'THEO THÔNG TƯ 03/2014/TT-BTTTT',
+      toUpperVi(examInfo.exam_name || 'DANH SÁCH DỰ THI'),
+    ],
+    infoLines: [
+      formatExamDateLine(examInfo.exam_date),
+      `Hội đồng thi: ${toUpperVi(examInfo.organizer_name || examInfo.location || 'Chưa xác định')}`,
+    ],
+    headers: ['STT', 'SỐ PHÁCH', 'SỐ CMT', 'HỌ', 'TÊN', 'NGÀY SINH', 'NƠI SINH', 'GIỚI TÍNH', 'DÂN TỘC', 'MÔN THI', '', 'KÝ TÊN', 'GHI CHÚ'],
+    subHeaders: ['LT', 'TH'],
+    rows: students.map((student: any, index: number) => [
+      index + 1,
+      '',
+      student.cccd || '',
+      toUpperVi([student.ho, student.ten_dem].filter(Boolean).join(' ')),
+      toUpperVi(student.ten || ''),
+      formatDateVN(student.ngay_sinh),
+      cleanStudentPlace(student.noi_sinh),
+      normalizeGenderLabel(student.gioi_tinh),
+      toUpperVi(student.dan_toc || ''),
+      '',
+      '',
+      '',
+      '',
+    ]),
+  };
+}
+
+function buildVanTrangFullExamListPreview(
+  examInfo: any,
+  students: any[],
+  scopeLabel: string,
+) {
+  const columns = getVanTrangFullColumns();
+  const examDate = formatDateVN(examInfo.exam_date);
+  const examTime = (() => {
+    const date = new Date(examInfo.exam_date);
+    if (Number.isNaN(date.getTime())) return '';
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  })();
+
+  return {
+    kind: 'vantrang_full',
+    formatLabel: 'VanTrang Full thông tin',
+    sheetTitle: buildVanTrangFullTitle(examInfo),
+    infoLines: [
+      `Kỳ thi: ${examInfo.exam_name || ''}`,
+      `Ngày thi: ${examDate}${examTime ? ` • ${examTime}` : ''}`,
+      `Địa điểm: ${examInfo.location || 'Chưa xác định'}`,
+      `Tổng thí sinh (${scopeLabel}): ${students.length}`,
+    ],
+    headers: columns.map((column) => column.header),
+    centerColumnIndexes: columns
+      .map((column, index) => (column.center ? index : -1))
+      .filter((index) => index >= 0),
+    rows: students.map((student: any, index: number) => columns.map((column: any) => column.value(student, index))),
+  };
+}
+
+function buildExamListPreviewData(
+  examInfo: any,
+  students: any[],
+  resolvedTemplateName: ResolvedExamListTemplateName,
+  scopeLabel: string,
+) {
+  if (resolvedTemplateName === 'vept') {
+    return buildVeptExamListPreview(examInfo, students);
+  }
+
+  if (resolvedTemplateName === 'vantrang_full') {
+    return buildVanTrangFullExamListPreview(examInfo, students, scopeLabel);
+  }
+
+  return buildPtitExamListPreview(examInfo, students);
 }
 
 // ========================================
@@ -701,7 +1163,9 @@ exportRoute.get('/class/:class_id', async (c) => {
     }
 
     // 2. Lấy danh sách đăng ký
-    const registrations = excludeTestStudents(await getRegistrationsByClass(c.env.DB, classId));
+    const registrations = normalizeStudentsForExport(
+      excludeTestStudents(await getRegistrationsByClass(c.env.DB, classId))
+    );
 
     // 3. Tạo workbook
     const workbook = XLSX.utils.book_new();
@@ -724,15 +1188,15 @@ exportRoute.get('/class/:class_id', async (c) => {
 
     // 4. Tạo data rows
     const dataRows = registrations.map((reg) => {
-      const hoVaTenDem = (reg.ho || '') + (reg.ten_dem ? ' ' + reg.ten_dem : '');
+      const hoVaTenDem = toUpperVi((reg.ho || '') + (reg.ten_dem ? ' ' + reg.ten_dem : ''));
       return [
         hoVaTenDem,
-        reg.ten || '',
+        toUpperVi(reg.ten || ''),
         formatDateVN(reg.ngay_sinh),
         normalizeGenderLabel(reg.gioi_tinh),
-        reg.dan_toc || 'Kinh',
+        toUpperVi(reg.dan_toc || 'KINH'),
         reg.sdt || '',
-        reg.email || '',
+        normalizeEmail(reg.email || ''),
         reg.cccd || '',
         formatDateVN(reg.ngay_cap_cccd),
         cleanStudentPlace(reg.noi_sinh),
@@ -836,7 +1300,9 @@ exportRoute.get('/class/:class_id/json', async (c) => {
       return errorResponse('Lớp không tồn tại', 404);
     }
 
-    const registrations = excludeTestStudents(await getRegistrationsByClass(c.env.DB, classId));
+    const registrations = normalizeStudentsForExport(
+      excludeTestStudents(await getRegistrationsByClass(c.env.DB, classId))
+    );
 
     return new Response(JSON.stringify({
       success: true,
@@ -866,32 +1332,34 @@ exportRoute.get('/class/:class_id/csv', async (c) => {
       return errorResponse('Lớp không tồn tại', 404);
     }
 
-    const registrations = excludeTestStudents(await getRegistrationsByClass(c.env.DB, classId));
+    const registrations = normalizeStudentsForExport(
+      excludeTestStudents(await getRegistrationsByClass(c.env.DB, classId))
+    );
 
     // Convert to CSV
     const headers = ['STT', 'Số phách', 'Số CMT', 'Họ', 'Tên', 'Ngày sinh', 'Nơi sinh', 'Giới tính', 'Email', 'SĐT', 'Địa chỉ', 'Trạng thái', 'Nộp phí'];
     const csvRows = registrations.map((reg, index) => {
-      const nopPhi = (reg.payment_status === 'confirmed' || reg.payment_status === 'paid') ? 'Đã nộp' : 'Chưa nộp';
+      const nopPhi = (reg.payment_status === 'confirmed' || reg.payment_status === 'paid') ? 'ĐÃ NỘP' : 'CHƯA NỘP';
       const statusMap = {
-        'pending': 'Chờ duyệt',
-        'approved': 'Đã duyệt',
-        'studying': 'Đang học',
-        'completed': 'Hoàn thành',
-        'certified': 'Đã cấp chứng chỉ',
-        'cancelled': 'Đã hủy'
+        'pending': 'CHỜ DUYỆT',
+        'approved': 'ĐÃ DUYỆT',
+        'studying': 'ĐANG HỌC',
+        'completed': 'HOÀN THÀNH',
+        'certified': 'ĐÃ CẤP CHỨNG CHỈ',
+        'cancelled': 'ĐÃ HỦY'
       };
-      const trangThai = statusMap[reg.status as keyof typeof statusMap] || reg.status;
+      const trangThai = statusMap[reg.status as keyof typeof statusMap] || toUpperVi(reg.status || '');
 
       return [
         index + 1,
         reg.so_phach || '',
         reg.cccd || '',
-        (reg.ho || '') + (reg.ten_dem ? ' ' + reg.ten_dem : ''),
-        reg.ten || '',
+        toUpperVi((reg.ho || '') + (reg.ten_dem ? ' ' + reg.ten_dem : '')),
+        toUpperVi(reg.ten || ''),
         formatDateVN(reg.ngay_sinh),
         cleanStudentPlace(reg.noi_sinh),
         normalizeGenderLabel(reg.gioi_tinh),
-        reg.email || '',
+        normalizeEmail(reg.email || ''),
         reg.sdt || '',
         cleanStudentAddress(reg.dia_chi),
         trangThai,
@@ -937,7 +1405,7 @@ exportRoute.get('/exam/:exam_id', async (c) => {
     }
 
     // 2. Lấy đúng danh sách đã duyệt như màn hình admin (/exam-schedules/:id/students)
-    const students = await getExamRegistrations(c.env.DB, examId) as any[];
+    const students = normalizeStudentsForExport(await getExamRegistrations(c.env.DB, examId) as any[]);
 
     // 3. Tạo workbook
     const workbook = XLSX.utils.book_new();
@@ -973,15 +1441,15 @@ exportRoute.get('/exam/:exam_id', async (c) => {
 
     // 4. Tạo data rows
     const dataRows = students.map((s) => {
-      const hoVaTenDem = (s.ho || '') + (s.ten_dem ? ' ' + s.ten_dem : '');
+      const hoVaTenDem = toUpperVi((s.ho || '') + (s.ten_dem ? ' ' + s.ten_dem : ''));
       return [
         hoVaTenDem,
-        s.ten || '',
+        toUpperVi(s.ten || ''),
         formatDateVN(s.ngay_sinh),
         normalizeGenderLabel(s.gioi_tinh),
-        s.dan_toc || 'Kinh',
+        toUpperVi(s.dan_toc || 'KINH'),
         s.sdt || '',
-        s.email || '',
+        normalizeEmail(s.email || ''),
         s.cccd || '',
         formatDateVN(s.ngay_cap_cccd),
         cleanStudentPlace(s.noi_sinh),
@@ -1127,142 +1595,26 @@ exportRoute.get('/exam/:exam_id', async (c) => {
 exportRoute.get('/exam/:exam_id/exam-list', async (c) => {
   try {
     const examId = parseInt(c.req.param('exam_id'));
-
-    // 1. Lấy thông tin kỳ thi (kèm template_id)
-    const examInfo = await c.env.DB.prepare(
-      `
-        SELECT e.*, org.name as organizer_name, org.code as organizer_code
-        FROM exam_schedules e
-        LEFT JOIN program_organizers org ON org.uuid = e.organizer_uuid
-        WHERE e.id = ?
-      `
-    ).bind(examId).first() as any;
-
-    if (!examInfo) {
-      return errorResponse('Kỳ thi không tồn tại', 404);
+    const scope = resolveExamExportScope(c.req.query('scope'));
+    if (!scope) {
+      return errorResponse('Phạm vi export không hợp lệ', 400);
     }
 
-    // 2. Lấy đúng danh sách đã duyệt như màn hình admin (/exam-schedules/:id/students)
-    const students = await getExamRegistrations(c.env.DB, examId) as any[];
+    const context = await loadExamListExportContext(c.env.DB, examId, scope);
+    if (!context) {
+      return errorResponse('Kỳ thi không tồn tại', 404);
+    }
+    const { examInfo, students, resolvedTemplateName } = context;
 
-    // 2.1 Sort theo cột TÊN (cột E) nhưng giữ nguyên toàn bộ dòng dữ liệu
-    // Ưu tiên: TEN -> HO -> TEN_DEM -> CCCD/ID, dùng localeCompare tiếng Việt để sắp xếp có dấu ổn hơn.
-    students.sort((a: any, b: any) => {
-      const aTen = (a.ten || '').trim();
-      const bTen = (b.ten || '').trim();
-      const cmpTen = aTen.localeCompare(bTen, 'vi', { sensitivity: 'base' });
-      if (cmpTen !== 0) return cmpTen;
-
-      const aHo = (a.ho || '').trim();
-      const bHo = (b.ho || '').trim();
-      const cmpHo = aHo.localeCompare(bHo, 'vi', { sensitivity: 'base' });
-      if (cmpHo !== 0) return cmpHo;
-
-      const aTenDem = (a.ten_dem || '').trim();
-      const bTenDem = (b.ten_dem || '').trim();
-      const cmpTenDem = aTenDem.localeCompare(bTenDem, 'vi', { sensitivity: 'base' });
-      if (cmpTenDem !== 0) return cmpTenDem;
-
-      const aKey = (a.cccd || a.id || '').toString();
-      const bKey = (b.cccd || b.id || '').toString();
-      return aKey.localeCompare(bKey, 'vi', { sensitivity: 'base' });
-    });
-    const { day, month, year } = getDateParts(examInfo.exam_date);
-
-    // 3. Export mặc định theo dữ liệu danh sách thực tế đang hiển thị
+    // Export theo template đã lưu; nếu thiếu template thì fallback bằng rule nhận diện
     const workbook = XLSX.utils.book_new();
-
-    // Header rows 
-    const headerRows = [
-      ['CHỨNG CHỈ ỨNG DỤNG CÔNG NGHỆ THÔNG TIN CƠ BẢN & NÂNG CAO', '', '', '', '', '', '', '', '', '', '', '', ''],
-      ['THEO THÔNG TƯ 03/2014/TT-BTTTT', '', '', '', '', '', '', '', '', '', '', '', ''],
-      ['DANH SÁCH DỰ THI', '', '', '', '', '', '', '', '', '', '', '', ''],
-      ['', '', '', '', '', `Thời gian: ngày ${day} tháng ${String(month).padStart(2, '0')} năm ${year}`, '', '', '', '', '', '', ''],
-      ['', '', '', '', '', `Địa điểm thi: ${examInfo.location || 'Chưa xác định'}`, '', '', '', '', '', '', ''],
-      ['', '', '', '', '', '', '', '', '', '', '', '', ''],
-      ['STT', 'SỐ PHÁCH', 'SỐ CMT', 'HỌ', 'TÊN', 'NGÀY SINH', 'NƠI SINH', 'GIỚI TÍNH', 'DÂN TỘC', 'MÔN THI', '', 'KÝ TÊN', 'GHI CHÚ'],
-      ['', '', '', '', '', '', '', '', '', 'LT', 'TH', '', ''],
-    ];
-
-    // Tạo data rows
-    const dataRows = students.map((s, index) => {
-      const hoVaTenDem = (s.ho || '') + (s.ten_dem ? ' ' + s.ten_dem : '');
-      return [
-        index + 1,
-        '', // SỐ PHÁCH
-        s.cccd || '',
-        hoVaTenDem,
-        s.ten || '',
-        formatDateVN(s.ngay_sinh),
-        cleanStudentPlace(s.noi_sinh),
-        normalizeGenderLabel(s.gioi_tinh),
-        s.dan_toc || '',
-        '', // LT
-        '', // TH
-        '', // KÝ TÊN
-        '', // GHI CHÚ
-      ];
-    });
-
-    const wsData = [...headerRows, ...dataRows];
-    const worksheet = XLSX.utils.aoa_to_sheet(wsData);
-
-    // Merge cells
-    worksheet['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 12 } },
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 12 } },
-      { s: { r: 2, c: 0 }, e: { r: 2, c: 12 } },
-      { s: { r: 3, c: 5 }, e: { r: 3, c: 12 } },
-      { s: { r: 4, c: 5 }, e: { r: 4, c: 12 } },
-      { s: { r: 6, c: 9 }, e: { r: 6, c: 10 } },
-    ];
-
-    // Col widths
-    worksheet['!cols'] = [
-      { wch: 5 }, { wch: 10 }, { wch: 14 }, { wch: 18 }, { wch: 10 },
-      { wch: 16 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 5 },
-      { wch: 5 }, { wch: 12 }, { wch: 12 },
-    ];
-
-    // Styles
-    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-    const borderStyle = {
-      top: { style: 'thin', color: { rgb: '000000' } },
-      bottom: { style: 'thin', color: { rgb: '000000' } },
-      left: { style: 'thin', color: { rgb: '000000' } },
-      right: { style: 'thin', color: { rgb: '000000' } }
-    };
-
-    for (let row = range.s.r; row <= range.e.r; row++) {
-      for (let col = range.s.c; col <= range.e.c; col++) {
-        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
-        if (!worksheet[cellAddress]) worksheet[cellAddress] = { v: '', t: 's' };
-
-        if (row <= 2) {
-          worksheet[cellAddress].s = {
-            font: { name: 'Times New Roman', sz: row === 2 ? 14 : 12, bold: true },
-            alignment: { horizontal: 'center', vertical: 'center' },
-          };
-        } else if (row >= 3 && row <= 5) {
-          worksheet[cellAddress].s = {
-            font: { name: 'Times New Roman', sz: 11, italic: true },
-            alignment: { horizontal: 'left', vertical: 'center' },
-          };
-        } else if (row >= 6 && row <= 7) {
-          worksheet[cellAddress].s = {
-            font: { name: 'Times New Roman', sz: 11, bold: true },
-            border: borderStyle,
-            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-            fill: { fgColor: { rgb: 'D9E1F2' } }
-          };
-        } else {
-          worksheet[cellAddress].s = {
-            font: { name: 'Times New Roman', sz: 11 },
-            border: borderStyle,
-            alignment: { horizontal: col === 0 ? 'center' : 'left', vertical: 'center' }
-          };
-        }
-      }
+    const worksheet = XLSX.utils.aoa_to_sheet([]);
+    if (resolvedTemplateName === 'vept') {
+      writeVeptExamListTemplate(worksheet, examInfo, students, 5);
+    } else if (resolvedTemplateName === 'vantrang_full') {
+      writeVanTrangFullExamListTemplate(worksheet, examInfo, students);
+    } else {
+      writePtitExamListTemplate(worksheet, examInfo, students, 9);
     }
 
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Danh sách dự thi');
@@ -1280,6 +1632,45 @@ exportRoute.get('/exam/:exam_id/exam-list', async (c) => {
   } catch (error: any) {
     console.error('Export exam list error:', error);
     return errorResponse('Lỗi xuất danh sách dự thi: ' + error.message, 500);
+  }
+});
+
+// ========================================
+// GET /export/exam/:exam_id/exam-list/preview - Preview dữ liệu Excel từ backend (single source of truth)
+// ========================================
+exportRoute.get('/exam/:exam_id/exam-list/preview', async (c) => {
+  try {
+    const examId = parseInt(c.req.param('exam_id'));
+    const scope = resolveExamExportScope(c.req.query('scope'));
+    if (!scope) {
+      return errorResponse('Phạm vi export không hợp lệ', 400);
+    }
+
+    const context = await loadExamListExportContext(c.env.DB, examId, scope);
+
+    if (!context) {
+      return errorResponse('Kỳ thi không tồn tại', 404);
+    }
+
+    const preview = buildExamListPreviewData(
+      context.examInfo,
+      context.students,
+      context.resolvedTemplateName,
+      context.scopeLabel,
+    );
+
+    return c.json({
+      success: true,
+      data: {
+        ...preview,
+        scope: context.scope,
+        scopeLabel: context.scopeLabel,
+        totalStudents: context.students.length,
+      },
+    });
+  } catch (error: any) {
+    console.error('Export exam list preview error:', error);
+    return errorResponse('Lỗi preview danh sách dự thi: ' + error.message, 500);
   }
 });
 

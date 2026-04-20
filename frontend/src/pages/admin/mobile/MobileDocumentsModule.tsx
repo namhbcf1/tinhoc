@@ -15,6 +15,7 @@ import {
     formatFileSize
 } from '../shared/hooks/useDocumentsManagement';
 import AdminLoadingState from '../../../components/admin/AdminLoadingState';
+import OverlayPortal from '../../../components/ui/OverlayPortal';
 
 // ============= BOTTOM SHEET =============
 const BottomSheet = ({ isOpen, onClose, title, children, height = 'auto' }) => {
@@ -34,29 +35,28 @@ const BottomSheet = ({ isOpen, onClose, title, children, height = 'auto' }) => {
     if (!isVisible && !isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50">
-            <div
-                className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
-                onClick={onClose}
-            />
-            <div
-                className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
-                style={{ maxHeight: height === 'auto' ? '90vh' : height }}
-            >
-                <div className="flex justify-center pt-3 pb-2">
-                    <div className="w-12 h-1.5 bg-slate-300 rounded-full" />
-                </div>
-                <div className="flex items-center justify-between px-5 pb-3 border-b border-slate-100">
-                    <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                        <X size={20} className="text-slate-500" />
-                    </button>
-                </div>
-                <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 100px)' }}>
-                    {children}
+        <OverlayPortal>
+            <div className="fixed inset-0 z-[100000]">
+                <div
+                    className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+                    onClick={onClose}
+                />
+                <div
+                    className={`absolute inset-0 bg-white shadow-2xl transition-transform duration-300 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
+                    style={{ height: height === 'auto' ? '100dvh' : height, maxHeight: '100dvh' }}
+                >
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                        <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+                        <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                            <X size={20} className="text-slate-500" />
+                        </button>
+                    </div>
+                    <div className="overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 73px)' }}>
+                        {children}
+                    </div>
                 </div>
             </div>
-        </div>
+        </OverlayPortal>
     );
 };
 
@@ -663,21 +663,21 @@ export default function MobileDocumentsModule() {
         <PullToRefreshWrapper onRefresh={handleRefresh}>
         <div className="min-h-screen bg-slate-50">
             {/* Header */}
-            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 pt-4 pb-6 safe-area-inset-top">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-white">Quản lý Tài liệu</h2>
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 pt-3.5 pb-3 safe-area-inset-top">
+                <div className="mb-2.5 flex items-center justify-between">
+                    <h2 className="text-base font-bold text-white">Quản lý Tài liệu</h2>
                     <div className="flex gap-2">
                         <button
                             onClick={() => setShowFolder(true)}
-                            className="p-2 bg-white/20 rounded-xl text-white active:bg-white/30"
+                            className="rounded-xl bg-white/20 p-2 text-white active:bg-white/30"
                         >
-                            <FolderPlus size={20} />
+                            <FolderPlus size={18} />
                         </button>
                         <button
                             onClick={() => setShowUpload(true)}
-                            className="p-2 bg-white/20 rounded-xl text-white active:bg-white/30"
+                            className="rounded-xl bg-white/20 p-2 text-white active:bg-white/30"
                         >
-                            <Plus size={22} />
+                            <Plus size={20} />
                         </button>
                     </div>
                 </div>
@@ -690,7 +690,7 @@ export default function MobileDocumentsModule() {
                         placeholder="Tìm tài liệu..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-12 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/60"
+                        className="w-full rounded-xl border border-white/30 bg-white/20 py-2 pl-10 pr-12 text-[13px] text-white placeholder-white/70 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/60"
                     />
                     <button
                         onClick={() => setShowFilters(!showFilters)}
@@ -713,7 +713,7 @@ export default function MobileDocumentsModule() {
                             <button
                                 key={f.value}
                                 onClick={() => setFilterType(f.value)}
-                                className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1 transition-all ${filterType === f.value
+                                className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all ${filterType === f.value
                                     ? 'bg-white text-emerald-600'
                                     : 'bg-white/20 text-white'
                                     }`}
@@ -726,8 +726,8 @@ export default function MobileDocumentsModule() {
             </div>
 
             {/* Stats */}
-            <div className="px-4 -mt-3">
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+            <div className="px-4 -mt-2">
+                <div className="rounded-2xl border border-slate-100 bg-white p-2.5 shadow-sm">
                     <div className="grid grid-cols-5 gap-1 text-center">
                         <div>
                             <p className="text-lg font-bold text-slate-900">{stats.all}</p>

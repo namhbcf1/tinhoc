@@ -4,6 +4,7 @@ export interface StudentExamCardVM {
   subtitle?: string;
   examDate: string;
   location: string;
+  googleMapUrl?: string | null;
   durationMinutes: number | null;
   examType?: string;
   mode: 'online' | 'offline';

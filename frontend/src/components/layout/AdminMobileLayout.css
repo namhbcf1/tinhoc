@@ -15,17 +15,12 @@
 
 @media (max-width: 768px) {
     .admin-mobile-layout {
-        --mb-space-scale: 0.78;
-        --mb-font-scale: 0.88;
-        --mb-touch-scale: 0.92;
-        --mb-radius-scale: 0.84;
-        --mb-layout-scale: 0.82;
+        --mb-space-scale: 0.72;
+        --mb-font-scale: 0.8;
+        --mb-touch-scale: 1.0; /* Never scale touch targets below 44px - WCAG 2.2 requirement */
+        --mb-radius-scale: 0.82;
+        --mb-layout-scale: 0.8;
     }
-}
-
-/* iOS safe area padding */
-.admin-mobile-layout.ios {
-    padding-top: env(safe-area-inset-top);
 }
 
 /* Header cố định trên cùng */
@@ -38,17 +33,30 @@
     height: var(--mb-header-height);
 }
 
+.admin-mobile-layout.ios .mobile-header {
+    padding-top: env(safe-area-inset-top);
+    height: calc(var(--mb-header-height) + env(safe-area-inset-top));
+}
+
 /* Content area - dùng page scroll tự nhiên, không tạo scroll container */
 .admin-mobile-layout .mobile-content {
     flex: 1;
-    padding-top: calc(var(--mb-header-height) + var(--mb-md));
-    padding-bottom: calc(var(--mb-bottom-nav-height) + var(--mb-lg));
+    padding-top: calc(var(--mb-header-height) + var(--mb-sm));
+    padding-bottom: calc(var(--mb-bottom-nav-height) + env(safe-area-inset-bottom, 0px) + var(--mb-md));
     min-height: 100vh;
     box-sizing: border-box;
     overflow-x: clip;
     overflow-y: unset;
     -webkit-overflow-scrolling: unset;
     overscroll-behavior-y: unset;
+}
+
+.admin-mobile-layout.ios .mobile-content {
+    padding-top: calc(var(--mb-header-height) + env(safe-area-inset-top) + var(--mb-sm));
+}
+
+body.admin-overlay-open .admin-mobile-layout .mobile-content {
+    overflow: hidden;
 }
 
 /* Bottom nav cố định */
@@ -85,18 +93,18 @@
 
 /* Admin active = blue */
 .admin-mobile-layout .mobile-drawer-item.active {
-    background: var(--mb-admin-bg);
-    color: var(--mb-admin-dark);
+    background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+    color: #ffffff;
     font-weight: var(--mb-font-semibold);
 }
 
 .admin-mobile-layout .mobile-drawer-item.active .mobile-drawer-item-icon {
-    background: var(--mb-admin);
+    background: rgba(255,255,255,0.14);
     color: var(--mb-text-inverse);
 }
 
 .mobile-bottom-nav.admin .mobile-bottom-nav-item.active {
-    background: var(--mb-admin-bg);
+    background: linear-gradient(135deg, rgba(29,78,216,0.14), rgba(16,185,129,0.12));
 }
 
 .mobile-bottom-nav.admin .mobile-bottom-nav-item.active .mobile-bottom-nav-icon,

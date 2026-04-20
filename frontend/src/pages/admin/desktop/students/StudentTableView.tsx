@@ -1,5 +1,6 @@
 import { Users, Eye, Edit2, Trash2 } from 'lucide-react';
 import { formatDateVN } from '../../../../utils/dateUtils';
+import { applyImageFallback } from '../../../../utils/imageUrl';
 
 // Normalize giới tính — DB có thể lưu 'Nam'/'Nữ' hoặc 'male'/'female'
 const resolveGender = (g) => {
@@ -145,11 +146,12 @@ export default function StudentTableView({
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-3.5">
                     <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm overflow-hidden">
-                      {student.image_3x4 ? (
+                      {student.image_3x4 || student.photo_3x4_image_id ? (
                         <img
-                          src={getImageUrl ? getImageUrl(student.image_3x4) : student.image_3x4}
+                          src={getImageUrl ? getImageUrl(student.image_3x4 || student.photo_3x4_image_id) : student.image_3x4}
                           alt={student.ho_ten_full || 'Hoc vien'}
                           className="w-full h-full object-cover"
+                          onError={(event) => applyImageFallback(event, student.ho_ten_full || 'Hoc vien')}
                         />
                       ) : (
                         student.ho_ten_full?.charAt(0) || 'H'

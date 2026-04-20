@@ -10,6 +10,7 @@ import documents from './routes/documents.js';
 import documentFolders from './routes/document-folders.js';
 import payments from './routes/payments.js';
 import certificates from './routes/certificates.js';
+import shipping from './routes/shipping.js';
 import posts from './routes/posts.js';
 import homepage from './routes/homepage.js';
 import notifications from './routes/notifications.js';
@@ -28,6 +29,9 @@ import cccdUpload from './routes/cccd-upload.js';
 import onlineClasses from './routes/online-classes.js';
 import videos from './routes/videos.js';
 import assignments from './routes/assignments.js';
+import studentReviews from './routes/student-reviews.js';
+import studentFeedbacks from './routes/student-feedbacks.js';
+import publicStudentFeedbacks from './routes/public-student-feedbacks.js';
 import examCategories from './routes/exam-categories.js';
 import examTypes from './routes/exam-types.js';
 import programOrganizers from './routes/program-organizers.js';
@@ -41,6 +45,7 @@ import adminTeaching from './routes/admin-teaching.js';
 import ai from './routes/ai.js';
 import errors from './routes/errors.js';
 // import migrate from './routes/migrate.js';
+import { handlePhoto3x4Queue } from './services/photo-3x4-pipeline.js';
 import { errorResponse } from './utils/helpers.js';
 import { moderateRateLimiter, strictRateLimiter } from './utils/rate-limiter.js';
 import { authMiddleware, requireAdmin, requireAuth } from './middleware/auth-middleware.js';
@@ -51,6 +56,7 @@ import { globalErrorHandler } from './middleware/error-handler.js';
 // ========================================
 
 const app = new Hono<{ Bindings: Env }>();
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const PUBLIC_CACHEABLE_PATHS = [
   '/classes/open',
   '/posts',
@@ -58,6 +64,7 @@ const PUBLIC_CACHEABLE_PATHS = [
   '/exam-categories',
   '/exam-types',
   '/certificates/lookup',
+  '/public/student-feedbacks',
 ];
 
 export function resolveDefaultCacheControl(
@@ -79,6 +86,12 @@ export function resolveDefaultCacheControl(
   }
 
   return 'private, no-store, max-age=0, must-revalidate';
+}
+
+function isReadOnlyModeEnabled(value: string | undefined) {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
 }
 
 // ========================================
@@ -110,7 +123,17 @@ app.use('/*', cors({
 }));
 
 // Global rate limiting
-app.use('*', moderateRateLimiter);
+// Skip public image streaming routes to avoid broken avatars when many images load in parallel.
+app.use('*', async (c, next) => {
+  const path = new URL(c.req.url).pathname;
+  if (
+    c.req.method === 'GET' &&
+    (path.startsWith('/students/image/') || path.startsWith('/cccd-upload/image/'))
+  ) {
+    return next();
+  }
+  return moderateRateLimiter(c, next);
+});
 
 // Request logging
 app.use('*', async (c, next) => {
@@ -122,6 +145,17 @@ app.use('*', async (c, next) => {
   if (cacheControl) {
     c.header('Cache-Control', cacheControl);
   }
+});
+
+// Read-only safety switch for production DB operations during migration windows.
+app.use('*', async (c, next) => {
+  if (isReadOnlyModeEnabled(c.env.READ_ONLY_MODE) && MUTATING_METHODS.has(c.req.method)) {
+    return c.json({
+      success: false,
+      error: 'Hệ thống đang ở chế độ read-only để bảo trì dữ liệu. Vui lòng thử lại sau.',
+    }, 503);
+  }
+  return next();
 });
 
 // ========================================
@@ -177,16 +211,31 @@ app.use('/payments/*', strictRateLimiter);
 app.use('/payments/*', authMiddleware);
 app.route('/payments', payments);
 
-// Certificates: GET/lookup public; write ops (POST/PUT) require admin
+// Certificates: only lookup/download/qr-code stay public; all admin data and shipment endpoints require admin
 app.use('/certificates/*', async (c, next) => {
-  if (c.req.method === 'GET') return next();
+  if (c.req.method === 'GET') {
+    const path = new URL(c.req.url).pathname;
+    const isPublicGet = path === '/certificates/lookup'
+      || /^\/certificates\/[^/]+\/download$/.test(path)
+      || /^\/certificates\/[^/]+\/qr-code$/.test(path);
+    if (isPublicGet) {
+      return next();
+    }
+  }
   return requireAdmin(c, next);
 });
 app.use('/certificates', async (c, next) => {
-  if (c.req.method === 'GET') return next();
+  if (c.req.method === 'GET') {
+    return requireAdmin(c, next);
+  }
   return requireAdmin(c, next);
 });
 app.route('/certificates', certificates);
+
+// Viettel Post shipping endpoints (admin only)
+app.use('/shipping', requireAdmin);
+app.use('/shipping/*', requireAdmin);
+app.route('/shipping', shipping);
 
 // Export route (admin only — contains full PII: CCCD, SĐT, ngày sinh)
 app.use('/export/*', requireAdmin);
@@ -290,6 +339,18 @@ app.route('/online-classes', onlineClasses);
 // Assignments (teacher create, student submit)
 app.route('/assignments', assignments);
 
+// Student reviews (admin create/publish, student view own)
+app.use('/student-reviews/*', authMiddleware);
+app.route('/student-reviews', studentReviews);
+
+// Student feedbacks (student submit/edit, admin review)
+app.use('/student-feedbacks/*', authMiddleware);
+app.use('/student-feedbacks', authMiddleware);
+app.route('/student-feedbacks', studentFeedbacks);
+
+// Public approved student feedbacks
+app.route('/public/student-feedbacks', publicStudentFeedbacks);
+
 // Class videos (student/teacher/admin with membership)
 app.route('/', videos);
 
@@ -357,4 +418,11 @@ app.notFound((c) => {
 // EXPORT
 // ========================================
 
-export default app;
+const worker: ExportedHandler<Env> = {
+  fetch: app.fetch,
+  queue(batch, env) {
+    return handlePhoto3x4Queue(batch as MessageBatch<any>, env);
+  },
+};
+
+export default worker;

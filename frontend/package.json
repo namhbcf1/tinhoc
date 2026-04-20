@@ -4,13 +4,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:prod": "vite build",
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && cross-env SKIP_PRERENDER=true vite build",
+    "build:prod": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && cross-env SKIP_PRERENDER=true vite build",
+    "build:prerender": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && vite build",
     "preview": "vite preview",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "deploy": "npm install && npm run build:prod && npx wrangler pages deploy dist --project-name=vantrangedu",
-    "deploy:quick": "npm run build:prod && npx wrangler pages deploy dist --project-name=vantrangedu"
+    "deploy": "npm install && npm run build:prod && npx wrangler pages deploy dist --project-name=vantrangedu --branch=main --commit-dirty=true",
+    "deploy:quick": "npm run build:prod && npx wrangler pages deploy dist --project-name=vantrangedu --branch=main --commit-dirty=true"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

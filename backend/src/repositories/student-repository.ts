@@ -22,16 +22,25 @@ export async function searchStudents(db: any, keyword: string) {
         OR LOWER(COALESCE(email, '')) LIKE '%@student.local'
         OR LOWER(COALESCE(cccd, '')) LIKE 'test%'
       )
-    ORDER BY created_at DESC LIMIT 100
+    ORDER BY created_at DESC
   `).bind(searchTerm, searchTerm, searchTerm, searchTerm).all();
   return result.results || [];
 }
 
-export async function getAllStudents(db: any, limit: number, offset: number) {
-  const result = await db.prepare(`
-    SELECT id, cccd, ho, ten_dem, ten, ho_ten_full, ho_ten_normalized, ngay_sinh, noi_sinh, gioi_tinh, dan_toc, quoc_tich, email, sdt, dia_chi, ngay_cap_cccd, don_vi_cong_tac, image_cccd_front, image_cccd_back, image_3x4, cccd_front_image_id, cccd_back_image_id, photo_3x4_image_id, created_at, updated_at
-    FROM students ORDER BY created_at DESC LIMIT ? OFFSET ?
-  `).bind(limit, offset).all();
+export async function getAllStudents(db: any, limit: number | null, offset: number) {
+  const sql = limit && limit > 0
+    ? `
+        SELECT id, cccd, ho, ten_dem, ten, ho_ten_full, ho_ten_normalized, ngay_sinh, noi_sinh, gioi_tinh, dan_toc, quoc_tich, email, sdt, dia_chi, ngay_cap_cccd, don_vi_cong_tac, image_cccd_front, image_cccd_back, image_3x4, cccd_front_image_id, cccd_back_image_id, photo_3x4_image_id, created_at, updated_at
+        FROM students ORDER BY created_at DESC LIMIT ? OFFSET ?
+      `
+    : `
+        SELECT id, cccd, ho, ten_dem, ten, ho_ten_full, ho_ten_normalized, ngay_sinh, noi_sinh, gioi_tinh, dan_toc, quoc_tich, email, sdt, dia_chi, ngay_cap_cccd, don_vi_cong_tac, image_cccd_front, image_cccd_back, image_3x4, cccd_front_image_id, cccd_back_image_id, photo_3x4_image_id, created_at, updated_at
+        FROM students ORDER BY created_at DESC
+      `;
+  const stmt = db.prepare(sql);
+  const result = limit && limit > 0
+    ? await stmt.bind(limit, offset).all()
+    : await stmt.all();
   return result.results || [];
 }
 
@@ -57,7 +66,7 @@ export async function getStudentSummaryStats(db: any) {
     db.prepare(`
       SELECT COUNT(DISTINCT student_id) AS certified_students
       FROM certificates
-      WHERE status = 'issued'
+      WHERE status IN ('active', 'issued')
     `),
   ]);
 
@@ -76,7 +85,7 @@ export async function createStudent(db: any, data: any) {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     data.cccd, data.ho, data.ten_dem || '', data.ten, data.ho_ten_full, data.ho_ten_normalized,
-    data.ngay_sinh, data.noi_sinh, data.gioi_tinh, data.dan_toc || 'Kinh', data.quoc_tich || 'Việt Nam',
+    data.ngay_sinh, data.noi_sinh, data.gioi_tinh, data.dan_toc || 'KINH', data.quoc_tich || 'VIỆT NAM',
     data.email, data.sdt, data.dia_chi, data.ngay_cap_cccd || null, data.don_vi_cong_tac || null,
     data.image_cccd_front || null, data.image_cccd_back || null, data.image_3x4 || null,
     data.cccd_front_image_id || null, data.cccd_back_image_id || null, data.photo_3x4_image_id || null

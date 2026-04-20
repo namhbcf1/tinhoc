@@ -8,14 +8,21 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Label } from '../../components/ui/Label';
 import { Card, CardContent } from '../../components/ui/Card';
+import OverlayPortal from '../../components/ui/OverlayPortal';
 import api from '../../services/api';
 import SEO from '../../components/common/SEO';
 import { getStorageValue, removeStorageValue, setStorageValue } from '../../utils/browser-storage.js';
 
 // Validation Schemas — student only (teacher logs in via /admin/login)
+const TEST_STUDENT_CCCD_REGEX = /^(?:00[1-9]|001[0-9])$/;
+const PHONE_OR_TEST_PASSWORD_REGEX = /^(?:(0|\+84)\d{9}|test123)$/;
+
 const studentSchema = z.object({
-  cccd: z.string().min(9, 'CCCD/CMND phải có ít nhất 9 số').max(12, 'CCCD/CMND tối đa 12 số'),
-  sdt: z.string().regex(/^(0|\+84)\d{9}$/, 'Số điện thoại không hợp lệ'),
+  cccd: z.string().refine(
+    (value) => /^\d{9,12}$/.test(value) || TEST_STUDENT_CCCD_REGEX.test(value),
+    'CCCD/CMND không hợp lệ'
+  ),
+  sdt: z.string().regex(PHONE_OR_TEST_PASSWORD_REGEX, 'Thông tin đăng nhập không hợp lệ'),
 });
 
 // Storage helpers: chọn localStorage (persist) hoặc sessionStorage (clear on close)
@@ -179,7 +186,7 @@ export default function UnifiedLogin() {
         saveSession('student_data', JSON.stringify(response.data), rememberMe);
         window.location.assign('/dashboard/exams');
       } else {
-        setError('Thông tin đăng nhập không chính xác. Kiểm tra lại CCCD và số điện thoại.');
+        setError('Thông tin đăng nhập không chính xác. Vui lòng thử lại.');
       }
     } catch (err) {
       setError(err.message || 'Không thể kết nối máy chủ. Vui lòng thử lại.');
@@ -289,7 +296,7 @@ export default function UnifiedLogin() {
                     <Input
                       id="sdt"
                       name="sdt"
-                      type="tel"
+                      type="text"
                       autoComplete="tel"
                       placeholder="Nhập số điện thoại"
                       className="pl-10 border-slate-200 focus:border-green-500 focus:ring-green-500"
@@ -358,14 +365,15 @@ export default function UnifiedLogin() {
 
       {/* ===== MODAL: Quên thông tin? (Sinh viên) ===== */}
       {showStudentForgotModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="modal-title"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowStudentForgotModal(false); }}
-        >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative animate-in fade-in zoom-in-95">
+        <OverlayPortal>
+          <div
+            className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowStudentForgotModal(false); }}
+          >
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative animate-in fade-in zoom-in-95">
             <button
               onClick={() => setShowStudentForgotModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
@@ -406,8 +414,9 @@ export default function UnifiedLogin() {
                 Đã hiểu
               </Button>
             </div>
+            </div>
           </div>
-        </div>
+        </OverlayPortal>
       )}
     </div>
   );

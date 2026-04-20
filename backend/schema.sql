@@ -27,6 +27,12 @@ CREATE TABLE IF NOT EXISTS students (
     email TEXT NOT NULL,
     sdt TEXT NOT NULL,
     dia_chi TEXT NOT NULL,
+    cccd_front_image_id TEXT,
+    cccd_back_image_id TEXT,
+    photo_3x4_image_id TEXT,
+    cccd_front_url_expires_at DATETIME,
+    cccd_back_url_expires_at DATETIME,
+    photo_3x4_url_expires_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -152,7 +158,126 @@ CREATE TABLE IF NOT EXISTS certificates (
     FOREIGN KEY (issued_by) REFERENCES admins(id)
 );
 
+CREATE TABLE IF NOT EXISTS certificate_shipments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    certificate_id INTEGER NOT NULL,
+    student_id INTEGER NOT NULL,
+    carrier TEXT NOT NULL DEFAULT 'viettel_post',
+    carrier_order_number TEXT,
+    carrier_tracking_number TEXT,
+    status TEXT NOT NULL DEFAULT 'draft'
+        CHECK(status IN ('draft', 'quoted', 'created', 'in_transit', 'delivered', 'cancelled_local', 'failed')),
+    receiver_name TEXT NOT NULL,
+    receiver_phone TEXT NOT NULL,
+    address_raw TEXT NOT NULL,
+    address_line TEXT,
+    province_id INTEGER,
+    province_name TEXT,
+    district_id INTEGER,
+    district_name TEXT,
+    ward_id INTEGER,
+    ward_name TEXT,
+    normalized_full_address TEXT,
+    resolution_status TEXT NOT NULL DEFAULT 'unresolved'
+        CHECK(resolution_status IN ('resolved', 'needs_review', 'unresolved')),
+    warnings_json TEXT,
+    service_code TEXT,
+    service_name TEXT,
+    service_add_codes_json TEXT,
+    product_name TEXT NOT NULL DEFAULT 'Chứng chỉ',
+    product_description TEXT NOT NULL DEFAULT 'Chứng chỉ, tài liệu',
+    product_weight_grams INTEGER NOT NULL DEFAULT 250,
+    declared_value INTEGER NOT NULL DEFAULT 0,
+    shipping_fee INTEGER,
+    raw_request_json TEXT,
+    raw_response_json TEXT,
+    created_by INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (certificate_id) REFERENCES certificates(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES admins(id)
+);
+
 -- Bảng AUDIT_LOGS - Nhật ký hoạt động
+CREATE TABLE IF NOT EXISTS image_processing_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER,
+    image_type TEXT NOT NULL,
+    original_image_id TEXT,
+    processed_image_id TEXT,
+    source_image_id TEXT,
+    candidate_image_id TEXT,
+    final_image_id TEXT,
+    processing_status TEXT DEFAULT 'pending',
+    pipeline_stage TEXT DEFAULT 'uploaded',
+    progress_percent INTEGER DEFAULT 0,
+    pipeline_version TEXT DEFAULT 'v1',
+    generation_mode TEXT,
+    used_as_primary INTEGER DEFAULT 0,
+    selection_status TEXT DEFAULT 'processing',
+    selected_variant_id INTEGER,
+    recommended_variant_id INTEGER,
+    selection_completed_at DATETIME,
+    ai_confidence_score REAL,
+    quality_score REAL,
+    error_message TEXT,
+    processing_details TEXT,
+    warnings_json TEXT,
+    validation_result_json TEXT,
+    processing_started_at DATETIME,
+    processing_completed_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS photo_3x4_variants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    processing_log_id INTEGER NOT NULL,
+    variant_slot INTEGER NOT NULL,
+    image_id TEXT NOT NULL,
+    generation_mode TEXT NOT NULL,
+    score REAL NOT NULL DEFAULT 0,
+    recommended INTEGER NOT NULL DEFAULT 0,
+    warnings_json TEXT,
+    validation_result_json TEXT,
+    prompt_profile TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (processing_log_id) REFERENCES image_processing_logs(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS image_access_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL,
+    accessed_by_user_id INTEGER,
+    access_type TEXT NOT NULL,
+    image_type TEXT,
+    ip_address TEXT,
+    user_agent TEXT,
+    accessed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS image_quality_metrics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    image_processing_log_id INTEGER NOT NULL,
+    blur_score REAL,
+    brightness_score REAL,
+    contrast_score REAL,
+    resolution_width INTEGER,
+    resolution_height INTEGER,
+    file_size_bytes INTEGER,
+    has_cccd_corners BOOLEAN DEFAULT 0,
+    aspect_ratio_match REAL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (image_processing_log_id) REFERENCES image_processing_logs(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS audit_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     admin_id INTEGER,
@@ -174,6 +299,9 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 CREATE INDEX IF NOT EXISTS idx_students_cccd ON students(cccd);
 CREATE INDEX IF NOT EXISTS idx_students_email ON students(email);
 CREATE INDEX IF NOT EXISTS idx_students_sdt ON students(sdt);
+CREATE INDEX IF NOT EXISTS idx_students_cccd_front_image ON students(cccd_front_image_id);
+CREATE INDEX IF NOT EXISTS idx_students_cccd_back_image ON students(cccd_back_image_id);
+CREATE INDEX IF NOT EXISTS idx_students_photo_image ON students(photo_3x4_image_id);
 CREATE INDEX IF NOT EXISTS idx_registrations_student ON registrations(student_id);
 CREATE INDEX IF NOT EXISTS idx_registrations_class ON registrations(class_id);
 CREATE INDEX IF NOT EXISTS idx_classes_status ON classes(status);
@@ -190,5 +318,20 @@ CREATE INDEX IF NOT EXISTS idx_document_permissions_online_class ON document_per
 CREATE INDEX IF NOT EXISTS idx_document_downloads_doc ON document_downloads(document_id);
 CREATE INDEX IF NOT EXISTS idx_document_downloads_student ON document_downloads(student_id);
 CREATE INDEX IF NOT EXISTS idx_certificates_student ON certificates(student_id);
+CREATE INDEX IF NOT EXISTS idx_certificate_shipments_certificate ON certificate_shipments(certificate_id);
+CREATE INDEX IF NOT EXISTS idx_certificate_shipments_student ON certificate_shipments(student_id);
+CREATE INDEX IF NOT EXISTS idx_certificate_shipments_status ON certificate_shipments(status);
+CREATE INDEX IF NOT EXISTS idx_image_logs_student ON image_processing_logs(student_id);
+CREATE INDEX IF NOT EXISTS idx_image_logs_status ON image_processing_logs(processing_status);
+CREATE INDEX IF NOT EXISTS idx_image_logs_stage ON image_processing_logs(pipeline_stage);
+CREATE INDEX IF NOT EXISTS idx_image_logs_created ON image_processing_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_image_logs_selection_status ON image_processing_logs(selection_status);
+CREATE INDEX IF NOT EXISTS idx_photo_3x4_variants_log ON photo_3x4_variants(processing_log_id);
+CREATE INDEX IF NOT EXISTS idx_photo_3x4_variants_slot ON photo_3x4_variants(processing_log_id, variant_slot);
+CREATE INDEX IF NOT EXISTS idx_photo_3x4_variants_recommended ON photo_3x4_variants(processing_log_id, recommended);
+CREATE INDEX IF NOT EXISTS idx_access_logs_student ON image_access_logs(student_id);
+CREATE INDEX IF NOT EXISTS idx_access_logs_accessed_by ON image_access_logs(accessed_by_user_id);
+CREATE INDEX IF NOT EXISTS idx_access_logs_date ON image_access_logs(accessed_at);
+CREATE INDEX IF NOT EXISTS idx_quality_metrics_log ON image_quality_metrics(image_processing_log_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_admin ON audit_logs(admin_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at);

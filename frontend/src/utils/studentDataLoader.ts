@@ -42,6 +42,7 @@ export const loadStudentData = async (cccd) => {
 
 export const getActiveTabFromPath = (pathname) => {
   if (pathname.includes('/exams')) return 'exams';
+  if (pathname.includes('/attendance')) return 'attendance';
   if (pathname.includes('/profile') || pathname.includes('/personal-info')) return 'profile';
   return 'dashboard';
 };
@@ -50,6 +51,7 @@ export const getPathFromTab = (tabId) => {
   const pathMap = {
     'dashboard': '/dashboard',
     'exams': '/dashboard/exams',
+    'attendance': '/dashboard/attendance',
     'profile': '/dashboard/profile'
   };
   return pathMap[tabId] || '/dashboard';

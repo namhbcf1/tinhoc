@@ -4,6 +4,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { initViewportFix } from './utils/viewportFix';
 import { initAnalytics } from './utils/analytics-init';
+import { initAdaptiveViewport } from './utils/deviceDetection';
 import './index.css';
 import App from './App';
 
@@ -42,6 +43,9 @@ function reloadForStaleChunk() {
 // Initialize viewport fix for mobile browsers
 initViewportFix();
 
+// Initialize adaptive layout vars for device + resolution
+initAdaptiveViewport();
+
 // ⛔ Dark mode bị cấm hoàn toàn — xóa dữ liệu cũ và đảm bảo chế độ sáng
 localStorage.removeItem('theme');
 document.documentElement.classList.remove('dark');
@@ -74,7 +78,9 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 });
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+const rootEl = document.getElementById('root');
+if (!rootEl) throw new Error('[vantrangedu] Root element #root not found in DOM');
+ReactDOM.createRoot(rootEl).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <HelmetProvider>

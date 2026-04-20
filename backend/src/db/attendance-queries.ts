@@ -26,6 +26,42 @@ const buildTestStudentFilter = (alias = 's') => `
   )
 `;
 
+const hasExamRegistrationPaymentStatusColumn = async (db: D1Database) => {
+  const result = await db.prepare(`PRAGMA table_info(exam_registrations)`).all();
+  return (result.results || []).some((column: any) => column?.name === 'payment_status');
+};
+
+const buildExamRegistrationPaymentStatusSelect = (alias = 'r') => `
+  CASE
+    WHEN ${alias}.status = 'pending' THEN 'unknown'
+    WHEN ${alias}.payment_status = 'paid' THEN 'paid'
+    WHEN ${alias}.payment_status = 'unpaid' THEN 'unpaid'
+    WHEN ${alias}.status IN ('approved', 'registered') THEN 'unpaid'
+    ELSE 'unknown'
+  END
+`;
+
+const getExamRegistrationPaymentStatusSelect = async (db: D1Database, alias = 'r') => (
+  await hasExamRegistrationPaymentStatusColumn(db)
+    ? buildExamRegistrationPaymentStatusSelect(alias)
+    : `'unknown'`
+);
+
+const ensureExamRegistrationPaymentStatusColumn = async (db: D1Database) => {
+  if (await hasExamRegistrationPaymentStatusColumn(db)) {
+    return;
+  }
+
+  await db.prepare(`
+    ALTER TABLE exam_registrations
+    ADD COLUMN payment_status TEXT CHECK (payment_status IN ('unpaid', 'paid'))
+  `).run();
+  await db.prepare(`
+    CREATE INDEX IF NOT EXISTS idx_exam_registrations_payment_status
+    ON exam_registrations(payment_status)
+  `).run();
+};
+
 export async function markAttendance(db: D1Database, registrationId: number, classId: number, attendanceDate: string, status: string, notes: string | null = null, markedBy: number | null = null, markedByType = 'admin') {
   try {
     // Validate inputs
@@ -133,6 +169,91 @@ export async function getAttendanceStats(db: D1Database, classId: number) {
   return result;
 }
 
+export async function getOnlineAttendanceByStudent(db: D1Database, studentId: number) {
+  const result = await db.prepare(`
+    SELECT
+      oc.id AS online_class_id,
+      oc.class_name,
+      oc.teacher_name,
+      oc.source_kind,
+      ocs.id AS session_id,
+      ocs.session_date,
+      ocs.start_time,
+      ocs.end_time,
+      ocs.note AS session_note,
+      oca.status,
+      oca.note AS attendance_note,
+      oca.checked_in_at,
+      oca.zoom_join_source
+    FROM online_class_enrollments oce
+    JOIN online_classes oc ON oc.id = oce.online_class_id
+    LEFT JOIN online_class_sessions ocs ON ocs.online_class_id = oc.id
+    LEFT JOIN online_class_attendance oca
+      ON oca.session_id = ocs.id
+      AND oca.student_id = oce.student_id
+    WHERE oce.student_id = ?
+      AND oce.status = 'active'
+      AND oc.deleted_at IS NULL
+    ORDER BY LOWER(COALESCE(oc.class_name, '')) ASC, date(ocs.session_date) DESC, ocs.id DESC
+  `).bind(studentId).all();
+
+  const grouped = new Map<number, {
+    online_class_id: number;
+    class_name: string;
+    teacher_name: string | null;
+    source_kind: string | null;
+    records: Array<{
+      session_id: number;
+      date: string | null;
+      start_time: string | null;
+      end_time: string | null;
+      status: string;
+      notes: string | null;
+      checked_in_at: string | null;
+      join_source: string | null;
+    }>;
+  }>();
+
+  for (const row of (result.results || []) as any[]) {
+    const classId = Number(row.online_class_id);
+    if (!Number.isFinite(classId) || classId <= 0) {
+      continue;
+    }
+
+    if (!grouped.has(classId)) {
+      grouped.set(classId, {
+        online_class_id: classId,
+        class_name: String(row.class_name || `Lớp online #${classId}`),
+        teacher_name: row.teacher_name ? String(row.teacher_name) : null,
+        source_kind: row.source_kind ? String(row.source_kind) : null,
+        records: [],
+      });
+    }
+
+    const sessionId = Number(row.session_id);
+    if (!Number.isFinite(sessionId) || sessionId <= 0) {
+      continue;
+    }
+
+    grouped.get(classId)?.records.push({
+      session_id: sessionId,
+      date: row.session_date ? String(row.session_date) : null,
+      start_time: row.start_time ? String(row.start_time) : null,
+      end_time: row.end_time ? String(row.end_time) : null,
+      status: String(row.status || 'pending'),
+      notes: row.attendance_note ? String(row.attendance_note) : (row.session_note ? String(row.session_note) : null),
+      checked_in_at: row.checked_in_at ? String(row.checked_in_at) : null,
+      join_source: row.zoom_join_source ? String(row.zoom_join_source) : null,
+    });
+  }
+
+  return Array.from(grouped.values()).map((item) => ({
+    ...item,
+    total_sessions: item.records.length,
+    present_count: item.records.filter((record) => ['present', 'late'].includes(record.status)).length,
+  }));
+}
+
 // ========================================
 // ZOOM CLICK-THROUGH TRACKING
 // ========================================
@@ -226,6 +347,7 @@ export async function createExamSchedule(
     class_seed_end_date,
     class_seed_teacher_name,
     class_seed_max_students,
+    google_map_url,
   } = metadata;
 
   const result = await db.prepare(`
@@ -235,6 +357,7 @@ export async function createExamSchedule(
       exam_date,
       duration_minutes,
       location,
+      google_map_url,
       notes,
       template_id,
       zoom_link,
@@ -267,13 +390,14 @@ export async function createExamSchedule(
       class_seed_teacher_name,
       class_seed_max_students
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     classId,
     examName,
     examDate,
     durationMinutes,
     location,
+    google_map_url ?? null,
     notes,
     templateId,
     zoom_link ?? null,
@@ -388,6 +512,7 @@ export async function updateExamSchedule(db: D1Database, examId: number, data: R
     class_seed_end_date,
     class_seed_teacher_name,
     class_seed_max_students,
+    google_map_url,
   } = data;
   const updates: string[] = [];
   const values: unknown[] = [];
@@ -411,6 +536,10 @@ export async function updateExamSchedule(db: D1Database, examId: number, data: R
   if (location !== undefined) {
     updates.push('location = ?');
     values.push(location);
+  }
+  if (google_map_url !== undefined) {
+    updates.push('google_map_url = ?');
+    values.push(google_map_url);
   }
   if (notes !== undefined) {
     updates.push('notes = ?');
@@ -907,10 +1036,11 @@ export async function registerStudentForExam(
 
   // Upsert: neu da co (ke ca cancelled) thi update lai status
   const result = await db.prepare(`
-    INSERT INTO exam_registrations (exam_id, student_id, status, created_by, approved_at, approved_by)
-    VALUES (?, ?, ?, ?, ${adminId ? 'CURRENT_TIMESTAMP' : 'NULL'}, ?)
+    INSERT INTO exam_registrations (exam_id, student_id, status, payment_status, created_by, approved_at, approved_by)
+    VALUES (?, ?, ?, ${adminId ? "'unpaid'" : 'NULL'}, ?, ${adminId ? 'CURRENT_TIMESTAMP' : 'NULL'}, ?)
     ON CONFLICT(exam_id, student_id) DO UPDATE SET
       status = excluded.status,
+      payment_status = excluded.payment_status,
       created_at = CURRENT_TIMESTAMP,
       created_by = excluded.created_by,
       approved_at = excluded.approved_at,
@@ -929,9 +1059,11 @@ export async function cancelExamRegistration(db: D1Database, examId: number, stu
 
 // Lay danh sach da duyet (approved) - dung cho export va hien thi chinh
 export async function getExamRegistrations(db: D1Database, examId: number) {
+  const paymentStatusSelect = await getExamRegistrationPaymentStatusSelect(db);
   const result = await db.prepare(`
     SELECT r.id as registration_id,
            r.status as registration_status,
+           ${paymentStatusSelect} as payment_status,
            r.created_at as registration_date,
            r.created_by,
            r.approved_at,
@@ -954,6 +1086,8 @@ export async function getExamRegistrations(db: D1Database, examId: number) {
            s.don_vi_cong_tac,
            s.image_3x4,
            s.photo_3x4_image_id,
+           s.image_cccd_front,
+           s.cccd_front_image_id,
            s.created_at as student_created_at
     FROM exam_registrations r
     JOIN students s ON r.student_id = s.id
@@ -965,11 +1099,63 @@ export async function getExamRegistrations(db: D1Database, examId: number) {
   return result.results || [];
 }
 
-// Lay danh sach cho duyet (pending)
-export async function getPendingExamRegistrations(db: D1Database, examId: number) {
+export type ExamRegistrationExportScope = 'approved' | 'all';
+
+export async function getExamRegistrationsForExport(
+  db: D1Database,
+  examId: number,
+  scope: ExamRegistrationExportScope = 'approved',
+) {
+  const statuses = scope === 'all'
+    ? ['approved', 'registered', 'pending']
+    : ['approved', 'registered'];
+  const placeholders = statuses.map(() => '?').join(', ');
+  const paymentStatusSelect = await getExamRegistrationPaymentStatusSelect(db);
   const result = await db.prepare(`
     SELECT r.id as registration_id,
            r.status as registration_status,
+           ${paymentStatusSelect} as payment_status,
+           r.created_at as registration_date,
+           r.created_by,
+           r.approved_at,
+           r.approved_by,
+           a.full_name as approved_by_name,
+           s.id as student_id,
+           s.ho,
+           s.ten_dem,
+           s.ten,
+           s.ho_ten_full,
+           s.ngay_sinh,
+           s.noi_sinh,
+           s.gioi_tinh,
+           s.dan_toc,
+           s.quoc_tich,
+           s.email,
+           s.sdt,
+           s.cccd,
+           s.dia_chi,
+           s.ngay_cap_cccd,
+           s.don_vi_cong_tac,
+           s.image_3x4,
+           s.photo_3x4_image_id,
+           s.created_at as student_created_at
+    FROM exam_registrations r
+    JOIN students s ON r.student_id = s.id
+    LEFT JOIN admins a ON r.approved_by = a.id
+    WHERE r.exam_id = ? AND r.status IN (${placeholders})
+      AND ${buildTestStudentFilter('s')}
+    ORDER BY r.created_at DESC
+  `).bind(examId, ...statuses).all();
+  return result.results || [];
+}
+
+// Lay danh sach cho duyet (pending)
+export async function getPendingExamRegistrations(db: D1Database, examId: number) {
+  const paymentStatusSelect = await getExamRegistrationPaymentStatusSelect(db);
+  const result = await db.prepare(`
+    SELECT r.id as registration_id,
+           r.status as registration_status,
+           ${paymentStatusSelect} as payment_status,
            r.created_at as registration_date,
            r.created_by,
            s.id as student_id,
@@ -982,7 +1168,9 @@ export async function getPendingExamRegistrations(db: D1Database, examId: number
            s.dia_chi,
            s.noi_sinh,
            s.image_3x4,
-           s.photo_3x4_image_id
+           s.photo_3x4_image_id,
+           s.image_cccd_front,
+           s.cccd_front_image_id
     FROM exam_registrations r
     JOIN students s ON r.student_id = s.id
     WHERE r.exam_id = ? AND r.status = 'pending'
@@ -992,11 +1180,34 @@ export async function getPendingExamRegistrations(db: D1Database, examId: number
   return result.results || [];
 }
 
+export async function updateExamRegistrationPaymentStatus(
+  db: D1Database,
+  examId: number,
+  studentId: number,
+  paymentStatus: 'paid' | 'unpaid' | 'unknown'
+) {
+  await ensureExamRegistrationPaymentStatusColumn(db);
+  const dbPaymentStatus = paymentStatus === 'unknown' ? null : paymentStatus;
+
+  const result = await db.prepare(`
+    UPDATE exam_registrations
+    SET payment_status = ?
+    WHERE exam_id = ?
+      AND student_id = ?
+      AND status IN ('pending', 'approved', 'registered')
+  `).bind(dbPaymentStatus, examId, studentId).run();
+
+  return result;
+}
+
 // Duyet 1 thi sinh
 export async function approveExamRegistration(db: D1Database, examId: number, studentId: number, approvedBy: number) {
   const result = await db.prepare(`
     UPDATE exam_registrations
-    SET status = 'approved', approved_at = CURRENT_TIMESTAMP, approved_by = ?
+    SET status = 'approved',
+        payment_status = COALESCE(payment_status, 'unpaid'),
+        approved_at = CURRENT_TIMESTAMP,
+        approved_by = ?
     WHERE exam_id = ? AND student_id = ? AND status = 'pending'
   `).bind(approvedBy, examId, studentId).run();
   return result;
@@ -1006,7 +1217,10 @@ export async function approveExamRegistration(db: D1Database, examId: number, st
 export async function approveAllExamRegistrations(db: D1Database, examId: number, approvedBy: number) {
   const result = await db.prepare(`
     UPDATE exam_registrations
-    SET status = 'approved', approved_at = CURRENT_TIMESTAMP, approved_by = ?
+    SET status = 'approved',
+        payment_status = COALESCE(payment_status, 'unpaid'),
+        approved_at = CURRENT_TIMESTAMP,
+        approved_by = ?
     WHERE exam_id = ? AND status = 'pending'
   `).bind(approvedBy, examId).run();
   return result;

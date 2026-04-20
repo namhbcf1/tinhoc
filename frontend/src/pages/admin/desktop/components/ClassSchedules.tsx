@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
 import { CalendarDays, Edit, ExternalLink, Plus, Trash2 } from 'lucide-react';
-import api from '../../../services/api';
-import { Button } from '../../../components/ui/Button';
-import { Input } from '../../../components/ui/Input';
-import { Label } from '../../../components/ui/Label';
+import api from '../../../../services/api';
+import { Button } from '../../../../components/ui/Button';
+import { Input } from '../../../../components/ui/Input';
+import { Label } from '../../../../components/ui/Label';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../../components/ui/Dialog';
-import { Badge } from '../../../components/ui/Badge';
-import { useToast } from '../../../components/ui/ToastContainer';
+} from '../../../../components/ui/Dialog';
+import { Badge } from '../../../../components/ui/Badge';
+import { useToast } from '../../../../components/ui/ToastContainer';
 
 const SESSION_TYPE_OPTIONS = [
   { value: 'lesson', label: 'Buổi học' },

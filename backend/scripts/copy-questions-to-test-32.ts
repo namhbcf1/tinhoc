@@ -5,7 +5,7 @@ import { writeFileSync, unlinkSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-const DB_NAME = 'vantrangedu_db';
+const DB_BINDING = 'DB';
 const SOURCE_TEST_ID = 47;
 const TARGET_TEST_ID = 32;
 
@@ -16,7 +16,7 @@ function execD1(command: string, useRemote = true): string | null {
 
     writeFileSync(tempFile, command.trim(), 'utf-8');
 
-    const result = execSync(`wrangler d1 execute ${DB_NAME} ${remoteFlag} --file "${tempFile}"`, {
+    const result = execSync(`wrangler d1 execute ${DB_BINDING} ${remoteFlag} --file "${tempFile}"`, {
       encoding: 'utf-8',
       stdio: 'pipe'
     });

@@ -1,6 +1,9 @@
 .backup-page {
-  padding: 24px;
-  background: #f8f9fa;
+  width: 100%;
+  max-width: 1760px;
+  margin: 0 auto;
+  padding: clamp(22px, 2.3vw, 34px) clamp(18px, 2.6vw, 34px) 48px;
+  background: transparent;
   min-height: 100%;
   box-sizing: border-box;
 }
@@ -21,8 +24,9 @@
 .backup-section {
   background: white;
   padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 24px;
+  border: 1px solid rgba(219, 229, 222, 0.92);
+  box-shadow: 0 24px 60px -38px rgba(15, 23, 42, 0.2);
 }
 
 .backup-section h2 {
@@ -60,9 +64,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
+  background: #f8fafc;
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
 }
 
 .backup-info h4 {

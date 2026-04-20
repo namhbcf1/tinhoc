@@ -5,6 +5,9 @@ import path from 'path';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
+const buildId = process.env.CF_PAGES_COMMIT_SHA?.slice(0, 8)
+    || process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 8)
+    || Date.now().toString(36);
 
 // Prerendering for SEO: generates static HTML snapshots for Googlebot
 // Requires Puppeteer/Chromium — only active in production builds.
@@ -58,6 +61,9 @@ function getPrerenderPlugin() {
 const prerenderPlugin = getPrerenderPlugin();
 
 export default defineConfig({
+    define: {
+        __VT_BUILD_ID__: JSON.stringify(buildId),
+    },
     plugins: [
         react(),
         tailwindcss(),
@@ -82,14 +88,20 @@ export default defineConfig({
         },
     },
     build: {
-        modulePreload: false,
+        // modulePreload must be enabled (default) so Vite injects <link rel="modulepreload">
+        // for lazy chunks into index.html. Without it, chunks are fetched lazily at runtime
+        // and any race-condition / stale-cache delivers the SPA HTML fallback instead of JS,
+        // producing "MIME type text/html" errors in the browser console.
         rollupOptions: {
             output: {
+                entryFileNames: `assets/[name]-${buildId}-[hash].js`,
+                chunkFileNames: `assets/[name]-${buildId}-[hash].js`,
+                assetFileNames: `assets/[name]-${buildId}-[hash][extname]`,
                 manualChunks: {
-                    'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-                    'icon-vendor': ['lucide-react'],
-                    'form-vendor': ['react-hook-form', '@hookform/resolvers', 'zod'],
-                    'image-vendor': ['browser-image-compression'],
+                    'react-vendor-v4': ['react', 'react-dom', 'react-router-dom', 'react-helmet-async'],
+                    'icon-vendor-v4': ['lucide-react'],
+                    'form-vendor-v4': ['react-hook-form', '@hookform/resolvers', 'zod'],
+                    'image-vendor-v4': ['browser-image-compression'],
                 },
             },
         },

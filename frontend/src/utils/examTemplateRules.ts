@@ -25,6 +25,20 @@ function matchesPtitOrganizer(organizer?: OrganizerOptionLike | null) {
   return [organizer?.code, organizer?.name].some((value) => normalizeUpper(value).includes('PTIT'));
 }
 
+function matchesVeptProgram(program?: ProgramOptionLike | null) {
+  return [program?.code, program?.name].some((value) => {
+    const token = normalizeUpper(value);
+    return token.includes('VEPT') || token.includes('VSTEP') || token.includes('VERSANT');
+  });
+}
+
+function matchesPtitProgram(program?: ProgramOptionLike | null) {
+  return [program?.code, program?.name].some((value) => {
+    const token = normalizeUpper(value);
+    return token.includes('PTIT') || token.includes('TIN_HOC') || token.includes('TIN HOC') || token.includes('CNTT') || token.includes('TH-');
+  });
+}
+
 export function findExamTemplateOption(
   templates: TemplateOptionLike[],
   templateId: string | number | null | undefined,
@@ -50,14 +64,14 @@ export function suggestExamTemplateId(input: {
     (item) => String(item.uuid) === String(input.selectedProgramUuid || '')
   );
 
-  if (matchesPtitOrganizer(organizer)) {
-    const ptitTemplate = input.templates.find((item) => normalizeUpper(item.name) === 'PTIT');
-    return ptitTemplate ? String(ptitTemplate.id) : '';
-  }
-
-  if (normalizeUpper(program?.code) === 'VEPT') {
+  if (matchesVeptProgram(program)) {
     const veptTemplate = input.templates.find((item) => normalizeUpper(item.name) === 'VEPT');
     return veptTemplate ? String(veptTemplate.id) : '';
+  }
+
+  if (matchesPtitProgram(program) || matchesPtitOrganizer(organizer)) {
+    const ptitTemplate = input.templates.find((item) => normalizeUpper(item.name) === 'PTIT');
+    return ptitTemplate ? String(ptitTemplate.id) : '';
   }
 
   return '';

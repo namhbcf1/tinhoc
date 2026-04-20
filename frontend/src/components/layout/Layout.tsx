@@ -115,7 +115,7 @@ export default function Layout({ children }) {
     {
       key: 'admissions',
       label: t('admissions'),
-      path: '/admissions'
+      path: '/register'
     },
     {
       key: 'quality',
@@ -262,7 +262,7 @@ export default function Layout({ children }) {
 
             <div className="navbar-actions">
               <button 
-                className="mobile-menu-toggle"
+                className="mobile-menu-toggle min-h-[44px] min-w-[44px]"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
                 <span></span>
@@ -302,7 +302,7 @@ export default function Layout({ children }) {
 
             <div className="navbar-actions">
               <button 
-                className="mobile-menu-toggle"
+                className="mobile-menu-toggle min-h-[44px] min-w-[44px]"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
                 <span></span>
@@ -381,7 +381,7 @@ export default function Layout({ children }) {
             <h4>Dịch vụ</h4>
             <ul>
               <li><Link to="/training">Đào tạo</Link></li>
-              <li><Link to="/admissions">Đăng ký khóa học</Link></li>
+              <li><Link to="/register">Đăng ký khóa học</Link></li>
               <li><Link to="/about">Về chúng tôi</Link></li>
               <li><Link to="/training">Hỗ Trợ Ngoại Ngữ Cấp Tốc</Link></li>
             </ul>
@@ -401,7 +401,7 @@ export default function Layout({ children }) {
             <h4>Thông tin</h4>
             <ul>
               <li><Link to="/about">Giới thiệu</Link></li>
-              <li><Link to="/admissions">Đăng ký</Link></li>
+              <li><Link to="/register">Đăng ký</Link></li>
               <li><Link to="/training">Chương trình đào tạo</Link></li>
               <li><a href="https://www.facebook.com/Englishvantrang" target="_blank" rel="noopener noreferrer">Facebook Page</a></li>
             </ul>

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import {
   Award, Search, RefreshCw, Check, X, Download, Eye, Calendar,
-  Users, CheckCircle, Clock, FileText, ChevronLeft, ChevronRight, Sparkles
+  Users, CheckCircle, Clock, FileText, ChevronLeft, ChevronRight, Sparkles, Truck
 } from 'lucide-react';
 import api from '../../../services/api';
 import { formatDateVN } from '../../../utils/dateUtils';
+import CertificateShipmentModal from '../../../components/admin/CertificateShipmentModal';
 import '../../../styles/admin/AdminModern.css';
+import { AdminPageHeader, AdminSummaryPill } from '../shared/AdminPageHeader';
 
 export default function CertificatesManagement({ toast }) {
   const [classes, setClasses] = useState([]);
@@ -15,6 +17,7 @@ export default function CertificatesManagement({ toast }) {
   const [loading, setLoading] = useState(false);
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [currentTab, setCurrentTab] = useState('classes'); // 'classes', 'eligible', 'issued'
+  const [shipmentModalCertificate, setShipmentModalCertificate] = useState(null);
 
   useEffect(() => { loadClasses(); loadCertificates(); }, []);
 
@@ -66,20 +69,24 @@ export default function CertificatesManagement({ toast }) {
     else setSelectedStudents(eligible.map(s => s.id));
   };
 
+  const openShipmentModal = (certificate) => {
+    setShipmentModalCertificate(certificate);
+  };
+
   return (
     <div className="admin-page">
-      {/* Header */}
-      <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20, marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 12, color: '#1e293b' }}>
-            <Award size={32} className="text-green-600" /> Quản lý Chứng chỉ
-          </h1>
-          <p style={{ color: '#64748b', marginTop: 4, marginLeft: 44 }}>Cấp và quản lý chứng chỉ cho học viên đủ điều kiện</p>
-        </div>
-        <button onClick={() => { loadClasses(); loadCertificates(); }} className="admin-btn admin-btn-outline" style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <RefreshCw size={18} /> Làm mới
-        </button>
-      </div>
+      <AdminPageHeader
+        icon={Award}
+        title="Chứng chỉ"
+        description="Cấp chứng chỉ, theo dõi lịch sử phát hành và xử lý vận đơn sau khi in."
+        pills={(
+          <>
+            <AdminSummaryPill>Lớp đủ điều kiện {classes.length}</AdminSummaryPill>
+            <AdminSummaryPill>Đã cấp {certificates.length}</AdminSummaryPill>
+          </>
+        )}
+        actions={<button onClick={() => { loadClasses(); loadCertificates(); }} className="admin-btn admin-btn-outline" style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}><RefreshCw size={18} /> Làm mới</button>}
+      />
 
       {/* Unified Card */}
       <div className="admin-card unified-card">
@@ -234,14 +241,20 @@ export default function CertificatesManagement({ toast }) {
                             <div>
                               <div style={{ fontWeight: 600 }}>{cert.ho_ten_full}</div>
                               <div style={{ fontSize: 12, color: '#94a3b8' }}>{cert.cccd}</div>
+                              <div style={{ fontSize: 12, color: '#94a3b8' }}>{cert.sdt || 'Chưa có SĐT'} • {cert.shipment_status ? `Vận đơn: ${cert.shipment_status}` : 'Chưa tạo vận đơn'}</div>
                             </div>
                           </div>
                         </td>
                         <td><span className="admin-badge info">{cert.ten_lop}</span></td>
                         <td><code style={{ background: '#fef3c7', padding: '4px 10px', borderRadius: 6, fontSize: 13, color: '#92400e', fontWeight: 600 }}>{cert.certificate_number}</code></td>
-                        <td style={{ color: '#64748b', fontSize: 13 }}>{formatDateVN(cert.issue_date)}</td>
+                        <td style={{ color: '#64748b', fontSize: 13 }}>{formatDateVN(cert.issued_date)}</td>
                         <td style={{ textAlign: 'center' }}>
-                          <button onClick={() => window.open(api.getCertificateDownloadUrl(cert.id), '_blank')} className="admin-btn admin-btn-ghost hover:scale-110 transition-transform" style={{ padding: '8px' }} title="Tải xuống"><Download size={18} /></button>
+                          <div style={{ display: 'inline-flex', gap: 8 }}>
+                            <button onClick={() => window.open(api.getCertificateDownloadUrl(cert.id), '_blank')} className="admin-btn admin-btn-ghost hover:scale-110 transition-transform" style={{ padding: '8px' }} title="Tải xuống"><Download size={18} /></button>
+                            <button onClick={() => openShipmentModal(cert)} className="admin-btn admin-btn-ghost hover:scale-110 transition-transform" style={{ padding: '8px' }} title={cert.shipment_status ? 'Xem vận đơn' : 'Tạo vận đơn'}>
+                              <Truck size={18} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -252,6 +265,20 @@ export default function CertificatesManagement({ toast }) {
           )}
         </div>
       </div>
+
+      <CertificateShipmentModal
+        open={!!shipmentModalCertificate}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShipmentModalCertificate(null);
+          }
+        }}
+        certificate={shipmentModalCertificate}
+        toast={toast}
+        onSuccess={() => {
+          loadCertificates();
+        }}
+      />
     </div>
   );
 }

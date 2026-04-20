@@ -1,4 +1,5 @@
 import { Mail, Phone } from 'lucide-react';
+import { applyImageFallback } from '../../../../utils/imageUrl';
 
 // Status badge
 function StatusBadge({ status }) {
@@ -33,11 +34,12 @@ function StudentCard({ student, onClick, getImageUrl }) {
       {/* Avatar + Name */}
       <div className="mb-5 flex items-center gap-4">
         <div className="h-14 w-14 rounded-[20px] bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white font-bold text-2xl shadow-md flex-shrink-0 overflow-hidden">
-          {student.image_3x4 ? (
+          {student.image_3x4 || student.photo_3x4_image_id ? (
             <img
-              src={getImageUrl ? getImageUrl(student.image_3x4) : student.image_3x4}
+              src={getImageUrl ? getImageUrl(student.image_3x4 || student.photo_3x4_image_id) : student.image_3x4}
               alt={student.ho_ten_full || 'Hoc vien'}
               className="w-full h-full object-cover"
+              onError={(event) => applyImageFallback(event, student.ho_ten_full || 'Hoc vien')}
             />
           ) : (
             student.ho_ten_full?.charAt(0) || 'H'

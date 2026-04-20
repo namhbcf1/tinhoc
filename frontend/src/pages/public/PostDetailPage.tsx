@@ -207,7 +207,12 @@ export default function PostDetailPage() {
     if (error || !post) {
         return (
             <ModernPublicLayout>
-                <SEO title="Không tìm thấy bài viết" description="Bài viết không tồn tại hoặc đã bị xóa." />
+                <SEO
+                    title="Không tìm thấy bài viết"
+                    description="Bài viết không tồn tại hoặc đã bị xóa."
+                    url={slug ? `/news/${slug}` : '/news'}
+                    noindex
+                />
                 <div className="min-h-screen bg-slate-50 flex items-center justify-center">
                     <Card className="max-w-md mx-auto">
                         <CardContent className="p-8 text-center">

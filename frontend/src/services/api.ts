@@ -21,6 +21,9 @@ import { applyExportMethods } from './api-export-methods.js';
 import { applyMiscMethods } from './api-misc-methods.js';
 import { applyClassScheduleMethods } from './api-class-schedule-methods.js';
 import { applyAttendanceMethods } from './api-attendance-methods.js';
+import { applyReviewMethods } from './api-review-methods.js';
+import { applyFeedbackMethods } from './api-feedback-methods.js';
+import { applyMyClassesMethods } from './api-my-classes-methods.js';
 
 // Apply all domain mixins onto ApiClient.prototype
 applyStudentMethods(ApiClient);
@@ -38,6 +41,9 @@ applyExportMethods(ApiClient);
 applyMiscMethods(ApiClient);
 applyClassScheduleMethods(ApiClient);
 applyAttendanceMethods(ApiClient);
+applyReviewMethods(ApiClient);
+applyFeedbackMethods(ApiClient);
+applyMyClassesMethods(ApiClient);
 
 // Singleton instance used by all callers via: import api from '../services/api'
 const api = new ApiClient(getApiBaseUrl());

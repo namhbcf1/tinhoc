@@ -8,6 +8,7 @@ import { formatDateVN } from '../../../utils/dateUtils';
 import PullToRefreshWrapper from '../../../components/ui/PullToRefreshWrapper';
 import { ADMIN_CACHE_KEYS, ADMIN_CACHE_TTL, clearAdminCache, getAdminCache, setAdminCache } from '../shared/admin-cache';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
+import { MobileAdminHeroCard, MobileAdminSecondaryButton, MobileAdminStatCard } from '../shared/mobileAdminUi';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 const BLUE = '#3b82f6';
@@ -22,14 +23,14 @@ const formatCurrency = (val) => {
 
 // ── Stat Card ────────────────────────────────────────────────────────────────
 const StatCard = ({ icon: Icon, label, value, iconBg, iconColor }) => (
-    <div className="bg-white rounded-2xl p-3.5 flex items-center gap-3 border border-slate-100 shadow-sm">
-        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+    <div className="bg-white rounded-xl p-3 flex items-center gap-2.5 border border-slate-100 shadow-sm">
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
             style={{ background: iconBg }}>
-            <Icon size={20} style={{ color: iconColor }} />
+            <Icon size={18} style={{ color: iconColor }} />
         </div>
         <div className="min-w-0">
-            <p className="text-xs text-slate-500 font-medium leading-none">{label}</p>
-            <p className="text-lg font-extrabold text-slate-800 leading-tight mt-0.5">{value ?? '—'}</p>
+            <p className="text-[11px] text-slate-500 font-medium leading-none">{label}</p>
+            <p className="text-base font-extrabold text-slate-800 leading-tight mt-0.5">{value ?? '—'}</p>
         </div>
     </div>
 );
@@ -38,13 +39,13 @@ const StatCard = ({ icon: Icon, label, value, iconBg, iconColor }) => (
 const QuickAction = ({ icon: Icon, label, onClick, iconBg, iconColor }) => (
     <button
         onClick={onClick}
-        className="flex flex-col items-center gap-2 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm active:scale-95 transition-all"
+        className="flex flex-col items-center gap-2 rounded-[20px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-3 shadow-[0_18px_36px_-28px_rgba(15,23,42,0.3)] active:scale-95 transition-all"
     >
-        <div className="w-11 h-11 rounded-xl flex items-center justify-center"
+        <div className="flex h-10 w-10 items-center justify-center rounded-[16px] shadow-sm"
             style={{ background: iconBg }}>
-            <Icon size={20} style={{ color: iconColor }} />
+            <Icon size={18} style={{ color: iconColor }} />
         </div>
-        <span className="text-xs font-semibold text-slate-700 text-center leading-tight">{label}</span>
+        <span className="text-[11px] font-bold text-slate-700 text-center leading-tight">{label}</span>
     </button>
 );
 
@@ -54,17 +55,15 @@ const StudentRow = ({ student, onClick }) => (
         onClick={onClick}
         className="w-full flex items-center gap-3 px-4 py-3 bg-white border-b border-slate-50 active:bg-slate-50 transition-all last:border-b-0 text-left"
     >
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm text-white flex-shrink-0"
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs text-white flex-shrink-0"
             style={{ background: BLUE }}>
             {(student.ho_ten_full || 'H').charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-slate-800 truncate">{student.ho_ten_full || 'Chưa có tên'}</p>
             <p className="text-xs text-slate-400 truncate">{student.email || student.cccd || '—'}</p>
+            <p className="mt-0.5 text-[11px] text-slate-400">{student.created_at ? formatDateVN(student.created_at, true) : ''}</p>
         </div>
-        <span className="text-xs text-slate-400 flex-shrink-0">
-            {student.created_at ? formatDateVN(student.created_at, true) : ''}
-        </span>
         <ChevronRight size={14} className="text-slate-300 flex-shrink-0" />
     </button>
 );
@@ -126,48 +125,48 @@ export default function MobileDashboardOverview({ onNavigate }) {
             clearAdminCache(ADMIN_CACHE_KEYS.mobileDashboardOverview);
             return load(true);
         }}>
-            <div style={{ paddingBottom: 'calc(var(--mb-bottom-nav-height, 70px) + 16px)' }}>
+            <div style={{ paddingBottom: 'calc(var(--mb-bottom-nav-height, 70px) + 12px)' }}>
+                <MobileAdminHeroCard
+                    eyebrow="Tổng quan"
+                    icon={TrendingUp}
+                    tone="blue"
+                    title="Admin mobile"
+                    description="Nhìn nhanh số liệu, truy cập nhanh module quan trọng và nắm được học viên mới ngay trên một hero thống nhất hơn với desktop."
+                    actions={(
+                        <MobileAdminSecondaryButton onClick={() => {
+                            clearAdminCache(ADMIN_CACHE_KEYS.mobileDashboardOverview);
+                            void load(true);
+                        }} className="px-3.5">
+                            <TrendingUp size={16} />
+                            Làm mới
+                        </MobileAdminSecondaryButton>
+                    )}
+                    footer={<span>{new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}</span>}
+                />
 
-                {/* ── Hero Banner ── */}
-                <div
-                    className="mx-4 mt-3 mb-4 rounded-2xl p-5 relative overflow-hidden"
-                    style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}
-                >
-                    <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/10"
-                        style={{ transform: 'translate(30%,-30%)' }} />
-                    <div className="absolute bottom-0 left-20 w-20 h-20 rounded-full bg-white/5"
-                        style={{ transform: 'translate(0,40%)' }} />
-                    <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1 relative">
-                        {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}
-                    </p>
-                    <h2 className="text-xl font-extrabold text-white leading-tight relative">
-                        Tổng quan
-                    </h2>
-                </div>
-
-                {/* ── Stats Grid ── */}
-                <div className="px-4 grid grid-cols-2 gap-2.5 mb-4">
+                <div className="px-4 grid grid-cols-2 gap-2 mb-3">
                     {loading ? (
                         Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="bg-white rounded-2xl p-3.5 h-16 animate-pulse border border-slate-100" />
+                            <div key={i} className="bg-white rounded-xl p-3 h-14 animate-pulse border border-slate-100" />
                         ))
                     ) : (
                         <>
-                            <StatCard icon={Users}     label="Học viên"  value={stats?.studentCount}          iconBg="#dbeafe" iconColor="#3b82f6" />
-                            <StatCard icon={BookOpen}  label="Lớp học"   value={stats?.classCount}             iconBg="#d1fae5" iconColor="#10b981" />
-                            <StatCard icon={CreditCard} label="Doanh thu" value={formatCurrency(stats?.revenue)} iconBg="#ede9fe" iconColor="#8b5cf6" />
-                            <StatCard icon={TrendingUp} label="Hoạt động" value="Live"                         iconBg="#fef3c7" iconColor="#f59e0b" />
+                            <MobileAdminStatCard label="Học viên" value={stats?.studentCount} tone="blue" />
+                            <MobileAdminStatCard label="Lớp học" value={stats?.classCount} tone="emerald" />
+                            <MobileAdminStatCard label="Doanh thu" value={formatCurrency(stats?.revenue)} tone="violet" />
+                            <MobileAdminStatCard label="Hoạt động" value="Live" tone="amber" />
                         </>
                     )}
                 </div>
 
                 {/* ── Quick Actions ── */}
-                <div className="px-4 mb-5">
-                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5 ml-1">
+                <div className="px-4 mb-4">
+                    <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.12em] mb-2 ml-1">
                         Truy cập nhanh
                     </h3>
                     <div className="grid grid-cols-3 gap-2">
                         <QuickAction icon={Users}        label="Học viên"  onClick={() => onNavigate?.('students')}       iconBg="#dbeafe" iconColor="#3b82f6" />
+                        <QuickAction icon={BookOpen}     label="Lớp học"   onClick={() => onNavigate?.('classes')}        iconBg="#d1fae5" iconColor="#10b981" />
                         <QuickAction icon={CreditCard}   label="Học phí"   onClick={() => onNavigate?.('payments')}       iconBg="#ede9fe" iconColor="#8b5cf6" />
                         <QuickAction icon={Calendar}     label="Lịch thi"  onClick={() => onNavigate?.('exam-schedules')} iconBg="#fef3c7" iconColor="#f59e0b" />
                         <QuickAction icon={Newspaper}    label="Bài viết"  onClick={() => onNavigate?.('posts')}          iconBg="#e0f2fe" iconColor="#0284c7" />
@@ -177,8 +176,8 @@ export default function MobileDashboardOverview({ onNavigate }) {
 
                 {/* ── Recent Students ── */}
                 <div className="px-4">
-                    <div className="flex items-center justify-between mb-2.5">
-                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+                    <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.12em] ml-1">
                             Mới đăng ký
                         </h3>
                         <button
@@ -189,7 +188,7 @@ export default function MobileDashboardOverview({ onNavigate }) {
                         </button>
                     </div>
 
-                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
                         {loading ? (
                             Array.from({ length: 3 }).map((_, i) => (
                                 <div key={i} className="h-14 px-4 flex items-center gap-3 border-b border-slate-50">

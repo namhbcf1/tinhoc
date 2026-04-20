@@ -1,22 +1,121 @@
 import { Hono } from 'hono';
 import type { Env, JWTPayload } from '../types/env.js';
-import { jsonResponse, errorResponse } from '../utils/helpers.js';
+import { errorResponse, jsonResponse } from '../utils/helpers.js';
 import {
   createCertificate,
-  getCertificatesByClass,
-  getCertificatesByStudent,
   getCertificateById,
-  getCertificateByNumber,
   updateCertificateStatus,
 } from '../db/certificate-queries.js';
-// getRegistrationsByClass and getPaymentsByRegistration removed — replaced by single JOIN query in /eligible
+import {
+  createCertificateShipment,
+  getLatestShipmentByCertificate,
+  getOpenShipmentByCertificate,
+  updateCertificateShipment,
+} from '../db/certificate-shipment-queries.js';
 import { generateCertificateHTML, generateQRCodeDataURL } from '../utils/pdf-generator.js';
 import { notifyCertificateIssued } from '../utils/notification-helper.js';
+import { createViettelPostShipment, getViettelPostErrorMessage } from '../services/viettel-post.js';
+import { isVietnamesePhoneNumber } from '../services/viettel-post-address.js';
 
 const certificates = new Hono<{ Bindings: Env; Variables: { user: JWTPayload } }>();
 
+function parsePositiveInteger(value: unknown) {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function isIssuedCertificateStatus(status: unknown) {
+  return status === 'active' || status === 'issued';
+}
+
+function parseJsonField(value: unknown, fallback: unknown) {
+  if (!value) return fallback;
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return fallback;
+  }
+}
+
+function hydrateShipment(shipment: any) {
+  if (!shipment) return null;
+  return {
+    ...shipment,
+    warnings: parseJsonField(shipment.warnings_json, []),
+    service_add_codes: parseJsonField(shipment.service_add_codes_json, []),
+    raw_request: parseJsonField(shipment.raw_request_json, null),
+    raw_response: parseJsonField(shipment.raw_response_json, null),
+  };
+}
+
+async function getClassInfo(db: D1Database, classId: number) {
+  return db.prepare('SELECT * FROM classes WHERE id = ?').bind(classId).first();
+}
+
+async function buildCertificateNumber(db: D1Database, classId: number) {
+  const certCount = await db.prepare(`
+    SELECT COUNT(*) AS count
+    FROM certificates
+    WHERE class_id = ?
+  `).bind(classId).first();
+
+  const count = Number((certCount as any)?.count || 0);
+  return `VT-${new Date().getFullYear()}-${classId}-${String(count + 1).padStart(4, '0')}`;
+}
+
+async function issueCertificateForStudent(
+  env: Env,
+  classId: number,
+  studentId: number,
+  issuedBy: number | null,
+  options: { skipExisting?: boolean } = {},
+) {
+  const classInfo = await getClassInfo(env.DB, classId);
+  if (!classInfo) {
+    throw new Error('Không tìm thấy lớp.');
+  }
+
+  const existing = await env.DB.prepare(`
+    SELECT id, certificate_number
+    FROM certificates
+    WHERE student_id = ? AND class_id = ? AND status IN ('active', 'issued')
+    LIMIT 1
+  `).bind(studentId, classId).first();
+
+  if (existing) {
+    if (options.skipExisting) {
+      return null;
+    }
+    throw new Error('Học viên này đã có chứng chỉ cho lớp đã chọn.');
+  }
+
+  const certificateNumber = await buildCertificateNumber(env.DB, classId);
+  const result = await createCertificate(env.DB, {
+    student_id: studentId,
+    class_id: classId,
+    certificate_number: certificateNumber,
+    title: `Chứng chỉ hoàn thành ${(classInfo as any).ten_lop}`,
+    issued_by: issuedBy,
+  });
+
+  try {
+    await notifyCertificateIssued(env.DB, String(studentId), certificateNumber, (classInfo as any).ten_lop);
+  } catch (notifError) {
+    console.error('Error creating certificate notification:', notifError);
+  }
+
+  return {
+    certificate_id: result.meta.last_row_id,
+    certificate_number: certificateNumber,
+    student_id: studentId,
+    class_id: classId,
+    class_name: (classInfo as any).ten_lop,
+  };
+}
+
 // ========================================
-// GET /certificates/lookup - Tra cứu chứng chỉ công khai (MUST BE BEFORE /:id)
+// GET /certificates/lookup - Public certificate lookup
 // ========================================
 certificates.get('/lookup', async (c) => {
   try {
@@ -36,8 +135,8 @@ certificates.get('/lookup', async (c) => {
         c.ngay_thi
       FROM certificates cert
       JOIN students s ON cert.student_id = s.id
-      JOIN classes c ON cert.class_id = c.id
-      WHERE cert.status = 'issued'
+      LEFT JOIN classes c ON cert.class_id = c.id
+      WHERE cert.status IN ('active', 'issued')
     `;
     const params: any[] = [];
 
@@ -64,24 +163,20 @@ certificates.get('/lookup', async (c) => {
 });
 
 // ========================================
-// GET /certificates/:id/download - Download certificate PDF/HTML
+// GET /certificates/:id/download - Download certificate HTML
 // ========================================
 certificates.get('/:id/download', async (c) => {
   try {
     const { id } = c.req.param();
-    const format = c.req.query('format') || 'html'; // 'html' or 'json'
-
-    const cert = await getCertificateById(c.env.DB, parseInt(id));
+    const format = c.req.query('format') || 'html';
+    const cert = await getCertificateById(c.env.DB, Number.parseInt(id, 10));
 
     if (!cert) {
       return errorResponse('Không tìm thấy chứng chỉ', 404);
     }
 
-    // Generate lookup URL for QR code
     const frontendUrl = (c.env as any).FRONTEND_URL || 'https://vantrangedu-3vg.pages.dev';
     const lookupUrl = `${frontendUrl}/certificate/lookup?certificate_number=${(cert as any).certificate_number}&cccd=${(cert as any).cccd}`;
-
-    // Generate QR code URL using external API service
     const qrCodeUrl = await generateQRCodeDataURL(lookupUrl);
 
     const certificateData = {
@@ -103,10 +198,7 @@ certificates.get('/:id/download', async (c) => {
       });
     }
 
-    // Generate HTML certificate
-    const html = generateCertificateHTML(certificateData);
-
-    return new Response(html, {
+    return new Response(generateCertificateHTML(certificateData), {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
         'Cache-Control': 'no-cache',
@@ -119,22 +211,19 @@ certificates.get('/:id/download', async (c) => {
 });
 
 // ========================================
-// GET /certificates/:id/qr-code - Get QR code for certificate
+// GET /certificates/:id/qr-code
 // ========================================
 certificates.get('/:id/qr-code', async (c) => {
   try {
     const { id } = c.req.param();
-
-    const cert = await getCertificateById(c.env.DB, parseInt(id));
+    const cert = await getCertificateById(c.env.DB, Number.parseInt(id, 10));
 
     if (!cert) {
       return errorResponse('Không tìm thấy chứng chỉ', 404);
     }
 
-    const frontendUrl = (c.env as any).FRONTEND_URL || 'https://your-frontend-url.com';
+    const frontendUrl = (c.env as any).FRONTEND_URL || 'https://vantrangedu-3vg.pages.dev';
     const lookupUrl = `${frontendUrl}/certificate/lookup?certificate_number=${(cert as any).certificate_number}&cccd=${(cert as any).cccd}`;
-
-    // Return QR code data URL or URL to QR code service
     const qrCodeUrl = await generateQRCodeDataURL(lookupUrl);
 
     return jsonResponse({
@@ -150,39 +239,74 @@ certificates.get('/:id/qr-code', async (c) => {
 });
 
 // ========================================
-// GET /certificates - Lấy tất cả chứng chỉ (Admin only)
+// GET /certificates - Admin list with shipment summary
 // ========================================
 certificates.get('/', async (c) => {
   try {
-    const limit = parseInt(c.req.query('limit') as string) || 100;
-    const offset = parseInt(c.req.query('offset') as string) || 0;
-    const classId = c.req.query('class_id');
-    const studentId = c.req.query('student_id');
+    const limit = Number.parseInt(c.req.query('limit') as string, 10) || 100;
+    const offset = Number.parseInt(c.req.query('offset') as string, 10) || 0;
+    const classId = parsePositiveInteger(c.req.query('class_id'));
+    const studentId = parsePositiveInteger(c.req.query('student_id'));
     const status = c.req.query('status');
 
     let query = `
       SELECT
         cert.*,
+        s.id AS student_id,
         s.ho_ten_full,
         s.cccd,
+        s.sdt,
+        s.dia_chi,
         c.ten_lop,
-        a.full_name as issued_by_name
+        a.full_name AS issued_by_name,
+        (
+          SELECT cs.status
+          FROM certificate_shipments cs
+          WHERE cs.certificate_id = cert.id
+            AND cs.status IN ('draft', 'quoted', 'created', 'in_transit')
+          ORDER BY cs.created_at DESC, cs.id DESC
+          LIMIT 1
+        ) AS shipment_status,
+        (
+          SELECT cs.carrier_tracking_number
+          FROM certificate_shipments cs
+          WHERE cs.certificate_id = cert.id
+            AND cs.status IN ('draft', 'quoted', 'created', 'in_transit')
+          ORDER BY cs.created_at DESC, cs.id DESC
+          LIMIT 1
+        ) AS shipment_tracking_number,
+        (
+          SELECT cs.normalized_full_address
+          FROM certificate_shipments cs
+          WHERE cs.certificate_id = cert.id
+            AND cs.status IN ('draft', 'quoted', 'created', 'in_transit')
+          ORDER BY cs.created_at DESC, cs.id DESC
+          LIMIT 1
+        ) AS shipment_normalized_address,
+        (
+          SELECT cs.resolution_status
+          FROM certificate_shipments cs
+          WHERE cs.certificate_id = cert.id
+            AND cs.status IN ('draft', 'quoted', 'created', 'in_transit')
+          ORDER BY cs.created_at DESC, cs.id DESC
+          LIMIT 1
+        ) AS shipment_resolution_status
       FROM certificates cert
       JOIN students s ON cert.student_id = s.id
-      JOIN classes c ON cert.class_id = c.id
+      LEFT JOIN classes c ON cert.class_id = c.id
       LEFT JOIN admins a ON cert.issued_by = a.id
-      WHERE 1=1
+      WHERE 1 = 1
     `;
     const params: any[] = [];
 
     if (classId) {
       query += ' AND cert.class_id = ?';
-      params.push(parseInt(classId));
+      params.push(classId);
     }
 
     if (studentId) {
       query += ' AND cert.student_id = ?';
-      params.push(parseInt(studentId));
+      params.push(studentId);
     }
 
     if (status) {
@@ -190,11 +314,10 @@ certificates.get('/', async (c) => {
       params.push(status);
     }
 
-    query += ' ORDER BY cert.issued_date DESC LIMIT ? OFFSET ?';
+    query += ' ORDER BY cert.issued_date DESC, cert.id DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
 
     const result = await c.env.DB.prepare(query).bind(...params).all();
-
     return jsonResponse({
       success: true,
       data: result.results || [],
@@ -206,15 +329,11 @@ certificates.get('/', async (c) => {
 });
 
 // ========================================
-// GET /certificates/class/:id/eligible - Lấy danh sách học viên đủ điều kiện cấp chứng chỉ
-// Single JOIN query thay thế N+1 loop (200+ queries → 1 query)
+// GET /certificates/class/:id/eligible
 // ========================================
 certificates.get('/class/:id/eligible', async (c) => {
   try {
-    const classId = parseInt(c.req.param('id'));
-
-    // Single query: JOIN registrations + students + payment status + certificate status
-    // Eliminates N+1 loop that previously ran 2 queries per student
+    const classId = Number.parseInt(c.req.param('id'), 10);
     const result = await c.env.DB.prepare(`
       SELECT
         r.id AS registration_id,
@@ -231,7 +350,9 @@ certificates.get('/class/:id/eligible', async (c) => {
         CASE
           WHEN EXISTS (
             SELECT 1 FROM certificates cert
-            WHERE cert.student_id = s.id AND cert.class_id = r.class_id
+            WHERE cert.student_id = s.id
+              AND cert.class_id = r.class_id
+              AND cert.status IN ('active', 'issued')
           ) THEN 1 ELSE 0
         END AS has_certificate
       FROM registrations r
@@ -257,73 +378,59 @@ certificates.get('/class/:id/eligible', async (c) => {
 });
 
 // ========================================
-// POST /certificates/bulk - Cấp chứng chỉ hàng loạt (Admin only)
+// POST /certificates - Issue a single certificate
+// ========================================
+certificates.post('/', async (c) => {
+  try {
+    const { class_id, student_id } = await c.req.json() as any;
+    const classId = parsePositiveInteger(class_id);
+    const studentId = parsePositiveInteger(student_id);
+    const user = c.get('user');
+
+    if (!classId || !studentId) {
+      return errorResponse('Thiếu class_id hoặc student_id hợp lệ', 400);
+    }
+
+    const created = await issueCertificateForStudent(c.env, classId, studentId, Number(user?.id) || null);
+    return jsonResponse({
+      success: true,
+      message: 'Cấp chứng chỉ thành công',
+      data: created,
+    }, 201);
+  } catch (error: any) {
+    return errorResponse('Lỗi cấp chứng chỉ: ' + error.message, 500);
+  }
+});
+
+// ========================================
+// POST /certificates/bulk - Bulk issue certificates
 // ========================================
 certificates.post('/bulk', async (c) => {
   try {
     const { class_id, student_ids } = await c.req.json() as any;
+    const classId = parsePositiveInteger(class_id);
     const user = c.get('user');
 
-    if (!class_id || !student_ids || student_ids.length === 0) {
+    if (!classId || !Array.isArray(student_ids) || !student_ids.length) {
       return errorResponse('Thiếu class_id hoặc student_ids', 400);
     }
 
-    // Get class info
-    const classInfo = await c.env.DB.prepare(
-      'SELECT * FROM classes WHERE id = ?'
-    ).bind(class_id).first();
-
-    if (!classInfo) {
-      return errorResponse('Không tìm thấy lớp', 404);
-    }
-
     const issuedCertificates: any[] = [];
-
     for (const studentId of student_ids) {
-      // Check if already has certificate
-      const existing = await c.env.DB.prepare(`
-        SELECT id FROM certificates
-        WHERE student_id = ? AND class_id = ?
-      `).bind(studentId, class_id).first();
+      const normalizedStudentId = parsePositiveInteger(studentId);
+      if (!normalizedStudentId) continue;
 
-      if (existing) {
-        continue; // Skip if already has certificate
+      const created = await issueCertificateForStudent(
+        c.env,
+        classId,
+        normalizedStudentId,
+        Number(user?.id) || null,
+        { skipExisting: true },
+      );
+
+      if (created) {
+        issuedCertificates.push(created);
       }
-
-      // Generate certificate number
-      const certCount = await c.env.DB.prepare(`
-        SELECT COUNT(*) as count FROM certificates WHERE class_id = ?
-      `).bind(class_id).first();
-
-      const count = (certCount as any)?.count || 0;
-      const certNumber = `VT-${new Date().getFullYear()}-${class_id}-${String(count + 1).padStart(4, '0')}`;
-
-      // Create certificate
-      const result = await createCertificate(c.env.DB, {
-        student_id: studentId,
-        class_id: class_id,
-        certificate_number: certNumber,
-        title: `Chứng chỉ hoàn thành ${(classInfo as any).ten_lop}`,
-        issued_by: (user as any)?.id || null,
-      });
-
-      // Create notification
-      try {
-        await notifyCertificateIssued(
-          c.env.DB,
-          studentId,
-          certNumber,
-          (classInfo as any).ten_lop
-        );
-      } catch (notifError) {
-        console.error('Error creating notification:', notifError);
-      }
-
-      issuedCertificates.push({
-        certificate_id: result.meta.last_row_id,
-        certificate_number: certNumber,
-        student_id: studentId,
-      });
     }
 
     return jsonResponse({
@@ -337,11 +444,191 @@ certificates.post('/bulk', async (c) => {
 });
 
 // ========================================
-// GET /certificates/:id - Lấy chi tiết chứng chỉ
+// GET /certificates/:id/shipment - Current shipment
+// ========================================
+certificates.get('/:id/shipment', async (c) => {
+  try {
+    const certificateId = Number.parseInt(c.req.param('id'), 10);
+    const cert = await getCertificateById(c.env.DB, certificateId);
+
+    if (!cert) {
+      return errorResponse('Không tìm thấy chứng chỉ', 404);
+    }
+
+    const shipment = await getOpenShipmentByCertificate(c.env.DB, certificateId)
+      || await getLatestShipmentByCertificate(c.env.DB, certificateId);
+
+    return jsonResponse({
+      success: true,
+      data: hydrateShipment(shipment),
+    });
+  } catch (error: any) {
+    return errorResponse('Lỗi lấy vận đơn: ' + error.message, 500);
+  }
+});
+
+// ========================================
+// POST /certificates/:id/shipment - Create Viettel Post shipment
+// ========================================
+certificates.post('/:id/shipment', async (c) => {
+  const certificateId = Number.parseInt(c.req.param('id'), 10);
+  let draftShipmentId: number | null = null;
+
+  try {
+    const cert = await getCertificateById(c.env.DB, certificateId);
+    if (!cert) {
+      return errorResponse('Không tìm thấy chứng chỉ', 404);
+    }
+    if (!isIssuedCertificateStatus((cert as any).status)) {
+      return errorResponse('Chỉ được tạo vận đơn cho chứng chỉ đã cấp.', 400);
+    }
+
+    const body = await c.req.json();
+    const user = c.get('user');
+    const receiverName = String(body?.receiver_name || '').trim();
+    const receiverPhone = String(body?.receiver_phone || '').trim();
+    const rawAddress = String(body?.raw_address || '').trim();
+    const addressLine = String(body?.address_line || '').trim();
+    const normalizedFullAddress = String(body?.normalized_full_address || '').trim();
+    const resolutionStatus = String(body?.resolution_status || '').trim();
+    const provinceId = parsePositiveInteger(body?.province_id);
+    const districtId = parsePositiveInteger(body?.district_id);
+    const wardId = parsePositiveInteger(body?.ward_id);
+    const serviceCode = String(body?.service_code || '').trim();
+    const serviceName = String(body?.service_name || '').trim();
+    const productWeight = parsePositiveInteger(body?.product_weight_grams) || 250;
+    const serviceAddCodes = Array.isArray(body?.service_add_codes)
+      ? body.service_add_codes.map((value: unknown) => String(value || '').trim()).filter(Boolean)
+      : [];
+    const warnings = Array.isArray(body?.warnings) ? body.warnings : [];
+
+    if (!receiverName) {
+      return errorResponse('Thiếu receiver_name.', 400);
+    }
+    if (!receiverPhone || !isVietnamesePhoneNumber(receiverPhone)) {
+      return errorResponse('Số điện thoại người nhận chưa hợp lệ.', 400);
+    }
+    if (!rawAddress || !addressLine || !provinceId || !districtId || !wardId) {
+      return errorResponse('Địa chỉ vận chuyển chưa đầy đủ.', 400);
+    }
+    if (resolutionStatus !== 'resolved') {
+      return errorResponse('Địa chỉ chưa được chuẩn hóa rõ ràng, chưa thể tạo vận đơn.', 400);
+    }
+    if (!serviceCode) {
+      return errorResponse('Thiếu service_code để tạo vận đơn.', 400);
+    }
+
+    const openShipment = await getOpenShipmentByCertificate(c.env.DB, certificateId);
+    if (openShipment && openShipment.status !== 'draft') {
+      return errorResponse('Chứng chỉ này đã có vận đơn đang hoạt động.', 409);
+    }
+
+    const draftPayload = {
+      certificate_id: certificateId,
+      student_id: Number((cert as any).student_id),
+      carrier: 'viettel_post',
+      status: 'draft',
+      receiver_name: receiverName,
+      receiver_phone: receiverPhone,
+      address_raw: rawAddress,
+      address_line: addressLine,
+      province_id: provinceId,
+      province_name: body?.province_name || null,
+      district_id: districtId,
+      district_name: body?.district_name || null,
+      ward_id: wardId,
+      ward_name: body?.ward_name || null,
+      normalized_full_address: normalizedFullAddress,
+      resolution_status: resolutionStatus,
+      warnings_json: warnings,
+      service_code: serviceCode,
+      service_name: serviceName || null,
+      service_add_codes_json: serviceAddCodes,
+      product_name: 'Chứng chỉ',
+      product_description: 'Chứng chỉ, tài liệu',
+      product_weight_grams: productWeight,
+      declared_value: 0,
+      created_by: Number(user?.id) || null,
+      raw_request_json: {
+        receiver_name: receiverName,
+        receiver_phone: receiverPhone,
+        raw_address: rawAddress,
+        address_line: addressLine,
+        province_id: provinceId,
+        district_id: districtId,
+        ward_id: wardId,
+        service_code: serviceCode,
+        service_add_codes: serviceAddCodes,
+        product_weight_grams: productWeight,
+      },
+    };
+
+    if (openShipment?.id) {
+      draftShipmentId = Number(openShipment.id);
+      await updateCertificateShipment(c.env.DB, draftShipmentId, draftPayload);
+    } else {
+      const draftResult = await createCertificateShipment(c.env.DB, draftPayload);
+      draftShipmentId = Number(draftResult.meta.last_row_id);
+    }
+
+    const partnerOrderNumber = `CERT-${certificateId}-${draftShipmentId}-${Date.now()}`;
+    const carrierResult = await createViettelPostShipment(c.env, {
+      order_number: partnerOrderNumber,
+      receiver_name: receiverName,
+      receiver_phone: receiverPhone,
+      raw_address: rawAddress,
+      address_line: addressLine,
+      province_id: provinceId,
+      district_id: districtId,
+      ward_id: wardId,
+      service_code: serviceCode,
+      service_name: serviceName || null,
+      service_add_codes: serviceAddCodes,
+      product_weight_grams: productWeight,
+      product_name: 'Chứng chỉ',
+      product_description: 'Chứng chỉ, tài liệu',
+      declared_value: 0,
+    });
+
+    await updateCertificateShipment(c.env.DB, draftShipmentId, {
+      status: 'created',
+      carrier_order_number: carrierResult.carrier_order_number,
+      carrier_tracking_number: carrierResult.carrier_tracking_number,
+      shipping_fee: carrierResult.shipping_fee,
+      raw_request_json: carrierResult.request_payload,
+      raw_response_json: carrierResult.raw,
+    });
+
+    const shipment = await getLatestShipmentByCertificate(c.env.DB, certificateId);
+    return jsonResponse({
+      success: true,
+      message: 'Tạo vận đơn Viettel Post thành công',
+      data: hydrateShipment(shipment),
+    }, 201);
+  } catch (error: any) {
+    const message = getViettelPostErrorMessage(error);
+    const status = Number((error as any)?.status) || 502;
+
+    if (draftShipmentId) {
+      await updateCertificateShipment(c.env.DB, draftShipmentId, {
+        status: 'draft',
+        raw_response_json: {
+          message,
+          details: (error as any)?.details || null,
+        },
+      });
+    }
+
+    return errorResponse(message, status);
+  }
+});
+
+// ========================================
+// GET /certificates/:id - Detail
 // ========================================
 certificates.get('/:id', async (c) => {
   try {
-    const id = parseInt(c.req.param('id'));
+    const id = Number.parseInt(c.req.param('id'), 10);
     const cert = await getCertificateById(c.env.DB, id);
 
     if (!cert) {
@@ -358,11 +645,11 @@ certificates.get('/:id', async (c) => {
 });
 
 // ========================================
-// PUT /certificates/:id/revoke - Thu hồi chứng chỉ (Admin only)
+// PUT /certificates/:id/revoke
 // ========================================
 certificates.put('/:id/revoke', async (c) => {
   try {
-    const id = parseInt(c.req.param('id'));
+    const id = Number.parseInt(c.req.param('id'), 10);
     await updateCertificateStatus(c.env.DB, id, 'revoked');
 
     return jsonResponse({

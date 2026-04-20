@@ -13,14 +13,57 @@ test('register submits domestic birthplace from the 34-province selector', async
       pathname: '/api/cccd-upload',
       handle: async ({ route }) => {
         uploadedCount += 1;
+        if (uploadedCount === 3) {
+          await fulfillJson(route, {
+            success: true,
+            imageId: 'img-3-original',
+            processingQueued: true,
+            processingLogId: 'log-3',
+            previewUrl: 'https://example.com/photo-3x4-original.jpg',
+            status: 'uploaded',
+          });
+          return;
+        }
+
         await fulfillJson(route, { success: true, imageId: `img-${uploadedCount}` });
+      },
+    },
+    {
+      method: 'GET',
+      pathname: '/api/cccd-upload/status/log-3',
+      handle: async ({ route }) => {
+        await fulfillJson(route, {
+          success: true,
+          status: 'success',
+          stage: 'completed',
+          progress: 100,
+          originalImageId: 'img-3-original',
+          finalImageId: 'img-3',
+          previewImageId: 'img-3',
+          previewUrl: 'https://example.com/photo-3-final.jpg',
+          finalPreviewUrl: 'https://example.com/photo-3-final.jpg',
+          warnings: [],
+        });
       },
     },
     {
       method: 'POST',
       pathname: '/api/cccd-upload/extract',
       handle: async ({ route }) => {
-        await fulfillJson(route, { success: true, data: { prefill: {}, hasUsefulData: false } });
+        await fulfillJson(route, {
+          success: true,
+          data: {
+            prefill: {
+              fullName: 'Nguyen Van A',
+              cccd: '012345678901',
+              dateOfBirth: '01012000',
+              gender: 'Nam',
+              ethnicity: 'Kinh',
+              issueDate: '14042021',
+            },
+            hasUsefulData: true,
+          },
+        });
       },
     },
     {
@@ -50,10 +93,14 @@ test('register submits domestic birthplace from the 34-province selector', async
   const fileInputs = page.locator('input[type="file"]');
   for (let index = 0; index < 3; index += 1) {
     await fileInputs.nth(index).setInputFiles(createPngUpload(`upload-${index + 1}.png`));
-    const confirmButton = page.getByRole('button', { name: 'Xác nhận' });
+    const manualConfirmButton = page.getByRole('button', { name: 'Lưu ảnh đã chỉnh' });
+    const autoConfirmButton = page.getByRole('button', { name: 'Dùng ảnh này' });
+    const confirmButton = index === 2
+      ? page.getByRole('button', { name: 'Xác nhận' })
+      : manualConfirmButton.or(autoConfirmButton);
     await expect(confirmButton).toBeVisible();
-    await confirmButton.click();
-    await expect(confirmButton).toBeHidden();
+    await confirmButton.first().click();
+    await expect.poll(() => uploadedCount, { timeout: 30000 }).toBe(index + 1);
   }
 
   const selects = page.locator('form select');
@@ -82,4 +129,3 @@ test('register submits domestic birthplace from the 34-province selector', async
   await expect.poll(() => registrationPayload?.photo_3x4_image_id).toBe('img-3');
   await expect(page.getByText('Đăng ký thành công! Thông tin của bạn đã được ghi nhận.')).toBeVisible();
 });
-

@@ -40,6 +40,7 @@ export default function CertificateLookup() {
   const container = useRef();
 
   useGSAP(() => {
+    if (!container.current) return;
     gsap.fromTo('.anim-fade-up',
       { y: 30, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: 'power3.out' }

@@ -9,6 +9,9 @@ type BirthPlaceFieldProps = {
   label?: string;
   value: string;
   onChange: (nextValue: string) => void;
+  fieldId?: string;
+  hintId?: string;
+  errorId?: string;
   required?: boolean;
   error?: string;
   hint?: string;
@@ -32,6 +35,9 @@ export default function BirthPlaceField({
   label = 'Nơi sinh',
   value,
   onChange,
+  fieldId,
+  hintId,
+  errorId,
   required = false,
   error = '',
   hint = '',
@@ -52,6 +58,7 @@ export default function BirthPlaceField({
 }: BirthPlaceFieldProps) {
   const accessibleLabel = label || 'Nơi sinh';
   const normalizedValue = useMemo(() => normalizeBirthPlaceValue(value), [value]);
+  const describedBy = [hint ? hintId : '', error ? errorId : ''].filter(Boolean).join(' ') || undefined;
   const [placeType, setPlaceType] = useState<'trong_nuoc' | 'nuoc_ngoai'>(
     normalizedValue && !isVietnamProvince2025(normalizedValue) ? 'nuoc_ngoai' : 'trong_nuoc'
   );
@@ -85,7 +92,7 @@ export default function BirthPlaceField({
   return (
     <div className={wrapperClassName} data-testid="birth-place-field">
       {label ? (
-        <label className={labelClassName}>
+        <label className={labelClassName} htmlFor={fieldId}>
           {label}
           {required ? <span className="ml-0.5 text-red-400">*</span> : null}
         </label>
@@ -121,8 +128,11 @@ export default function BirthPlaceField({
       <div className="mt-2">
         {placeType === 'trong_nuoc' ? (
           <select
+            id={fieldId}
             value={domesticValue}
             aria-label={accessibleLabel}
+            aria-describedby={describedBy}
+            aria-invalid={error ? 'true' : 'false'}
             data-testid="birth-place-select"
             disabled={disabled}
             onChange={(event) => onChange(normalizeBirthPlaceValue(event.target.value))}
@@ -137,9 +147,12 @@ export default function BirthPlaceField({
           </select>
         ) : (
           <input
+            id={fieldId}
             type="text"
             value={placeType === 'nuoc_ngoai' ? normalizedValue : ''}
             aria-label={accessibleLabel}
+            aria-describedby={describedBy}
+            aria-invalid={error ? 'true' : 'false'}
             data-testid="birth-place-input"
             disabled={disabled}
             placeholder={inputPlaceholder}
@@ -149,8 +162,8 @@ export default function BirthPlaceField({
         )}
       </div>
 
-      {hint ? <p className={hintClassName}>{hint}</p> : null}
-      {error ? <p className={errorClassName}>{error}</p> : null}
+      {hint ? <p id={hintId} className={hintClassName}>{hint}</p> : null}
+      {error ? <p id={errorId} className={errorClassName}>{error}</p> : null}
     </div>
   );
 }

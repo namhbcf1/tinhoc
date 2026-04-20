@@ -28,8 +28,8 @@ html, body {
 .top-bar {
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   color: white;
-  padding: 10px 0;
-  font-size: 13px;
+  padding: clamp(6px, 1.2vw, 10px) 0;
+  font-size: clamp(11px, 1.8vw, 13px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   width: 100%;
 }
@@ -37,7 +37,7 @@ html, body {
 .top-bar-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 clamp(12px, 3vw, 20px);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -45,7 +45,7 @@ html, body {
 
 .top-bar-left {
   display: flex;
-  gap: 30px;
+  gap: clamp(16px, 4vw, 30px);
   align-items: center;
 }
 
@@ -54,34 +54,34 @@ html, body {
   text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: clamp(6px, 1vw, 8px);
   transition: all 0.3s ease;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: clamp(2px, 0.5vw, 4px) clamp(4px, 1vw, 8px);
+  border-radius: clamp(3px, 0.5vw, 4px);
   font-weight: 500;
 }
 
 .top-bar-link:hover {
   color: #4CAF50;
   background: rgba(76, 175, 80, 0.1);
-  transform: translateY(-1px);
+  transform: translateY(clamp(-2px, -0.2vw, -1px));
 }
 
 .top-bar-link .icon {
-  font-size: 14px;
+  font-size: clamp(12px, 2vw, 14px);
   opacity: 0.9;
 }
 
 .top-bar-right {
   display: flex;
-  gap: 12px;
+  gap: clamp(8px, 2vw, 12px);
   align-items: center;
 }
 
 .top-bar-btn {
-  padding: 8px 18px;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: clamp(6px, 1vw, 8px) clamp(12px, 2.5vw, 18px);
+  border-radius: clamp(5px, 0.8vw, 6px);
+  font-size: clamp(11px, 1.8vw, 13px);
   font-weight: 700;
   text-decoration: none;
   transition: all 0.3s ease;

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ChevronRight, ExternalLink, LogOut, Menu, User, X } from 'lucide-react';
 import { useDeviceType } from '../../utils/deviceDetection';
 import { STUDENT_MAIN_MENU, STUDENT_PAGE_TITLES, openStudyPlatform } from '../../features/student/student-nav';
+import { applyImageFallback, resolveImageUrl } from '../../utils/imageUrl';
 import './StudentMobileLayout.css';
 
 export default function StudentMobileLayout({
@@ -24,18 +25,7 @@ export default function StudentMobileLayout({
     if (typeof window === 'undefined' || window.innerWidth > 768) {
       return;
     }
-
-    const root = document.documentElement;
-    const previousFontSize = root.style.getPropertyValue('--vt-mobile-root-font-size');
-    root.style.setProperty('--vt-mobile-root-font-size', '8.5px');
-
-    return () => {
-      if (previousFontSize) {
-        root.style.setProperty('--vt-mobile-root-font-size', previousFontSize);
-      } else {
-        root.style.removeProperty('--vt-mobile-root-font-size');
-      }
-    };
+    // Đã bỏ root font-size override (8.5px) — không cần thiết với Tailwind px classes
   }, []);
 
   useEffect(() => {
@@ -44,6 +34,7 @@ export default function StudentMobileLayout({
 
   const displayName = studentData?.ho_ten_full || studentData?.fullName || 'Học viên';
   const initial = displayName.charAt(0).toUpperCase();
+  const avatarUrl = resolveImageUrl(studentData?.image_3x4 || studentData?.photo_3x4_image_id || studentData?.avatar);
   const mobileMenuItems = [
     ...STUDENT_MAIN_MENU,
     { id: 'profile', label: 'Cá nhân', icon: User },
@@ -63,7 +54,7 @@ export default function StudentMobileLayout({
       <header className="mobile-header student">
         <div className="mobile-header-content">
           <button
-            className="mobile-header-btn"
+            className="mobile-header-btn min-h-[44px] min-w-[44px]"
             onClick={() => setIsMenuOpen(true)}
             aria-label="Menu"
             data-tour="student-mobile-menu"
@@ -81,8 +72,12 @@ export default function StudentMobileLayout({
               aria-label="Mở hồ sơ cá nhân"
               data-tour="student-mobile-profile"
             >
-              {studentData?.image_3x4 ? (
-                <img src={studentData.image_3x4} alt="Avatar" />
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Avatar"
+                  onError={(event) => applyImageFallback(event, displayName)}
+                />
               ) : (
                 <span>{initial}</span>
               )}
@@ -119,8 +114,12 @@ export default function StudentMobileLayout({
             <div className="mobile-drawer-header student">
               <div className="mobile-drawer-user">
                 <div className="mobile-drawer-avatar">
-                  {studentData?.image_3x4 ? (
-                    <img src={studentData.image_3x4} alt="Avatar" />
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Avatar"
+                      onError={(event) => applyImageFallback(event, displayName)}
+                    />
                   ) : (
                     <span>{initial}</span>
                   )}

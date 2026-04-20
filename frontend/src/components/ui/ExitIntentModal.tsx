@@ -2,6 +2,7 @@ import { useState, useEffect, useId } from 'react';
 import { X, Gift, Clock } from 'lucide-react';
 import { Button } from './Button';
 import { Card, CardContent } from './Card';
+import OverlayPortal from './OverlayPortal';
 
 /**
  * ExitIntentModal Component
@@ -80,10 +81,11 @@ export default function ExitIntentModal() {
     if (!isVisible) return null;
 
     return (
-        <div
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in"
-            aria-hidden="true"
-        >
+        <OverlayPortal>
+            <div
+                className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in"
+                aria-hidden="true"
+            >
             {/* Dialog panel — role="dialog" for screen readers */}
             <Card
                 role="dialog"
@@ -165,7 +167,7 @@ export default function ExitIntentModal() {
                                     📞 Gọi ngay: 096 244 5963
                                 </Button>
                             </a>
-                            <a href="/admissions" className="block">
+                            <a href="/register" className="block">
                                 <Button
                                     variant="outline"
                                     className="w-full border-green-600 text-green-700 hover:bg-green-50 font-bold py-3"
@@ -181,6 +183,7 @@ export default function ExitIntentModal() {
                     </div>
                 </CardContent>
             </Card>
-        </div>
+            </div>
+        </OverlayPortal>
     );
 }

@@ -7,6 +7,7 @@ import {
   exportDatabaseToJSON,
   exportTableToCSV,
   createBackup,
+  listDatabaseTables,
   listBackups,
   restoreFromBackup,
 } from '../utils/backup.js';
@@ -14,70 +15,26 @@ import {
 const backup = new Hono<{ Bindings: Env; Variables: { user: JWTPayload; teacher: JWTPayload } }>();
 
 // ========================================
-// SECURITY: Whitelist of all valid table names
-// Table names cannot be parameterized in SQL — must validate against whitelist
-// ========================================
-const ALLOWED_TABLES = new Set([
-  // Core registration data
-  'students',
-  'classes',
-  'registrations',
-  'payments',
-  'certificates',
-  // Admin & auth
-  'admins',
-  'password_reset_tokens',
-  'admin_activity_logs',
-  // Content
-  'posts',
-  'documents',
-  'document_folders',
-  'document_permissions',
-  'document_downloads',
-  'notifications',
-  // Teachers & scheduling
-  'teachers',
-  'class_teachers',
-  'class_schedules',
-  'attendance',
-  // Assignments
-  'assignments',
-  'assignment_submissions',
-  // Exam system
-  'exam_tests',
-  'exam_questions',
-  'exam_answers',
-  'exam_attempts',
-  'exam_attempt_answers',
-  'exam_schedules',
-  // Online classes / videos
-  'online_classes',
-  'class_videos',
-  'video_views',
-  // Messaging
-  'messages',
-  'message_threads',
-  // VSTEP
-  'vstep_tests',
-  'vstep_questions',
-  'vstep_attempts',
-]);
-
-// ========================================
 // SECURITY: Allowed column name pattern (alphanumeric + underscore only)
 // Used to validate column names from restore JSON before SQL insertion
 // ========================================
 const SAFE_IDENTIFIER_RE = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
+async function getExistingTableNames(db: D1Database): Promise<Set<string>> {
+  const tables = await listDatabaseTables(db);
+  return new Set(tables.map((table) => table.name));
+}
+
 /**
- * Validate that a table name is in the whitelist.
+ * Validate that a table name exists in the live database.
  * Returns error response if invalid, otherwise calls next().
  */
-function validateTableName(tableName: string): Response | null {
+async function validateTableName(db: D1Database, tableName: string): Promise<Response | null> {
   if (!tableName || typeof tableName !== 'string') {
     return errorResponse('Tên bảng không hợp lệ', 400);
   }
-  if (!ALLOWED_TABLES.has(tableName)) {
+  const allowedTables = await getExistingTableNames(db);
+  if (!allowedTables.has(tableName)) {
     return errorResponse(`Bảng "${tableName}" không tồn tại hoặc không được phép truy cập`, 400);
   }
   return null; // valid
@@ -100,15 +57,17 @@ function validateColumnNames(columns: string[]): Response | null {
  * Validate all table and column names in a backup JSON object.
  * Returns error response if any name is unsafe.
  */
-function validateBackupData(backupData: any): Response | null {
+async function validateBackupData(db: D1Database, backupData: any): Promise<Response | null> {
   if (!backupData || typeof backupData.tables !== 'object') {
     return errorResponse('Dữ liệu backup không hợp lệ', 400);
   }
 
+  const allowedTables = await getExistingTableNames(db);
+
   for (const [tableName, rows] of Object.entries(backupData.tables)) {
-    // Validate table name against whitelist
-    const tableError = validateTableName(tableName);
-    if (tableError) return tableError;
+    if (!allowedTables.has(tableName)) {
+      return errorResponse(`Bảng "${tableName}" không tồn tại hoặc không được phép truy cập`, 400);
+    }
 
     // Validate column names in the first row (representative of all rows)
     if (Array.isArray(rows) && rows.length > 0) {
@@ -167,7 +126,7 @@ backup.get('/export/csv/:table', async (c) => {
     const { table } = c.req.param();
 
     // Whitelist validation — prevents SQL injection via table name
-    const validationError = validateTableName(table);
+    const validationError = await validateTableName(c.env.DB, table);
     if (validationError) return validationError;
 
     const csvData = await exportTableToCSV(c.env.DB, table);
@@ -260,7 +219,7 @@ backup.post('/restore/:key', async (c) => {
 
     // Validate ALL table names and column names before restoring
     // This prevents SQL injection via a maliciously crafted backup file
-    const dataValidationError = validateBackupData(backupData);
+    const dataValidationError = await validateBackupData(c.env.DB, backupData);
     if (dataValidationError) return dataValidationError;
 
     const result = await restoreFromBackup(c.env.DB, c.env.R2, decodedKey);

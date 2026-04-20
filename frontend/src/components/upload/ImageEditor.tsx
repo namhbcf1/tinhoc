@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { ZoomIn, ZoomOut, RotateCw, FlipHorizontal, FlipVertical, X, Check, RotateCcw, Loader2 } from 'lucide-react';
 import { getOverlayBox } from './overlayUtils';
 import { detectDocumentAutoFitBox } from './documentAutoFit';
+import { validatePortraitPreviewCanvas } from './portrait-photo-validation';
 import { useIsMobile } from '../../utils/deviceDetection';
 import { lazyWithChunkReload } from '../../utils/lazyWithChunkReload';
 import './ImageEditor.css';
@@ -17,6 +18,7 @@ export default function ImageEditor({
     onCancel
 }) {
     const isMobile = useIsMobile();
+    const isPortraitPhoto = type === 'photo_3x4';
     const requiresDocumentDetection = type === 'cccd_front' || type === 'cccd_back';
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
@@ -31,6 +33,13 @@ export default function ImageEditor({
     const [documentCheckState, setDocumentCheckState] = useState(
         requiresDocumentDetection ? 'checking' : 'detected'
     );
+    const [photoValidation, setPhotoValidation] = useState(() => ({
+        isValid: !isPortraitPhoto,
+        blockingReasons: [],
+        warnings: [],
+        metrics: null,
+        checking: isPortraitPhoto,
+    }));
     
     // Touch gesture state - use refs to avoid dependency issues
     const [isDragging, setIsDragging] = useState(false);
@@ -134,7 +143,7 @@ export default function ImageEditor({
     const calculateOverlay = useCallback((containerWidth, containerHeight, canvasWidth, canvasHeight) => {
         const visibleOverlay = getOverlayBox(type, containerWidth, containerHeight, {
             maxHeightRatio: 0.86,
-            centerYOffset: type === 'photo_3x4' ? -0.01 : -0.04,
+            centerYOffset: type === 'photo_3x4' ? -0.05 : -0.04,
         });
         const offsetX = (canvasWidth - containerWidth) / 2;
         const offsetY = (canvasHeight - containerHeight) / 2;
@@ -245,6 +254,156 @@ export default function ImageEditor({
         };
     }, [calculateOverlay, clampTranslateToCoverOverlay, computeCoverScaleForOverlay, type]);
 
+    const buildPortraitPreviewCanvas = useCallback(() => {
+        const img = imageRef.current;
+        const container = containerRef.current;
+        if (!img || !container) return null;
+
+        const containerRect = container.getBoundingClientRect();
+        const containerWidth = containerRect.width;
+        const containerHeight = containerRect.height;
+        const { overlayWidth, overlayHeight, overlayX, overlayY } = calculateOverlay(
+            containerWidth,
+            containerHeight,
+            containerWidth,
+            containerHeight
+        );
+
+        let imgWidth = img.width;
+        let imgHeight = img.height;
+        if (rotation === 90 || rotation === 270) {
+            [imgWidth, imgHeight] = [imgHeight, imgWidth];
+        }
+
+        const finalScale = Math.max(
+            scale,
+            computeCoverScaleForOverlay(overlayWidth, overlayHeight, imgWidth, imgHeight)
+        );
+        const clamped = clampTranslateToCoverOverlay(
+            finalScale,
+            translateX,
+            translateY,
+            overlayX,
+            overlayY,
+            overlayWidth,
+            overlayHeight,
+            containerWidth,
+            containerHeight,
+            imgWidth,
+            imgHeight
+        );
+
+        const previewScale = Math.max(2, Math.min(4, Math.ceil(480 / Math.max(overlayHeight, 1))));
+        const previewCanvas = document.createElement('canvas');
+        previewCanvas.width = Math.max(360, Math.round(overlayWidth * previewScale));
+        previewCanvas.height = Math.max(480, Math.round(overlayHeight * previewScale));
+        const previewCtx = previewCanvas.getContext('2d');
+        if (!previewCtx) return null;
+
+        const rad = (rotation * Math.PI) / 180;
+        const drawWidth = imgWidth * finalScale * previewScale;
+        const drawHeight = imgHeight * finalScale * previewScale;
+
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        previewCtx.save();
+        previewCtx.translate(
+            previewCanvas.width / 2 + clamped.tx * previewScale,
+            previewCanvas.height / 2 + clamped.ty * previewScale
+        );
+        previewCtx.rotate(rad);
+        previewCtx.scale(flipHorizontal ? -1 : 1, flipVertical ? -1 : 1);
+        previewCtx.imageSmoothingEnabled = true;
+        previewCtx.imageSmoothingQuality = 'high';
+        previewCtx.drawImage(
+            img,
+            -drawWidth / 2,
+            -drawHeight / 2,
+            drawWidth,
+            drawHeight
+        );
+        previewCtx.restore();
+
+        return previewCanvas;
+    }, [
+        calculateOverlay,
+        clampTranslateToCoverOverlay,
+        computeCoverScaleForOverlay,
+        flipHorizontal,
+        flipVertical,
+        rotation,
+        scale,
+        translateX,
+        translateY,
+    ]);
+
+    useEffect(() => {
+        if (!isPortraitPhoto) {
+            setPhotoValidation({
+                isValid: true,
+                blockingReasons: [],
+                warnings: [],
+                metrics: null,
+                checking: false,
+            });
+            return;
+        }
+
+        if (!imageRef.current || !containerRef.current) {
+            setPhotoValidation((prev) => ({
+                ...prev,
+                isValid: false,
+                checking: true,
+            }));
+            return;
+        }
+
+        let cancelled = false;
+        const timer = window.setTimeout(async () => {
+            const previewCanvas = buildPortraitPreviewCanvas();
+            if (!previewCanvas) return;
+
+            setPhotoValidation((prev) => ({
+                ...prev,
+                checking: true,
+            }));
+
+            try {
+                const result = await validatePortraitPreviewCanvas(previewCanvas, { stage: 'editor' });
+                if (!cancelled) {
+                    setPhotoValidation({
+                        ...result,
+                        checking: false,
+                    });
+                }
+            } catch {
+                if (!cancelled) {
+                    setPhotoValidation({
+                        isValid: false,
+                        blockingReasons: ['Không thể kiểm tra ảnh 3x4 này. Vui lòng chọn ảnh nền xanh rõ hơn.'],
+                        warnings: [],
+                        metrics: null,
+                        checking: false,
+                    });
+                }
+            }
+        }, 120);
+
+        return () => {
+            cancelled = true;
+            window.clearTimeout(timer);
+        };
+    }, [
+        buildPortraitPreviewCanvas,
+        imageFile,
+        isPortraitPhoto,
+        scale,
+        translateX,
+        translateY,
+        rotation,
+        flipHorizontal,
+        flipVertical,
+    ]);
+
     // Draw overlay template guide
     const drawOverlay = useCallback((ctx, canvasWidth, canvasHeight) => {
         const container = containerRef.current;
@@ -302,7 +461,36 @@ export default function ImageEditor({
         ctx.lineTo(overlayX + overlayWidth, overlayY + overlayHeight);
         ctx.lineTo(overlayX + overlayWidth, overlayY + overlayHeight - cornerSize);
         ctx.stroke();
-    }, [calculateOverlay]);
+
+        if (type === 'photo_3x4') {
+            const centerLineX = overlayX + overlayWidth / 2;
+            const headGuideY = overlayY + overlayHeight * 0.12;
+            const shoulderGuideY = overlayY + overlayHeight * 0.62;
+
+            ctx.save();
+            ctx.setLineDash([8, 8]);
+            ctx.strokeStyle = 'rgba(167, 243, 208, 0.95)';
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.moveTo(centerLineX, overlayY + 10);
+            ctx.lineTo(centerLineX, overlayY + overlayHeight - 10);
+            ctx.stroke();
+
+            ctx.strokeStyle = 'rgba(125, 211, 252, 0.9)';
+            ctx.beginPath();
+            ctx.moveTo(overlayX + 12, headGuideY);
+            ctx.lineTo(overlayX + overlayWidth - 12, headGuideY);
+            ctx.stroke();
+
+            ctx.strokeStyle = 'rgba(253, 224, 71, 0.9)';
+            ctx.beginPath();
+            ctx.moveTo(overlayX + 18, shoulderGuideY);
+            ctx.lineTo(overlayX + overlayWidth - 18, shoulderGuideY);
+            ctx.stroke();
+            ctx.restore();
+        }
+    }, [calculateOverlay, type]);
 
     // Draw image with transformations
     const drawImage = useCallback(() => {
@@ -690,12 +878,23 @@ export default function ImageEditor({
         };
     }, []); // Empty deps - handlers use refs
 
-    // Wheel zoom
-    const handleWheel = (e) => {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        handleZoom(delta);
-    };
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const wheelHandler = (event: WheelEvent) => {
+            if (event.cancelable) {
+                event.preventDefault();
+            }
+            const delta = event.deltaY > 0 ? -0.1 : 0.1;
+            handleZoom(delta);
+        };
+
+        container.addEventListener('wheel', wheelHandler, { passive: false });
+        return () => {
+            container.removeEventListener('wheel', wheelHandler);
+        };
+    }, [handleZoom]);
 
     // Confirm and crop - Crop trực tiếp từ canvas đã vẽ để đảm bảo khớp 100%
     const handleConfirm = async () => {
@@ -776,7 +975,11 @@ export default function ImageEditor({
         );
 
         // Crop trực tiếp từ canvas đã vẽ (high quality)
-        const qualityScale = 2;
+        const sourceToOverlayRatio = Math.min(
+            img.width / Math.max(finalOverlayWidth, 1),
+            img.height / Math.max(finalOverlayHeight, 1)
+        );
+        const qualityScale = Math.max(2, Math.min(6, Math.ceil(sourceToOverlayRatio)));
         const finalWidth = finalOverlayWidth * qualityScale;
         const finalHeight = finalOverlayHeight * qualityScale;
         
@@ -834,6 +1037,48 @@ export default function ImageEditor({
         { key: 'reset', label: 'Đặt lại', icon: RotateCcw, onClick: handleReset, active: false },
     ];
 
+    const displayTypeLabels = {
+        cccd_front: 'CCCD mặt trước',
+        cccd_back: 'CCCD mặt sau',
+        photo_3x4: 'Ảnh 3x4'
+    };
+
+    const portraitBlockingReason = isPortraitPhoto ? photoValidation.blockingReasons[0] : '';
+    const canConfirm = isPortraitPhoto
+        ? !photoValidation.checking
+        : !documentCheckState || documentCheckState !== 'checking';
+    const statusVariant = isPortraitPhoto
+        ? (photoValidation.checking ? 'checking' : photoValidation.isValid ? 'detected' : 'manual')
+        : documentCheckState;
+    const statusBadgeText = isPortraitPhoto
+        ? (photoValidation.checking ? 'Đang kiểm tra' : photoValidation.isValid ? 'Đạt chuẩn sơ bộ' : 'Chưa đạt')
+        : (documentCheckState === 'detected' ? 'Auto-fit' : documentCheckState === 'checking' ? 'Đang đọc' : 'Chỉnh tay');
+    const displayStatusText = isPortraitPhoto
+        ? (
+            photoValidation.checking
+                ? 'Đang kiểm tra nền xanh, độ rõ nét và bố cục đầu-vai trong khung 3x4.'
+                : photoValidation.isValid
+                    ? 'Ảnh đã đạt kiểm tra cơ bản theo yêu cầu nền xanh, rõ nét và bố cục đầu-vai.'
+                    : portraitBlockingReason
+                        ? `${portraitBlockingReason} Bạn vẫn có thể gửi để AI thử chỉnh lại, nhưng kết quả không được đảm bảo đỗ chuẩn.`
+                        : 'Ảnh chưa đạt yêu cầu. Bạn vẫn có thể gửi để AI thử chỉnh lại, nhưng nên thay ảnh gốc tốt hơn nếu có.'
+        )
+        : statusText;
+    const displayStageHint = isPortraitPhoto
+        ? 'Ưu tiên ảnh nền xanh, rõ nét, chính diện, đầu-vai cân đối. Nếu ảnh chưa đạt, bạn vẫn có thể gửi cho AI thử chỉnh nhưng hệ thống không đảm bảo cứu được mọi ảnh.'
+        : stageHint;
+    const confirmButtonLabel = isPortraitPhoto && !photoValidation.checking && !photoValidation.isValid
+        ? 'Thử AI chỉnh'
+        : 'Xác nhận';
+    const displayControlItems = [
+        { key: 'zoom-out', label: 'Thu nhỏ', icon: ZoomOut, onClick: () => handleZoom(-0.2), active: false },
+        { key: 'zoom-in', label: 'Phóng to', icon: ZoomIn, onClick: () => handleZoom(0.2), active: false },
+        { key: 'rotate', label: 'Xoay', icon: RotateCw, onClick: handleRotate, active: false },
+        { key: 'flip-h', label: 'Lật ngang', icon: FlipHorizontal, onClick: handleFlipHorizontal, active: flipHorizontal },
+        { key: 'flip-v', label: 'Lật dọc', icon: FlipVertical, onClick: handleFlipVertical, active: flipVertical },
+        { key: 'reset', label: 'Đặt lại', icon: RotateCcw, onClick: handleReset, active: false },
+    ];
+
     if (typeof document === 'undefined') {
         return null;
     }
@@ -880,14 +1125,14 @@ export default function ImageEditor({
             <div className="image-editor-content" onClick={(e) => e.stopPropagation()}>
                 <div className="image-editor-header">
                     <div className="image-editor-header-copy">
-                        <span className="image-editor-eyebrow">Document Scan</span>
+                        <span className="image-editor-eyebrow">{isPortraitPhoto ? '\u1ea2nh th\u1ebb' : 'Document Scan'}</span>
                         <div className="image-editor-title-row">
-                            <h3>Chỉnh sửa {typeLabels[type] || type}</h3>
-                            <span className={`image-editor-status-badge status-${documentCheckState}`}>
-                                {documentCheckState === 'detected' ? 'Auto-fit' : documentCheckState === 'checking' ? 'Đang đọc' : 'Chỉnh tay'}
+                            <h3>{`\u0043h\u1ec9nh s\u1eeda ${displayTypeLabels[type] || type}`}</h3>
+                            <span className={`image-editor-status-badge status-${statusVariant}`}>
+                                {statusBadgeText}
                             </span>
                         </div>
-                        <p className="image-editor-subtitle">{statusText}</p>
+                        <p className="image-editor-subtitle">{displayStatusText}</p>
                     </div>
                     <button type="button" className="editor-close-btn" onClick={onCancel}>
                         <X size={24} />
@@ -897,12 +1142,12 @@ export default function ImageEditor({
                 <div className="image-editor-stage-summary">
                     <div className="image-editor-guidance-card">
                         <span className="image-editor-guidance-label">Mẹo căn khung</span>
-                        <p>{stageHint}</p>
+                        <p>{displayStageHint}</p>
                     </div>
                     <div className="image-editor-telemetry">
                         <span>{Math.round(scale * 100)}% zoom</span>
                         <span>{rotation}° xoay</span>
-                        <span>Kéo ảnh để canh</span>
+                        <span>{isPortraitPhoto ? 'Canh đầu và vai trong khung' : 'Kéo ảnh để canh'}</span>
                     </div>
                 </div>
 
@@ -913,13 +1158,12 @@ export default function ImageEditor({
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
-                    onWheel={handleWheel}
                 >
                     <canvas ref={canvasRef} className="image-editor-canvas" />
                 </div>
 
                 <div className="image-editor-controls">
-                    {controlItems.map((item) => {
+                    {displayControlItems.map((item) => {
                         const Icon = item.icon;
                         return (
                             <button
@@ -938,11 +1182,11 @@ export default function ImageEditor({
 
                 <div className="image-editor-actions">
                     <button type="button" className="editor-action-btn cancel-btn" onClick={onCancel}>
-                        Hủy
+                        {'H\u1ee7y'}
                     </button>
-                    <button type="button" className="editor-action-btn confirm-btn" onClick={handleConfirm}>
+                    <button type="button" className="editor-action-btn confirm-btn" onClick={handleConfirm} disabled={!canConfirm}>
                         <Check size={18} />
-                        Xác nhận
+                        {confirmButtonLabel}
                     </button>
                 </div>
             </div>

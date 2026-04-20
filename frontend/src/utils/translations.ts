@@ -21,6 +21,7 @@ export const translations = {
     life: 'Đời sống HUB',
     units: 'Đơn vị HUB',
     guides: 'Hướng dẫn',
+    feedback: 'Feedback',
 
     // Actions
     login: 'Đăng nhập',
@@ -198,6 +199,7 @@ export const translations = {
     life: 'HUB Life',
     units: 'HUB Units',
     guides: 'Guides',
+    feedback: 'Feedback',
 
     // Actions
     login: 'Login',

@@ -3,6 +3,7 @@ import { Award, Download, QrCode, Share2, X, CheckCircle, Star } from 'lucide-re
 import api from '../../../services/api';
 import PullToRefreshWrapper from '../../../components/ui/PullToRefreshWrapper';
 import { getStorageValue } from '../../../utils/browser-storage.js';
+import OverlayPortal from '../../../components/ui/OverlayPortal';
 
 const formatDate = (date) => {
     if (!date) return '';
@@ -81,11 +82,12 @@ const CertificateDetailSheet = ({ certificate, onClose, onDownload, onShare }) =
     const level = certificate.level || certificate.cap_do || '';
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/60 backdrop-blur-sm" onClick={onClose}>
-            <div
-                className="bg-white w-full max-h-[90vh] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-            >
+        <OverlayPortal>
+            <div className="fixed inset-0 z-[100000] flex items-end bg-black/60 backdrop-blur-sm" onClick={onClose}>
+                <div
+                    className="bg-white w-full max-h-[90vh] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
+                    onClick={(e) => e.stopPropagation()}
+                >
                 <div className="relative bg-gradient-to-br from-amber-500 to-yellow-600 px-6 pt-8 pb-6">
                     <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full bg-white/20 backdrop-blur-sm">
                         <X size={20} className="text-white" />
@@ -132,8 +134,9 @@ const CertificateDetailSheet = ({ certificate, onClose, onDownload, onShare }) =
                         </button>
                     </div>
                 </div>
+                </div>
             </div>
-        </div>
+        </OverlayPortal>
     );
 };
 

@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react';
 import api from '../../../services/api';
+import '../../../styles/admin/AdminModern.css';
 import '../../../styles/admin/AdminDashboard.css';
+import './HomepageManagement.css';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
+import { Home, Save } from 'lucide-react';
+import { AdminPageHeader, AdminSummaryPill } from '../shared/AdminPageHeader';
+import AdminLoadingState from '../../../components/admin/AdminLoadingState';
 
 export default function HomepageManagement({ toast }) {
   const [settings, setSettings] = useState({
@@ -59,7 +64,7 @@ export default function HomepageManagement({ toast }) {
       await api.updateHomepageSettings(settings);
       toast?.success('Đã lưu cài đặt thành công!');
     } catch (error) {
-      alert('Lỗi: ' + error.message);
+      toast?.error('Lỗi: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -67,21 +72,35 @@ export default function HomepageManagement({ toast }) {
 
   if (loadingData) {
     return (
-      <div className="content-section">
-        <h1>Quản lý Homepage</h1>
-        <div className="loading">Đang tải cài đặt...</div>
+      <div className="admin-page">
+        <AdminLoadingState
+          title="Đang tải cấu hình trang chủ"
+          hint="Cấu hình trang chủ được khôi phục để bạn chỉnh nội dung công khai mà không phải tải lại toàn bộ admin."
+          variant="dashboard"
+          accent="emerald"
+        />
       </div>
     );
   }
 
   return (
     <div className="homepage-management-page">
-      <div className="homepage-page-header">
-        <h1>🏠 Quản lý Homepage</h1>
-        <button onClick={handleSave} className="btn btn-primary" disabled={loading}>
-          {loading ? 'Đang lưu...' : '💾 Lưu thay đổi'}
-        </button>
-      </div>
+      <AdminPageHeader
+        icon={Home}
+        title="Trang chủ"
+        description="Điều phối các section công khai của landing page mà không phải chạm vào code hiển thị."
+        pills={(
+          <>
+            <AdminSummaryPill>Hero {settings.bannerEnabled ? 'Bật' : 'Tắt'}</AdminSummaryPill>
+            <AdminSummaryPill>CTA {settings.ctaEnabled ? 'Bật' : 'Tắt'}</AdminSummaryPill>
+          </>
+        )}
+        actions={(
+          <button onClick={handleSave} className="btn btn-primary" disabled={loading}>
+            <Save size={16} /> {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
+          </button>
+        )}
+      />
 
       <div className="homepage-settings-section">
         {/* Hiển thị Sections */}

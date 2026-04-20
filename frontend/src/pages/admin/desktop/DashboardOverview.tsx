@@ -16,6 +16,7 @@ import '../../../styles/admin/AdminModern.css';
 import AdminLoadingState from '../../../components/admin/AdminLoadingState';
 import { ADMIN_CACHE_KEYS, ADMIN_CACHE_TTL, clearAdminCache, getAdminCache, setAdminCache } from '../shared/admin-cache';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
+import { AdminPageHeader, AdminSummaryPill } from '../shared/AdminPageHeader';
 
 function OverviewStatCard({ icon: Icon, label, value, tone }: {
   icon: any; label: string; value: any; tone: string;
@@ -148,31 +149,31 @@ export default function DashboardOverview({ toast, onNavigate }: { toast?: any; 
 
   return (
     <div className="admin-page">
-      <div className="admin-header">
-        <div className="flex items-center justify-between gap-4">
-          <h1>
-            <BarChart2 size={28} />
-            Tổng quan
-          </h1>
-          <div className="flex items-center gap-3">
-            {lastUpdated && (
-              <span className="text-xs font-medium text-slate-400">
-                {lastUpdated.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            )}
-            <button
-              onClick={() => {
-                clearAdminCache(ADMIN_CACHE_KEYS.dashboardOverview);
-                void load(true);
-              }}
-              disabled={refreshing}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-all disabled:opacity-50"
-            >
-              <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
-            </button>
-          </div>
-        </div>
-      </div>
+      <AdminPageHeader
+        icon={BarChart2}
+        title="Tổng quan"
+        description="Theo dõi nhanh nhịp vận hành của admin và đi thẳng tới các module cần xử lý."
+        pills={(
+          <>
+            <AdminSummaryPill>Học viên {stats?.studentCount ?? '—'}</AdminSummaryPill>
+            <AdminSummaryPill>Lớp học {stats?.classCount ?? '—'}</AdminSummaryPill>
+            {lastUpdated ? <AdminSummaryPill>Cập nhật {lastUpdated.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</AdminSummaryPill> : null}
+          </>
+        )}
+        actions={(
+          <button
+            onClick={() => {
+              clearAdminCache(ADMIN_CACHE_KEYS.dashboardOverview);
+              void load(true);
+            }}
+            disabled={refreshing}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-all disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+            Làm mới
+          </button>
+        )}
+      />
 
       <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', marginBottom: 0 }}>
         <OverviewStatCard icon={Users} label="Học viên" value={stats?.studentCount} tone="primary" />

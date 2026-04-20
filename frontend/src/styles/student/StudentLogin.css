@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  padding: clamp(30px, 5vw, 60px) clamp(15px, 3vw, 20px);
   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
   position: relative;
   overflow: hidden;
@@ -45,8 +45,8 @@
 
 .login-card {
   background: white;
-  border-radius: 20px;
-  padding: 50px 40px;
+  border-radius: clamp(14px, 3vw, 20px);
+  padding: clamp(30px, 5vw, 50px) clamp(20px, 4vw, 40px);
   box-shadow: 0 20px 80px rgba(76, 175, 80, 0.15);
   border: 1px solid rgba(76, 175, 80, 0.1);
 }
@@ -54,9 +54,9 @@
 .login-card h1 {
   text-align: center;
   color: #2c3e50;
-  font-size: 36px;
+  font-size: clamp(26px, 5vw, 36px);
   font-weight: 800;
-  margin-bottom: 15px;
+  margin-bottom: clamp(10px, 2vw, 15px);
   letter-spacing: -0.5px;
   background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
   -webkit-background-clip: text;
@@ -67,19 +67,19 @@
 .login-subtitle {
   text-align: center;
   color: #5a6c7d;
-  margin-bottom: 35px;
-  font-size: 16px;
+  margin-bottom: clamp(25px, 4vw, 35px);
+  font-size: clamp(14px, 2.5vw, 16px);
   line-height: 1.6;
 }
 
 .error-box {
-  padding: 18px 24px;
+  padding: clamp(14px, 2.5vw, 18px) clamp(18px, 3vw, 24px);
   background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
   color: #721c24;
   border: 2px solid #f1b0b7;
-  border-radius: 12px;
-  margin-bottom: 25px;
-  font-size: 15px;
+  border-radius: clamp(8px, 2vw, 12px);
+  margin-bottom: clamp(18px, 3vw, 25px);
+  font-size: clamp(13px, 2vw, 15px);
   font-weight: 500;
   animation: slideDown 0.3s ease-out;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -97,15 +97,15 @@
 }
 
 .form-group {
-  margin-bottom: 24px;
+  margin-bottom: clamp(18px, 3vw, 24px);
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: clamp(8px, 1.5vw, 10px);
   color: #2c3e50;
   font-weight: 600;
-  font-size: 15px;
+  font-size: clamp(13px, 2vw, 15px);
   letter-spacing: -0.2px;
 }
 
@@ -117,10 +117,10 @@
 
 .form-group input {
   width: 100%;
-  padding: 14px 18px;
+  padding: clamp(12px, 2vw, 14px) clamp(14px, 2.5vw, 18px);
   border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  font-size: 15px;
+  border-radius: clamp(8px, 2vw, 12px);
+  font-size: clamp(13px, 2vw, 15px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: #ffffff;
   color: #2c3e50;
@@ -140,18 +140,18 @@
 
 .field-hint {
   display: block;
-  margin-top: 8px;
-  font-size: 13px;
+  margin-top: clamp(6px, 1vw, 8px);
+  font-size: clamp(11px, 1.5vw, 13px);
   color: #78909c;
   font-style: italic;
 }
 
 .btn-login-submit {
   width: 100%;
-  padding: 18px;
+  padding: clamp(14px, 2.5vw, 18px);
   border: none;
-  border-radius: 12px;
-  font-size: 17px;
+  border-radius: clamp(8px, 2vw, 12px);
+  font-size: clamp(15px, 2.5vw, 17px);
   font-weight: 700;
   cursor: pointer;
   background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
@@ -162,7 +162,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   box-shadow: 0 8px 24px rgba(76, 175, 80, 0.3);
-  margin-top: 10px;
+  margin-top: clamp(8px, 1.5vw, 10px);
 }
 
 .btn-login-submit::before {
@@ -199,23 +199,23 @@
 }
 
 .login-footer {
-  margin-top: 35px;
+  margin-top: clamp(25px, 4vw, 35px);
   text-align: center;
-  padding-top: 25px;
+  padding-top: clamp(18px, 3vw, 25px);
   border-top: 2px solid #e8f5e9;
 }
 
 .login-footer p {
   color: #5a6c7d;
-  margin-bottom: 12px;
-  font-size: 15px;
+  margin-bottom: clamp(10px, 1.5vw, 12px);
+  font-size: clamp(13px, 2vw, 15px);
 }
 
 .link-register {
   color: #4CAF50;
   text-decoration: none;
   font-weight: 700;
-  font-size: 16px;
+  font-size: clamp(14px, 2.5vw, 16px);
   transition: all 0.3s ease;
   display: inline-block;
   position: relative;

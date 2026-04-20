@@ -7,10 +7,45 @@ import {
   getAttendanceByRegistration,
   getAttendanceByClass,
   getAttendanceStats,
+  getOnlineAttendanceByStudent,
 } from '../db/attendance-queries.js';
 import { createActivityLog } from '../db/admin-queries.js';
 
 const attendance = new Hono<{ Bindings: Env; Variables: { user: JWTPayload; teacher: JWTPayload } }>();
+const ADMIN_ROLES = new Set(['admin', 'super_admin', 'teacher']);
+
+function isStaffUser(user: JWTPayload | null | undefined) {
+  if (!user) {
+    return false;
+  }
+
+  return (
+    ADMIN_ROLES.has(String(user.role || ''))
+    || user.type === 'admin'
+    || user.user_type === 'admin'
+  );
+}
+
+function getUserId(user: JWTPayload | null | undefined) {
+  const value = Number(user?.id ?? user?.userId ?? user?.sub);
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
+async function getRegistrationOwnerStudentId(db: D1Database, registrationId: number) {
+  if (registrationId < 0) {
+    return Math.abs(registrationId);
+  }
+
+  const row = await db.prepare(`
+    SELECT student_id
+    FROM registrations
+    WHERE id = ?
+    LIMIT 1
+  `).bind(registrationId).first<{ student_id?: number }>();
+
+  const ownerId = Number(row?.student_id);
+  return Number.isFinite(ownerId) && ownerId > 0 ? ownerId : null;
+}
 
 // ========================================
 // POST /attendance/batch - Mark attendance in batch
@@ -23,8 +58,7 @@ attendance.post('/batch', async (c) => {
       return errorResponse('Chưa đăng nhập', 401);
     }
     
-    const allowedRoles = ['admin', 'super_admin'];
-    if (!user.role || !allowedRoles.includes(user.role)) {
+    if (!user || !['admin', 'super_admin'].includes(String(user.role || ''))) {
       return errorResponse('Không có quyền điểm danh', 403);
     }
     
@@ -103,16 +137,22 @@ attendance.post('/batch', async (c) => {
       );
     }
     
+    const hasErrors = errors.length > 0;
+    const hasSuccess = results.length > 0;
+    const statusCode = hasErrors ? (hasSuccess ? 207 : 400) : 201;
+
     return jsonResponse({
-      success: true,
-      message: `Điểm danh thành công ${results.length}/${records.length} học viên`,
+      success: !hasErrors,
+      message: hasErrors
+        ? `Điểm danh thành công ${results.length}/${records.length} học viên`
+        : `Điểm danh thành công ${results.length}/${records.length} học viên`,
       data: {
         success_count: results.length,
         error_count: errors.length,
         results,
         errors: errors.length > 0 ? errors : undefined,
       },
-    }, 201);
+    }, statusCode);
   } catch (error: any) {
     return errorResponse('Lỗi điểm danh hàng loạt: ' + error.message, 500);
   }
@@ -130,8 +170,7 @@ attendance.post('/', async (c) => {
     }
     
     // Allow both admin and teacher to mark attendance
-    const allowedRoles = ['admin', 'super_admin', 'teacher'];
-    if (!user.role || !allowedRoles.includes(user.role)) {
+    if (!isStaffUser(user)) {
       return errorResponse('Không có quyền điểm danh', 403);
     }
     
@@ -177,12 +216,68 @@ attendance.post('/', async (c) => {
 });
 
 // ========================================
+// GET /attendance/student/:id/online - Get online attendance summary by student
+// ========================================
+attendance.get('/student/:id/online', async (c) => {
+  try {
+    const user = c.get('user') as any;
+    if (!user) {
+      return errorResponse('Chưa đăng nhập', 401);
+    }
+
+    const studentId = parseInt(c.req.param('id'));
+    if (!Number.isFinite(studentId) || studentId <= 0) {
+      return errorResponse('studentId không hợp lệ', 400);
+    }
+
+    if (!isStaffUser(user)) {
+      const userId = getUserId(user);
+      if (!userId || userId !== studentId) {
+        return errorResponse('Không có quyền xem điểm danh online này', 403);
+      }
+    }
+
+    const onlineAttendance = await getOnlineAttendanceByStudent(c.env.DB, studentId);
+
+    return jsonResponse({
+      success: true,
+      data: onlineAttendance,
+    });
+  } catch (error: any) {
+    return errorResponse('Lỗi lấy điểm danh online: ' + error.message, 500);
+  }
+});
+
+// ========================================
 // GET /attendance/registration/:id - Get attendance by registration
 // ========================================
 attendance.get('/registration/:id', async (c) => {
   try {
+    const user = c.get('user') as any;
+    if (!user) {
+      return errorResponse('Chưa đăng nhập', 401);
+    }
+
     const { id } = c.req.param();
-    const attendance = await getAttendanceByRegistration(c.env.DB, parseInt(id));
+    const registrationId = parseInt(id);
+    if (!Number.isFinite(registrationId)) {
+      return errorResponse('registrationId không hợp lệ', 400);
+    }
+
+    if (!isStaffUser(user)) {
+      const userId = getUserId(user);
+      const ownerStudentId = await getRegistrationOwnerStudentId(c.env.DB, registrationId);
+
+      if (!userId || !ownerStudentId) {
+        return errorResponse('Không tìm thấy dữ liệu điểm danh', 404);
+      }
+
+      if (userId !== ownerStudentId) {
+        return errorResponse('Không có quyền xem điểm danh này', 403);
+      }
+    }
+
+    const attendance = await getAttendanceByRegistration(c.env.DB, registrationId);
     
     return jsonResponse({
       success: true,
@@ -198,6 +293,11 @@ attendance.get('/registration/:id', async (c) => {
 // ========================================
 attendance.get('/class/:id', async (c) => {
   try {
+    const user = c.get('user') as any;
+    if (!isStaffUser(user)) {
+      return errorResponse('Không có quyền xem danh sách điểm danh lớp', 403);
+    }
+
     const { id } = c.req.param();
     const date = c.req.query('date');
     
@@ -215,8 +315,6 @@ attendance.get('/class/:id', async (c) => {
 });
 
 export default attendance;
-
-
 
 
 

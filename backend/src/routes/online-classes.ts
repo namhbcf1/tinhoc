@@ -20,6 +20,7 @@ import {
   approveEnrollmentById, rejectEnrollmentById, removeStudent,
   getAvailableStudents, findStudentForAuth,
   listEnrolledStudents, listActiveEnrollmentsWithStudents,
+  isWithinClassTime,
   listPendingEnrollmentsWithStudents, getClassForName
 } from '../lib/services/online-classes.js';
 
@@ -110,6 +111,37 @@ function getViewer(c: any) {
   };
 }
 
+function getDateInTimeZone(timezone: string) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone || 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
+function normalizeJoinSource(value: unknown, joinLink: string | null) {
+  const normalized = String(value ?? '').trim().toLowerCase();
+  if (normalized === 'meet_click' || normalized === 'zoom_click') {
+    return normalized;
+  }
+
+  const link = String(joinLink || '').toLowerCase();
+  return link.includes('meet.google.com') ? 'meet_click' : 'zoom_click';
+}
+
+function buildSessionScheduleTime(
+  startTime: string | null | undefined,
+  endTime: string | null | undefined,
+  fallbackScheduleTime: string | null | undefined
+) {
+  if (startTime && endTime) {
+    return `${String(startTime).slice(0, 5)}-${String(endTime).slice(0, 5)}`;
+  }
+
+  return fallbackScheduleTime || null;
+}
+
 // ─── Test/Debug Endpoints ────────────────────────────────────────────────────
 
 /**
@@ -184,6 +216,94 @@ onlineClasses.get('/', studentAuth, async (c) => {
 
   const result = await getClassList(db, c.req.query(), viewer);
   return successResponse(result);
+});
+
+// ─── Student: Lớp học của tôi + Zoom tracking ────────────────────────────────
+
+/**
+ * GET /online-classes/my-enrolled
+ * Danh sách lớp online học viên đang active, kèm meet_link + trạng thái session hôm nay.
+ * PHẢI đặt TRƯỚC /:id để tránh bị Hono capture nhầm.
+ */
+onlineClasses.get('/my-enrolled', studentAuth, async (c) => {
+  try {
+    const viewer = getViewer(c);
+    const studentId = viewer.studentId;
+    if (!studentId || !Number.isFinite(studentId) || studentId <= 0) {
+      return errorResponse('Không xác định được học viên', 401);
+    }
+
+    const db = c.env.DB;
+    const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+    const rows = await db.prepare(`
+      SELECT
+        oc.id            AS online_class_id,
+        oc.class_name,
+        oc.schedule_time,
+        oc.start_date,
+        oc.end_date,
+        oc.meet_link,
+        oc.teacher_name,
+        oc.source_exam_schedule_id,
+        oc.status        AS class_status,
+        oce.id           AS enrollment_id,
+        oce.status       AS enrollment_status,
+        ocs.id           AS today_session_id,
+        ocs.session_date AS today_session_date,
+        ocs.start_time   AS today_start_time,
+        ocs.end_time     AS today_end_time,
+        oca.status       AS today_attendance_status,
+        oca.checked_in_at AS today_checked_in_at,
+        oca.zoom_join_source AS today_zoom_source,
+        es.zoom_link     AS exam_zoom_link,
+        es.zoom_link_backup AS exam_zoom_backup,
+        es.zoom_meeting_id AS exam_zoom_meeting_id
+      FROM online_class_enrollments oce
+      JOIN online_classes oc ON oc.id = oce.online_class_id
+      LEFT JOIN online_class_sessions ocs
+        ON ocs.online_class_id = oc.id
+        AND ocs.session_date = ?
+      LEFT JOIN online_class_attendance oca
+        ON oca.session_id = ocs.id
+        AND oca.student_id = ?
+      LEFT JOIN exam_schedules es
+        ON es.id = oc.source_exam_schedule_id
+      WHERE oce.student_id = ?
+        AND oce.status IN ('active', 'approved', 'confirmed', 'enrolled')
+        AND COALESCE(oc.status, 'active') != 'deleted'
+      ORDER BY COALESCE(oc.start_date, oc.created_at) DESC, oc.id DESC
+    `).bind(todayStr, studentId, studentId).all();
+
+    const classes = (rows.results ?? []).map((row: any) => {
+      const joinLink: string | null =
+        row.meet_link || row.exam_zoom_link || row.exam_zoom_backup || null;
+      const joinedToday = row.today_attendance_status === 'present' ||
+        row.today_zoom_source === 'zoom_click';
+      return {
+        online_class_id:    Number(row.online_class_id),
+        class_name:         String(row.class_name || `Lớp #${row.online_class_id}`),
+        schedule_time:      row.schedule_time ? String(row.schedule_time) : null,
+        start_date:         row.start_date ? String(row.start_date) : null,
+        end_date:           row.end_date ? String(row.end_date) : null,
+        teacher_name:       row.teacher_name ? String(row.teacher_name) : null,
+        class_status:       String(row.class_status || 'active'),
+        enrollment_status:  String(row.enrollment_status || 'active'),
+        join_link:          joinLink,
+        today_session_id:   row.today_session_id ? Number(row.today_session_id) : null,
+        today_session_date: row.today_session_date ? String(row.today_session_date) : null,
+        today_start_time:   row.today_start_time ? String(row.today_start_time) : null,
+        today_end_time:     row.today_end_time ? String(row.today_end_time) : null,
+        today_attendance:   row.today_attendance_status ? String(row.today_attendance_status) : null,
+        today_checked_in_at: row.today_checked_in_at ? String(row.today_checked_in_at) : null,
+        joined_today:       joinedToday,
+      };
+    });
+
+    return successResponse(classes);
+  } catch (err: any) {
+    return errorResponse(err?.message || 'Lỗi khi tải lớp học của học viên', 500);
+  }
 });
 
 /**
@@ -558,6 +678,103 @@ onlineClasses.post('/:id/debug-sync-meet', authMiddleware, adminOnly, async (c) 
     debugInfo.error = error.message;
     debugInfo.error_stack = error.stack;
     return errorResponse('Lỗi khi sync meet_link: ' + error.message, 500);
+  }
+});
+
+/**
+ * POST /online-classes/:id/track-zoom-join
+ * Học viên bấm nút vào Zoom/Meet → gọi endpoint này trước khi mở link.
+ * Chỉ ghi nhận điểm danh khi đã có session hôm nay và đang trong khung giờ học.
+ * PHẢI đặt sau /:id/debug-sync-meet để không bị capture nhầm.
+ */
+onlineClasses.post('/:id/track-zoom-join', studentAuth, async (c) => {
+  try {
+    const viewer = getViewer(c);
+    const studentId = viewer.studentId;
+    if (!studentId || !Number.isFinite(studentId) || studentId <= 0) {
+      return errorResponse('Không xác định được học viên', 401);
+    }
+
+    const classId = Number.parseInt(c.req.param('id'), 10);
+    if (!Number.isFinite(classId) || classId <= 0) {
+      return errorResponse('classId không hợp lệ', 400);
+    }
+
+    const db = c.env.DB;
+
+    // 1. Kiểm tra enrollment hợp lệ
+    const enrollment = await db.prepare(`
+      SELECT oce.id, oc.meet_link, oc.source_exam_schedule_id, oc.timezone, oc.schedule_time,
+             es.zoom_link, es.zoom_link_backup
+      FROM online_class_enrollments oce
+      JOIN online_classes oc ON oc.id = oce.online_class_id
+      LEFT JOIN exam_schedules es ON es.id = oc.source_exam_schedule_id
+      WHERE oce.student_id = ?
+        AND oce.online_class_id = ?
+        AND oce.status IN ('active', 'approved', 'confirmed', 'enrolled')
+      LIMIT 1
+    `).bind(studentId, classId).first<any>();
+
+    if (!enrollment) {
+      return errorResponse('Bạn không thuộc lớp học này', 403);
+    }
+
+    const joinLink: string | null =
+      enrollment.meet_link || enrollment.zoom_link || enrollment.zoom_link_backup || null;
+
+    let body: Record<string, unknown> = {};
+    try {
+      body = await c.req.json();
+    } catch {
+      body = {};
+    }
+
+    const timezone = String(enrollment.timezone || 'Asia/Ho_Chi_Minh');
+    const todayStr = getDateInTimeZone(timezone);
+    const joinSource = normalizeJoinSource(body?.source, joinLink);
+
+    // 2. Chỉ dùng session hôm nay đã có sẵn, không tự tạo session giả.
+    const existingSession = await db.prepare(`
+      SELECT id, start_time, end_time
+      FROM online_class_sessions
+      WHERE online_class_id = ? AND session_date = ?
+      LIMIT 1
+    `).bind(classId, todayStr).first<{ id: number; start_time?: string | null; end_time?: string | null }>();
+
+    if (!existingSession?.id) {
+      return errorResponse('Chưa có buổi học nào của hôm nay để ghi nhận điểm danh tự động', 409);
+    }
+
+    const scheduleTime = buildSessionScheduleTime(
+      existingSession.start_time ?? null,
+      existingSession.end_time ?? null,
+      enrollment.schedule_time ? String(enrollment.schedule_time) : null
+    );
+    if (!scheduleTime || !isWithinClassTime(scheduleTime, timezone, 30, 30)) {
+      return errorResponse('Điểm danh tự động chỉ mở trong khung giờ buổi học hôm nay', 409);
+    }
+
+    // 3. Upsert điểm danh
+    await db.prepare(`
+      INSERT INTO online_class_attendance
+        (session_id, student_id, status, note, checked_in_at, zoom_join_source, created_at, updated_at)
+      VALUES (?, ?, 'present', 'Học viên vào phòng học trực tuyến', CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      ON CONFLICT(session_id, student_id) DO UPDATE SET
+        status           = 'present',
+        checked_in_at    = COALESCE(checked_in_at, CURRENT_TIMESTAMP),
+        zoom_join_source = excluded.zoom_join_source,
+        updated_at       = CURRENT_TIMESTAMP
+    `).bind(Number(existingSession.id), studentId, joinSource).run();
+
+    return successResponse({
+      tracked:    true,
+      session_id: Number(existingSession.id),
+      join_link:  joinLink,
+      source:     joinSource,
+      message:    'Điểm danh đã được ghi nhận tự động.',
+    });
+  } catch (err: any) {
+    return errorResponse(err?.message || 'Lỗi ghi điểm danh Zoom', 500);
   }
 });
 

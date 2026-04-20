@@ -5,6 +5,7 @@ import { cn } from '../../lib/utils';
 import api from '../../services/api';
 import { STUDENT_MAIN_MENU, openStudyPlatform } from '../../features/student/student-nav';
 import { getStorageValue, removeStorageValue } from '../../utils/browser-storage.js';
+import { applyImageFallback, resolveImageUrl } from '../../utils/imageUrl';
 import './DashboardSidebar.css';
 
 const StudentProfileEditor = lazy(() => import('../profile/StudentProfileEditor'));
@@ -37,6 +38,8 @@ export default function DashboardSidebar({
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [localData, setLocalData] = useState(() => studentDataProp || safeReadStudentData());
   const [currentStudent, setCurrentStudent] = useState(() => studentDataProp || safeReadStudentData());
+  const displayName = localData?.ho_ten_full || localData?.fullName || localData?.ten || 'Học viên';
+  const avatarUrl = resolveImageUrl(localData?.image_3x4 || localData?.photo_3x4_image_id || localData?.avatar);
 
   useEffect(() => {
     if (studentDataProp && Object.keys(studentDataProp).length > 0) {
@@ -115,15 +118,20 @@ export default function DashboardSidebar({
             data-tour="student-desktop-profile"
           >
             <div className="w-11 h-11 rounded-[14px] bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-600 shadow-inner group-hover:scale-105 transition-transform duration-300 shrink-0">
-              {(localData?.image_3x4 || localData?.avatar) ? (
-                <img src={localData.image_3x4 || localData.avatar} alt="Avatar" className="w-full h-full rounded-[12px] object-cover" />
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Avatar"
+                  className="w-full h-full rounded-[12px] object-cover"
+                  onError={(event) => applyImageFallback(event, displayName)}
+                />
               ) : (
                 <UserCircle size={26} strokeWidth={2} />
               )}
             </div>
             <div className="flex-1 min-w-0 overflow-hidden flex flex-col justify-center">
               <p className="text-[14px] font-bold text-slate-900 truncate group-hover:text-emerald-700 transition-colors leading-tight">
-                {localData.ho_ten_full || localData.fullName || localData.ten || 'Học viên'}
+                {displayName}
               </p>
               <div className="flex items-center gap-1.5 mt-1">
                 <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />

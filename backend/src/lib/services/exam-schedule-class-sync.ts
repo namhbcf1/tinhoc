@@ -67,6 +67,45 @@ function toTimeOnly(value: Date) {
   return `${pad2(value.getHours())}:${pad2(value.getMinutes())}`;
 }
 
+function parseDateOnly(value: string) {
+  const [year, month, day] = String(value || '').split('-').map((item) => Number.parseInt(item, 10));
+  return new Date(Date.UTC(year, (month || 1) - 1, day || 1));
+}
+
+function addDays(value: Date, amount: number) {
+  const copy = new Date(value.getTime());
+  copy.setUTCDate(copy.getUTCDate() + amount);
+  return copy;
+}
+
+function toDateOnlyFromDateTime(value: string | null | undefined) {
+  const normalized = normalizeString(value);
+  if (!normalized) {
+    return null;
+  }
+
+  const match = normalized.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match?.[1] ?? null;
+}
+
+function buildDateRange(startDate: string, endDate: string) {
+  const items: string[] = [];
+  const start = parseDateOnly(startDate);
+  const end = parseDateOnly(endDate);
+
+  for (let cursor = start; cursor.getTime() <= end.getTime(); cursor = addDays(cursor, 1)) {
+    items.push(toDateOnly(cursor));
+  }
+
+  return items;
+}
+
+const AUTO_LEARNING_SESSION_NOTE = 'Tự sinh từ lịch thi';
+
+function isAutoLearningSessionNote(value: unknown) {
+  return normalizeString(value) === AUTO_LEARNING_SESSION_NOTE;
+}
+
 async function findExamSchedule(db: D1Database, examScheduleId: number): Promise<ExamScheduleRow | null> {
   const row = await db.prepare(
     `
@@ -237,6 +276,156 @@ function buildClassSeed(schedule: ExamScheduleRow) {
   };
 }
 
+async function syncLearningSessionsForLinkedClass(
+  db: D1Database,
+  examScheduleId: number
+) {
+  const linkedClass = await findClassBySourceExamSchedule(db, examScheduleId);
+  if (!linkedClass) {
+    return { created: 0, updated: 0, deleted: 0, window_start: null, window_end: null };
+  }
+
+  const schedule = await findExamSchedule(db, examScheduleId);
+  const examDateKey = toDateOnlyFromDateTime(schedule?.exam_date);
+  const firstRegistration = await db.prepare(
+    `
+      SELECT MIN(date(created_at)) as first_registration_date
+      FROM exam_registrations
+      WHERE exam_id = ?
+        AND status IN ('approved', 'registered')
+    `
+  ).bind(examScheduleId).first<{ first_registration_date?: string | null }>();
+
+  const firstRegistrationDate = normalizeString(firstRegistration?.first_registration_date) || null;
+  const sessionWindowEndExclusive = examDateKey ? toDateOnly(addDays(parseDateOnly(examDateKey), -1)) : null;
+
+  let targetDates: string[] = [];
+  if (
+    firstRegistrationDate &&
+    sessionWindowEndExclusive &&
+    parseDateOnly(firstRegistrationDate).getTime() <= parseDateOnly(sessionWindowEndExclusive).getTime()
+  ) {
+    targetDates = buildDateRange(firstRegistrationDate, sessionWindowEndExclusive);
+  }
+
+  const scheduleTime = normalizeString(linkedClass.schedule_time) || normalizeString(schedule?.class_seed_schedule_time) || '08:00-10:00';
+  const [startTimeRaw, endTimeRaw] = scheduleTime.split('-');
+  const startTime = normalizeString(startTimeRaw) || '08:00';
+  const endTime = normalizeString(endTimeRaw) || '10:00';
+
+  const existingSessionsResult = await db.prepare(
+    `
+      SELECT
+        s.id,
+        s.session_date,
+        s.start_time,
+        s.end_time,
+        s.note,
+        EXISTS(
+          SELECT 1
+          FROM online_class_attendance a
+          WHERE a.session_id = s.id
+            AND (
+              COALESCE(a.status, 'pending') != 'pending'
+              OR a.checked_in_at IS NOT NULL
+              OR a.zoom_join_source IS NOT NULL
+              OR a.note IS NOT NULL
+            )
+          LIMIT 1
+        ) as has_attendance_history
+      FROM online_class_sessions s
+      WHERE s.online_class_id = ?
+      ORDER BY s.session_date ASC, s.id ASC
+    `
+  ).bind(linkedClass.id).all<{
+    id?: number;
+    session_date?: string | null;
+    start_time?: string | null;
+    end_time?: string | null;
+    note?: string | null;
+    has_attendance_history?: number | null;
+  }>();
+
+  const existingSessions = existingSessionsResult.results || [];
+  const existingByDate = new Map(
+    existingSessions
+      .map((row) => [normalizeString(row.session_date) || '', row] as const)
+      .filter(([date]) => Boolean(date))
+  );
+  const targetDateSet = new Set(targetDates);
+
+  let created = 0;
+  let updated = 0;
+  let deleted = 0;
+
+  for (const sessionDate of targetDates) {
+    const existingSession = existingByDate.get(sessionDate);
+    if (!existingSession) {
+      await db.prepare(
+        `
+          INSERT INTO online_class_sessions (
+            online_class_id,
+            session_date,
+            start_time,
+            end_time,
+            note
+          )
+          VALUES (?, ?, ?, ?, ?)
+        `
+      ).bind(linkedClass.id, sessionDate, startTime, endTime, AUTO_LEARNING_SESSION_NOTE).run();
+      created += 1;
+      continue;
+    }
+
+    if (!isAutoLearningSessionNote(existingSession.note)) {
+      continue;
+    }
+
+    const needsUpdate =
+      normalizeString(existingSession.start_time) !== startTime ||
+      normalizeString(existingSession.end_time) !== endTime ||
+      !isAutoLearningSessionNote(existingSession.note);
+
+    if (!needsUpdate) {
+      continue;
+    }
+
+    await db.prepare(
+      `
+        UPDATE online_class_sessions
+        SET start_time = ?,
+            end_time = ?,
+            note = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `
+    ).bind(startTime, endTime, AUTO_LEARNING_SESSION_NOTE, existingSession.id).run();
+    updated += 1;
+  }
+
+  for (const session of existingSessions) {
+    const sessionDate = normalizeString(session.session_date);
+    if (!sessionDate || targetDateSet.has(sessionDate) || !isAutoLearningSessionNote(session.note)) {
+      continue;
+    }
+
+    if (Number(session.has_attendance_history || 0) > 0) {
+      continue;
+    }
+
+    await db.prepare(`DELETE FROM online_class_sessions WHERE id = ?`).bind(session.id).run();
+    deleted += 1;
+  }
+
+  return {
+    created,
+    updated,
+    deleted,
+    window_start: targetDates[0] ?? null,
+    window_end: targetDates[targetDates.length - 1] ?? null,
+  };
+}
+
 async function cleanupClassScopedData(db: D1Database, classId: number) {
   const assignmentIds = await db.prepare(
     `SELECT id FROM assignments WHERE class_id = ?`
@@ -316,6 +505,13 @@ export async function syncLinkedOnlineClassForExamSchedule(
 
   const updated = await updateClassById(db, env, existing.id, payload);
   return updated;
+}
+
+export async function syncLinkedClassSessionsForExamSchedule(
+  db: D1Database,
+  examScheduleId: number
+) {
+  return syncLearningSessionsForLinkedClass(db, examScheduleId);
 }
 
 export async function syncApprovedExamRegistrationsToOnlineClass(db: D1Database, examScheduleId: number) {
@@ -431,6 +627,7 @@ export async function resyncAllLinkedOnlineClasses(
     }
 
     await syncLinkedOnlineClassForExamSchedule(db, env, row.id, actorId);
+    await syncLinkedClassSessionsForExamSchedule(db, row.id);
     liveScheduleIds.add(row.id);
     createdOrUpdated += 1;
   }

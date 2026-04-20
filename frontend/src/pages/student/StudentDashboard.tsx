@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, LogOut } from 'lucide-react';
 
@@ -11,14 +11,22 @@ import { isMobileDevice } from '../../utils/deviceDetection';
 import { loadStudentData, STUDENT_SESSION_UPDATED_EVENT } from '../../utils/studentDataLoader';
 
 const StudentExams = lazy(() => import('./desktop/StudentExams'));
+const AttendancePage = lazy(() => import('./desktop/AttendancePage'));
 const PersonalInfo = lazy(() => import('./desktop/PersonalInfo'));
+const StudentReviewsView = lazy(() => import('./desktop/StudentReviewsView'));
+const StudentFeedbackView = lazy(() => import('./desktop/StudentFeedbackView'));
+const StudentMyClassesView = lazy(() => import('./desktop/StudentMyClassesView'));
 
 // Mobile dashboard — lazy-loaded only khi cần
 const StudentDashboardMobile = lazy(() => import('./mobile/StudentDashboardMobile'));
 
-const TAB_MAP = {
-  exams: StudentExams,
-  profile: PersonalInfo,
+const TAB_MAP: Record<string, React.LazyExoticComponent<any>> = {
+  exams:         StudentExams,
+  'my-classes':  StudentMyClassesView,
+  attendance:    AttendancePage,
+  reviews:       StudentReviewsView,
+  feedback:      StudentFeedbackView,
+  profile:       PersonalInfo,
 };
 
 function getTabFromPath(pathname) {
@@ -28,6 +36,22 @@ function getTabFromPath(pathname) {
 
   if (pathname.includes('/profile')) {
     return 'profile';
+  }
+
+  if (pathname.includes('/my-classes')) {
+    return 'my-classes';
+  }
+
+  if (pathname.includes('/reviews')) {
+    return 'reviews';
+  }
+
+  if (pathname.includes('/feedback')) {
+    return 'feedback';
+  }
+
+  if (pathname.includes('/attendance')) {
+    return 'attendance';
   }
 
   for (const key of Object.keys(TAB_MAP)) {

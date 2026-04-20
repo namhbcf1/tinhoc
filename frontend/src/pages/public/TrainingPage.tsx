@@ -368,7 +368,7 @@ export default function TrainingPage() {
                       <td className="px-5 py-4 font-semibold text-emerald-700">{row.fee}</td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2">
-                          <Link to="/admissions" className="inline-block px-3 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold transition-colors whitespace-nowrap">
+                          <Link to="/register" className="inline-block px-3 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold transition-colors whitespace-nowrap">
                             Đăng ký
                           </Link>
                           <a href="tel:0962445963" className="inline-block px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors whitespace-nowrap">
@@ -559,7 +559,7 @@ export default function TrainingPage() {
           </div>
 
           <div className="text-center">
-            <Link to="/admissions">
+            <Link to="/register">
               <Button size="lg" className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-12 h-16 text-xl rounded-2xl shadow-xl shadow-slate-900/20 transition-all hover:scale-105 active:scale-95">
                 Bắt Đầu Hành Trình Ngay <ArrowRight className="ml-2" />
               </Button>
@@ -572,7 +572,7 @@ export default function TrainingPage() {
           <div className="container mx-auto px-4 text-center">
             <p className="text-slate-500 text-sm mb-4 font-medium">Khám phá thêm</p>
             <div className="flex flex-wrap justify-center gap-3">
-              <Link to="/admissions" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors shadow-sm">
+              <Link to="/register" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors shadow-sm">
                 Đăng ký tuyển sinh <ArrowRight size={14} />
               </Link>
               <Link to="/contact" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white border border-emerald-300 text-emerald-700 text-sm font-semibold hover:bg-emerald-50 transition-colors shadow-sm">

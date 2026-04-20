@@ -240,48 +240,48 @@ export default function ClassesManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Unified Main Content Card */}
-      <div className="admin-card unified-card">
-        {/* 1. Stats Section (Simplified for Classes) */}
-        <div className="admin-stats-unified">
-          <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 0 }}>
-            <div className="admin-stat-item" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(5b, 33, 182, 0.1)', color: '#5b21b6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={24} /></div>
-              <div><div style={{ fontSize: 24, fontWeight: 700, color: '#0f172a' }}>{classes.length}</div><div style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Tổng số lớp</div></div>
+      <div className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_24px_64px_-44px_rgba(15,23,42,0.24)]">
+        <div className="border-b border-slate-100 bg-[linear-gradient(180deg,rgba(248,250,252,0.92)_0%,rgba(255,255,255,1)_100%)] p-5">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-[24px] border border-violet-100 bg-violet-50/60 px-4 py-4 shadow-[0_16px_44px_-34px_rgba(124,58,237,0.35)]">
+              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Tổng số lớp</div>
+              <div className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-slate-950">{classes.length}</div>
+              <div className="mt-2 text-xs text-slate-500">Toàn bộ lớp legacy hiện đang quản lý.</div>
             </div>
-            <div className="admin-stat-item" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(22, 163, 74, 0.1)', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={24} /></div>
-              <div><div style={{ fontSize: 24, fontWeight: 700, color: '#0f172a' }}>{classes.filter(c => c.status === 'open').length}</div><div style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Đang mở đăng ký</div></div>
+            <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/60 px-4 py-4 shadow-[0_16px_44px_-34px_rgba(16,185,129,0.35)]">
+              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Mở đăng ký</div>
+              <div className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-slate-950">{classes.filter(c => c.status === 'open').length}</div>
+              <div className="mt-2 text-xs text-slate-500">Các lớp vẫn nhận hồ sơ mới.</div>
             </div>
-            <div className="admin-stat-item" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(37, 99, 235, 0.1)', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={24} /></div>
-              <div><div style={{ fontSize: 24, fontWeight: 700, color: '#0f172a' }}>{classes.filter(c => c.status === 'closed').length}</div><div style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Đã đóng đăng ký</div></div>
+            <div className="rounded-[24px] border border-blue-100 bg-blue-50/60 px-4 py-4 shadow-[0_16px_44px_-34px_rgba(37,99,235,0.28)]">
+              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Đã đóng</div>
+              <div className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-slate-950">{classes.filter(c => c.status === 'closed').length}</div>
+              <div className="mt-2 text-xs text-slate-500">Lớp đã chốt nhận học viên mới.</div>
             </div>
-            <div className="admin-stat-item" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(100, 116, 139, 0.1)', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={24} /></div>
-              <div><div style={{ fontSize: 24, fontWeight: 700, color: '#0f172a' }}>{classes.filter(c => c.status === 'finished').length}</div><div style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Đã kết thúc</div></div>
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 px-4 py-4 shadow-[0_16px_44px_-34px_rgba(15,23,42,0.22)]">
+              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Đã kết thúc</div>
+              <div className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-slate-950">{classes.filter(c => c.status === 'finished').length}</div>
+              <div className="mt-2 text-xs text-slate-500">Những lớp đã hoàn tất lộ trình.</div>
             </div>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="relative w-full xl:max-w-lg">
+              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <Input
+                placeholder="Tìm kiếm lớp học theo tên hoặc mã..."
+                className="h-11 rounded-2xl border-slate-200 bg-white pl-10 pr-4 shadow-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Button onClick={handleCreateClass} className="h-11 rounded-2xl bg-cyan-600 px-5 text-white shadow-[0_18px_36px_-24px_rgba(8,145,178,0.58)] hover:bg-cyan-700">
+              <Plus size={18} className="mr-2" /> Tạo lớp học
+            </Button>
           </div>
         </div>
 
-        {/* 2. Toolbar */}
-        <div className="admin-toolbar-unified">
-          <div style={{ flex: 1, minWidth: 300, display: 'flex', gap: 12, background: '#f8fafc', borderRadius: 12, padding: '12px 16px', border: '1px solid #e2e8f0', transition: 'all 0.2s' }}>
-            <Search size={20} color="#94a3b8" />
-            <Input
-              placeholder="Tìm kiếm lớp học theo tên hoặc mã..."
-              className="border-none shadow-none focus-visible:ring-0 text-base bg-transparent p-0 h-auto"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <Button onClick={handleCreateClass} className="bg-blue-600 hover:bg-blue-700 text-white shadow-md rounded-xl px-6 h-12">
-            <Plus size={18} className="mr-2" /> Tạo lớp học
-          </Button>
-        </div>
-
-        {/* 3. Content (Grid view as original, but inside unified card) */}
-        <div style={{ padding: 32, background: '#fcfcfc' }}>
+        <div className="bg-slate-50/65 p-6 md:p-7">
           {loading ? (
             <div className="text-center py-12 text-slate-500 font-medium">Đang tải dữ liệu...</div>
           ) : filteredClasses.length === 0 ? (
@@ -289,7 +289,8 @@ export default function ClassesManagement() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredClasses.map((cls) => (
-                <Card key={cls.id} className="hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group border-slate-200 rounded-2xl overflow-hidden" onClick={() => setViewingClassId(cls.id)}>
+                <Card key={cls.id} className="group cursor-pointer overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_16px_40px_-32px_rgba(15,23,42,0.3)] transition-all duration-300 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-[0_26px_52px_-34px_rgba(8,145,178,0.26)]" onClick={() => setViewingClassId(cls.id)}>
+                  <div className="h-1.5 w-full bg-[linear-gradient(90deg,#06b6d4_0%,#2563eb_100%)]" />
                   <CardHeader className="pb-3 pt-5 px-5">
                     <div className="flex justify-between items-start">
                       <Badge className={
@@ -317,13 +318,13 @@ export default function ClassesManagement() {
                         </Button>
                       </div>
                     </div>
-                    <CardTitle className="text-lg font-bold text-slate-900 line-clamp-2 mt-3 group-hover:text-blue-600 transition-colors">
-                      {cls.ten_lop}
-                    </CardTitle>
-                    <CardDescription className="text-xs font-mono bg-slate-100 text-slate-500 py-1 px-2 rounded-md inline-block mt-2 font-medium">
-                      {cls.ma_lop}
-                    </CardDescription>
-                  </CardHeader>
+                      <CardTitle className="mt-3 line-clamp-2 text-lg font-bold text-slate-900 transition-colors group-hover:text-cyan-700">
+                        {cls.ten_lop}
+                      </CardTitle>
+                      <CardDescription className="mt-2 inline-block rounded-full bg-slate-100 px-2.5 py-1 text-xs font-mono font-medium text-slate-500">
+                        {cls.ma_lop}
+                      </CardDescription>
+                    </CardHeader>
                   <CardContent className="pb-4 px-5 space-y-3">
                     <div className="flex items-center text-sm text-slate-600">
                       <Calendar size={16} className="mr-2.5 text-slate-400 shrink-0" />
@@ -340,12 +341,12 @@ export default function ClassesManagement() {
                       </div>
                     )}
                   </CardContent>
-                  <CardFooter className="pt-3 pb-4 px-5 border-t border-slate-50 bg-slate-50/50">
+                  <CardFooter className="border-t border-slate-100 bg-slate-50/70 px-5 pb-4 pt-3">
                     <div className="w-full flex justify-between items-center text-sm">
-                      <span className="font-bold text-blue-600 text-base">
+                      <span className="text-base font-bold text-cyan-700">
                         {cls.hoc_phi === 0 ? 'Liên hệ' : `${parseInt(cls.hoc_phi || 0).toLocaleString()} đ`}
                       </span>
-                      <div className="flex items-center text-slate-400 text-xs font-medium group-hover:text-blue-500 transition-colors">
+                      <div className="flex items-center text-xs font-medium text-slate-400 transition-colors group-hover:text-cyan-600">
                         Chi tiết <Plus size={12} className="ml-1" />
                       </div>
                     </div>

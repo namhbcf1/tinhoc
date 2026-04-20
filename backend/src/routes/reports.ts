@@ -119,7 +119,7 @@ reports.get('/certificates', async (c) => {
           strftime('%Y-%m', cert.issued_date) as month,
           COUNT(*) as count
         FROM certificates cert
-        WHERE cert.status = 'issued'
+        WHERE cert.status IN ('active', 'issued')
           AND strftime('%Y', cert.issued_date) = ?
         GROUP BY strftime('%Y-%m', cert.issued_date)
         ORDER BY month
@@ -143,7 +143,7 @@ reports.get('/certificates', async (c) => {
           COUNT(*) as count
         FROM certificates cert
         JOIN classes c ON cert.class_id = c.id
-        WHERE cert.status = 'issued'
+        WHERE cert.status IN ('active', 'issued')
           AND strftime('%Y', cert.issued_date) = ?
         GROUP BY c.id, c.ten_lop
         ORDER BY count DESC
@@ -240,7 +240,7 @@ reports.get('/summary', async (c) => {
     // Total certificates issued this year
     const certificatesResult = await c.env.DB.prepare(`
       SELECT COUNT(*) as count FROM certificates
-      WHERE status = 'issued' AND strftime('%Y', issued_date) = ?
+      WHERE status IN ('active', 'issued') AND strftime('%Y', issued_date) = ?
     `).bind(String(year)).first();
 
     return jsonResponse({

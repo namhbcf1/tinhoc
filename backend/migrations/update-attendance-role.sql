@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS attendance_new (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (registration_id) REFERENCES registrations(id) ON DELETE CASCADE,
     FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
-    UNIQUE(registration_id, attendance_date)
+    UNIQUE(registration_id, class_id, attendance_date)
 );
 
 -- 2. Copy data

@@ -10,6 +10,7 @@ import { Card, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
+import OverlayPortal from '../../../components/ui/OverlayPortal';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
@@ -95,11 +96,8 @@ export default function MobileAttendanceModule() {
     if (!selectedClass) return;
     setLoadingStudents(true);
     try {
-      let classId = selectedClass.class_id || selectedClass.id;
-      if (typeof classId === 'string' && classId.startsWith('online_')) {
-        classId = classId.replace('online_', '');
-      }
-      const response = await api.getOnlineClassEnrollments(classId);
+      const classId = selectedClass.class_id || selectedClass.id;
+      const response = await api.getRegistrationsByClass(classId);
       if (response?.success) {
         const list = Array.isArray(response.data)
           ? response.data
@@ -108,12 +106,17 @@ export default function MobileAttendanceModule() {
         // Mặc định: tất cả VẮNG, admin tick có mặt
         const defaultMap = {};
         list.forEach((s) => {
-          defaultMap[s.student_id || s.id] = false;
+          defaultMap[s.registration_id] = false;
         });
         setPresentMap(defaultMap);
+      } else {
+        setStudents([]);
+        setPresentMap({});
       }
     } catch (err) {
       console.error('Error loading students:', err);
+      setStudents([]);
+      setPresentMap({});
     } finally {
       setLoadingStudents(false);
     }
@@ -144,7 +147,7 @@ export default function MobileAttendanceModule() {
   const markAll = (present) => {
     const newMap = {};
     students.forEach((s) => {
-      newMap[s.student_id || s.id] = present;
+      newMap[s.registration_id] = present;
     });
     setPresentMap(newMap);
   };
@@ -158,12 +161,12 @@ export default function MobileAttendanceModule() {
       const classId = selectedClass.class_id || selectedClass.id;
 
       const records = students.map((s) => {
-        const sid = s.student_id || s.id;
+        const registrationId = s.registration_id;
         return {
-          student_id: sid,
+          registration_id: registrationId,
           class_id: classId,
-          date: dateStr,
-          status: presentMap[sid] ? 'present' : 'absent',
+          attendance_date: dateStr,
+          status: presentMap[registrationId] ? 'present' : 'absent',
         };
       });
 
@@ -241,14 +244,15 @@ export default function MobileAttendanceModule() {
 
       {/* Class picker modal */}
       {showClassPicker && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex items-end"
-          onClick={() => setShowClassPicker(false)}
-        >
+        <OverlayPortal>
           <div
-            className="bg-white w-full max-h-[70vh] rounded-t-3xl p-6 shadow-2xl overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[100000] bg-slate-900/30 backdrop-blur-sm flex items-end"
+            onClick={() => setShowClassPicker(false)}
           >
+            <div
+              className="bg-white w-full max-h-[70vh] rounded-t-3xl p-6 shadow-2xl overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5" />
             <h3 className="text-lg font-bold text-slate-800 mb-4">Chọn lớp học</h3>
             {loadingClasses ? (
@@ -291,8 +295,9 @@ export default function MobileAttendanceModule() {
                 ))}
               </div>
             )}
+            </div>
           </div>
-        </div>
+        </OverlayPortal>
       )}
 
       {/* Content khi đã chọn lớp */}
@@ -376,7 +381,7 @@ export default function MobileAttendanceModule() {
               ) : (
                 <div className="space-y-2">
                   {filteredStudents.map((student) => {
-                    const sid = student.student_id || student.id;
+                    const sid = student.registration_id;
                     const isPresent = !!presentMap[sid];
                     return (
                       <button

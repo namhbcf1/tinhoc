@@ -16,7 +16,7 @@
 
 .registration-container {
     background-color: var(--bg-main);
-    padding: 3rem 1rem;
+    padding: clamp(2rem, 5vw, 3rem) clamp(0.75rem, 2vw, 1rem);
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -29,9 +29,9 @@
     width: 100%;
     max-width: 900px;
     background: var(--card-bg);
-    border-radius: 1.5rem;
+    border-radius: clamp(1rem, 2vw, 1.5rem);
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-    padding: 3rem;
+    padding: clamp(2rem, 4vw, 3rem);
     position: relative;
     overflow: hidden;
 }
@@ -42,8 +42,8 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-    margin-bottom: 2.5rem;
-    padding-bottom: 2rem;
+    margin-bottom: clamp(1.75rem, 4vw, 3.25rem);
+    padding-bottom: clamp(1.4rem, 3vw, 2.6rem);
     border-bottom: 1px solid var(--input-border);
 }
 
@@ -51,12 +51,12 @@
     display: flex;
     justify-content: space-between;
     width: 100%;
-    margin-bottom: 2rem;
-    gap: 1rem;
+    margin-bottom: clamp(1.4rem, 3vw, 2.6rem);
+    gap: clamp(0.7rem, 1.5vw, 1.3rem);
 }
 
 .school-info {
-    font-size: 0.85rem;
+    font-size: clamp(0.7225rem, 1.2vw, 1.02rem);
     font-weight: 700;
     text-transform: uppercase;
     color: var(--text-main);
@@ -65,7 +65,7 @@
 }
 
 .national-title {
-    font-size: 0.85rem;
+    font-size: clamp(0.7225rem, 1.2vw, 1.02rem);
     font-weight: 700;
     text-transform: uppercase;
     text-align: right;
@@ -74,8 +74,8 @@
 .national-subtitle {
     font-style: italic;
     font-weight: 500;
-    font-size: 0.75rem;
-    margin-top: 0.2rem;
+    font-size: clamp(0.6375rem, 1vw, 0.9rem);
+    margin-top: clamp(0.14rem, 0.3vw, 0.26rem);
 }
 
 .main-title-box {
@@ -83,14 +83,14 @@
 }
 
 .form-title {
-    font-size: 1.75rem;
+    font-size: clamp(1.4875rem, 2.5vw, 2.1rem);
     font-weight: 800;
     color: var(--primary);
-    margin-bottom: 0.5rem;
+    margin-bottom: clamp(0.35rem, 0.8vw, 0.6rem);
 }
 
 .form-subtitle {
-    font-size: 0.95rem;
+    font-size: clamp(0.8075rem, 1.3vw, 1.14rem);
     color: var(--text-muted);
     font-style: italic;
 }
@@ -99,17 +99,17 @@
 .section-header {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    margin: 2.5rem 0 1.5rem 0;
-    padding-bottom: 0.75rem;
+    gap: clamp(0.525rem, 1vw, 0.975rem);
+    margin: clamp(1.75rem, 4vw, 3.25rem) 0 clamp(1.05rem, 2.5vw, 1.95rem) 0;
+    padding-bottom: clamp(0.525rem, 1vw, 0.975rem);
     border-bottom: 2px solid #f1f5f9;
 }
 
 .section-icon {
     background: #fff1f2;
     color: var(--primary);
-    padding: 0.5rem;
-    border-radius: 0.75rem;
+    padding: clamp(0.35rem, 0.8vw, 0.65rem);
+    border-radius: clamp(0.6rem, 1.2vw, 0.9rem);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -117,7 +117,7 @@
 
 .section-title {
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: clamp(0.935rem, 1.5vw, 1.32rem);
     color: var(--text-main);
     text-transform: uppercase;
 }
@@ -126,7 +126,7 @@
 .modern-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
+    gap: clamp(1.05rem, 2vw, 1.95rem);
 }
 
 .grid-full {
@@ -136,29 +136,29 @@
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: clamp(0.35rem, 0.8vw, 0.65rem);
 }
 
 .field-label {
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: clamp(0.74375rem, 1.2vw, 1.05rem);
     color: var(--text-main);
 }
 
 .field-label .required {
     color: var(--error);
-    margin-left: 0.25rem;
+    margin-left: clamp(0.175rem, 0.4vw, 0.325rem);
 }
 
 .modern-input,
 .modern-select {
     width: 100%;
-    padding: 0.75rem 1rem;
+    padding: clamp(0.525rem, 1vw, 0.975rem) clamp(0.7rem, 1.5vw, 1.3rem);
     background: #fdfdfd;
     border: 1px solid var(--input-border);
-    border-radius: 0.75rem;
+    border-radius: clamp(0.6rem, 1.2vw, 0.9rem);
     font-family: inherit;
-    font-size: 0.95rem;
+    font-size: clamp(0.8075rem, 1.3vw, 1.14rem);
     transition: all 0.2s ease;
 }
 
@@ -176,16 +176,16 @@
 /* Radio Group */
 .modern-radio-group {
     display: flex;
-    gap: 1.5rem;
-    padding: 0.5rem 0;
+    gap: clamp(1.05rem, 2vw, 1.95rem);
+    padding: clamp(0.35rem, 0.8vw, 0.65rem) 0;
 }
 
 .radio-option {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: clamp(0.35rem, 0.8vw, 0.65rem);
     cursor: pointer;
-    font-size: 0.95rem;
+    font-size: clamp(0.8075rem, 1.3vw, 1.14rem);
 }
 
 .radio-option input {
@@ -198,241 +198,3 @@
 .upload-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-    margin-top: 1rem;
-}
-
-.upload-card {
-    border: 2px dashed var(--input-border);
-    border-radius: 1rem;
-    padding: 1.5rem;
-    text-align: center;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    position: relative;
-    background: #fafafa;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    min-height: 180px;
-}
-
-.upload-card:hover {
-    border-color: var(--primary);
-    background: #fff1f2;
-}
-
-.upload-card.has-file {
-    border-style: solid;
-    border-color: var(--success);
-    background: #f0fdf4;
-}
-
-.preview-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 0.5rem;
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
-.upload-info {
-    z-index: 1;
-}
-
-.upload-title {
-    font-weight: 600;
-    font-size: 0.85rem;
-    margin-top: 0.5rem;
-}
-
-.upload-hint {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-}
-
-.rule-btn {
-    font-size: 0.75rem;
-    color: var(--primary);
-    background: transparent;
-    border: none;
-    text-decoration: underline;
-    cursor: pointer;
-    margin-top: 0.5rem;
-}
-
-/* Modals */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 1rem;
-}
-
-.modal-content {
-    background: white;
-    border-radius: 1.5rem;
-    width: 100%;
-    max-width: 500px;
-    padding: 2rem;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    position: relative;
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-.modal-header {
-    text-align: center;
-    margin-bottom: 1.5rem;
-}
-
-.modal-title {
-    font-weight: 800;
-    color: #f97316;
-    text-transform: uppercase;
-    font-size: 1.25rem;
-}
-
-.modal-body img {
-    width: 100%;
-    border-radius: 0.75rem;
-    margin: 1rem 0;
-    border: 1px solid var(--input-border);
-}
-
-.modal-close-btn {
-    width: 100%;
-    background: #f97316;
-    color: white;
-    padding: 0.75rem;
-    border-radius: 0.75rem;
-    border: none;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 1rem;
-}
-
-/* Footer Section */
-.form-footer {
-    margin-top: 3rem;
-    padding-top: 2rem;
-    border-top: 1px solid var(--input-border);
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.commitment-section {
-    background: #f8fafc;
-    padding: 1.5rem;
-    border-radius: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.checkbox-label {
-    display: flex;
-    gap: 0.75rem;
-    align-items: flex-start;
-    font-size: 0.875rem;
-    cursor: pointer;
-    line-height: 1.4;
-}
-
-.checkbox-label input {
-    margin-top: 0.2rem;
-    accent-color: var(--primary);
-    width: 1.1rem;
-    height: 1.1rem;
-}
-
-/* Actions */
-.form-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-}
-
-.btn-secondary-modern {
-    background: transparent;
-    border: 1px solid var(--input-border);
-    color: var(--text-main);
-    padding: 0.875rem 1.5rem;
-    border-radius: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s;
-}
-
-.btn-secondary-modern:hover {
-    background: #f1f5f9;
-}
-
-.btn-primary-modern {
-    background: var(--primary);
-    border: none;
-    color: white;
-    padding: 0.875rem 2.5rem;
-    border-radius: 0.75rem;
-    font-weight: 700;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(224, 58, 62, 0.3);
-}
-
-.btn-primary-modern:hover {
-    background: var(--primary-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(224, 58, 62, 0.4);
-}
-
-.btn-primary-modern:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .registration-card {
-        padding: 1.5rem;
-    }
-
-    .modern-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .grid-full {
-        grid-column: span 1;
-    }
-
-    .branding-top {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-
-    .school-info,
-    .national-title {
-        text-align: center;
-    }
-
-    .upload-grid {
-        grid-template-columns: 1fr;
-    }
-}

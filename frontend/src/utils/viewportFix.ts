@@ -26,9 +26,9 @@ export function initViewportFix() {
   let lastTouchEnd = 0;
   document.addEventListener('touchend', (event) => {
     const now = Date.now();
-    if (now - lastTouchEnd <= 300) {
+    if (now - lastTouchEnd <= 300 && event.cancelable) {
       event.preventDefault();
     }
     lastTouchEnd = now;
-  }, false);
+  }, { passive: false });
 }

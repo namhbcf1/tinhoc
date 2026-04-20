@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Download, Eye, Trash2, Check, X, UserPlus, Search, Loader } from 'lucide-react';
-import api from '../../../services/api';
-import { formatDateVN } from '../../../utils/dateUtils';
-import { resolveImageUrl } from '../../../utils/imageUrl';
-import { Button } from '../../../components/ui/Button';
-import { Input } from '../../../components/ui/Input';
-import { Badge } from '../../../components/ui/Badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '../../../components/ui/Dialog';
-import { useToast } from '../../../components/ui/ToastContainer';
+import api from '../../../../services/api';
+import { formatDateVN } from '../../../../utils/dateUtils';
+import { resolveImageUrl } from '../../../../utils/imageUrl';
+import { Button } from '../../../../components/ui/Button';
+import { Input } from '../../../../components/ui/Input';
+import { Badge } from '../../../../components/ui/Badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '../../../../components/ui/Dialog';
+import { useToast } from '../../../../components/ui/ToastContainer';
 
 export default function ClassRegistrations({ classId }) {
     const { toast } = useToast();

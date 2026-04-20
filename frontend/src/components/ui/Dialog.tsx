@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useId } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from './Button';
+import { acquireOverlayLock, releaseOverlayLock, useOverlayLayer } from './overlay-lock';
 
 /**
  * Focusable element selectors for focus trap
@@ -28,15 +30,16 @@ const DialogContext = React.createContext(null);
 
 const Dialog = ({ open, onOpenChange, children }) => {
     const titleId = useId();
+    const overlayLayer = useOverlayLayer(open);
 
     useEffect(() => {
         if (open) {
-            document.body.style.overflow = 'hidden';
+            acquireOverlayLock();
         } else {
-            document.body.style.overflow = 'unset';
+            releaseOverlayLock();
         }
         return () => {
-            document.body.style.overflow = 'unset';
+            releaseOverlayLock();
         };
     }, [open]);
 
@@ -54,9 +57,9 @@ const Dialog = ({ open, onOpenChange, children }) => {
 
     if (!open) return null;
 
-    return (
+    const dialogTree = (
         <DialogContext.Provider value={{ titleId, onOpenChange }}>
-            <div className="fixed inset-0 z-[99999] flex items-center justify-center">
+            <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: overlayLayer }}>
                 {/* Backdrop — click outside to close */}
                 <div
                     className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity animate-in fade-in"
@@ -70,6 +73,12 @@ const Dialog = ({ open, onOpenChange, children }) => {
             </div>
         </DialogContext.Provider>
     );
+
+    if (typeof document === 'undefined') {
+        return dialogTree;
+    }
+
+    return createPortal(dialogTree, document.body);
 };
 
 /**

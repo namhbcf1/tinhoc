@@ -11,10 +11,11 @@ export default function SEO({
     structuredData,
     article,
     robots,
-    noindex = false
+    noindex = false,
+    lang = 'vi'
 }) {
     const siteTitle = 'VanTrangEdu - Tu Van Giao Duc Son Trang';
-    const defaultDescription = 'Van Trang Education cung cap dao tao ngoai ngu, luyen thi chung chi va tu van giao duc voi lo trinh thuc chien, ro rang va de tiep can.';
+    const defaultDescription = 'Van Trang Education (VanTrangEdu) cung cap dao tao ngoai ngu, luyen thi chung chi va tu van giao duc voi lo trinh thuc chien, ro rang va de tiep can.';
     const defaultImage = 'https://vantrangedu.com/og-image.jpg';
     const defaultImageWidth = '1200';
     const defaultImageHeight = '630';
@@ -30,9 +31,31 @@ export default function SEO({
         ? 'noindex, nofollow, noarchive'
         : (robots || 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
     const ogType = type || (article ? 'article' : 'website');
+    const pageLang = lang === 'en' ? 'en' : 'vi';
+    const pageLocale = pageLang === 'en' ? 'en_US' : 'vi_VN';
+    const resolvedStructuredData = structuredData
+        ? (
+            Array.isArray(structuredData)
+                ? { '@context': 'https://schema.org', '@graph': structuredData }
+                : { '@context': 'https://schema.org', ...structuredData }
+        )
+        : {
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            name: pageTitle,
+            description: pageDescription,
+            url: pageUrl,
+            inLanguage: pageLang,
+            isPartOf: {
+                '@type': 'WebSite',
+                name: 'VanTrangEdu',
+                url: siteUrl,
+            },
+        };
 
     return (
         <Helmet prioritizeSeoTags>
+            <html lang={pageLang} />
             <title>{pageTitle}</title>
             <meta name="description" content={pageDescription} />
             <meta name="author" content="Van Trang Education" />
@@ -49,7 +72,7 @@ export default function SEO({
             <meta property="og:image:height" content={pageImageHeight} />
             <meta property="og:image:alt" content={pageDescription} />
             <meta property="og:site_name" content="Van Trang Education" />
-            <meta property="og:locale" content="vi_VN" />
+            <meta property="og:locale" content={pageLocale} />
 
             <meta name="twitter:card" content="summary_large_image" />
             <meta name="twitter:site" content="@vantrangedu" />
@@ -74,15 +97,9 @@ export default function SEO({
                 </>
             )}
 
-            {structuredData && (
-                <script type="application/ld+json">
-                    {JSON.stringify(
-                        Array.isArray(structuredData)
-                            ? { '@context': 'https://schema.org', '@graph': structuredData }
-                            : { '@context': 'https://schema.org', ...structuredData }
-                    )}
-                </script>
-            )}
+            <script type="application/ld+json">
+                {JSON.stringify(resolvedStructuredData)}
+            </script>
         </Helmet>
     );
 }

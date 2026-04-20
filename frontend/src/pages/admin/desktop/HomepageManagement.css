@@ -1,8 +1,11 @@
 /* Homepage Management - Chuẩn Teachers */
 
 .homepage-management-page {
-  padding: 24px;
-  background: #f8f9fa;
+  width: 100%;
+  max-width: 1760px;
+  margin: 0 auto;
+  padding: clamp(22px, 2.3vw, 34px) clamp(18px, 2.6vw, 34px) 48px;
+  background: transparent;
   min-height: 100%;
   box-sizing: border-box;
 }
@@ -49,9 +52,9 @@
 /* Settings Section - Card Layout */
 .homepage-settings-section {
   background: white;
-  border-radius: 16px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 24px;
+  border: 1px solid rgba(219, 229, 222, 0.92);
+  box-shadow: 0 24px 60px -38px rgba(15, 23, 42, 0.2);
   padding: 24px;
   margin-bottom: 24px;
 }

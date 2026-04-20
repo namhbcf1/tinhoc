@@ -49,11 +49,13 @@ export async function getCertificateById(db: D1Database, id: number) {
       cert.*,
       s.ho_ten_full,
       s.cccd,
+      s.sdt,
+      s.dia_chi,
       c.ten_lop,
       c.ngay_thi
     FROM certificates cert
     JOIN students s ON cert.student_id = s.id
-    JOIN classes c ON cert.class_id = c.id
+    LEFT JOIN classes c ON cert.class_id = c.id
     WHERE cert.id = ?
   `).bind(id).first();
   return result;
@@ -68,15 +70,14 @@ export async function getCertificateByNumber(db: D1Database, certificateNumber: 
 
 export async function updateCertificateStatus(db: D1Database, id: number, status: string) {
   // Validate status
-  const validStatuses = ['active', 'issued', 'revoked'];
+  const validStatuses = ['active', 'revoked'];
   if (!validStatuses.includes(status)) {
     throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
   }
 
   const result = await db.prepare(`
     UPDATE certificates SET
-      status = ?,
-      updated_at = CURRENT_TIMESTAMP
+      status = ?
     WHERE id = ?
   `).bind(status, id).run();
 

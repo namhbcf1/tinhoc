@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Database } from 'lucide-react';
 import api from '../../../services/api';
 import AdminLoadingState from '../../../components/admin/AdminLoadingState';
 import ToastContainer, { useToast } from '../../../components/ui/ToastContainer';
@@ -9,6 +10,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { Textarea } from '../../../components/ui/Textarea';
 import { showError } from '../../../utils/errorHandler';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
+import { LearningInfoPill, LearningWorkspaceHeader } from '../shared/LearningWorkspaceHeader';
 
 const DELIVERY_MODE_OPTIONS = [
   { value: 'internal_training', label: 'Đào tạo nội bộ' },
@@ -29,29 +31,29 @@ const SCHEDULE_MODEL_OPTIONS = [
 ];
 
 const FIELD_TYPE_OPTIONS = [
-  'text',
-  'number',
-  'date',
-  'select',
-  'multi_select',
-  'toggle',
-  'link',
-  'file',
-  'rich_text',
-  'object',
-  'repeatable_group',
-  'computed',
+  { value: 'text', label: 'Văn bản ngắn' },
+  { value: 'number', label: 'Số' },
+  { value: 'date', label: 'Ngày' },
+  { value: 'select', label: 'Chọn 1' },
+  { value: 'multi_select', label: 'Chọn nhiều' },
+  { value: 'toggle', label: 'Bật / tắt' },
+  { value: 'link', label: 'Đường dẫn' },
+  { value: 'file', label: 'Tệp đính kèm' },
+  { value: 'rich_text', label: 'Nội dung dài (rich text)' },
+  { value: 'object', label: 'Đối tượng (object)' },
+  { value: 'repeatable_group', label: 'Nhóm lặp' },
+  { value: 'computed', label: 'Giá trị tính toán' },
 ];
 
 const TARGET_ENTITY_OPTIONS = [
-  { value: 'exam_schedule', label: 'exam_schedule' },
-  { value: 'online_class', label: 'online_class' },
-  { value: 'class_session', label: 'class_session' },
-  { value: 'document', label: 'document' },
-  { value: 'assignment', label: 'assignment' },
-  { value: 'practice_exam', label: 'practice_exam' },
-  { value: 'program', label: 'program' },
-  { value: 'program_level', label: 'program_level' },
+  { value: 'exam_schedule', label: 'Lịch thi (exam_schedule)' },
+  { value: 'online_class', label: 'Lớp online (online_class)' },
+  { value: 'class_session', label: 'Buổi học (class_session)' },
+  { value: 'document', label: 'Tài liệu (document)' },
+  { value: 'assignment', label: 'Bài tập (assignment)' },
+  { value: 'practice_exam', label: 'Đề luyện tập (practice_exam)' },
+  { value: 'program', label: 'Chương trình (program)' },
+  { value: 'program_level', label: 'Trình độ (program_level)' },
 ];
 
 const OWNER_ENTITY_TYPE_OPTIONS = [
@@ -78,12 +80,6 @@ const STEP_ITEMS = [
     number: '03',
     title: 'Trình độ',
     description: 'Level là tùy chọn theo từng chương trình. Không bắt buộc program nào cũng phải có.',
-  },
-  {
-    id: 'field',
-    number: '04',
-    title: 'Field mở',
-    description: 'Thêm field definition và option theo đúng owner đang quản lý.',
   },
 ] as const;
 
@@ -187,6 +183,14 @@ function getModeLabel(isEditing: boolean, noun: string) {
   return isEditing ? `Đang chỉnh sửa ${noun}` : `Tạo ${noun} mới`;
 }
 
+function getFieldTypeLabel(fieldType: string) {
+  return FIELD_TYPE_OPTIONS.find((item) => item.value === fieldType)?.label || fieldType;
+}
+
+function getTargetEntityLabel(targetEntityType: string) {
+  return TARGET_ENTITY_OPTIONS.find((item) => item.value === targetEntityType)?.label || targetEntityType;
+}
+
 function Toggle({
   label,
   checked,
@@ -221,11 +225,11 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[28px] border border-slate-200 bg-white/95 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur">
+    <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_22px_56px_-42px_rgba(15,23,42,0.28)]">
       <div className="mb-5 flex flex-col gap-3 border-b border-slate-100 pb-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-slate-950">{title}</h2>
-          {hint ? <p className="mt-1 max-w-2xl text-sm text-slate-500">{hint}</p> : null}
+          <h2 className="text-xl font-bold tracking-tight text-slate-950">{title}</h2>
+          {hint ? <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">{hint}</p> : null}
         </div>
         {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
       </div>
@@ -277,22 +281,22 @@ function StepCard({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-[24px] border px-4 py-4 text-left transition ${
+      className={`w-full rounded-xl border px-3 py-3 text-left transition ${
         active
-          ? 'border-slate-950 bg-slate-950 text-white shadow-[0_18px_40px_rgba(15,23,42,0.22)]'
+          ? 'border-blue-600 bg-blue-50 text-blue-900'
           : 'border-slate-200 bg-white text-slate-800 hover:border-blue-300 hover:bg-blue-50/70'
       }`}
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className={`text-xs font-semibold uppercase tracking-[0.2em] ${active ? 'text-slate-300' : 'text-slate-400'}`}>
+          <div className={`text-xs font-semibold ${active ? 'text-blue-700' : 'text-slate-500'}`}>
             Bước {number}
           </div>
-          <div className="mt-2 text-base font-semibold">{title}</div>
-          <div className={`mt-2 text-sm ${active ? 'text-slate-300' : 'text-slate-500'}`}>{description}</div>
+          <div className="mt-1 text-sm font-semibold">{title}</div>
+          {active ? <div className="mt-1 text-xs text-slate-600">{description}</div> : null}
         </div>
-        <Badge className={active ? 'border-white/15 bg-white/10 text-white' : completed ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}>
-          {completed ? 'Có dữ liệu' : 'Chưa tạo'}
+        <Badge className={completed ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}>
+          {completed ? 'Đã có' : 'Trống'}
         </Badge>
       </div>
     </button>
@@ -315,10 +319,10 @@ function ContextCard({
   onClear: () => void;
 }) {
   return (
-    <div className={`rounded-2xl border px-4 py-4 ${active ? 'border-blue-300 bg-blue-50/80' : 'border-slate-200 bg-white'}`}>
+    <div className={`rounded-xl border px-3 py-3 ${active ? 'border-blue-300 bg-blue-50/70' : 'border-slate-200 bg-white'}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</div>
+          <div className="text-xs font-semibold text-slate-500">{label}</div>
           <div className="mt-2 text-sm font-semibold text-slate-900">{value || 'Chưa chọn'}</div>
           <div className="mt-1 text-xs text-slate-500">{hint}</div>
         </div>
@@ -331,9 +335,9 @@ function ContextCard({
       <button
         type="button"
         onClick={onFocus}
-        className="mt-4 inline-flex text-xs font-semibold uppercase tracking-[0.14em] text-blue-700 transition hover:text-blue-900"
+        className="mt-4 inline-flex text-xs font-semibold text-blue-700 transition hover:text-blue-900"
       >
-        Mở bước này
+        Đi tới bước
       </button>
     </div>
   );
@@ -731,7 +735,7 @@ export default function ProgramPlatformPage() {
       owner_entity_uuid: fieldOwnerUuid || suggestedFieldContext.uuid,
     });
     setSelectedFieldDefinitionUuid('');
-    goToStep('field');
+    goToStep('level');
   };
 
   const startEditFieldDefinition = (field: any) => {
@@ -765,7 +769,7 @@ export default function ProgramPlatformPage() {
       ...emptyFieldOptionForm,
       field_definition_uuid: field.uuid,
     });
-    goToStep('field');
+    goToStep('level');
   };
 
   const startNewFieldOption = () => {
@@ -773,7 +777,7 @@ export default function ProgramPlatformPage() {
       ...emptyFieldOptionForm,
       field_definition_uuid: selectedFieldDefinitionUuid || fieldOptionForm.field_definition_uuid,
     });
-    goToStep('field');
+    goToStep('level');
   };
 
   const startEditFieldOption = (option: any) => {
@@ -787,7 +791,7 @@ export default function ProgramPlatformPage() {
       sort_order: Number(option.sortOrder || 0),
       is_active: isActiveItem(option),
     });
-    goToStep('field');
+    goToStep('level');
   };
 
   const useSuggestedFieldContext = () => {
@@ -826,7 +830,7 @@ export default function ProgramPlatformPage() {
       <div className="p-6">
         <AdminLoadingState
           title="Đang tải nền tảng chương trình"
-          hint="Organizer, program, level và field definitions đang được đồng bộ."
+          hint="Đơn vị, chương trình, trình độ và field đang được đồng bộ."
           variant="dashboard"
           accent="blue"
         />
@@ -1094,7 +1098,7 @@ export default function ProgramPlatformPage() {
             </select>
           </div>
           <div>
-            <Label htmlFor="program-mode">Delivery mode</Label>
+            <Label htmlFor="program-mode">Hình thức học</Label>
             <select
               id="program-mode"
               className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3"
@@ -1102,21 +1106,6 @@ export default function ProgramPlatformPage() {
               onChange={(event) => setProgramForm((current) => ({ ...current, delivery_mode: event.target.value }))}
             >
               {DELIVERY_MODE_OPTIONS.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <Label htmlFor="program-schedule-model">Mô hình lịch</Label>
-            <select
-              id="program-schedule-model"
-              className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3"
-              value={programForm.schedule_model}
-              onChange={(event) => setProgramForm((current) => ({ ...current, schedule_model: event.target.value }))}
-            >
-              {SCHEDULE_MODEL_OPTIONS.map((item) => (
                 <option key={item.value} value={item.value}>
                   {item.label}
                 </option>
@@ -1140,17 +1129,20 @@ export default function ProgramPlatformPage() {
           </div>
         </div>
 
+        {programForm.delivery_mode === 'external_redirect' ? (
+          <div className="mt-4">
+            <Label htmlFor="program-redirect">Link chuyển hướng</Label>
+            <Input
+              id="program-redirect"
+              value={programForm.redirect_url}
+              onChange={(event) => setProgramForm((current) => ({ ...current, redirect_url: event.target.value }))}
+              placeholder="Ví dụ: /vept hoặc https://..."
+            />
+          </div>
+        ) : null}
+
         <div className="mt-4">
-          <Label htmlFor="program-redirect">Redirect URL</Label>
-          <Input
-            id="program-redirect"
-            value={programForm.redirect_url}
-            onChange={(event) => setProgramForm((current) => ({ ...current, redirect_url: event.target.value }))}
-            placeholder="Ví dụ: /vept hoặc https://..."
-          />
-        </div>
-        <div className="mt-4">
-          <Label htmlFor="program-description">Mô tả</Label>
+          <Label htmlFor="program-description">Mô tả ngắn</Label>
           <Textarea
             id="program-description"
             value={programForm.description}
@@ -1159,28 +1151,48 @@ export default function ProgramPlatformPage() {
           />
         </div>
 
-        <div className="mt-5 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-          <Toggle label="Có chứng chỉ đầu ra" checked={programForm.certificate_enabled} onChange={(checked) => setProgramForm((current) => ({ ...current, certificate_enabled: checked }))} />
-          <Toggle label="Cho phép đào tạo" checked={programForm.training_enabled} onChange={(checked) => setProgramForm((current) => ({ ...current, training_enabled: checked }))} />
-          <Toggle label="Tạo linked class" checked={programForm.linked_class_enabled} onChange={(checked) => setProgramForm((current) => ({ ...current, linked_class_enabled: checked }))} />
-          <Toggle label="Hiện trên edu public" checked={programForm.visible_on_edu_public} onChange={(checked) => setProgramForm((current) => ({ ...current, visible_on_edu_public: checked }))} />
-          <Toggle label="Hiện trên edu admin" checked={programForm.visible_on_edu_admin} onChange={(checked) => setProgramForm((current) => ({ ...current, visible_on_edu_admin: checked }))} />
-          <Toggle label="Hiện trên exam teacher" checked={programForm.visible_on_exam_teacher} onChange={(checked) => setProgramForm((current) => ({ ...current, visible_on_exam_teacher: checked }))} />
-          <Toggle label="Hiện trên exam student" checked={programForm.visible_on_exam_student} onChange={(checked) => setProgramForm((current) => ({ ...current, visible_on_exam_student: checked }))} />
-          <Toggle label="Chương trình đang hoạt động" checked={programForm.is_active} onChange={(checked) => setProgramForm((current) => ({ ...current, is_active: checked }))} />
-        </div>
-
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-          <div className="font-semibold text-slate-900">Quy tắc nghiệp vụ</div>
+        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+          <div className="font-semibold text-slate-900">Ghi nhớ nhanh</div>
           <div className="mt-2">
-            Level là tùy chọn. Nếu chương trình này không cần trình độ, bạn có thể bỏ qua hoàn toàn bước 3.
-            Kiểu đánh giá hiện tại là{' '}
-            <span className="font-semibold text-slate-900">
+            Bạn có thể bỏ qua bước trình độ nếu chương trình này không chia level. Kiểu đánh giá hiện tại:
+            <span className="ml-1 font-semibold text-slate-900">
               {ASSESSMENT_MODE_OPTIONS.find((item) => item.value === programForm.assessment_mode)?.label || programForm.assessment_mode}
             </span>
-            , và giá trị này sẽ quyết định site tiêu thụ dữ liệu có hiện khu vực exam/test hay đánh giá thủ công hay không.
           </div>
         </div>
+
+        <details className="mt-4 rounded-xl border border-slate-200 bg-white">
+          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-slate-900">
+            Chi tiết nâng cao
+          </summary>
+          <div className="border-t border-slate-100 px-4 py-4">
+            <div>
+              <Label htmlFor="program-schedule-model">Mô hình lịch</Label>
+              <select
+                id="program-schedule-model"
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3"
+                value={programForm.schedule_model}
+                onChange={(event) => setProgramForm((current) => ({ ...current, schedule_model: event.target.value }))}
+              >
+                {SCHEDULE_MODEL_OPTIONS.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+              <Toggle label="Có chứng chỉ đầu ra" checked={programForm.certificate_enabled} onChange={(checked) => setProgramForm((current) => ({ ...current, certificate_enabled: checked }))} />
+              <Toggle label="Cho phép đào tạo" checked={programForm.training_enabled} onChange={(checked) => setProgramForm((current) => ({ ...current, training_enabled: checked }))} />
+              <Toggle label="Tạo linked class" checked={programForm.linked_class_enabled} onChange={(checked) => setProgramForm((current) => ({ ...current, linked_class_enabled: checked }))} />
+              <Toggle label="Hiện trên edu public" checked={programForm.visible_on_edu_public} onChange={(checked) => setProgramForm((current) => ({ ...current, visible_on_edu_public: checked }))} />
+              <Toggle label="Hiện trên edu admin" checked={programForm.visible_on_edu_admin} onChange={(checked) => setProgramForm((current) => ({ ...current, visible_on_edu_admin: checked }))} />
+              <Toggle label="Hiện trên exam teacher" checked={programForm.visible_on_exam_teacher} onChange={(checked) => setProgramForm((current) => ({ ...current, visible_on_exam_teacher: checked }))} />
+              <Toggle label="Hiện trên exam student" checked={programForm.visible_on_exam_student} onChange={(checked) => setProgramForm((current) => ({ ...current, visible_on_exam_student: checked }))} />
+              <Toggle label="Chương trình đang hoạt động" checked={programForm.is_active} onChange={(checked) => setProgramForm((current) => ({ ...current, is_active: checked }))} />
+            </div>
+          </div>
+        </details>
 
         <div className="mt-5 flex flex-wrap gap-3">
           <Button
@@ -1364,17 +1376,17 @@ export default function ProgramPlatformPage() {
   const renderFieldStep = () => (
     <div className="space-y-6">
       <Panel
-        title="Phạm vi đang chỉnh field"
-        hint="Chọn owner trước để danh sách field và form tạo mới luôn bám đúng đơn vị, chương trình hoặc trình độ."
+        title="Phạm vi chỉnh field"
+        hint="Chọn phạm vi trước để danh sách và form luôn bám đúng đơn vị, chương trình hoặc trình độ."
         actions={
           <Button variant="outline" onClick={useSuggestedFieldContext}>
-            Dùng ngữ cảnh đang chọn
+            Dùng ngữ cảnh hiện tại
           </Button>
         }
       >
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div>
-            <Label htmlFor="field-browser-owner-type">Owner type</Label>
+            <Label htmlFor="field-browser-owner-type">Phạm vi quản lý</Label>
             <select
               id="field-browser-owner-type"
               className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3"
@@ -1392,7 +1404,7 @@ export default function ProgramPlatformPage() {
             </select>
           </div>
           <div className="md:col-span-2">
-            <Label htmlFor="field-browser-owner-uuid">Owner đang xem</Label>
+            <Label htmlFor="field-browser-owner-uuid">Đang xem theo</Label>
             <select
               id="field-browser-owner-uuid"
               className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3"
@@ -1413,7 +1425,7 @@ export default function ProgramPlatformPage() {
               id="field-search"
               value={fieldSearch}
               onChange={(event) => setFieldSearch(event.target.value)}
-              placeholder="label, key hoặc target"
+              placeholder="Tên hiển thị, key hoặc loại field"
             />
           </div>
         </div>
@@ -1421,8 +1433,8 @@ export default function ProgramPlatformPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <Panel
-          title="Danh sách field definitions"
-          hint="Nhấn vào một field để sửa hoặc để mở luôn khu vực quản lý option."
+          title="Danh sách field"
+          hint="Nhấn vào một field để sửa hoặc mở quản lý option."
           actions={
             <>
               <Badge className="border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-600">
@@ -1455,10 +1467,12 @@ export default function ProgramPlatformPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-semibold text-slate-900">{field.label}</span>
                           <Badge className="border border-slate-200 bg-slate-100 text-slate-700">{field.fieldKey}</Badge>
-                          <Badge className="border border-blue-200 bg-blue-50 text-blue-700">{field.fieldType}</Badge>
+                          <Badge className="border border-blue-200 bg-blue-50 text-blue-700">
+                            {getFieldTypeLabel(field.fieldType)}
+                          </Badge>
                         </div>
                         <div className="mt-2 text-sm text-slate-500">
-                          {ownerLabel || field.ownerEntityUuid || 'Chưa gắn owner'} • {field.targetEntityType} • {optionsCount} option
+                          {ownerLabel || field.ownerEntityUuid || 'Chưa gắn phạm vi'} • {getTargetEntityLabel(field.targetEntityType)} • {optionsCount} option
                         </div>
                         {field.description ? <div className="mt-2 text-sm text-slate-500">{field.description}</div> : null}
                       </div>
@@ -1474,7 +1488,7 @@ export default function ProgramPlatformPage() {
               })
             ) : (
               <EmptyState
-                title="Chưa có field definition phù hợp"
+                title="Chưa có field phù hợp"
                 hint="Chọn owner khác hoặc tạo field mới để bắt đầu."
               />
             )}
@@ -1484,7 +1498,7 @@ export default function ProgramPlatformPage() {
         <div className="space-y-6">
           <Panel
             title={getModeLabel(Boolean(fieldDefinitionForm.uuid), 'field')}
-            hint="Field mới sẽ tự bám owner đang chọn. Nếu cần, bạn có thể đổi owner ngay trong form."
+            hint="Field mới tự bám phạm vi đang chọn. Bạn vẫn có thể đổi lại trong form."
             actions={
               <Button variant="outline" onClick={startNewFieldDefinition}>
                 Tạo form trống
@@ -1493,7 +1507,7 @@ export default function ProgramPlatformPage() {
           >
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <Label htmlFor="field-owner-type">Owner type</Label>
+                <Label htmlFor="field-owner-type">Phạm vi quản lý</Label>
                 <select
                   id="field-owner-type"
                   className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3"
@@ -1514,7 +1528,7 @@ export default function ProgramPlatformPage() {
                 </select>
               </div>
               <div>
-                <Label htmlFor="field-owner-uuid">Owner</Label>
+                <Label htmlFor="field-owner-uuid">Đối tượng áp dụng</Label>
                 <select
                   id="field-owner-uuid"
                   className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3"
@@ -1537,7 +1551,7 @@ export default function ProgramPlatformPage() {
                 </select>
               </div>
               <div>
-                <Label htmlFor="field-target-type">Target entity</Label>
+                <Label htmlFor="field-target-type">Áp dụng cho module</Label>
                 <select
                   id="field-target-type"
                   className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3"
@@ -1552,7 +1566,7 @@ export default function ProgramPlatformPage() {
                 </select>
               </div>
               <div>
-                <Label htmlFor="field-type">Field type</Label>
+                <Label htmlFor="field-type">Loại field</Label>
                 <select
                   id="field-type"
                   className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3"
@@ -1560,8 +1574,8 @@ export default function ProgramPlatformPage() {
                   onChange={(event) => setFieldDefinitionForm((current) => ({ ...current, field_type: event.target.value }))}
                 >
                   {FIELD_TYPE_OPTIONS.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
+                    <option key={item.value} value={item.value}>
+                      {item.label}
                     </option>
                   ))}
                 </select>
@@ -1580,6 +1594,7 @@ export default function ProgramPlatformPage() {
                   id="field-key"
                   value={fieldDefinitionForm.field_key}
                   onChange={(event) => setFieldDefinitionForm((current) => ({ ...current, field_key: event.target.value }))}
+                  placeholder="Ví dụ: exam_duration_minutes"
                 />
               </div>
               <div>
@@ -1591,7 +1606,7 @@ export default function ProgramPlatformPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="field-sort-order">Sort order</Label>
+                <Label htmlFor="field-sort-order">Thứ tự</Label>
                 <Input
                   id="field-sort-order"
                   type="number"
@@ -1600,42 +1615,49 @@ export default function ProgramPlatformPage() {
                 />
               </div>
             </div>
-            <div className="mt-4">
-              <Label htmlFor="field-description">Mô tả</Label>
-              <Textarea
-                id="field-description"
-                value={fieldDefinitionForm.description}
-                onChange={(event) => setFieldDefinitionForm((current) => ({ ...current, description: event.target.value }))}
-              />
-            </div>
-            <div className="mt-4">
-              <Label htmlFor="field-help">Help text</Label>
-              <Textarea
-                id="field-help"
-                value={fieldDefinitionForm.help_text}
-                onChange={(event) => setFieldDefinitionForm((current) => ({ ...current, help_text: event.target.value }))}
-              />
-            </div>
-            <div className="mt-4">
-              <Label htmlFor="field-config">Config JSON</Label>
-              <Textarea
-                id="field-config"
-                value={fieldDefinitionForm.config_json}
-                onChange={(event) => setFieldDefinitionForm((current) => ({ ...current, config_json: event.target.value }))}
-                placeholder='{"optionsSource":"manual"}'
-              />
-            </div>
-            <div className="mt-5 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              <Toggle label="Searchable" checked={fieldDefinitionForm.searchable} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, searchable: checked }))} />
-              <Toggle label="Filterable" checked={fieldDefinitionForm.filterable} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, filterable: checked }))} />
-              <Toggle label="Exportable" checked={fieldDefinitionForm.exportable} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, exportable: checked }))} />
-              <Toggle label="Reportable" checked={fieldDefinitionForm.reportable} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, reportable: checked }))} />
-              <Toggle label="Visible edu public" checked={fieldDefinitionForm.visible_on_edu_public} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, visible_on_edu_public: checked }))} />
-              <Toggle label="Visible edu admin" checked={fieldDefinitionForm.visible_on_edu_admin} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, visible_on_edu_admin: checked }))} />
-              <Toggle label="Visible exam teacher" checked={fieldDefinitionForm.visible_on_exam_teacher} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, visible_on_exam_teacher: checked }))} />
-              <Toggle label="Visible exam student" checked={fieldDefinitionForm.visible_on_exam_student} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, visible_on_exam_student: checked }))} />
-              <Toggle label="Field đang hoạt động" checked={fieldDefinitionForm.is_active} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, is_active: checked }))} />
-            </div>
+            <details className="mt-4 rounded-xl border border-slate-200 bg-white">
+              <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-slate-900">
+                Chi tiết nâng cao
+              </summary>
+              <div className="border-t border-slate-100 px-4 py-4">
+                <div>
+                  <Label htmlFor="field-description">Mô tả</Label>
+                  <Textarea
+                    id="field-description"
+                    value={fieldDefinitionForm.description}
+                    onChange={(event) => setFieldDefinitionForm((current) => ({ ...current, description: event.target.value }))}
+                  />
+                </div>
+                <div className="mt-4">
+                  <Label htmlFor="field-help">Gợi ý nhập liệu</Label>
+                  <Textarea
+                    id="field-help"
+                    value={fieldDefinitionForm.help_text}
+                    onChange={(event) => setFieldDefinitionForm((current) => ({ ...current, help_text: event.target.value }))}
+                  />
+                </div>
+                <div className="mt-4">
+                  <Label htmlFor="field-config">Cấu hình JSON</Label>
+                  <Textarea
+                    id="field-config"
+                    value={fieldDefinitionForm.config_json}
+                    onChange={(event) => setFieldDefinitionForm((current) => ({ ...current, config_json: event.target.value }))}
+                    placeholder='{"optionsSource":"manual"}'
+                  />
+                </div>
+                <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                  <Toggle label="Cho phép tìm kiếm" checked={fieldDefinitionForm.searchable} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, searchable: checked }))} />
+                  <Toggle label="Cho phép lọc" checked={fieldDefinitionForm.filterable} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, filterable: checked }))} />
+                  <Toggle label="Cho phép xuất file" checked={fieldDefinitionForm.exportable} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, exportable: checked }))} />
+                  <Toggle label="Cho phép báo cáo" checked={fieldDefinitionForm.reportable} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, reportable: checked }))} />
+                  <Toggle label="Hiện trên edu public" checked={fieldDefinitionForm.visible_on_edu_public} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, visible_on_edu_public: checked }))} />
+                  <Toggle label="Hiện trên edu admin" checked={fieldDefinitionForm.visible_on_edu_admin} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, visible_on_edu_admin: checked }))} />
+                  <Toggle label="Hiện trên exam teacher" checked={fieldDefinitionForm.visible_on_exam_teacher} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, visible_on_exam_teacher: checked }))} />
+                  <Toggle label="Hiện trên exam student" checked={fieldDefinitionForm.visible_on_exam_student} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, visible_on_exam_student: checked }))} />
+                  <Toggle label="Field đang hoạt động" checked={fieldDefinitionForm.is_active} onChange={(checked) => setFieldDefinitionForm((current) => ({ ...current, is_active: checked }))} />
+                </div>
+              </div>
+            </details>
             <div className="mt-5 flex flex-wrap gap-3">
               <Button
                 onClick={() =>
@@ -1663,7 +1685,7 @@ export default function ProgramPlatformPage() {
                       });
                       setSelectedFieldDefinitionUuid('');
                     },
-                    fieldDefinitionForm.uuid ? 'Đã cập nhật field definition' : 'Đã tạo field definition'
+                    fieldDefinitionForm.uuid ? 'Đã cập nhật field' : 'Đã tạo field'
                   )
                 }
                 disabled={!fieldDefinitionForm.owner_entity_uuid || !fieldDefinitionForm.label.trim() || !fieldDefinitionForm.field_key.trim() || !fieldDefinitionForm.target_entity_type.trim() || savingKey === 'field-definition'}
@@ -1677,7 +1699,7 @@ export default function ProgramPlatformPage() {
           </Panel>
 
           <Panel
-            title="Field options"
+            title="Tùy chọn của field"
             hint={
               selectedFieldDefinition
                 ? `Bạn đang quản lý option cho field "${selectedFieldDefinition.label}".`
@@ -1693,7 +1715,7 @@ export default function ProgramPlatformPage() {
               <div className="space-y-5">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <Label htmlFor="field-option-label">Label option</Label>
+                    <Label htmlFor="field-option-label">Nhãn hiển thị</Label>
                     <Input
                       id="field-option-label"
                       value={fieldOptionForm.label}
@@ -1701,7 +1723,7 @@ export default function ProgramPlatformPage() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="field-option-value">Value option</Label>
+                    <Label htmlFor="field-option-value">Giá trị lưu</Label>
                     <Input
                       id="field-option-value"
                       value={fieldOptionForm.value}
@@ -1709,7 +1731,7 @@ export default function ProgramPlatformPage() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="field-option-color">Color</Label>
+                    <Label htmlFor="field-option-color">Màu (tùy chọn)</Label>
                     <Input
                       id="field-option-color"
                       value={fieldOptionForm.color}
@@ -1718,7 +1740,7 @@ export default function ProgramPlatformPage() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="field-option-order">Sort order</Label>
+                    <Label htmlFor="field-option-order">Thứ tự</Label>
                     <Input
                       id="field-option-order"
                       type="number"
@@ -1796,8 +1818,8 @@ export default function ProgramPlatformPage() {
               </div>
             ) : (
               <EmptyState
-                title="Chưa chọn field definition"
-                hint="Hãy chọn một field bên trái để quản lý option. Điều này giúp giảm nhầm lẫn khi hệ thống có nhiều field giống nhau."
+                title="Chưa chọn field"
+                hint="Hãy chọn một field bên trái để quản lý option."
               />
             )}
           </Panel>
@@ -1807,90 +1829,87 @@ export default function ProgramPlatformPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="overflow-hidden rounded-[34px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_35%),linear-gradient(135deg,#f8fafc_0%,#ffffff_42%,#eff6ff_100%)] p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-          <div className="max-w-3xl">
-            <div className="text-xs font-semibold uppercase tracking-[0.26em] text-blue-700">Program Control Desk</div>
-            <h1 className="mt-3 text-3xl font-semibold text-slate-950">Chương trình tổng</h1>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Màn này đã được chia lại theo từng bước rõ ràng: chọn ngữ cảnh ở cột trái, chỉnh sửa ở khung phải,
-              và luôn có thể quay lại sửa dữ liệu đã tạo. Mục tiêu là để admin nhìn vào biết ngay đang sửa đơn vị,
-              chương trình, trình độ hay field mở nào.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="Đơn vị" value={organizers.length} tone="blue" />
-            <MetricCard label="Chương trình" value={programs.length} tone="emerald" />
-            <MetricCard label="Trình độ" value={levels.length} tone="amber" />
-            <MetricCard label="Field mở" value={fieldDefinitions.length} tone="fuchsia" />
-          </div>
-        </div>
-      </div>
+    <div className="admin-page">
+      <LearningWorkspaceHeader
+        icon={Database}
+        tone="violet"
+        title="Chương trình tổng"
+        description="Điều phối đơn vị, chương trình, trình độ và field dùng chung theo một luồng rõ ràng hơn để admin cấu hình nhanh mà vẫn giữ được ngữ cảnh đang làm việc."
+        pills={(
+          <>
+            <LearningInfoPill>Bước hiện tại: {STEP_ITEMS.find((step) => step.id === activeStep)?.title || 'Chưa chọn'}</LearningInfoPill>
+            {selectedProgram?.name ? <LearningInfoPill>Chương trình: {selectedProgram.name}</LearningInfoPill> : null}
+            {selectedLevel?.name ? <LearningInfoPill>Trình độ: {selectedLevel.name}</LearningInfoPill> : null}
+          </>
+        )}
+        stats={[
+          { label: 'Đơn vị', value: organizers.length, hint: 'Nguồn tổ chức gốc cho toàn bộ chương trình.' },
+          { label: 'Chương trình', value: programs.length, hint: 'Các nhánh đào tạo và luồng vận hành đang cấu hình.' },
+          { label: 'Trình độ', value: levels.length, hint: 'Những level gắn theo từng chương trình.' },
+          { label: 'Field', value: fieldDefinitions.length, hint: 'Field động phục vụ biểu mẫu, metadata và export.' },
+        ]}
+      />
 
-      <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-          <Panel
-            title="Làm theo từng bước"
-            hint="Không cần đi tuần tự cứng, nhưng flow này giúp kiểm soát dữ liệu tốt nhất."
-          >
-            <div className="space-y-3">
-              {STEP_ITEMS.map((step) => (
-                <StepCard
-                  key={step.id}
-                  number={step.number}
-                  title={step.title}
-                  description={step.description}
-                  active={activeStep === step.id}
-                  completed={stepCompletion[step.id]}
-                  onClick={() => goToStep(step.id)}
-                />
-              ))}
-            </div>
-          </Panel>
-
-          <Panel
-            title="Ngữ cảnh đang chọn"
-            hint="Ba ô này cho biết bạn đang làm việc trong nhánh dữ liệu nào. Có thể bỏ chọn bất kỳ lúc nào."
-          >
-            <div className="space-y-3">
-              <ContextCard
-                label="Đơn vị"
-                value={selectedOrganizer?.name || ''}
-                hint="Lọc chương trình theo đơn vị này"
-                active={activeStep === 'organizer'}
-                onFocus={() => goToStep('organizer')}
-                onClear={() => setSelectedOrganizerUuid('')}
+      <div className="space-y-6">
+        <Panel
+          title="Quản lý chương trình"
+          hint="Chọn bước bên dưới để thao tác. Luồng dễ nhất: Đơn vị → Chương trình → Trình độ (nếu cần) → Field."
+        >
+          <div className="flex flex-wrap gap-2">
+            <Badge className="border border-blue-200 bg-blue-50 text-blue-700">Đơn vị: {organizers.length}</Badge>
+            <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700">Chương trình: {programs.length}</Badge>
+            <Badge className="border border-amber-200 bg-amber-50 text-amber-700">Trình độ: {levels.length}</Badge>
+            <Badge className="border border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700">Field: {fieldDefinitions.length}</Badge>
+          </div>
+          <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            {STEP_ITEMS.map((step) => (
+              <StepCard
+                key={step.id}
+                number={step.number}
+                title={step.title}
+                description={step.description}
+                active={activeStep === step.id}
+                completed={stepCompletion[step.id]}
+                onClick={() => goToStep(step.id)}
               />
-              <ContextCard
-                label="Chương trình"
-                value={selectedProgram?.name || ''}
-                hint="Lọc trình độ và gợi ý owner cho field"
-                active={activeStep === 'program'}
-                onFocus={() => goToStep('program')}
-                onClear={() => setSelectedProgramUuid('')}
-              />
-              <ContextCard
-                label="Trình độ"
-                value={selectedLevel?.name || ''}
-                hint="Ưu tiên owner cấp level cho field nếu cần"
-                active={activeStep === 'level'}
-                onFocus={() => goToStep('level')}
-                onClear={() => setSelectedLevelUuid('')}
-              />
-            </div>
-          </Panel>
-        </aside>
+            ))}
+          </div>
+          <div className="mt-4 grid gap-2 md:grid-cols-3">
+            <ContextCard
+              label="Đơn vị"
+              value={selectedOrganizer?.name || ''}
+              hint="Đang lọc chương trình theo đơn vị này"
+              active={activeStep === 'organizer'}
+              onFocus={() => goToStep('organizer')}
+              onClear={() => setSelectedOrganizerUuid('')}
+            />
+            <ContextCard
+              label="Chương trình"
+              value={selectedProgram?.name || ''}
+              hint="Đang lọc trình độ và gợi ý phạm vi field"
+              active={activeStep === 'program'}
+              onFocus={() => goToStep('program')}
+              onClear={() => setSelectedProgramUuid('')}
+            />
+            <ContextCard
+              label="Trình độ"
+              value={selectedLevel?.name || ''}
+              hint="Ưu tiên phạm vi cấp trình độ cho field"
+              active={activeStep === 'level'}
+              onFocus={() => goToStep('level')}
+              onClear={() => setSelectedLevelUuid('')}
+            />
+          </div>
+        </Panel>
 
         <div className="space-y-6">
           {activeStep === 'organizer' ? renderOrganizerStep() : null}
           {activeStep === 'program' ? renderProgramStep() : null}
           {activeStep === 'level' ? renderLevelStep() : null}
-          {activeStep === 'field' ? renderFieldStep() : null}
         </div>
-      </div>
 
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
+        <ToastContainer toasts={toasts} removeToast={removeToast} />
+      </div>
     </div>
   );
 }

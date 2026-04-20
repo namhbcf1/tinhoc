@@ -8,6 +8,7 @@ import ToastContainer, { useToast } from '../../../components/ui/ToastContainer'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import '../../../styles/admin/AdminModern.css';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
+import { AdminPageHeader, AdminSummaryPill } from '../shared/AdminPageHeader';
 
 export default function AdminManagement() {
   const { success, error, toasts, removeToast } = useToast();
@@ -61,14 +62,17 @@ export default function AdminManagement() {
   return (
     <div className="admin-page">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-      <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20, marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 12, color: '#1e293b' }}>
-            <Shield size={32} className="text-indigo-600" /> Quản lý Admin
-          </h1>
-          <p style={{ color: '#64748b', marginTop: 4, marginLeft: 44 }}>Quản lý tài khoản quản trị viên hệ thống</p>
-        </div>
-      </div>
+      <AdminPageHeader
+        icon={Shield}
+        title="Quản lý admin"
+        description="Theo dõi quyền, trạng thái và độ an toàn của tài khoản quản trị trong hệ thống."
+        pills={(
+          <>
+            <AdminSummaryPill>Tổng {admins.length} admin</AdminSummaryPill>
+            <AdminSummaryPill>Super Admin {admins.filter((admin) => admin.role === 'super_admin').length}</AdminSummaryPill>
+          </>
+        )}
+      />
 
       <div className="admin-card unified-card">
         {/* 1. Stats */}

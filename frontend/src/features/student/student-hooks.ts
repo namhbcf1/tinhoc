@@ -45,6 +45,7 @@ export function useStudentExams(studentData: any) {
         const status = item.registration_status || 'available';
         const zoomLinks = normalizeZoomLinkPair(item);
         const mode = zoomLinks.zoomLink || item.zoom_meeting_id ? 'online' : 'offline';
+        const googleMapUrl = typeof item.google_map_url === 'string' ? item.google_map_url.trim() : '';
         return {
           id: item.id,
           title: item.exam_name || 'Kỳ thi',
@@ -55,6 +56,7 @@ export function useStudentExams(studentData: any) {
             ? null
             : Number(item.duration_minutes),
           examType: item.exam_type || '',
+          googleMapUrl: googleMapUrl || null,
           mode,
           status,
           note: item.notes || '',
@@ -145,5 +147,140 @@ export function useStudentExams(studentData: any) {
     refetch: load,
     registerExam: (examId: number | string) => runAction(examId, 'register'),
     cancelExam: (examId: number | string) => runAction(examId, 'cancel'),
+  };
+}
+
+// ========================================
+// useStudentReviews — báo cáo đánh giá học viên
+// ========================================
+
+export interface StudentReviewSkillVM {
+  id: number;
+  skill: 'reading' | 'listening' | 'speaking' | 'writing';
+  score_raw: string | null;
+  score_num: number | null;
+  skill_status: 'good' | 'needs_work' | 'weak' | null;
+  comments: string | null;
+}
+
+export interface StudentReviewTestScoreVM {
+  id: number;
+  skill_label: string;
+  max_score: number | null;
+  student_score: number | null;
+  score_notes: string | null;
+}
+
+export interface StudentReviewHomeworkVM {
+  date: string;
+  status: 'du' | 'thieu_video' | 'khong_nop' | 'duoc_nghi';
+}
+
+export interface StudentReviewVM {
+  id: number;
+  online_class_id: number;
+  class_name: string;
+  class_code: string;
+  period_label: string | null;
+  report_title: string | null;
+  overall_summary: string | null;
+  recommendations: string | null;
+  homework_tracking: StudentReviewHomeworkVM[];
+  skills: StudentReviewSkillVM[];
+  test_scores: StudentReviewTestScoreVM[];
+  status: 'draft' | 'published';
+  updated_at: string;
+}
+
+export function useStudentReviews() {
+  const [reviews, setReviews] = useState<StudentReviewVM[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedReview, setSelectedReview] = useState<StudentReviewVM | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await (api as any).getMyReviews();
+      const items: StudentReviewVM[] = Array.isArray(response)
+        ? response
+        : (response?.data ?? []);
+      setReviews(items);
+    } catch (err: any) {
+      setError(err?.message || 'Không thể tải báo cáo học tập');
+      setReviews([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  return { reviews, loading, error, selectedReview, setSelectedReview, refetch: load };
+}
+
+// ========================================
+// useStudentFeedbacks — phản hồi của học viên
+// ========================================
+
+export interface StudentFeedbackClassVM {
+  online_class_id: number;
+  class_name: string;
+  schedule_time: string | null;
+  start_date: string | null;
+  end_date: string | null;
+}
+
+export interface StudentFeedbackVM {
+  id: number;
+  online_class_id: number;
+  class_name: string;
+  schedule_time: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  rating: number;
+  title: string;
+  content: string;
+  sentiment: 'positive' | 'mixed' | 'negative' | null;
+  status: 'submitted' | 'approved' | 'rejected';
+  teacher_response: string | null;
+  review_note_internal: string | null;
+  created_at: string;
+  updated_at: string;
+  reviewed_at: string | null;
+}
+
+export function useStudentFeedbacks() {
+  const [feedbacks, setFeedbacks] = useState<StudentFeedbackVM[]>([]);
+  const [availableClasses, setAvailableClasses] = useState<StudentFeedbackClassVM[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await (api as any).getMyStudentFeedbacks();
+      const payload = response?.data ?? response ?? {};
+      setFeedbacks(Array.isArray(payload?.feedbacks) ? payload.feedbacks : []);
+      setAvailableClasses(Array.isArray(payload?.available_classes) ? payload.available_classes : []);
+    } catch (err: any) {
+      setFeedbacks([]);
+      setAvailableClasses([]);
+      setError(err?.message || 'Không thể tải phản hồi học viên');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  return {
+    feedbacks,
+    availableClasses,
+    loading,
+    error,
+    refetch: load,
   };
 }

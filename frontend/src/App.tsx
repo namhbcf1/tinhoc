@@ -1,11 +1,10 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
 import analytics from './utils/analytics';
 import useAnalytics from './hooks/useAnalytics';
 import LoadingSpinner from './components/ui/LoadingSpinner';
-import ExternalRedirect from './components/routing/ExternalRedirect';
 import ProductTour from './components/tour/ProductTour';
-import { STUDY_PLATFORM_URL, openStudyPlatform } from './features/student/student-nav';
+import { openStudyPlatform } from './features/student/student-nav';
 
 // Public pages — lazy-loaded for code splitting (reduces main bundle ~2.7MB → ~200KB)
 const HomePage = lazy(() => import('./pages/public/HomePage'));
@@ -13,7 +12,6 @@ const StudentRegistration = lazy(() => import('./pages/public/StudentRegistratio
 const UnifiedLogin = lazy(() => import('./pages/public/UnifiedLogin'));
 const AboutPage = lazy(() => import('./pages/public/AboutPage'));
 const TrainingPage = lazy(() => import('./pages/public/TrainingPage'));
-const AdmissionsPage = lazy(() => import('./pages/public/AdmissionsPage'));
 const ResearchPage = lazy(() => import('./pages/public/ResearchPage'));
 const ConnectionsPage = lazy(() => import('./pages/public/ConnectionsPage'));
 const Hub4Page = lazy(() => import('./pages/public/Hub4Page'));
@@ -26,6 +24,7 @@ const StudentLookup = lazy(() => import('./pages/public/StudentLookup'));
 const ServicesPage = lazy(() => import('./pages/public/ServicesPage'));
 const NewsPage = lazy(() => import('./pages/public/NewsPage'));
 const GuidesPage = lazy(() => import('./pages/public/GuidesPage'));
+const FeedbackPage = lazy(() => import('./pages/public/FeedbackPage'));
 const PostDetailPage = lazy(() => import('./pages/public/PostDetailPage'));
 const ContactPage = lazy(() => import('./pages/public/ContactPage'));
 const PrivacyPage = lazy(() => import('./pages/public/PrivacyPage'));
@@ -46,11 +45,24 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const StudentDashboard = lazy(() => import('./pages/student/StudentDashboard'));
 
 function StudyPlatformRedirect() {
-  useEffect(() => {
-    void openStudyPlatform();
-  }, []);
+  const location = useLocation();
 
-  return <ExternalRedirect to={STUDY_PLATFORM_URL} />;
+  useEffect(() => {
+    const returnTo = location.pathname.includes('/online-classes')
+      ? '/#/student-classes'
+      : '/#/student-learning';
+
+    void openStudyPlatform({ target: '_self', returnTo });
+  }, [location.pathname]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="text-center">
+        <div className="w-10 h-10 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin mx-auto mb-3" />
+        <p className="text-slate-500 text-sm font-medium">Đang kết nối sang VanTrangExam...</p>
+      </div>
+    </div>
+  );
 }
 
 function AppRoutes() {
@@ -65,11 +77,14 @@ function AppRoutes() {
       <Route path="/register" element={<StudentRegistration />} />
       <Route path="/login" element={<UnifiedLogin />} />
       <Route path="/dashboard" element={<StudentDashboard />} />
-      <Route path="/dashboard/my-classes" element={<StudyPlatformRedirect />} />
+      <Route path="/dashboard/my-classes" element={<Navigate to="/dashboard/exams" replace />} />
       <Route path="/dashboard/register-class" element={<StudyPlatformRedirect />} />
       <Route path="/dashboard/payment" element={<Navigate to="/dashboard/exams" replace />} />
       <Route path="/dashboard/schedule" element={<Navigate to="/dashboard/exams" replace />} />
       <Route path="/dashboard/exams" element={<StudentDashboard />} />
+      <Route path="/dashboard/attendance" element={<Navigate to="/dashboard/exams" replace />} />
+      <Route path="/dashboard/reviews" element={<Navigate to="/dashboard/feedback" replace />} />
+      <Route path="/dashboard/feedback" element={<StudentDashboard />} />
       <Route path="/dashboard/profile" element={<StudentDashboard />} />
       <Route path="/dashboard/online-classes" element={<StudyPlatformRedirect />} />
 
@@ -88,7 +103,7 @@ function AppRoutes() {
       <Route path="/training/short-term" element={<TrainingPage />} />
       <Route path="/training/distance" element={<TrainingPage />} />
 
-      <Route path="/admissions" element={<AdmissionsPage />} />
+      <Route path="/admissions" element={<Navigate to="/register" replace />} />
 
       <Route path="/quality-assurance" element={<AboutPage />} />
 
@@ -128,6 +143,7 @@ function AppRoutes() {
       <Route path="/news" element={<NewsPage />} />
       <Route path="/news/:slug" element={<PostDetailPage />} />
       <Route path="/guides" element={<GuidesPage />} />
+      <Route path="/feedback" element={<FeedbackPage />} />
       <Route path="/contact" element={<ContactPage />} />
 
       {/* ========================================================= */}

@@ -301,6 +301,25 @@ export function applyExamScheduleMethods(ApiClient) {
     });
   };
 
+  // OCR preview từ ảnh lịch học
+  ApiClient.prototype.previewExamLearningSessionsImport = async function(examId, imageFile) {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    return this.request(`/exam-schedules/${examId}/learning-sessions/import-preview`, {
+      method: 'POST',
+      body: formData,
+    });
+  };
+
+  // Commit tạo hàng loạt buổi học từ rows đã duyệt
+  ApiClient.prototype.commitExamLearningSessionsImport = async function(examId, rows) {
+    return this.request(`/exam-schedules/${examId}/learning-sessions/import-commit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows }),
+    });
+  };
+
   // Xóa buổi học
   ApiClient.prototype.deleteExamLearningSession = async function(examId, sessionId) {
     return this.request(`/exam-schedules/${examId}/learning-sessions/${sessionId}`, {
@@ -377,8 +396,10 @@ export function applyExamScheduleMethods(ApiClient) {
   };
 
   // Download exam participant list as Excel file
-  ApiClient.prototype.downloadExamListExcel = async function(examId) {
-    const url = `${this.baseURL}/export/exam/${examId}/exam-list`;
+  ApiClient.prototype.downloadExamListExcel = async function(examId, options = {}) {
+    const scope = options?.scope || 'approved';
+    const query = new URLSearchParams({ scope }).toString();
+    const url = `${this.baseURL}/export/exam/${examId}/exam-list?${query}`;
     const token = this.getToken();
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     const response = await fetch(url, { headers });
@@ -388,9 +409,29 @@ export function applyExamScheduleMethods(ApiClient) {
     triggerBlobDownload(await response.blob(), serverFilename || `DANHSACHDUTHI-${examId}.xlsx`);
   };
 
+  // Preview exam participant list rendered from backend export source-of-truth
+  ApiClient.prototype.getExamListExcelPreview = async function(examId, options = {}) {
+    const scope = options?.scope || 'approved';
+    const query = new URLSearchParams({ scope }).toString();
+    return this.request(`/export/exam/${examId}/exam-list/preview?${query}`, {
+      tokenType: 'admin',
+    });
+  };
+
   // Get pending (awaiting approval) students for an exam
   ApiClient.prototype.getPendingExamStudents = async function(examId) {
     return this.request(`/exam-schedules/${examId}/pending`);
+  };
+
+  // Update exam student's fee marker
+  ApiClient.prototype.updateExamStudentPaymentStatus = async function(examId, studentId, paymentStatus) {
+    const res = await this.request(`/exam-schedules/${examId}/students/${studentId}/payment-status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_status: paymentStatus }),
+    });
+    invalidateExamCache(this);
+    return res;
   };
 
   // Approve a single student's exam registration

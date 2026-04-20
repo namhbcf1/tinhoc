@@ -15,6 +15,7 @@ import {
   setAdminCache,
 } from '../shared/admin-cache';
 import '../../../styles/admin/AdminModern.css';
+import { AdminPageHeader, AdminSummaryPill } from '../shared/AdminPageHeader';
 
 const EMPTY_PAYMENT_STATS = { total: 0, confirmed: 0, pending: 0, rejected: 0, revenue: 0 };
 
@@ -144,25 +145,31 @@ export default function PaymentsManagement({ toast }) {
 
   return (
     <div className="admin-page">
-      {/* Header */}
-      <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
-        <div>
-          <h1><CreditCard size={32} /> Quản lý Thanh toán</h1>
-          <p>Xác nhận và theo dõi các khoản thanh toán học phí</p>
-        </div>
-        <button
-          onClick={() => {
-            clearAdminCache(ADMIN_CACHE_KEYS.payments);
-            clearAdminCache(ADMIN_CACHE_KEYS.paymentClasses);
-            loadPayments({ force: true });
-            loadClasses({ force: true });
-          }}
-          className="admin-btn admin-btn-outline"
-          style={{ padding: '10px 16px' }}
-        >
-          <RefreshCw size={18} /> Làm mới
-        </button>
-      </div>
+      <AdminPageHeader
+        icon={CreditCard}
+        title="Thanh toán"
+        description="Xác nhận học phí, đọc nhanh trạng thái xử lý và bám theo doanh thu trên một màn hình vận hành gọn hơn."
+        pills={(
+          <>
+            <AdminSummaryPill>Tổng thu {formatCurrency(stats.revenue)}</AdminSummaryPill>
+            <AdminSummaryPill>Chờ xử lý {stats.pending}</AdminSummaryPill>
+          </>
+        )}
+        actions={(
+          <button
+            onClick={() => {
+              clearAdminCache(ADMIN_CACHE_KEYS.payments);
+              clearAdminCache(ADMIN_CACHE_KEYS.paymentClasses);
+              loadPayments({ force: true });
+              loadClasses({ force: true });
+            }}
+            className="admin-btn admin-btn-outline"
+            style={{ padding: '10px 16px' }}
+          >
+            <RefreshCw size={18} /> Làm mới
+          </button>
+        )}
+      />
 
       {/* Stats Dashboard */}
       <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>

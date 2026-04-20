@@ -5,6 +5,7 @@ import { formatDateVN } from '../../../utils/dateUtils';
 import { Calendar as CalendarIcon, Clock, MapPin, ChevronLeft, ChevronRight, BookOpen, X, Video, Loader2, CheckCircle2 } from 'lucide-react';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
 import { useToast } from '../../../components/ui/ToastContainer';
+import OverlayPortal from '../../../components/ui/OverlayPortal';
 
 export default function MobileMyScheduleModule() {
     const { success, error } = useToast();
@@ -231,15 +232,16 @@ export default function MobileMyScheduleModule() {
 
                 {/* Detail bottom sheet */}
                 {selectedSchedule && (
-                    <div
-                        className="fixed inset-0 z-50 flex items-end"
-                        style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
-                        onClick={() => setSelectedSchedule(null)}
-                    >
+                    <OverlayPortal>
                         <div
-                            className="bg-white w-full rounded-t-3xl shadow-2xl overflow-hidden"
-                            onClick={(e) => e.stopPropagation()}
+                            className="fixed inset-0 z-[100000] flex items-end"
+                            style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
+                            onClick={() => setSelectedSchedule(null)}
                         >
+                            <div
+                                className="bg-white w-full rounded-t-3xl shadow-2xl overflow-hidden"
+                                onClick={(e) => e.stopPropagation()}
+                            >
                             {/* Handle */}
                             <div className="flex justify-center pt-3 pb-2">
                                 <div className="w-10 h-1 bg-slate-200 rounded-full" />
@@ -328,8 +330,9 @@ export default function MobileMyScheduleModule() {
                                     </button>
                                 )}
                             </div>
+                            </div>
                         </div>
-                    </div>
+                    </OverlayPortal>
                 )}
             </div>
         </PullToRefreshWrapper>

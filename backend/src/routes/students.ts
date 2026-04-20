@@ -22,7 +22,15 @@ students.post('/upload-image', async (c) => {
 });
 
 students.get('/image/:key', async (c) => {
-  const object = await c.env.R2.get(c.req.param('key'));
+  const rawKey = c.req.param('key');
+  let key = rawKey;
+  try {
+    key = decodeURIComponent(rawKey);
+  } catch {
+    key = rawKey;
+  }
+
+  const object = await c.env.R2.get(key);
   if (!object) return new Response('Image not found', { status: 404 });
   const headers = new Headers();
   object.writeHttpMetadata(headers);
@@ -76,11 +84,14 @@ students.get('/', requireAdminOrTeacher, createGetEndpoint({
     offset: z.string().optional(),
   }),
   handler: (async (c: any, { query }: any) => {
-    const limit = Math.min(parseInt(query.limit || '20'), 100); // cap at 100
+    const parsedLimit = parseInt(query.limit || '', 10);
+    const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : null;
     const page = Math.max(parseInt(query.page || '1'), 1);
     const offset = query.offset !== undefined
       ? parseInt(query.offset)
-      : (page - 1) * limit;
+      : limit !== null
+        ? (page - 1) * limit
+        : 0;
     return await StudentService.getStudentsList(c, limit, offset, page);
   }) as any
 }));
@@ -148,6 +159,14 @@ students.post('/admin', requireAdmin, createPostEndpoint({
   handler: (async (c: any, { body }: any) => {
     const res = await StudentService.registerStudent(c, body);
     return { student_id: res.student_id };
+  }) as any
+}));
+
+// Protected: normalize legacy student data to uppercase (except email) — admin only
+students.post('/admin/normalize-uppercase', requireAdmin, createPostEndpoint({
+  body: z.any().optional(),
+  handler: (async (c: any, { body }: any) => {
+    return await StudentService.normalizeAllStudentsUppercase(c, Boolean(body?.dry_run));
   }) as any
 }));
 

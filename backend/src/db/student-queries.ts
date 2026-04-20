@@ -46,7 +46,7 @@ export async function createStudent(db: D1Database, data: Record<string, any>) {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     cccd, ho, ten_dem, ten, ho_ten_full, ho_ten_normalized,
-    ngay_sinh, noi_sinh, gioi_tinh, dan_toc || 'Kinh', quoc_tich || 'Viet Nam',
+    ngay_sinh, noi_sinh, gioi_tinh, dan_toc || 'KINH', quoc_tich || 'VIỆT NAM',
     email, sdt, dia_chi, ngay_cap_cccd || null, don_vi_cong_tac || null,
     image_cccd_front || null, image_cccd_back || null, image_3x4 || null,
     cccd_front_image_id || null, cccd_back_image_id || null, photo_3x4_image_id || null

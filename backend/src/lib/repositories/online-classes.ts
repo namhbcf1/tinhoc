@@ -62,14 +62,22 @@ interface CalendarSyncData {
  */
 export async function listClasses(db: D1Database, { status, search, limit, offset }: ListClassesOpts): Promise<{ rows: any[]; total: number }> {
   const params: any[] = [];
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   let where = 'WHERE 1=1';
 
-  if (status) {
+  if (status === 'completed') {
+    // Lớp đã kết thúc: status=active nhưng end_date đã qua, hoặc status=completed
+    where += ' AND (status = ? OR (status = ? AND end_date IS NOT NULL AND end_date < ?))';
+    params.push('completed', 'active', today);
+  } else if (status === 'paused' || status === 'cancelled') {
     where += ' AND status = ?';
     params.push(status);
+  } else if (status === '') {
+    // "Tất cả" — không lọc status
   } else {
-    where += ' AND status = ?';
-    params.push('active');
+    // Mặc định: active VÀ chưa quá end_date
+    where += ' AND status = ? AND (end_date IS NULL OR end_date >= ?)';
+    params.push('active', today);
   }
 
   if (search) {

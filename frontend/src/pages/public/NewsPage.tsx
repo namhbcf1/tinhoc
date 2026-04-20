@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import ModernPublicLayout from '../../components/layout/ModernPublicLayout';
 import { Card, CardContent } from '../../components/ui/Card';
@@ -14,20 +14,35 @@ import LazyImage from '../../components/ui/LazyImage';
 import ScrollToTopButton from '../../components/ui/ScrollToTopButton';
 import { gsap, ScrollTrigger, useGSAP } from '../../lib/gsap';
 
+interface NewsPost {
+    id: number;
+    title: string;
+    slug: string;
+    excerpt?: string;
+    content?: string;
+    category: string;
+    status: string;
+    featured_image?: string;
+    created_at: string;
+    updated_at?: string;
+    author?: string;
+    tags?: string;
+}
+
 export default function NewsPage() {
-    const [posts, setPosts] = useState([]);
+    const [posts, setPosts] = useState<NewsPost[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [selectedCategories, setSelectedCategories] = useState([]);
-    const container = useRef();
+    const [error, setError] = useState<string | null>(null);
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+    const container = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         loadPosts();
     }, []);
 
     useGSAP(() => {
-        if (!loading && posts.length > 0) {
-            const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+        if (!container.current || loading || posts.length === 0) return;
+        const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
             tl.fromTo('.hero-content > *',
                 { y: 30, opacity: 0 },
@@ -55,7 +70,6 @@ export default function NewsPage() {
                     }
                 }
             );
-        }
     }, { scope: container, dependencies: [loading, posts] });
 
     const loadPosts = async () => {
@@ -100,13 +114,19 @@ export default function NewsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const postsPerPage = 8;
 
-    const featuredPosts = posts.slice(0, 4);
-    const trendingPosts = posts.slice(0, 5);
-    const allCategories = [...new Set(posts.map(p => p.category).filter(Boolean))];
+    const featuredPosts = useMemo(() => posts.slice(0, 4), [posts]);
+    const trendingPosts = useMemo(() => posts.slice(0, 5), [posts]);
+    const allCategories = useMemo(
+        () => [...new Set(posts.map(p => p.category).filter(Boolean))],
+        [posts]
+    );
 
-    const filteredPosts = selectedCategories.length > 0
-        ? posts.filter(p => selectedCategories.includes(p.category))
-        : posts;
+    const filteredPosts = useMemo(
+        () => selectedCategories.length > 0
+            ? posts.filter(p => selectedCategories.includes(p.category))
+            : posts,
+        [posts, selectedCategories]
+    );
 
     const filteredIndexOfLastPost = currentPage * postsPerPage;
     const filteredIndexOfFirstPost = filteredIndexOfLastPost - postsPerPage;
@@ -176,7 +196,23 @@ export default function NewsPage() {
                                 )}
 
                                 <div className="news-grid grid md:grid-cols-2 gap-8 mb-16">
-                                    {currentFilteredPosts.map((item) => (
+                                    {currentFilteredPosts.length === 0 && selectedCategories.length > 0 ? (
+                                        <div className="col-span-full py-20 text-center">
+                                            <div className="inline-flex flex-col items-center gap-4 bg-white rounded-3xl p-10 shadow-sm border border-slate-100">
+                                                <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
+                                                    <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                </div>
+                                                <p className="text-slate-700 font-bold text-lg">Không tìm thấy bài viết</p>
+                                                <p className="text-slate-500 text-sm">Thử chọn danh mục khác hoặc xem tất cả bài viết</p>
+                                                <button
+                                                    onClick={() => setSelectedCategories([])}
+                                                    className="mt-1 px-5 py-2 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition-colors"
+                                                >
+                                                    Xem tất cả
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : currentFilteredPosts.map((item) => (
                                         <Link key={item.id} to={`/news/${item.slug || item.id}`} className="block group h-full">
                                             <Card className="news-card glass-card h-full border-0 shadow-md hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-500 bg-white/80 rounded-[2rem] overflow-hidden flex flex-col transform group-hover:-translate-y-2">
                                                 <div className="h-40 sm:h-48 md:h-56 overflow-hidden relative">
@@ -216,8 +252,6 @@ export default function NewsPage() {
                                         </Link>
                                     ))}
                                 </div>
-
-                                {/* Pagination Container */}
                                 {totalFilteredPages > 1 && (
                                     <div className="glass-panel p-4 rounded-2xl bg-white/60 flex justify-center items-center gap-2 max-w-max mx-auto border-0 shadow-sm">
                                         <Button

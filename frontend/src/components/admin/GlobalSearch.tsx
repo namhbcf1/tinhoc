@@ -9,6 +9,7 @@ import type { LucideIcon } from 'lucide-react';
 import api from '../../services/api';
 import { getAdminTabsForTarget, type AdminTabId } from '../../pages/admin/adminTabs';
 import { getStoredAdmin } from '../../utils/adminSession';
+import OverlayPortal from '../ui/OverlayPortal';
 
 // ─── Category icon + label map ──────────────────────────────────────────────────
 interface CategoryMeta {
@@ -250,16 +251,15 @@ export default function GlobalSearch({ onNavigate }: { onNavigate?: (tabId: stri
   }
 
   return (
-    /* Backdrop */
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] bg-black/40 backdrop-blur-sm"
-      onMouseDown={closeSearch}
-    >
-      {/* Palette panel */}
+    <OverlayPortal>
       <div
-        className="relative w-full max-w-2xl mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden animate-[fadeIn_0.15s_ease-out]"
-        onMouseDown={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-[100000] flex items-start justify-center pt-[12vh] bg-black/40 backdrop-blur-sm"
+        onMouseDown={closeSearch}
       >
+        <div
+          className="relative w-full max-w-2xl mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden animate-[fadeIn_0.15s_ease-out]"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
         {/* Input row */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
           {loading
@@ -310,7 +310,8 @@ export default function GlobalSearch({ onNavigate }: { onNavigate?: (tabId: stri
           <span className="flex items-center gap-1"><CornerDownLeft size={12} /> chọn</span>
           <span className="flex items-center gap-1"><kbd className="font-mono bg-white border border-slate-200 px-1 rounded text-slate-500">Esc</kbd> đóng</span>
         </div>
+        </div>
       </div>
-    </div>
+    </OverlayPortal>
   );
 }

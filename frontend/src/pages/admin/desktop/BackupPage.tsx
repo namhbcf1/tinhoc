@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import api from '../../../services/api';
-import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import ToastContainer, { useToast } from '../../../components/ui/ToastContainer';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import { showError } from '../../../utils/errorHandler';
 import { formatDateVN, getCurrentDateVN } from '../../../utils/dateUtils';
+import '../../../styles/admin/AdminModern.css';
 import './BackupPage.css';
+import { Database } from 'lucide-react';
+import { AdminPageHeader, AdminSummaryPill } from '../shared/AdminPageHeader';
+import AdminLoadingState from '../../../components/admin/AdminLoadingState';
 
 export default function BackupPage() {
   const { success, error, toasts, removeToast } = useToast();
@@ -122,7 +125,16 @@ export default function BackupPage() {
   };
 
   if (loading) {
-    return <LoadingSpinner text="Đang tải danh sách backup..." />;
+    return (
+      <div className="admin-page">
+        <AdminLoadingState
+          title="Đang tải danh sách backup"
+          hint="Các metadata backup đang được đồng bộ lại để tránh thao tác nhầm khi restore hoặc export."
+          variant="dashboard"
+          accent="violet"
+        />
+      </div>
+    );
   }
 
   const tables = ['students', 'classes', 'registrations', 'payments', 'certificates', 'admins'];
@@ -130,16 +142,26 @@ export default function BackupPage() {
   return (
     <div className="backup-page">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-      <div className="page-header">
-        <h1>💾 Sao lưu và Khôi phục</h1>
-        <button
-          onClick={handleCreateBackup}
-          className="btn btn-primary"
-          disabled={creatingBackup}
-        >
-          {creatingBackup ? 'Đang tạo...' : '➕ Tạo Backup'}
-        </button>
-      </div>
+      <AdminPageHeader
+        icon={Database}
+        title="Sao lưu & Khôi phục"
+        description="Bảo vệ dữ liệu vận hành và cho phép export/restore theo luồng quản trị an toàn hơn."
+        pills={(
+          <>
+            <AdminSummaryPill>{backups.length} bản sao lưu</AdminSummaryPill>
+            <AdminSummaryPill>{tables.length} bảng export nhanh</AdminSummaryPill>
+          </>
+        )}
+        actions={(
+          <button
+            onClick={handleCreateBackup}
+            className="btn btn-primary"
+            disabled={creatingBackup}
+          >
+            {creatingBackup ? 'Đang tạo...' : 'Tạo backup'}
+          </button>
+        )}
+      />
 
       <div className="backup-sections">
         <div className="backup-section">

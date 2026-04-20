@@ -10,51 +10,18 @@ import { useClassesManagement, useClassForm } from '../shared/hooks/useClassesMa
 import api from '../../../services/api';
 import PullToRefreshWrapper from '../../../components/ui/PullToRefreshWrapper';
 import AdminLoadingState from '../../../components/admin/AdminLoadingState';
+import {
+  MobileAdminBottomSheet,
+  MobileAdminFloatingAction,
+  MobileAdminHeroCard,
+  MobileAdminPrimaryButton,
+  MobileAdminSearchField,
+  MobileAdminSecondaryButton,
+  MobileAdminStatCard,
+  mobileAdminContentPadding,
+} from '../shared/mobileAdminUi';
 
-const BottomSheet = ({ isOpen, onClose, title, children, height = 'auto' }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const sheetRef = useRef(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setIsVisible(true);
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-      const timer = setTimeout(() => setIsVisible(false), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
-
-  if (!isVisible && !isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50">
-      <div
-        className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
-        onClick={onClose}
-      />
-      <div
-        ref={sheetRef}
-        className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
-        style={{ maxHeight: height === 'auto' ? '90vh' : height }}
-      >
-        <div className="flex justify-center pt-3 pb-2">
-          <div className="w-12 h-1.5 bg-slate-300 rounded-full" />
-        </div>
-        <div className="flex items-center justify-between px-5 pb-3 border-b border-slate-100">
-          <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-            <X size={20} className="text-slate-500" />
-          </button>
-        </div>
-        <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 100px)' }}>
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-};
+const BottomSheet = MobileAdminBottomSheet;
 
 const ClassCard = ({ cls, onClick, onEdit, onDelete }) => {
   const name = cls.ten_lop || 'Lớp học';
@@ -76,12 +43,12 @@ const ClassCard = ({ cls, onClick, onEdit, onDelete }) => {
 
   return (
     <div
-      className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 active:scale-[0.98] transition-all"
+      className="rounded-[26px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 shadow-[0_20px_44px_-30px_rgba(15,23,42,0.34)] active:scale-[0.98] transition-all"
       onClick={() => onClick(cls)}
     >
       <div className="flex items-start gap-3">
         <div className="relative flex-shrink-0">
-          <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${status === 'open' ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : 'bg-slate-200'} text-white`}>
+          <div className={`h-14 w-14 rounded-[20px] flex items-center justify-center ${status === 'open' ? 'bg-gradient-to-br from-cyan-500 to-blue-600 shadow-[0_18px_34px_-22px_rgba(37,99,235,0.55)]' : 'bg-slate-200'} text-white`}>
             <BookOpen size={20} />
           </div>
           {cls.pending_count > 0 && (
@@ -93,7 +60,7 @@ const ClassCard = ({ cls, onClick, onEdit, onDelete }) => {
 
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start mb-1">
-            <h3 className="font-bold text-slate-800 text-base line-clamp-2 pr-2">{name}</h3>
+            <h3 className="pr-2 text-[17px] font-black tracking-[-0.03em] text-slate-900 line-clamp-2">{name}</h3>
             <ChevronRight size={16} className="text-slate-300 flex-shrink-0 mt-1" />
           </div>
 
@@ -129,16 +96,16 @@ const ClassCard = ({ cls, onClick, onEdit, onDelete }) => {
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 mt-3 pt-3 border-t border-slate-50" onClick={(e) => e.stopPropagation()}>
+      <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={() => onEdit(cls)}
-          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg active:bg-blue-100"
+          className="flex items-center justify-center gap-1 rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-600 active:bg-blue-100"
         >
           <Edit2 size={12} /> Sửa
         </button>
         <button
           onClick={() => onDelete(cls)}
-          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg active:bg-red-100"
+          className="flex items-center justify-center gap-1 rounded-2xl border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 active:bg-red-100"
         >
           <Trash2 size={12} /> Xóa
         </button>
@@ -739,81 +706,69 @@ export default function MobileClassesModule() {
   return (
     <PullToRefreshWrapper onRefresh={handleRefresh}>
         <div className="min-h-screen bg-slate-50">
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 pt-4 pb-6 safe-area-inset-top">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-white">Quản lý Lớp học</h2>
-          <button
-            onClick={handleCreate}
-            className="p-2 bg-white/20 rounded-xl text-white active:bg-white/30"
-          >
-            <Plus size={22} />
-          </button>
-        </div>
-
-        <div className="relative">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/70" />
-          <input
-            type="text"
-            placeholder="Tìm lớp theo tên, mã lớp..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-12 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/60"
-          />
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg ${showFilters ? 'bg-white/30' : ''}`}
-          >
-            <Filter size={18} className="text-white/80" />
-          </button>
-        </div>
-
-        {showFilters && (
-          <div className="flex gap-2 mt-3 overflow-x-auto pb-1 -mx-1 px-1">
+      <MobileAdminHeroCard
+        eyebrow="Quản lý học tập"
+        icon={BookOpen}
+        tone="cyan"
+        title="Lớp học"
+        description="Tìm lớp nhanh, lọc theo trạng thái và vào chi tiết mà không bị dồn controls ở phần đầu trang."
+        actions={(
+          <>
+            <MobileAdminSecondaryButton onClick={handleRefresh} className="px-3.5">
+              <RefreshCw size={16} />
+              Làm mới
+            </MobileAdminSecondaryButton>
+            <MobileAdminPrimaryButton onClick={handleCreate} className="px-3.5">
+              <Plus size={16} />
+              Tạo lớp
+            </MobileAdminPrimaryButton>
+          </>
+        )}
+        stats={(
+          <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+            <MobileAdminStatCard label="Tổng" value={stats.total} tone="blue" />
+            <MobileAdminStatCard label="Đang mở" value={stats.open} tone="emerald" />
+            <MobileAdminStatCard label="Đã đóng" value={stats.closed} tone="rose" />
+            <MobileAdminStatCard label="Kết thúc" value={stats.finished} tone="slate" />
+          </div>
+        )}
+        search={(
+          <div className="flex gap-2">
+            <MobileAdminSearchField
+              value={searchTerm}
+              onChange={setSearchTerm}
+              onClear={() => setSearchTerm('')}
+              placeholder="Tìm lớp theo tên, mã lớp..."
+            />
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[20px] border shadow-sm ${showFilters ? 'border-blue-200 bg-blue-600 text-white' : 'border-white/10 bg-white/[0.96] text-slate-500'}`}
+            >
+              <Filter size={18} />
+            </button>
+          </div>
+        )}
+        filters={showFilters ? (
+          <div className="flex gap-2 overflow-x-auto pb-1">
             {[
               { value: 'all', label: 'Tất cả' },
               { value: 'open', label: 'Đang mở' },
               { value: 'closed', label: 'Đã đóng' },
               { value: 'finished', label: 'Kết thúc' },
-            ].map(f => (
+            ].map((f) => (
               <button
                 key={f.value}
                 onClick={() => setFilterStatus(f.value)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${filterStatus === f.value
-                  ? 'bg-white text-blue-600'
-                  : 'bg-white/20 text-white'
-                  }`}
+                className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition ${filterStatus === f.value ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}
               >
                 {f.label}
               </button>
             ))}
           </div>
-        )}
-      </div>
+        ) : null}
+      />
 
-      <div className="px-4 -mt-3">
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-          <div className="grid grid-cols-4 gap-2 text-center">
-            <div>
-              <p className="text-xl font-bold text-slate-900">{stats.total}</p>
-              <p className="text-xs text-slate-500">Tổng</p>
-            </div>
-            <div>
-              <p className="text-xl font-bold text-green-600">{stats.open}</p>
-              <p className="text-xs text-slate-500">Mở</p>
-            </div>
-            <div>
-              <p className="text-xl font-bold text-red-600">{stats.closed}</p>
-              <p className="text-xs text-slate-500">Đóng</p>
-            </div>
-            <div>
-              <p className="text-xl font-bold text-slate-600">{stats.finished}</p>
-              <p className="text-xs text-slate-500">Xong</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-4 pb-24">
+      <div className="p-4 pt-3" style={{ paddingBottom: mobileAdminContentPadding(20) }}>
         {loading ? (
           <AdminLoadingState
             title="Đang tải danh sách lớp"
@@ -841,12 +796,9 @@ export default function MobileClassesModule() {
         )}
       </div>
 
-      <button
-        onClick={handleCreate}
-        className="fixed bottom-20 right-4 w-14 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full shadow-lg shadow-blue-300 flex items-center justify-center active:scale-95 transition-transform z-40"
-      >
+      <MobileAdminFloatingAction onClick={handleCreate} className="bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-300">
         <Plus size={26} />
-      </button>
+      </MobileAdminFloatingAction>
 
       <ClassDetailSheet
         cls={selectedClass}

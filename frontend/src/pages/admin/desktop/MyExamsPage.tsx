@@ -8,6 +8,7 @@ import { formatDateVN, formatTime } from '../../../utils/dateUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
+import OverlayPortal from '../../../components/ui/OverlayPortal';
 import { ClipboardList, Calendar, Clock, MapPin, Info, Filter, ArrowRight, BookOpen, Hash, X } from 'lucide-react';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
 
@@ -193,14 +194,15 @@ export default function MyExamsPage({ toast }) {
 
       {/* Exam Detail Modal */}
       {selectedExam && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={() => setSelectedExam(null)}
-        >
-          <Card
-            className="glass-card max-w-lg w-full overflow-hidden shadow-2xl border-0"
-            onClick={(e) => e.stopPropagation()}
+        <OverlayPortal>
+          <div
+            className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => setSelectedExam(null)}
           >
+            <Card
+              className="glass-card max-w-lg w-full overflow-hidden shadow-2xl border-0"
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="bg-gradient-to-br from-teal-600 to-emerald-600 p-6 text-white flex items-start justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
@@ -275,8 +277,9 @@ export default function MyExamsPage({ toast }) {
                 </Button>
               </div>
             </CardContent>
-          </Card>
-        </div>
+            </Card>
+          </div>
+        </OverlayPortal>
       )}
     </div>
   );

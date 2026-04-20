@@ -2,14 +2,20 @@ import type { LucideIcon } from 'lucide-react';
 import {
   CalendarCheck,
   GraduationCap,
+  MessageSquareQuote,
 } from 'lucide-react';
 import { buildApiUrl } from '../../utils/api-base-url';
 import { getStorageValue } from '../../utils/browser-storage';
 
-export const STUDY_PLATFORM_URL = 'https://vantrangexam.pages.dev/login#/login';
+export const STUDY_PLATFORM_URL = 'https://vantrangexam.pages.dev/#/login';
+
+type OpenStudyPlatformOptions = {
+  target?: '_blank' | '_self';
+  returnTo?: string;
+};
 
 export interface StudentNavItem {
-  id: 'exams' | 'study';
+  id: 'exams' | 'attendance' | 'study' | 'reviews' | 'feedback' | 'my-classes';
   label: string;
   icon: LucideIcon;
   path?: string;
@@ -17,32 +23,60 @@ export interface StudentNavItem {
 }
 
 export const STUDENT_MAIN_MENU: StudentNavItem[] = [
-  { id: 'exams', label: 'Lịch thi', icon: CalendarCheck, path: '/dashboard/exams' },
-  { id: 'study', label: 'Học tập', icon: GraduationCap, external: STUDY_PLATFORM_URL },
+  { id: 'exams',      label: 'Lịch thi',       icon: CalendarCheck,      path: '/dashboard/exams' },
+  { id: 'feedback',   label: 'FEEDBACK LỚP HỌC', icon: MessageSquareQuote, path: '/dashboard/feedback' },
+  { id: 'study',      label: 'Học tập',         icon: GraduationCap,      external: STUDY_PLATFORM_URL },
 ];
 
 export const STUDENT_PAGE_TITLES: Record<string, string> = {
-  exams: 'Lịch thi',
-  study: 'Học tập',
-  profile: 'Hồ sơ cá nhân',
+  exams:       'Lịch thi',
+  feedback:    'FEEDBACK LỚP HỌC',
+  study:       'Học tập',
+  profile:     'Hồ sơ cá nhân',
 };
 
-export async function openStudyPlatform() {
+export async function openStudyPlatform(options: OpenStudyPlatformOptions = {}) {
   if (typeof window === 'undefined') return;
 
-  const popup = window.open(STUDY_PLATFORM_URL, '_blank');
-  const redirectPopup = (target: string) => {
-    if (popup) {
-      popup.location.replace(target);
+  const target = options.target || '_blank';
+  const returnTo = options.returnTo || '/#/student-learning';
+
+  const popup = target === '_blank' ? window.open('', '_blank') : null;
+  if (popup) {
+    try {
+      popup.document.title = 'Đang kết nối Vân Trang Exam...';
+      popup.document.body.innerHTML = `
+        <div style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f8fafc;font-family:Inter,Arial,sans-serif;color:#0f172a;">
+          <div style="text-align:center;padding:24px;">
+            <div style="width:42px;height:42px;margin:0 auto 16px;border:4px solid #dbeafe;border-top-color:#0f4ccf;border-radius:9999px;animation:vt-spin 1s linear infinite;"></div>
+            <div style="font-size:18px;font-weight:700;">Đang mở khu học tập</div>
+            <div style="margin-top:8px;font-size:14px;color:#64748b;">Vui lòng chờ trong giây lát...</div>
+          </div>
+        </div>
+        <style>@keyframes vt-spin{to{transform:rotate(360deg)}}</style>
+      `;
+    } catch {
+      // Ignore popup document access issues.
+    }
+  }
+
+  const redirectToStudy = (nextUrl: string) => {
+    if (target === '_self') {
+      window.location.replace(nextUrl);
       return;
     }
 
-    window.open(target, '_blank', 'noopener,noreferrer');
+    if (popup) {
+      popup.location.replace(nextUrl);
+      return;
+    }
+
+    window.open(nextUrl, '_blank', 'noopener,noreferrer');
   };
 
   const studentToken = getStorageValue('student_token');
   if (!studentToken) {
-    redirectPopup(STUDY_PLATFORM_URL);
+    redirectToStudy(STUDY_PLATFORM_URL);
     return;
   }
 
@@ -55,7 +89,7 @@ export async function openStudyPlatform() {
       },
       body: JSON.stringify({
         target_app: 'exam',
-        return_to: '/#/student-learning',
+        return_to: returnTo,
       }),
     });
 
@@ -64,8 +98,8 @@ export async function openStudyPlatform() {
     }
 
     const payload = await response.json();
-    redirectPopup(payload?.redirect_url || STUDY_PLATFORM_URL);
+    redirectToStudy(payload?.redirect_url || STUDY_PLATFORM_URL);
   } catch {
-    redirectPopup(STUDY_PLATFORM_URL);
+    redirectToStudy(STUDY_PLATFORM_URL);
   }
 }

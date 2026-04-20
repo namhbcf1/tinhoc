@@ -29,7 +29,7 @@ export default function ModernFooter() {
                         <h4 className="font-bold text-green-700 mb-6 uppercase">Dịch vụ</h4>
                         <ul className="space-y-3 text-sm">
                             <li><Link to="/training" className="hover:text-green-600 transition-colors">Đào tạo</Link></li>
-                            <li><Link to="/admissions" className="hover:text-green-600 transition-colors">Đăng ký khóa học</Link></li>
+                            <li><Link to="/register" className="hover:text-green-600 transition-colors">Đăng ký khóa học</Link></li>
                             <li><Link to="/news" className="hover:text-green-600 transition-colors">Tin tức & Blog</Link></li>
                             <li><Link to="/about" className="hover:text-green-600 transition-colors">Về chúng tôi</Link></li>
                             <li><Link to="/contact" className="hover:text-green-600 transition-colors">Liên hệ</Link></li>

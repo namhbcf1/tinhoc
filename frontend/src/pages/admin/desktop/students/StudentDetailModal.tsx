@@ -3,9 +3,13 @@ import { createPortal } from 'react-dom';
 import {
   X, Edit2, Download, User, Mail, Phone, MapPin, Calendar,
   CreditCard, Award, BookOpen, Clock3, History, CheckCircle2, RefreshCw,
+  Truck,
 } from 'lucide-react';
 import api from '../../../../services/api';
 import { formatDateTimeVN, formatDateVN } from '../../../../utils/dateUtils';
+import { applyImageFallback } from '../../../../utils/imageUrl';
+import CertificateShipmentModal from '../../../../components/admin/CertificateShipmentModal';
+import { useOverlayLayer, useOverlayLock } from '../../../../components/ui/overlay-lock';
 
 const STATUS_MAP = {
   studying:  { cls: 'bg-emerald-100 text-emerald-700', text: 'Đang học' },
@@ -130,7 +134,12 @@ function PhotoCard({ src, alt, filename, height = 120, placeholder }) {
     >
       {src ? (
         <>
-          <img src={src} alt={alt} className="h-full w-full object-cover" />
+          <img
+            src={src}
+            alt={alt}
+            className="h-full w-full object-cover"
+            onError={(event) => applyImageFallback(event, alt)}
+          />
           {hovered && (
             <div className="absolute inset-0 flex items-center justify-center bg-slate-950/55">
               <button
@@ -201,15 +210,18 @@ export default function StudentDetailModal({ student, getImageUrl, onClose, onEd
   const [historyLoading, setHistoryLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [actionKey, setActionKey] = useState('');
+  const [certificates, setCertificates] = useState([]);
+  const [certificatesLoading, setCertificatesLoading] = useState(false);
+  const [shipmentModalCertificate, setShipmentModalCertificate] = useState(null);
+  const overlayLayer = useOverlayLayer(true);
+
+  useOverlayLock();
 
   useEffect(() => {
     setDetailStudent(student);
   }, [student]);
 
   useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         onClose?.();
@@ -219,7 +231,6 @@ export default function StudentDetailModal({ student, getImageUrl, onClose, onEd
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [onClose]);
@@ -250,6 +261,29 @@ export default function StudentDetailModal({ student, getImageUrl, onClose, onEd
     };
 
     loadHistory();
+  }, [detailStudent?.id]);
+
+  useEffect(() => {
+    const loadCertificates = async () => {
+      if (!detailStudent?.id) {
+        setCertificates([]);
+        return;
+      }
+
+      setCertificatesLoading(true);
+      try {
+        const response = await api.getCertificates({ student_id: detailStudent.id, limit: 20 });
+        const items = Array.isArray(response?.data) ? response.data : [];
+        setCertificates(items.filter((item) => item?.status !== 'revoked'));
+      } catch (error) {
+        console.error('Error loading certificates:', error);
+        setCertificates([]);
+      } finally {
+        setCertificatesLoading(false);
+      }
+    };
+
+    loadCertificates();
   }, [detailStudent?.id]);
 
   const registrations = Array.isArray(detailStudent?.registrations) ? detailStudent.registrations : [];
@@ -291,6 +325,9 @@ export default function StudentDetailModal({ student, getImageUrl, onClose, onEd
   };
 
   const genderText = detailStudent?.gioi_tinh === 'male' || detailStudent?.gioi_tinh === 'Nam' ? 'Nam' : 'Nữ';
+  const image3x4 = getImageUrl(detailStudent?.image_3x4 || detailStudent?.photo_3x4_image_id);
+  const imageFront = getImageUrl(detailStudent?.image_cccd_front || detailStudent?.cccd_front_image_id);
+  const imageBack = getImageUrl(detailStudent?.image_cccd_back || detailStudent?.cccd_back_image_id);
 
   if (typeof document === 'undefined') {
     return null;
@@ -299,6 +336,7 @@ export default function StudentDetailModal({ student, getImageUrl, onClose, onEd
   return createPortal(
     <div
       className="fixed inset-0 z-[100120] flex items-center justify-center bg-slate-950/55 px-4 py-6 backdrop-blur-sm"
+      style={{ zIndex: overlayLayer }}
       onClick={onClose}
     >
       <div
@@ -309,8 +347,13 @@ export default function StudentDetailModal({ student, getImageUrl, onClose, onEd
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex min-w-0 items-center gap-4">
               <div className="h-20 w-20 overflow-hidden rounded-[28px] bg-white/15 ring-2 ring-white/20">
-                {detailStudent?.image_3x4 ? (
-                  <img src={getImageUrl(detailStudent.image_3x4)} alt="Avatar" className="h-full w-full object-cover" />
+                {image3x4 ? (
+                  <img
+                    src={image3x4}
+                    alt="Avatar"
+                    className="h-full w-full object-cover"
+                    onError={(event) => applyImageFallback(event, detailStudent?.ho_ten_full || 'Hoc vien')}
+                  />
                 ) : (
                   <div className="flex h-full items-center justify-center text-3xl font-black">
                     {detailStudent?.ho_ten_full?.charAt(0) || 'H'}
@@ -398,12 +441,28 @@ export default function StudentDetailModal({ student, getImageUrl, onClose, onEd
 
             {/* Col 2: Ảnh hồ sơ + Lịch sử đăng ký */}
             <div className="space-y-4">
-              <SectionCard title="Ảnh hồ sơ" icon={<Award size={14} />} tone="purple">
+              <SectionCard
+                title="Ảnh hồ sơ"
+                icon={<Award size={14} />}
+                tone="purple"
+                right={typeof onEdit === 'function' ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose?.();
+                      onEdit(detailStudent);
+                    }}
+                    className="rounded-xl border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700 transition hover:bg-purple-100"
+                  >
+                    Đổi ảnh
+                  </button>
+                ) : null}
+              >
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                   <div>
                     <div className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Ảnh 3x4</div>
                     <PhotoCard
-                      src={getImageUrl(detailStudent?.image_3x4)}
+                      src={image3x4}
                       alt="Ảnh 3x4"
                       filename={`${detailStudent?.ho_ten_full || 'student'}_3x4.jpg`}
                       height={140}
@@ -413,7 +472,7 @@ export default function StudentDetailModal({ student, getImageUrl, onClose, onEd
                   <div>
                     <div className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">CCCD trước</div>
                     <PhotoCard
-                      src={getImageUrl(detailStudent?.image_cccd_front)}
+                      src={imageFront}
                       alt="CCCD mặt trước"
                       filename={`${detailStudent?.ho_ten_full || 'student'}_cccd_front.jpg`}
                       height={140}
@@ -423,7 +482,7 @@ export default function StudentDetailModal({ student, getImageUrl, onClose, onEd
                   <div>
                     <div className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">CCCD sau</div>
                     <PhotoCard
-                      src={getImageUrl(detailStudent?.image_cccd_back)}
+                      src={imageBack}
                       alt="CCCD mặt sau"
                       filename={`${detailStudent?.ho_ten_full || 'student'}_cccd_back.jpg`}
                       height={140}
@@ -516,6 +575,54 @@ export default function StudentDetailModal({ student, getImageUrl, onClose, onEd
                   </div>
                 )}
               </SectionCard>
+
+              {(certificatesLoading || certificates.length > 0) ? (
+                <SectionCard
+                  title={`Chứng chỉ đã cấp (${certificates.length})`}
+                  icon={<Award size={14} />}
+                  tone="blue"
+                  right={certificatesLoading ? <RefreshCw size={14} className="animate-spin text-slate-400" /> : null}
+                >
+                  {certificatesLoading ? (
+                    <div className="space-y-3">
+                      {[1, 2].map((skeleton) => (
+                        <div key={skeleton} className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {certificates.map((cert) => (
+                        <div key={cert.id} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="text-base font-bold text-slate-900">{cert.certificate_number}</div>
+                              <div className="mt-1 text-sm text-slate-500">{cert.ten_lop || 'Không rõ lớp'} • {formatDateVN(cert.issued_date) || 'Chưa có ngày cấp'}</div>
+                              <div className="mt-2 text-xs text-slate-500">
+                                {cert.shipment_status ? `Vận đơn hiện tại: ${cert.shipment_status}` : 'Chưa tạo vận đơn'}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => window.open(api.getCertificateDownloadUrl(cert.id), '_blank')}
+                                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                              >
+                                Tải chứng chỉ
+                              </button>
+                              <button
+                                onClick={() => setShipmentModalCertificate(cert)}
+                                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+                              >
+                                <Truck size={14} />
+                                {cert.shipment_status ? 'Xem vận đơn' : 'Tạo vận đơn'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </SectionCard>
+              ) : null}
             </div>
 
             <div className="space-y-4">
@@ -575,6 +682,25 @@ export default function StudentDetailModal({ student, getImageUrl, onClose, onEd
           </div>
         </div>
       </div>
+      <CertificateShipmentModal
+        open={!!shipmentModalCertificate}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShipmentModalCertificate(null);
+          }
+        }}
+        certificate={shipmentModalCertificate}
+        toast={toast}
+        onSuccess={() => {
+          if (detailStudent?.id) {
+            api.getCertificates({ student_id: detailStudent.id, limit: 20 })
+              .then((response) => {
+                setCertificates(Array.isArray(response?.data) ? response.data.filter((item) => item?.status !== 'revoked') : []);
+              })
+              .catch(() => null);
+          }
+        }}
+      />
     </div>,
     document.body
   );

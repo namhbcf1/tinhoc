@@ -26,8 +26,35 @@ const MobileMyScheduleModule = lazy(() => import('./MobileMyScheduleModule'));
 const MobileMyExamsModule = lazy(() => import('./MobileMyExamsModule'));
 const MobileAttendanceModule = lazy(() => import('./MobileAttendanceModule'));
 
+function resolveInitialAdminTab(adminData) {
+    if (typeof window === 'undefined') {
+        return 'exam-schedules';
+    }
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const hash = window.location.hash;
+    const tabFromHash = hash ? hash.replace('#', '').split('?')[0] : '';
+    const tabFromSearch = searchParams.get('tab') || '';
+    const baseTab = tabFromHash || tabFromSearch;
+
+    if (!baseTab) {
+        return 'exam-schedules';
+    }
+
+    const requestedTab = baseTab === 'online-classes' ? 'classes' : baseTab;
+    if (!adminData) {
+        return 'exam-schedules';
+    }
+
+    const allowedTabs = new Set(
+        getAdminTabsForTarget(adminData.role, 'mobile', adminData).map((item) => item.id)
+    );
+
+    return allowedTabs.has(requestedTab) ? requestedTab : 'exam-schedules';
+}
+
 export default function AdminDashboardMobile() {
-    const [activeTab, setActiveTab] = useState('exam-schedules');
+    const [activeTab, setActiveTab] = useState(() => resolveInitialAdminTab(getStoredAdmin()));
     const [admin, setAdmin] = useState(null);
     const [returnToUrl, setReturnToUrl] = useState(null);
     const navigate = useNavigate();
@@ -56,27 +83,16 @@ export default function AdminDashboardMobile() {
             const searchParams = new URLSearchParams(window.location.search);
             const hash = window.location.hash;
             const tabFromHash = hash ? hash.replace('#', '').split('?')[0] : '';
-            const tabFromSearch = searchParams.get('tab') || '';
-            const tab = tabFromHash || tabFromSearch;
+            const currentAdminData = getStoredAdmin();
             setReturnToUrl(searchParams.get('return_to'));
 
-            if (!tab) {
-                setActiveTab('exam-schedules');
-                return;
-            }
-            if (tab === 'online-classes') {
+            if (tabFromHash === 'online-classes') {
                 window.location.hash = 'classes?mode=online';
+                setActiveTab('classes');
                 return;
             }
 
-            const allowedTabs = new Set(getAdminTabsForTarget(adminData.role, 'mobile', adminData).map((item) => item.id));
-            if (!allowedTabs.has(tab)) {
-                window.location.hash = 'exam-schedules';
-                setActiveTab('exam-schedules');
-                return;
-            }
-
-            setActiveTab(tab);
+            setActiveTab(resolveInitialAdminTab(currentAdminData));
         };
 
         const handleSessionUpdated = () => {

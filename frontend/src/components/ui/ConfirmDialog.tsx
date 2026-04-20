@@ -1,5 +1,6 @@
 import { useEffect, useRef, useId } from 'react';
 import './ConfirmDialog.css';
+import OverlayPortal from './OverlayPortal';
 
 /**
  * ConfirmDialog — WCAG 2.2 accessible confirmation dialog
@@ -55,44 +56,46 @@ export default function ConfirmDialog({
   const dialogRole = type === 'info' ? 'dialog' : 'alertdialog';
 
   return (
-    <div
-      className="confirm-dialog-overlay"
-      aria-hidden="true"
-      onClick={onClose}
-    >
+    <OverlayPortal>
       <div
-        role={dialogRole}
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descId}
-        className="confirm-dialog"
-        onClick={(e) => e.stopPropagation()}
+        className="confirm-dialog-overlay"
+        aria-hidden="true"
+        onClick={onClose}
       >
-        <div className={`confirm-dialog-header confirm-dialog-${type}`}>
-          <h3 id={titleId}>{title}</h3>
-        </div>
-        <div className="confirm-dialog-body">
-          <p id={descId}>{message}</p>
-        </div>
-        <div className="confirm-dialog-footer">
-          <button
-            ref={cancelBtnRef}
-            onClick={onClose}
-            className="btn btn-secondary"
-          >
-            {cancelText}
-          </button>
-          <button
-            onClick={() => {
-              onConfirm();
-              onClose();
-            }}
-            className={`btn btn-${type === 'danger' ? 'danger' : type === 'warning' ? 'warning' : 'primary'}`}
-          >
-            {confirmText}
-          </button>
+        <div
+          role={dialogRole}
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={descId}
+          className="confirm-dialog"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className={`confirm-dialog-header confirm-dialog-${type}`}>
+            <h3 id={titleId}>{title}</h3>
+          </div>
+          <div className="confirm-dialog-body">
+            <p id={descId}>{message}</p>
+          </div>
+          <div className="confirm-dialog-footer">
+            <button
+              ref={cancelBtnRef}
+              onClick={onClose}
+              className="btn btn-secondary"
+            >
+              {cancelText}
+            </button>
+            <button
+              onClick={() => {
+                onConfirm();
+                onClose();
+              }}
+              className={`btn btn-${type === 'danger' ? 'danger' : type === 'warning' ? 'warning' : 'primary'}`}
+            >
+              {confirmText}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </OverlayPortal>
   );
 }

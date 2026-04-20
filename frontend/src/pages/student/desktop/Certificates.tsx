@@ -56,6 +56,7 @@ const CertCard = ({ cert, index }) => (
             </div>
 
             <button
+                aria-label={`Tải chứng chỉ ${cert.name || cert.certificate_name || 'chứng chỉ'}`}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
                            bg-gradient-to-r from-violet-500 to-purple-600 text-white text-sm font-semibold
                            hover:from-violet-600 hover:to-purple-700 shadow hover:shadow-md
@@ -75,7 +76,7 @@ const MiniStat = ({ icon: Icon, label, value, gradient, bgLight, textColor }) =>
             <Icon size={20} className="text-white" />
         </div>
         <div>
-            <p className="text-2xl font-black leading-none ${textColor}">{value}</p>
+            <p className={`text-2xl font-black leading-none ${textColor}`}>{value}</p>
             <p className="text-xs text-slate-500 font-medium mt-0.5 font-bold">{label}</p>
         </div>
     </div>

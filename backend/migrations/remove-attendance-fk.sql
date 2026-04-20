@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS attendance_no_fk (
     marked_by_role TEXT DEFAULT 'admin' CHECK(marked_by_role IN ('admin', 'teacher')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(registration_id, attendance_date)
+    UNIQUE(registration_id, class_id, attendance_date)
 );
 
 -- 2. Copy all existing data

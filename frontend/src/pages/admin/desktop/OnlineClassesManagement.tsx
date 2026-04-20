@@ -21,9 +21,9 @@ import { getStorageValue } from '../../../utils/browser-storage.js';
 // ========================================
 function StatusBadge({ status }) {
     const config = {
-        active: { icon: CheckCircle, label: 'Đang học', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+        active: { icon: CheckCircle, label: 'Đang diễn ra', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
         paused: { icon: PauseCircle, label: 'Tạm dừng', className: 'bg-amber-100 text-amber-700 border-amber-200' },
-        completed: { icon: CheckCircle, label: 'Hoàn thành', className: 'bg-blue-100 text-blue-700 border-blue-200' },
+        completed: { icon: CheckCircle, label: 'Đã kết thúc', className: 'bg-blue-100 text-blue-700 border-blue-200' },
         cancelled: { icon: XCircle, label: 'Đã hủy', className: 'bg-rose-100 text-rose-700 border-rose-200' }
     };
 
@@ -188,6 +188,21 @@ export default function OnlineClassesManagement() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // Validate end_date >= start_date
+        if (formData.start_date && formData.end_date) {
+            const parseToDate = (s) => {
+                if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s);
+                const vn = parseVNDate(s);
+                return vn || null;
+            };
+            const sd = parseToDate(formData.start_date);
+            const ed = parseToDate(formData.end_date);
+            if (sd && ed && ed < sd) {
+                toast?.error('Ngày kết thúc phải sau ngày bắt đầu');
+                return;
+            }
+        }
+
         const schedule_rule = scheduleDays.length > 0
             ? `WEEKLY:${scheduleDays.join(',')}`
             : 'DAILY';
@@ -339,16 +354,38 @@ export default function OnlineClassesManagement() {
     // ========================================
     return (
         <div className="space-y-6">
-            {/* Unified Main Content Card */}
-            <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+            <div className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_24px_64px_-44px_rgba(15,23,42,0.24)]">
 
-                {/* 1. Header & Toolbar */}
-                <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row gap-4 justify-between items-center">
-                    <div className="relative w-full md:w-96">
+                <div className="border-b border-slate-100 bg-[linear-gradient(180deg,rgba(250,245,255,0.8)_0%,rgba(255,255,255,1)_100%)] p-5">
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                        <div className="rounded-[24px] border border-violet-100 bg-violet-50/65 px-4 py-4 shadow-[0_16px_44px_-34px_rgba(124,58,237,0.35)]">
+                            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Tổng số lớp</div>
+                            <div className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-slate-950">{classes.length}</div>
+                            <div className="mt-2 text-xs text-slate-500">Toàn bộ lớp online hiện có.</div>
+                        </div>
+                        <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/65 px-4 py-4 shadow-[0_16px_44px_-34px_rgba(16,185,129,0.35)]">
+                            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Đang hoạt động</div>
+                            <div className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-slate-950">{classes.filter(c => c.status === 'active').length}</div>
+                            <div className="mt-2 text-xs text-slate-500">Các lớp đang trong vòng vận hành.</div>
+                        </div>
+                        <div className="rounded-[24px] border border-blue-100 bg-blue-50/65 px-4 py-4 shadow-[0_16px_44px_-34px_rgba(37,99,235,0.28)]">
+                            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Tổng học viên</div>
+                            <div className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-slate-950">{classes.reduce((sum, c) => sum + (c.enrollment_count || 0), 0)}</div>
+                            <div className="mt-2 text-xs text-slate-500">Tổng số học viên đang ghi danh.</div>
+                        </div>
+                        <div className="rounded-[24px] border border-pink-100 bg-pink-50/65 px-4 py-4 shadow-[0_16px_44px_-34px_rgba(236,72,153,0.24)]">
+                            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Có Meet link</div>
+                            <div className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-slate-950">{classes.filter(c => c.meet_link).length}</div>
+                            <div className="mt-2 text-xs text-slate-500">Lớp đã sẵn sàng truy cập buổi học.</div>
+                        </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-col gap-3 md:flex-row md:justify-between md:items-center">
+                        <div className="relative w-full md:w-[440px]">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <Input
                             placeholder="Tìm kiếm lớp học..."
-                            className="pl-10 h-11 bg-white border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-100"
+                            className="h-11 rounded-2xl border-slate-200 bg-white pl-10 focus:ring-2 focus:ring-purple-100"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -358,43 +395,23 @@ export default function OnlineClassesManagement() {
                         <Select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className="h-11 w-full md:w-48 bg-white border-slate-200 rounded-xl cursor-pointer"
+                            className="h-11 w-full md:w-48 bg-white border-slate-200 rounded-2xl cursor-pointer"
                         >
                             <option value="">Tất cả trạng thái</option>
-                            <option value="active">🟢 Đang học</option>
+                            <option value="active">🟢 Đang diễn ra</option>
                             <option value="paused">⏸️ Tạm dừng</option>
-                            <option value="completed">✅ Hoàn thành</option>
+                            <option value="completed">✅ Đã kết thúc</option>
                             <option value="cancelled">❌ Đã hủy</option>
                         </Select>
 
-                        <Button onClick={handleCreateClass} className="h-11 px-6 bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-200 rounded-xl font-medium transition-all hover:scale-105 active:scale-95 shrink-0">
+                        <Button onClick={handleCreateClass} className="h-11 shrink-0 rounded-2xl bg-violet-600 px-6 font-medium text-white shadow-[0_18px_36px_-24px_rgba(124,58,237,0.58)] transition-all hover:scale-[1.01] hover:bg-violet-700 active:scale-95">
                             <Plus size={20} className="mr-2" /> Tạo lớp mới
                         </Button>
                     </div>
                 </div>
-
-                {/* 2. Stats Summary (Optional - Keep it if useful, or remove) */}
-                <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-slate-100 border-b border-slate-100 bg-white">
-                    <div className="p-4 text-center">
-                        <div className="text-sm text-slate-500 font-medium mb-1">Tổng số lớp</div>
-                        <div className="text-2xl font-bold text-slate-800">{classes.length}</div>
-                    </div>
-                    <div className="p-4 text-center">
-                        <div className="text-sm text-slate-500 font-medium mb-1">Đang hoạt động</div>
-                        <div className="text-2xl font-bold text-emerald-600">{classes.filter(c => c.status === 'active').length}</div>
-                    </div>
-                    <div className="p-4 text-center">
-                        <div className="text-sm text-slate-500 font-medium mb-1">Tổng học viên</div>
-                        <div className="text-2xl font-bold text-blue-600">{classes.reduce((sum, c) => sum + (c.enrollment_count || 0), 0)}</div>
-                    </div>
-                    <div className="p-4 text-center">
-                        <div className="text-sm text-slate-500 font-medium mb-1">Online Now</div>
-                        <div className="text-2xl font-bold text-purple-600">-</div>
-                    </div>
                 </div>
 
-                {/* 3. Content Grid */}
-                <div className="p-6 md:p-8 bg-slate-50/50 min-h-[400px]">
+                <div className="p-6 md:p-7 bg-slate-50/55 min-h-[400px]">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20 text-slate-400">
                             <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-4"></div>
@@ -413,7 +430,7 @@ export default function OnlineClassesManagement() {
                             {filteredClasses.map((cls) => (
                                 <Card
                                     key={cls.id}
-                                    className="group relative border-0 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden bg-white ring-1 ring-slate-200 hover:ring-purple-200 rounded-2xl"
+                                    className="group relative cursor-pointer overflow-hidden rounded-[26px] border-0 bg-white ring-1 ring-slate-200 shadow-[0_16px_40px_-32px_rgba(15,23,42,0.3)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_26px_52px_-34px_rgba(124,58,237,0.24)] hover:ring-purple-200"
                                     onClick={() => setViewingClass(cls)}
                                 >
                                     {/* Cover / Gradient Bar */}

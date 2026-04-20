@@ -113,29 +113,29 @@ describe('student self profile update policy', () => {
       currentStudent.id,
       {
         cccd: '098765432109',
-        ho: 'Trần',
-        ten_dem: 'Thị',
-        ten: 'Bình',
+        ho: 'TRẦN',
+        ten_dem: 'THỊ',
+        ten: 'BÌNH',
         gioi_tinh: 'Nữ',
-        noi_sinh: 'Hải Phòng',
-        dan_toc: 'Tày',
-        quoc_tich: 'Việt Nam',
+        noi_sinh: 'HẢI PHÒNG',
+        dan_toc: 'TÀY',
+        quoc_tich: 'VIỆT NAM',
         sdt: '0988000111',
         email: 'new@example.com',
-        dia_chi: 'Cầu Giấy, Hà Nội',
-        don_vi_cong_tac: 'Công ty ABC',
+        dia_chi: 'CẦU GIẤY, HÀ NỘI',
+        don_vi_cong_tac: 'CÔNG TY ABC',
         ngay_sinh: '2001-12-31',
         ngay_cap_cccd: '2024-02-15',
-        ho_ten_full: 'Trần Thị Bình',
+        ho_ten_full: 'TRẦN THỊ BÌNH',
         ho_ten_normalized: 'tran thi binh',
       },
     );
-    expect(repoMocks.logStudentEditHistory).toHaveBeenCalledTimes(13);
+    expect(repoMocks.logStudentEditHistory).toHaveBeenCalledTimes(14);
     expect(issueSessionToken).toHaveBeenCalledTimes(1);
     expect(result.data.cccd).toBe('098765432109');
     expect(result.token).toBe('token-moi');
     expect(result.data.email).toBe('new@example.com');
-    expect(result.data.dia_chi).toBe('Cầu Giấy, Hà Nội');
+    expect(result.data.dia_chi).toBe('CẦU GIẤY, HÀ NỘI');
   });
 
   it('từ chối khi sinh viên đổi sang CCCD đã thuộc về học viên khác', async () => {

@@ -32,24 +32,7 @@ export default function AdminMobileLayout({
     const visibleTabs = getAdminTabsForTarget(admin?.role, 'mobile', admin);
     const bottomTabs = getAdminBottomTabs(admin?.role, admin);
     const activeTabMeta = getAdminTabById(activeTab);
-
-    useEffect(() => {
-        if (typeof window === 'undefined' || window.innerWidth > 768) {
-            return;
-        }
-
-        const root = document.documentElement;
-        const previousFontSize = root.style.getPropertyValue('--vt-mobile-root-font-size');
-        root.style.setProperty('--vt-mobile-root-font-size', '15px');
-
-        return () => {
-            if (previousFontSize) {
-                root.style.setProperty('--vt-mobile-root-font-size', previousFontSize);
-            } else {
-                root.style.removeProperty('--vt-mobile-root-font-size');
-            }
-        };
-    }, []);
+    const activeGroupLabel = activeTabMeta?.group ? ADMIN_TAB_GROUP_LABELS[activeTabMeta.group] : 'Admin';
 
     useEffect(() => {
         setIsMenuOpen(false);
@@ -60,7 +43,7 @@ export default function AdminMobileLayout({
             <header className="mobile-header admin">
                 <div className="mobile-header-content">
                     <button
-                        className="mobile-header-btn"
+                        className="mobile-header-btn min-h-[44px] min-w-[44px]"
                         onClick={() => setIsMenuOpen(true)}
                         aria-label="Menu"
                         data-tour="admin-mobile-menu"
@@ -68,9 +51,10 @@ export default function AdminMobileLayout({
                         <Menu size={24} />
                     </button>
 
-                    <h1 className="mobile-header-title">
-                        {activeTabMeta?.label || 'Admin'}
-                    </h1>
+                    <div className="mobile-header-title">
+                        <span className="mobile-header-kicker">{activeGroupLabel}</span>
+                        <span className="mobile-header-heading">{activeTabMeta?.label || 'Admin'}</span>
+                    </div>
 
                     <div className="mobile-header-actions">
                         <button
@@ -133,6 +117,7 @@ export default function AdminMobileLayout({
                                     <p className="mobile-drawer-role">
                                         {admin?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
                                     </p>
+                                    <p className="mobile-drawer-subtitle">VanTrangEdu LearningOS</p>
                                 </div>
                             </div>
                             <button

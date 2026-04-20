@@ -48,36 +48,37 @@ export default function ModernHeader() {
         { to: '/', label: t('home') },
         { to: '/about', label: t('about') },
         { to: '/training', label: t('training') },
-        { to: '/admissions', label: t('admissions') },
+        { to: '/register', label: t('admissions') },
         { to: '/news', label: t('news') },
         { to: '/guides', label: t('guides') },
+        { to: '/feedback', label: t('feedback') },
         { to: '/contact', label: t('contact') },
     ];
 
     return (
         <header className="sticky top-0 z-50 w-full glass-panel border-b-0">
             {/* Top Bar */}
-            <div className="bg-emerald-600 bg-gradient-to-r from-emerald-600 to-teal-500 px-4 py-2 text-white text-xs md:text-sm shadow-sm">
+            <div className="bg-emerald-600 bg-gradient-to-r from-emerald-600 to-teal-500 px-4 py-3 text-white text-sm md:text-base shadow-sm">
                 <div className="container mx-auto flex justify-between items-center">
                     <div className="flex gap-4">
-                        <a href="tel:0962445963" className="flex items-center gap-1 hover:text-emerald-100" data-tour="public-hotline">
-                            <Phone size={14} /> <span>096 244 5963</span>
+                        <a href="tel:0962445963" className="flex items-center gap-1.5 hover:text-emerald-100" data-tour="public-hotline">
+                            <Phone size={16} /> <span>096 244 5963</span>
                         </a>
-                        <a href="mailto:info@vantrangedu.edu.vn" className="flex items-center gap-1 hover:text-emerald-100 hidden sm:flex">
-                            <Mail size={14} /> <span>info@vantrangedu.edu.vn</span>
+                        <a href="mailto:info@vantrangedu.edu.vn" className="flex items-center gap-1.5 hover:text-emerald-100 hidden sm:flex">
+                            <Mail size={16} /> <span>info@vantrangedu.edu.vn</span>
                         </a>
                     </div>
-                    <div className="flex gap-2" data-tour="public-language">
+                    <div className="flex gap-1" data-tour="public-language">
                         <button
                             onClick={() => setLanguage('vi')}
-                            className={cn("px-2 py-0.5 rounded transition-colors", language === 'vi' ? "bg-white/20 font-bold" : "hover:bg-white/10")}
+                            className={cn("min-h-[44px] min-w-[44px] px-3 py-2 rounded-lg transition-colors text-sm", language === 'vi' ? "bg-white/20 font-bold" : "hover:bg-white/10")}
                         >
                             VN
                         </button>
-                        <span className="text-white/40">|</span>
+                        <span className="text-white/40 self-center">|</span>
                         <button
                             onClick={() => setLanguage('en')}
-                            className={cn("px-2 py-0.5 rounded transition-colors", language === 'en' ? "bg-white/20 font-bold" : "hover:bg-white/10")}
+                            className={cn("min-h-[44px] min-w-[44px] px-3 py-2 rounded-lg transition-colors text-sm", language === 'en' ? "bg-white/20 font-bold" : "hover:bg-white/10")}
                         >
                             EN
                         </button>
@@ -146,10 +147,10 @@ export default function ModernHeader() {
                     )}
                 </div>
 
-                {/* Mobile actions — hamburger */}
+                {/* Mobile actions — keep menu access while auth stays visible below */}
                 <div className="md:hidden flex items-center gap-2">
                     <button
-                        className="p-2 text-slate-700 bg-slate-50 rounded-full border border-slate-200"
+                        className="p-2 text-slate-700 bg-slate-50 rounded-full border border-slate-200 min-h-[44px] min-w-[44px]"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                         aria-expanded={isMenuOpen}
                         aria-controls="mobile-menu"
@@ -161,9 +162,48 @@ export default function ModernHeader() {
                 </div>
             </div>
 
+            <div className="md:hidden border-t border-slate-100 bg-white/95 px-4 pb-3">
+                <div className="container mx-auto flex items-center gap-2 pt-3">
+                    {isLoggedIn ? (
+                        <>
+                            <Link to="/dashboard" className="flex-1">
+                                <Button className="h-10 w-full justify-center rounded-full bg-emerald-500 font-semibold text-white shadow-sm">
+                                    <User size={16} className="mr-2" /> Dashboard
+                                </Button>
+                            </Link>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={handleLogout}
+                                className="h-10 w-10 rounded-full border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600"
+                                aria-label="Đăng xuất"
+                            >
+                                <LogOut size={16} />
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <Link to="/login" className="flex-1">
+                                <Button
+                                    variant="outline"
+                                    className="h-10 w-full justify-center rounded-full border-emerald-200 font-semibold text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700"
+                                >
+                                    {t('login')}
+                                </Button>
+                            </Link>
+                            <Link to="/register" className="flex-1">
+                                <Button className="h-10 w-full justify-center rounded-full bg-emerald-500 font-semibold text-white shadow-sm">
+                                    {t('register')}
+                                </Button>
+                            </Link>
+                        </>
+                    )}
+                </div>
+            </div>
+
             {/* Mobile Menu — id for aria-controls, 100dvh for mobile browser bar (fix #2) */}
             {isMenuOpen && (
-                <div id="mobile-menu" className="md:hidden border-t border-slate-200 p-4 bg-white shadow-lg absolute w-full left-0 top-[100%] animate-in slide-in-from-top-2 h-[calc(100dvh-112px)] overflow-y-auto" data-tour="public-mobile-menu-panel">
+                <div id="mobile-menu" className="md:hidden border-t border-slate-200 p-4 bg-white shadow-lg absolute w-full left-0 top-[100%] animate-in slide-in-from-top-2 max-h-[calc(100dvh-10.5rem)] overflow-y-auto" data-tour="public-mobile-menu-panel">
                     <nav className="flex flex-col gap-2">
                         {navLinks.map((link) => (
                             <Link

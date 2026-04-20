@@ -128,7 +128,7 @@ export default function QuickConsultForm() {
                     type="text"
                     {...register('ho_ten')}
                     placeholder="Nguyễn Văn A"
-                    className={`w-full rounded-xl border px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 ${
+                    className={`w-full min-h-[48px] rounded-xl border px-4 py-3 text-base text-slate-900 placeholder-slate-400 outline-none transition-all focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 ${
                       errors.ho_ten ? 'border-red-400 bg-red-50/50' : 'border-slate-200 bg-white/70'
                     }`}
                   />
@@ -148,7 +148,7 @@ export default function QuickConsultForm() {
                     type="tel"
                     {...register('sdt')}
                     placeholder="09xxxxxxxx"
-                    className={`w-full rounded-xl border px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 ${
+                    className={`w-full min-h-[48px] rounded-xl border px-4 py-3 text-base text-slate-900 placeholder-slate-400 outline-none transition-all focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 ${
                       errors.sdt ? 'border-red-400 bg-red-50/50' : 'border-slate-200 bg-white/70'
                     }`}
                   />
@@ -166,7 +166,7 @@ export default function QuickConsultForm() {
                   <select
                     id="qcf-khoa"
                     {...register('khoa_quan_tam')}
-                    className={`w-full rounded-xl border px-3 py-2.5 text-sm text-slate-900 outline-none transition-all focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 bg-white/70 ${
+                    className={`w-full min-h-[48px] rounded-xl border px-4 py-3 text-base text-slate-900 outline-none transition-all focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 bg-white/70 ${
                       errors.khoa_quan_tam ? 'border-red-400 bg-red-50/50' : 'border-slate-200'
                     }`}
                   >
@@ -193,7 +193,7 @@ export default function QuickConsultForm() {
                     {...register('ghi_chu')}
                     rows={2}
                     placeholder="VD: Muốn học tối, đang ở quận Đống Đa..."
-                    className="w-full rounded-xl border border-slate-200 bg-white/70 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 resize-none"
+                    className="w-full min-h-[48px] rounded-xl border border-slate-200 bg-white/70 px-4 py-3 text-base text-slate-900 placeholder-slate-400 outline-none transition-all focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 resize-none"
                   />
                 </div>
               </div>
@@ -202,7 +202,7 @@ export default function QuickConsultForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-5 w-full flex items-center justify-center gap-2 rounded-xl py-3 px-6 text-sm font-bold text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                className="mt-5 w-full min-h-[48px] flex items-center justify-center gap-2 rounded-xl py-3 px-6 text-base font-bold text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{
                   background: 'linear-gradient(135deg, #10b981 0%, #0ea5e9 100%)',
                   boxShadow: '0 4px 16px rgba(16,185,129,0.35)',

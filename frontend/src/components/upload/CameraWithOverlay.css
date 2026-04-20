@@ -5,11 +5,14 @@
     right: 0 !important;
     bottom: 0 !important;
     width: 100vw !important;
-    height: 100vh !important;
+    height: calc(var(--vh, 1vh) * 100) !important;
+    height: 100dvh !important;
     max-width: 100vw !important;
-    max-height: 100vh !important;
+    max-height: calc(var(--vh, 1vh) * 100) !important;
+    max-height: 100dvh !important;
     min-width: 100vw !important;
-    min-height: 100vh !important;
+    min-height: calc(var(--vh, 1vh) * 100) !important;
+    min-height: 100dvh !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #000 !important;
@@ -85,6 +88,7 @@
     /* Đảm bảo không che controls - clip box-shadow */
     clip-path: inset(0);
     isolation: isolate;
+    min-height: 0;
 }
 
 .camera-video {
@@ -217,6 +221,14 @@
     line-height: 1.6;
 }
 
+.camera-overlay-template.detected .template-overlay-guide {
+    background: rgba(4, 120, 87, 0.92);
+}
+
+.camera-overlay-template.partial .template-overlay-guide {
+    background: rgba(146, 64, 14, 0.92);
+}
+
 .template-overlay-guide p {
     margin: 0;
     line-height: 1.5;
@@ -298,6 +310,7 @@
 .camera-capture-btn.enabled {
     background: white;
     cursor: pointer;
+    box-shadow: 0 10px 48px rgba(16, 185, 129, 0.35) !important;
 }
 
 .camera-capture-btn:hover:not(:disabled) {
@@ -306,10 +319,9 @@
     box-shadow: 0 10px 50px rgba(0, 0, 0, 0.6);
 }
 
-.camera-capture-btn.disabled {
+.camera-capture-btn.caution {
     background: rgba(255, 255, 255, 0.5);
-    cursor: not-allowed;
-    opacity: 0.6;
+    opacity: 0.78;
 }
 
 .camera-capture-btn svg {
@@ -363,6 +375,15 @@
         opacity: 0.6 !important;
     }
 
+    .camera-capture-btn-inline.enabled {
+        box-shadow: 0 12px 48px rgba(16, 185, 129, 0.36) !important;
+    }
+
+    .camera-capture-btn-inline.caution {
+        background: rgba(255, 255, 255, 0.58) !important;
+        opacity: 0.78 !important;
+    }
+
     .camera-capture-btn-inline svg {
         color: #1f2937 !important;
         width: 64px !important;
@@ -370,7 +391,7 @@
         display: block !important;
     }
 
-    /* Ẩn controls ở dưới cùng trên mobile */
+    /* Trên mobile chỉ giữ nút inline, không giữ thêm cụm controls phía dưới */
     .camera-controls {
         display: none !important;
     }
@@ -433,6 +454,7 @@
         justify-content: center !important;
         margin: 0 !important;
         padding: 0 !important;
+        min-height: 0 !important;
     }
     
     .camera-video {
@@ -447,55 +469,17 @@
         font-size: 16px;
         padding: 16px 24px;
         bottom: -85px;
-        min-width: 280px;
+        min-width: min(280px, calc(100vw - 28px));
+        max-width: calc(100vw - 28px);
     }
 
     .guide-subtitle {
         font-size: 14px !important;
     }
 
-    .camera-controls {
-        padding: 32px 20px !important;
-        padding-bottom: max(32px, env(safe-area-inset-bottom, 32px)) !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        width: 100% !important;
-        z-index: 1000 !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        position: relative !important;
-        background: rgba(0, 0, 0, 0.8) !important;
-        margin: 0 !important;
-        transform: none !important;
-    }
-
+    .camera-controls,
     .camera-capture-btn {
-        width: 140px !important;
-        height: 140px !important;
-        min-width: 140px !important;
-        min-height: 140px !important;
-        max-width: 140px !important;
-        max-height: 140px !important;
-        margin: 0 auto !important;
-        position: relative !important;
-        left: auto !important;
-        right: auto !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        z-index: 1001 !important;
-        display: flex !important;
-        background: white !important;
-        border: 4px solid rgba(255, 255, 255, 0.3) !important;
-        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5) !important;
-    }
-
-    .camera-capture-btn svg {
-        width: 64px !important;
-        height: 64px !important;
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
+        display: none !important;
     }
 
     .camera-switch-btn,
@@ -510,6 +494,33 @@
     .camera-flash-btn svg {
         width: 24px;
         height: 24px;
+    }
+}
+
+@media (max-width: 430px) {
+    .camera-capture-btn-inline {
+        width: 112px !important;
+        height: 112px !important;
+        min-width: 112px !important;
+        min-height: 112px !important;
+        max-width: 112px !important;
+        max-height: 112px !important;
+        bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
+    }
+
+    .camera-capture-btn-inline svg {
+        width: 48px !important;
+        height: 48px !important;
+    }
+
+    .template-overlay-guide {
+        padding: 14px 18px;
+        font-size: 14px;
+        bottom: -74px;
+    }
+
+    .guide-subtitle {
+        font-size: 12.5px !important;
     }
 }
 
@@ -700,7 +711,8 @@
 
     .preview-image {
         max-width: 100%;
-        max-height: calc(100vh - 200px);
+        max-height: calc((var(--vh, 1vh) * 100) - 200px);
+        max-height: calc(100dvh - 200px);
         width: auto;
         height: auto;
         object-fit: contain;

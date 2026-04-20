@@ -143,6 +143,13 @@
     background: rgba(255, 255, 255, 0.16);
 }
 
+.editor-action-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+    box-shadow: none;
+}
+
 .image-editor-stage-summary {
     display: flex;
     align-items: stretch;

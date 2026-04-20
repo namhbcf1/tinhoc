@@ -30,6 +30,13 @@ async function makeAdminToken(id = 99) {
   );
 }
 
+async function makeStudentToken(id: number) {
+  return generateJWT(
+    { id, role: 'student', type: 'student', exp: Date.now() + 3_600_000 },
+    JWT_SECRET
+  );
+}
+
 // ─── Helper: chèn class thật vào DB ─────────────────────────────────────────
 
 async function insertTestClass(overrides = {}) {
@@ -136,6 +143,41 @@ describe('GET /online-classes/:id (getClassDetail)', () => {
 });
 
 // ─── POST /online-classes ────────────────────────────────────────────────────
+
+describe('GET /online-classes/my-enrolled', () => {
+  it('nên trả về lớp active của học viên mà không phụ thuộc cột deleted_at', async () => {
+    const classId = await insertTestClass({ class_name: 'Lớp My Enrolled' });
+    const studentId = await insertTestStudent('555555555555');
+    const studentToken = await makeStudentToken(studentId);
+    const today = new Date().toISOString().slice(0, 10);
+
+    await env.DB.prepare(`
+      INSERT INTO online_class_enrollments (online_class_id, student_id, status)
+      VALUES (?, ?, 'active')
+    `).bind(classId, studentId).run();
+
+    await env.DB.prepare(`
+      INSERT INTO online_class_sessions (online_class_id, session_date, start_time, end_time)
+      VALUES (?, ?, '19:00', '21:00')
+    `).bind(classId, today).run();
+
+    const res = await app.fetch(
+      new Request('http://localhost/online-classes/my-enrolled', {
+        headers: {
+          Authorization: `Bearer ${studentToken}`
+        }
+      })
+    );
+
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.success).toBe(true);
+    expect(Array.isArray(json.data)).toBe(true);
+    expect(json.data).toHaveLength(1);
+    expect(json.data[0].class_name).toBe('Lớp My Enrolled');
+    expect(json.data[0].today_session_date).toBe(today);
+  });
+});
 
 describe('POST /online-classes (createClass)', () => {
   it('nên tạo lớp thành công với quyền admin (201)', async () => {

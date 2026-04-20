@@ -60,6 +60,8 @@ export default function AdminAttendancePage({ toast }) {
       }
     } catch (error) {
       console.error('Error loading classes:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -87,12 +89,8 @@ export default function AdminAttendancePage({ toast }) {
     if (!selectedClass) return;
     setLoadingStudents(true);
     try {
-      let classId = selectedClass.class_id || selectedClass.id;
-      // Strip "online_" prefix if present
-      if (typeof classId === 'string' && classId.startsWith('online_')) {
-        classId = classId.replace('online_', '');
-      }
-      const response = await api.getOnlineClassEnrollments(classId);
+      const classId = selectedClass.class_id || selectedClass.id;
+      const response = await api.getRegistrationsByClass(classId);
       if (response?.success) {
         const list = Array.isArray(response.data)
           ? response.data
@@ -101,7 +99,7 @@ export default function AdminAttendancePage({ toast }) {
         // Default all UNCHECKED (absent) \u2014 teacher must explicitly mark present
         const defaultMap = {};
         list.forEach(s => {
-          defaultMap[s.student_id || s.id] = false;
+          defaultMap[s.registration_id] = false;
         });
         setPresentMap(defaultMap);
       } else {
@@ -130,12 +128,12 @@ export default function AdminAttendancePage({ toast }) {
       const classId = selectedClass.class_id || selectedClass.id;
 
       const records = students.map(s => {
-        const sid = s.student_id || s.id;
+        const registrationId = s.registration_id;
         return {
-          student_id: sid,
+          registration_id: registrationId,
           class_id: classId,
-          date: dateStr,
-          status: presentMap[sid] ? 'present' : 'absent',
+          attendance_date: dateStr,
+          status: presentMap[registrationId] ? 'present' : 'absent',
         };
       });
 
@@ -271,7 +269,7 @@ export default function AdminAttendancePage({ toast }) {
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {students.map((student, idx) => {
-                          const sid = student.student_id || student.id;
+                          const sid = student.registration_id;
                           const isPresent = !!presentMap[sid];
                           return (
                             <tr

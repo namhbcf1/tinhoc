@@ -21,12 +21,12 @@
 
 .hero-section {
   position: relative;
-  min-height: 700px;
+  min-height: clamp(480px, 80vh, 700px);
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 120px 40px;
+  padding: clamp(60px, 15vw, 120px) clamp(20px, 5vw, 40px);
   background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
   overflow: hidden;
   width: 100vw !important;
@@ -99,10 +99,10 @@
 }
 
 .hero-tagline {
-  font-size: 24px;
+  font-size: clamp(16px, 3vw, 24px);
   font-weight: 300;
   color: rgba(255, 255, 255, 0.95);
-  margin-bottom: 20px;
+  margin-bottom: clamp(12px, 2vw, 20px);
   font-style: italic;
   letter-spacing: 4px;
   text-transform: uppercase;
@@ -110,10 +110,10 @@
 }
 
 .hero-title {
-  font-size: 42px;
+  font-size: clamp(28px, 5vw, 42px);
   font-weight: 700;
   color: white;
-  margin-bottom: 24px;
+  margin-bottom: clamp(16px, 3vw, 24px);
   line-height: 1.2;
   text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   animation: fadeInUp 0.8s ease-out 0.4s both;
@@ -141,9 +141,9 @@
 }
 
 .btn-hero {
-  padding: 18px 48px;
+  padding: clamp(12px, 2.5vw, 18px) clamp(24px, 5vw, 48px);
   border-radius: 12px;
-  font-size: 17px;
+  font-size: clamp(15px, 2vw, 17px);
   font-weight: 600;
   text-decoration: none;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -205,7 +205,7 @@
 
 .stats-section {
   background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
-  padding: 100px 40px;
+  padding: clamp(60px, 10vw, 100px) clamp(20px, 5vw, 40px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   width: 100%;
   max-width: 100vw;
@@ -251,9 +251,9 @@
 }
 
 .stat-number {
-  font-size: 4.5rem;
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
   font-weight: 800;
-  margin-bottom: 16px;
+  margin-bottom: clamp(8px, 2vw, 16px);
   line-height: 1;
   background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
   -webkit-background-clip: text;
@@ -265,7 +265,7 @@
 }
 
 .stat-label {
-  font-size: 17px;
+  font-size: clamp(14px, 2vw, 17px);
   color: #2c3e50;
   font-weight: 600;
   line-height: 1.4;
@@ -279,7 +279,7 @@
 
 .quick-links-section {
   background: #ffffff;
-  padding: 100px 40px;
+  padding: clamp(60px, 10vw, 100px) clamp(20px, 5vw, 40px);
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
@@ -384,7 +384,7 @@
 
 .alumni-section {
   background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
-  padding: 100px 40px;
+  padding: clamp(60px, 10vw, 100px) clamp(20px, 5vw, 40px);
 }
 
 .alumni-container {
@@ -399,12 +399,12 @@
 
 .section-title {
   text-align: center;
-  font-size: 42px;
+  font-size: clamp(28px, 5vw, 42px);
   font-weight: 800;
   color: #2c3e50;
-  margin-bottom: 60px;
+  margin-bottom: clamp(30px, 6vw, 60px);
   position: relative;
-  padding-bottom: 25px;
+  padding-bottom: clamp(15px, 3vw, 25px);
   letter-spacing: -1px;
 }
 
@@ -529,7 +529,7 @@
 
 .departments-section {
   background: #ffffff;
-  padding: 100px 40px;
+  padding: clamp(60px, 10vw, 100px) clamp(20px, 5vw, 40px);
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
@@ -575,7 +575,7 @@
 
 .research-section {
   background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
-  padding: 100px 40px;
+  padding: clamp(60px, 10vw, 100px) clamp(20px, 5vw, 40px);
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
@@ -632,7 +632,7 @@
 
 .connections-section {
   background: #ffffff;
-  padding: 100px 40px;
+  padding: clamp(60px, 10vw, 100px) clamp(20px, 5vw, 40px);
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
@@ -696,7 +696,7 @@
 
 .hub4-section {
   background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
-  padding: 100px 40px;
+  padding: clamp(60px, 10vw, 100px) clamp(20px, 5vw, 40px);
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
@@ -782,7 +782,7 @@
 
 .news-section {
   background: #ffffff;
-  padding: 100px 40px;
+  padding: clamp(60px, 10vw, 100px) clamp(20px, 5vw, 40px);
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
@@ -884,7 +884,7 @@
 
 .services-section {
   background: #ffffff;
-  padding: 100px 40px;
+  padding: clamp(60px, 10vw, 100px) clamp(20px, 5vw, 40px);
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
@@ -940,7 +940,7 @@
 
 .why-choose-section {
   background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
-  padding: 100px 40px;
+  padding: clamp(60px, 10vw, 100px) clamp(20px, 5vw, 40px);
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
@@ -1013,7 +1013,7 @@
   width: 200%;
   height: 200%;
   background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-  animation: rotate 20s linear infinite;
+  animation: rotate 40s linear infinite;
 }
 
 @keyframes rotate {
@@ -1038,52 +1038,52 @@
 }
 
 .cta-title {
-  font-size: 48px;
+  font-size: clamp(32px, 6vw, 48px);
   font-weight: 800;
   color: white;
-  margin-bottom: 20px;
+  margin-bottom: clamp(12px, 2vw, 20px);
   line-height: 1.2;
   letter-spacing: -1px;
   text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .cta-subtitle {
-  font-size: 22px;
+  font-size: clamp(16px, 2.5vw, 22px);
   color: rgba(255, 255, 255, 0.95);
-  margin-bottom: 50px;
+  margin-bottom: clamp(30px, 5vw, 50px);
   line-height: 1.7;
   font-weight: 400;
 }
 
 .cta-container h2 {
-  font-size: 48px;
+  font-size: clamp(32px, 6vw, 48px);
   font-weight: 800;
   color: white;
-  margin-bottom: 30px;
+  margin-bottom: clamp(20px, 3vw, 30px);
   line-height: 1.2;
   letter-spacing: -1px;
   text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .cta-container p {
-  font-size: 22px;
+  font-size: clamp(16px, 2.5vw, 22px);
   color: rgba(255, 255, 255, 0.95);
-  margin-bottom: 50px;
+  margin-bottom: clamp(30px, 5vw, 50px);
   line-height: 1.7;
   font-weight: 400;
 }
 
 .cta-actions {
   display: flex;
-  gap: 24px;
+  gap: clamp(16px, 3vw, 24px);
   justify-content: center;
   flex-wrap: wrap;
 }
 
 .btn-cta {
-  padding: 20px 50px;
+  padding: clamp(14px, 2.5vw, 20px) clamp(30px, 5vw, 50px);
   border-radius: 12px;
-  font-size: 18px;
+  font-size: clamp(15px, 2vw, 18px);
   font-weight: 700;
   text-decoration: none;
   display: inline-block;

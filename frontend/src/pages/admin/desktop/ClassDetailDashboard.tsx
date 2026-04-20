@@ -4,7 +4,8 @@ import {
     MoreVertical, Clock, MapPin, Video, Copy, ExternalLink,
     CheckCircle, XCircle, AlertCircle, Plus, Search, Filter,
     FileText, Download, Upload, Trash2, Edit, Save, CheckSquare, Square,
-    UserCheck, UserX
+    UserCheck, UserX, ClipboardList, Headphones, Mic, PenLine,
+    MessageSquare, TrendingUp, ChevronDown, ChevronUp, Send, EyeOff
 } from 'lucide-react';
 import api from '../../../services/api';
 import { formatDateVN, getCurrentDateVN } from '../../../utils/dateUtils';
@@ -17,6 +18,8 @@ import { useToast } from '../../../components/ui/ToastContainer';
 import { Select } from '../../../components/ui/Select';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import AddStudentModal from '../../../components/modals/AddStudentModal';
+import OverlayPortal from '../../../components/ui/OverlayPortal';
+import StudentFeedbackManagement from './StudentFeedbackManagement';
 
 // ========================================
 // HELPER COMPONENTS
@@ -61,7 +64,7 @@ const ClassOverviewTab = ({ classData, onRegenerateMeet }) => {
                         <div className="flex justify-between items-start">
                             <div>
                                 <p className="text-purple-100 font-medium mb-1">Tổng học viên</p>
-                                <h3 className="text-4xl font-bold">{classData.enrollment_count || 0}</h3>
+                                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold">{classData.enrollment_count || 0}</h3>
                             </div>
                             <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                                 <Users size={24} className="text-white" />
@@ -590,8 +593,9 @@ const PendingEnrollmentsTab = ({ classId, onCountChange }) => {
 
             {/* Reject Modal */}
             {showRejectModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl">
+                <OverlayPortal>
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100000] p-4">
+                        <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
                         <h3 className="text-lg font-bold text-slate-900 mb-4">
                             Từ chối {enrollmentToReject?.ho_ten_full}
                         </h3>
@@ -625,8 +629,9 @@ const PendingEnrollmentsTab = ({ classId, onCountChange }) => {
                                 {processing ? 'Đang xử lý...' : 'Xác nhận từ chối'}
                             </Button>
                         </div>
+                        </div>
                     </div>
-                </div>
+                </OverlayPortal>
             )}
         </div>
     );
@@ -1119,12 +1124,473 @@ const DocumentsTab = ({ classId }) => {
 };
 
 // ========================================
+// REVIEWS TAB — Báo cáo đánh giá học viên
+// ========================================
+
+const SKILL_OPTIONS = ['reading', 'listening', 'speaking', 'writing'];
+const SKILL_LABELS_MAP: Record<string, string> = { reading: 'Reading', listening: 'Listening', speaking: 'Speaking', writing: 'Writing' };
+const SKILL_ICONS_MAP: Record<string, any> = { reading: BookOpen, listening: Headphones, speaking: Mic, writing: PenLine };
+const SKILL_STATUS_OPTIONS = [
+    { value: '', label: '— Không chọn —' },
+    { value: 'good', label: 'Tốt' },
+    { value: 'needs_work', label: 'Cần cải thiện' },
+    { value: 'weak', label: 'Cần chú ý' },
+];
+const HW_STATUS_OPTIONS = [
+    { value: 'du', label: 'Đủ' },
+    { value: 'thieu_video', label: 'Thiếu video' },
+    { value: 'khong_nop', label: 'Không nộp' },
+    { value: 'duoc_nghi', label: 'Được nghỉ' },
+];
+const STATUS_BADGES: Record<string, string> = {
+    draft: 'bg-amber-50 text-amber-700 border border-amber-200',
+    published: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+};
+const STATUS_LABELS: Record<string, string> = { draft: 'Nháp', published: 'Đã gửi' };
+
+function initSkillRows() {
+    return SKILL_OPTIONS.map((skill) => ({ skill, score_raw: '', score_num: '', skill_status: '', comments: '', sort_order: 0 }));
+}
+
+function ReviewEditorModal({ classId, student, existing, onSaved, onClose }: any) {
+    const { showToast } = useToast();
+    const [saving, setSaving] = useState(false);
+    const [form, setForm] = useState(() => ({
+        period_label: existing?.period_label || '',
+        report_title: existing?.report_title || '',
+        overall_summary: existing?.overall_summary || '',
+        recommendations: existing?.recommendations || '',
+        skills: existing?.skills?.length
+            ? SKILL_OPTIONS.map((sk) => {
+                const found = existing.skills.find((s: any) => s.skill === sk);
+                return found
+                    ? { skill: sk, score_raw: found.score_raw || '', score_num: found.score_num ?? '', skill_status: found.skill_status || '', comments: found.comments || '' }
+                    : { skill: sk, score_raw: '', score_num: '', skill_status: '', comments: '' };
+            })
+            : initSkillRows(),
+        test_scores: existing?.test_scores || [],
+        homework_tracking: existing?.homework_tracking || [],
+    }));
+
+    const setField = (key: string, val: any) => setForm((f) => ({ ...f, [key]: val }));
+    const setSkillField = (idx: number, key: string, val: any) => setForm((f) => {
+        const skills = [...f.skills];
+        skills[idx] = { ...skills[idx], [key]: val };
+        return { ...f, skills };
+    });
+
+    const addScoreRow = () => setForm((f) => ({
+        ...f,
+        test_scores: [...f.test_scores, { skill_label: '', max_score: '', student_score: '', score_notes: '' }],
+    }));
+    const removeScoreRow = (idx: number) => setForm((f) => ({ ...f, test_scores: f.test_scores.filter((_: any, i: number) => i !== idx) }));
+    const setScoreField = (idx: number, key: string, val: any) => setForm((f) => {
+        const test_scores = [...f.test_scores];
+        test_scores[idx] = { ...test_scores[idx], [key]: val };
+        return { ...f, test_scores };
+    });
+
+    const addHwRow = () => setForm((f) => ({
+        ...f,
+        homework_tracking: [...f.homework_tracking, { date: '', status: 'du' }],
+    }));
+    const removeHwRow = (idx: number) => setForm((f) => ({ ...f, homework_tracking: f.homework_tracking.filter((_: any, i: number) => i !== idx) }));
+    const setHwField = (idx: number, key: string, val: any) => setForm((f) => {
+        const hw = [...f.homework_tracking];
+        hw[idx] = { ...hw[idx], [key]: val };
+        return { ...f, homework_tracking: hw };
+    });
+
+    const handleSave = async (publish = false) => {
+        setSaving(true);
+        try {
+            const payload = {
+                ...form,
+                skills: form.skills.map((s: any, i: number) => ({
+                    ...s,
+                    score_num: s.score_num !== '' ? parseFloat(s.score_num) : null,
+                    skill_status: s.skill_status || null,
+                    sort_order: i,
+                })),
+                test_scores: form.test_scores.map((r: any, i: number) => ({
+                    ...r,
+                    max_score: r.max_score !== '' ? parseFloat(r.max_score) : null,
+                    student_score: r.student_score !== '' ? parseFloat(r.student_score) : null,
+                    sort_order: i,
+                })),
+            };
+            const res = await (api as any).upsertClassReview(classId, student.id, payload);
+            if (!res || res.error) throw new Error(res?.error?.message || 'Lỗi lưu báo cáo');
+            const reviewId = res.data?.id || res.id;
+            if (publish && reviewId) {
+                await (api as any).publishReview(reviewId);
+            }
+            showToast(publish ? 'Đã lưu & gửi báo cáo!' : 'Đã lưu nháp!', 'success');
+            onSaved();
+        } catch (err: any) {
+            showToast(err?.message || 'Lỗi khi lưu báo cáo', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <OverlayPortal>
+            <div className="fixed inset-0 z-[100000] bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Báo cáo học viên</p>
+                        <h3 className="text-base font-extrabold text-slate-900">{student.ho_ten_full || student.student_name}</h3>
+                    </div>
+                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors">
+                        <XCircle size={16} />
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                    {/* Thông tin cơ bản */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Kỳ học</label>
+                            <Input value={form.period_label} onChange={(e) => setField('period_label', e.target.value)} placeholder="VD: Sau 5 buổi + 2 tuần BTVN" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Tiêu đề báo cáo</label>
+                            <Input value={form.report_title} onChange={(e) => setField('report_title', e.target.value)} placeholder="VD: Báo cáo B2 VSTEP" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide flex items-center gap-1.5"><TrendingUp size={12} /> Nhận xét tổng quan</label>
+                        <textarea className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400" rows={3} value={form.overall_summary} onChange={(e) => setField('overall_summary', e.target.value)} placeholder="Nhận xét chung về sự tiến bộ của học viên..." />
+                    </div>
+
+                    {/* 4 Kỹ năng */}
+                    <div>
+                        <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-600 mb-3"><BookOpen size={13} className="text-emerald-500" /> Đánh giá kỹ năng</h4>
+                        <div className="space-y-3">
+                            {form.skills.map((skill: any, idx: number) => {
+                                const Icon = SKILL_ICONS_MAP[skill.skill] || BookOpen;
+                                return (
+                                    <div key={skill.skill} className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Icon size={14} className="text-slate-500" />
+                                            <span className="font-bold text-sm text-slate-800">{SKILL_LABELS_MAP[skill.skill]}</span>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <div>
+                                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Điểm (VD: 18/40)</label>
+                                                <Input value={skill.score_raw} onChange={(e) => setSkillField(idx, 'score_raw', e.target.value)} placeholder="18/40" />
+                                            </div>
+                                            <div>
+                                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Đánh giá</label>
+                                                <Select value={skill.skill_status} onChange={(e) => setSkillField(idx, 'skill_status', e.target.value)}>
+                                                    {SKILL_STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                                                </Select>
+                                            </div>
+                                            <div>
+                                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Nhận xét</label>
+                                                <Input value={skill.comments} onChange={(e) => setSkillField(idx, 'comments', e.target.value)} placeholder="Ghi chú ngắn..." />
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Bảng điểm test */}
+                    <div>
+                        <div className="flex items-center justify-between mb-3">
+                            <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-600"><FileText size={13} className="text-blue-500" /> Bảng điểm test đầu ra</h4>
+                            <button type="button" onClick={addScoreRow} className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700">
+                                <Plus size={13} /> Thêm dòng
+                            </button>
+                        </div>
+                        {form.test_scores.length === 0 ? (
+                            <p className="text-xs text-slate-400 text-center py-4 border border-dashed border-slate-200 rounded-xl">Chưa có dòng nào. Nhấn "+ Thêm dòng" để bắt đầu.</p>
+                        ) : (
+                            <div className="space-y-2">
+                                {form.test_scores.map((row: any, idx: number) => (
+                                    <div key={idx} className="grid grid-cols-[2fr_1fr_1fr_2fr_auto] gap-2 items-center">
+                                        <Input value={row.skill_label} onChange={(e) => setScoreField(idx, 'skill_label', e.target.value)} placeholder="Kỹ năng (VD: Reading)" />
+                                        <Input type="number" value={row.max_score} onChange={(e) => setScoreField(idx, 'max_score', e.target.value)} placeholder="Tối đa" />
+                                        <Input type="number" value={row.student_score} onChange={(e) => setScoreField(idx, 'student_score', e.target.value)} placeholder="Đạt" />
+                                        <Input value={row.score_notes} onChange={(e) => setScoreField(idx, 'score_notes', e.target.value)} placeholder="Ghi chú" />
+                                        <button type="button" onClick={() => removeScoreRow(idx)} className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* BTVN */}
+                    <div>
+                        <div className="flex items-center justify-between mb-3">
+                            <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-600"><ClipboardList size={13} className="text-purple-500" /> Theo dõi bài tập về nhà</h4>
+                            <button type="button" onClick={addHwRow} className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700">
+                                <Plus size={13} /> Thêm ngày
+                            </button>
+                        </div>
+                        {form.homework_tracking.length === 0 ? (
+                            <p className="text-xs text-slate-400 text-center py-4 border border-dashed border-slate-200 rounded-xl">Chưa có dòng nào.</p>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-2">
+                                {form.homework_tracking.map((entry: any, idx: number) => (
+                                    <div key={idx} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                                        <Input type="date" value={entry.date} onChange={(e) => setHwField(idx, 'date', e.target.value)} className="flex-1 text-xs" />
+                                        <Select value={entry.status} onChange={(e) => setHwField(idx, 'status', e.target.value)}>
+                                            {HW_STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                                        </Select>
+                                        <button type="button" onClick={() => removeHwRow(idx)} className="text-red-400 hover:text-red-600"><Trash2 size={13} /></button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Đề xuất */}
+                    <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide flex items-center gap-1.5"><MessageSquare size={12} /> Đề xuất &amp; kế hoạch tiếp theo</label>
+                        <textarea className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400" rows={3} value={form.recommendations} onChange={(e) => setField('recommendations', e.target.value)} placeholder="Gợi ý cho học viên về các bước tiếp theo..." />
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="border-t border-slate-100 px-6 py-4 bg-slate-50/50 flex items-center justify-end gap-3 shrink-0">
+                    <Button variant="outline" onClick={onClose} disabled={saving}>Hủy</Button>
+                    <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
+                        <Save size={14} className="mr-1" /> {saving ? 'Đang lưu...' : 'Lưu nháp'}
+                    </Button>
+                    <Button onClick={() => handleSave(true)} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                        <Send size={14} className="mr-1" /> {saving ? 'Đang gửi...' : 'Lưu & Gửi học viên'}
+                    </Button>
+                </div>
+                </div>
+            </div>
+        </OverlayPortal>
+    );
+}
+
+function ReviewsTab({ classId, classStudents }: { classId: number; classStudents: any[] }) {
+    const { showToast } = useToast();
+    const [reviews, setReviews] = useState<any[]>([]);
+    const [loadingReviews, setLoadingReviews] = useState(true);
+    const [editorStudent, setEditorStudent] = useState<any>(null);
+    const [editorExisting, setEditorExisting] = useState<any>(null);
+    const [actionLoading, setActionLoading] = useState<number | null>(null);
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+
+    const fetchReviews = async () => {
+        setLoadingReviews(true);
+        try {
+            const res = await (api as any).listClassReviews(classId);
+            const list = Array.isArray(res) ? res : (res?.data ?? []);
+            setReviews(list);
+        } catch {
+            setReviews([]);
+        } finally {
+            setLoadingReviews(false);
+        }
+    };
+
+    useEffect(() => { fetchReviews(); }, [classId]);
+
+    const openEditor = async (student: any) => {
+        try {
+            const res = await (api as any).getClassReview(classId, student.id);
+            setEditorExisting(res?.data ?? res ?? null);
+        } catch {
+            setEditorExisting(null);
+        }
+        setEditorStudent(student);
+    };
+
+    const handleTogglePublish = async (review: any) => {
+        setActionLoading(review.id);
+        try {
+            if (review.status === 'published') {
+                await (api as any).unpublishReview(review.id);
+                showToast('Đã thu hồi báo cáo', 'info');
+            } else {
+                await (api as any).publishReview(review.id);
+                showToast('Đã gửi báo cáo cho học viên!', 'success');
+            }
+            fetchReviews();
+        } catch (err: any) {
+            showToast(err?.message || 'Lỗi cập nhật trạng thái', 'error');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!deleteId) return;
+        try {
+            await (api as any).deleteReview(deleteId);
+            showToast('Đã xóa báo cáo', 'success');
+            setDeleteId(null);
+            fetchReviews();
+        } catch (err: any) {
+            showToast(err?.message || 'Lỗi xóa báo cáo', 'error');
+        }
+    };
+
+    const reviewMap = Object.fromEntries(reviews.map((r) => [r.student_id, r]));
+    const draftCount = reviews.filter((r) => r.status === 'draft').length;
+    const publishedCount = reviews.filter((r) => r.status === 'published').length;
+
+    return (
+        <div className="space-y-6">
+            {/* Summary stats */}
+            <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-1.5 rounded-xl bg-slate-50 border border-slate-200 px-3 py-2">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Tổng học viên</span>
+                    <span className="text-sm font-extrabold text-slate-800">{classStudents.length}</span>
+                </div>
+                <div className="flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2">
+                    <Send size={12} className="text-emerald-500" />
+                    <span className="text-xs font-bold text-emerald-600 uppercase tracking-wide">Đã gửi</span>
+                    <span className="text-sm font-extrabold text-emerald-700">{publishedCount}</span>
+                </div>
+                {draftCount > 0 && (
+                    <div className="flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
+                        <Edit size={12} className="text-amber-500" />
+                        <span className="text-xs font-bold text-amber-600 uppercase tracking-wide">Nháp</span>
+                        <span className="text-sm font-extrabold text-amber-700">{draftCount}</span>
+                    </div>
+                )}
+            </div>
+
+            {/* Students table */}
+            {loadingReviews ? (
+                <div className="space-y-2">
+                    {[1, 2, 3].map((i) => <div key={i} className="h-14 rounded-xl bg-slate-100 animate-pulse" />)}
+                </div>
+            ) : classStudents.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-sm">Lớp chưa có học viên nào.</div>
+            ) : (
+                <div className="rounded-xl border border-slate-200 overflow-hidden">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="bg-slate-50 border-b border-slate-200">
+                                <th className="text-left px-5 py-3 font-bold text-slate-600 text-xs uppercase tracking-wide">Học viên</th>
+                                <th className="text-center px-4 py-3 font-bold text-slate-600 text-xs uppercase tracking-wide">Kỳ học</th>
+                                <th className="text-center px-4 py-3 font-bold text-slate-600 text-xs uppercase tracking-wide">Trạng thái</th>
+                                <th className="text-center px-4 py-3 font-bold text-slate-600 text-xs uppercase tracking-wide">Cập nhật</th>
+                                <th className="text-right px-5 py-3 font-bold text-slate-600 text-xs uppercase tracking-wide">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {classStudents.map((student: any) => {
+                                const sId = student.id || student.student_id;
+                                const review = reviewMap[sId];
+                                return (
+                                    <tr key={sId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                                        <td className="px-5 py-3">
+                                            <span className="font-semibold text-slate-800">{student.ho_ten_full || student.student_name || '—'}</span>
+                                        </td>
+                                        <td className="px-4 py-3 text-center text-slate-500 text-xs">
+                                            {review?.period_label || <span className="text-slate-300">—</span>}
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            {review ? (
+                                                <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${STATUS_BADGES[review.status]}`}>
+                                                    {review.status === 'published' ? <CheckCircle size={10} /> : <Edit size={10} />}
+                                                    {STATUS_LABELS[review.status]}
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs text-slate-300">Chưa có</span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-center text-xs text-slate-400">
+                                            {review?.updated_at ? new Date(review.updated_at).toLocaleDateString('vi-VN') : '—'}
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <button
+                                                    onClick={() => openEditor({ ...student, id: sId })}
+                                                    className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg transition-colors"
+                                                >
+                                                    <Edit size={12} /> {review ? 'Sửa' : 'Tạo'}
+                                                </button>
+                                                {review && (
+                                                    <>
+                                                        <button
+                                                            disabled={actionLoading === review.id}
+                                                            onClick={() => handleTogglePublish(review)}
+                                                            className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors ${review.status === 'published' ? 'text-slate-600 bg-slate-100 hover:bg-slate-200' : 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'}`}
+                                                        >
+                                                            {review.status === 'published' ? <><EyeOff size={12} /> Thu hồi</> : <><Send size={12} /> Gửi</>}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setDeleteId(review.id)}
+                                                            className="flex items-center gap-1 text-xs font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg transition-colors"
+                                                        >
+                                                            <Trash2 size={12} />
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {editorStudent && (
+                <ReviewEditorModal
+                    classId={classId}
+                    student={editorStudent}
+                    existing={editorExisting}
+                    onSaved={() => { setEditorStudent(null); setEditorExisting(null); fetchReviews(); }}
+                    onClose={() => { setEditorStudent(null); setEditorExisting(null); }}
+                />
+            )}
+
+            <ConfirmDialog
+                isOpen={!!deleteId}
+                title="Xóa báo cáo"
+                message="Bạn có chắc muốn xóa báo cáo này? Hành động không thể hoàn tác."
+                confirmText="Xóa"
+                cancelText="Hủy"
+                onConfirm={handleDelete}
+                onCancel={() => setDeleteId(null)}
+            />
+        </div>
+    );
+}
+
+// ========================================
 // ATTENDANCE TAB
 // ========================================
 
 export default function ClassDetailDashboard({ classData, onBack, onUpdate, onRegenerateMeet }) {
     const [activeTab, setActiveTab] = useState('overview');
     const [pendingCount, setPendingCount] = useState(0);
+    const [enrolledStudents, setEnrolledStudents] = useState<any[]>([]);
+
+    // Fetch enrolled students for Reviews tab — dùng online-class enrollments
+    useEffect(() => {
+        (api as any).getOnlineClassEnrollments(classData.id).then((res: any) => {
+            const list = res?.data?.data || res?.data || res || [];
+            const active = (Array.isArray(list) ? list : []).filter(
+                (r: any) => !r.enrollment_status || ['approved', 'active', 'completed', 'enrolled'].includes(r.enrollment_status)
+            );
+            setEnrolledStudents(active.map((r: any) => ({
+                id: r.id ?? r.student_id,
+                student_id: r.id ?? r.student_id,
+                ho_ten_full: r.ho_ten_full || r.student_name || '—',
+                student_name: r.ho_ten_full || r.student_name || '—',
+            })));
+        }).catch(() => setEnrolledStudents([]));
+    }, [classData.id]);
 
     // Fetch pending count immediately on mount
     useEffect(() => {
@@ -1208,6 +1674,18 @@ export default function ClassDetailDashboard({ classData, onBack, onUpdate, onRe
                                 Tài liệu
                             </div>
                         </TabsTrigger>
+                        <TabsTrigger value="reviews" className="px-6 py-2.5 rounded-lg data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 font-medium">
+                            <div className="flex items-center gap-2">
+                                <ClipboardList size={18} />
+                                Báo cáo
+                            </div>
+                        </TabsTrigger>
+                        <TabsTrigger value="feedback" className="px-6 py-2.5 rounded-lg data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 font-medium">
+                            <div className="flex items-center gap-2">
+                                <MessageSquare size={18} />
+                                Feedback học viên
+                            </div>
+                        </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="overview" className="focus-visible:outline-none">
@@ -1228,6 +1706,14 @@ export default function ClassDetailDashboard({ classData, onBack, onUpdate, onRe
 
                     <TabsContent value="resources" className="focus-visible:outline-none">
                         <DocumentsTab classId={classData.id} />
+                    </TabsContent>
+
+                    <TabsContent value="reviews" className="focus-visible:outline-none">
+                        <ReviewsTab classId={classData.id} classStudents={enrolledStudents} />
+                    </TabsContent>
+
+                    <TabsContent value="feedback" className="focus-visible:outline-none">
+                        <StudentFeedbackManagement classId={classData.id} />
                     </TabsContent>
                 </Tabs>
             </div>

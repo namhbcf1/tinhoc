@@ -28,8 +28,35 @@ const MySchedulePage = lazy(() => import('./MySchedulePage'));
 const MyExamsPage = lazy(() => import('./MyExamsPage'));
 const AdminAttendancePage = lazy(() => import('./AdminAttendancePage'));
 
+function resolveInitialAdminTab(adminData) {
+  if (typeof window === 'undefined') {
+    return 'exam-schedules';
+  }
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const hash = window.location.hash;
+  const tabFromHash = hash ? hash.replace('#', '').split('?')[0] : '';
+  const tabFromSearch = searchParams.get('tab') || '';
+  const baseTab = tabFromHash || tabFromSearch;
+
+  if (!baseTab) {
+    return 'exam-schedules';
+  }
+
+  const requestedTab = baseTab === 'online-classes' ? 'classes' : baseTab;
+  if (!adminData) {
+    return 'exam-schedules';
+  }
+
+  const validTabs = new Set(
+    getAdminTabsForTarget(adminData.role, 'desktop', adminData).map((item) => item.id)
+  );
+
+  return validTabs.has(requestedTab) ? requestedTab : 'exam-schedules';
+}
+
 export default function AdminDashboardDesktop() {
-  const [activeTab, setActiveTab] = useState('exam-schedules');
+  const [activeTab, setActiveTab] = useState(() => resolveInitialAdminTab(getStoredAdmin()));
   const [admin, setAdmin] = useState(null);
   const [returnToUrl, setReturnToUrl] = useState(null);
   const navigate = useNavigate();
@@ -59,26 +86,15 @@ export default function AdminDashboardDesktop() {
       const searchParams = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
       const tabFromHash = hash ? hash.replace('#', '').split('?')[0] : '';
-      const tabFromSearch = searchParams.get('tab') || '';
-      const baseTab = tabFromHash || tabFromSearch;
       setReturnToUrl(searchParams.get('return_to'));
 
-      if (baseTab) {
-        if (baseTab === 'online-classes') {
-          window.location.hash = 'classes?mode=online';
-          return;
-        }
-        if (!currentAdminData) {
-          setActiveTab('exam-schedules');
-          return;
-        }
-        const validTabs = new Set(getAdminTabsForTarget(currentAdminData.role, 'desktop', currentAdminData).map((item) => item.id));
-        if (validTabs.has(baseTab)) {
-          setActiveTab(baseTab);
-        }
-      } else {
-        setActiveTab('exam-schedules');
+      if (tabFromHash === 'online-classes') {
+        window.location.hash = 'classes?mode=online';
+        setActiveTab('classes');
+        return;
       }
+
+      setActiveTab(resolveInitialAdminTab(currentAdminData));
     };
 
     const handleSessionUpdated = () => {

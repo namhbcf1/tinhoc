@@ -125,6 +125,7 @@ CREATE TABLE IF NOT EXISTS exam_schedules (
     exam_date DATETIME NOT NULL,
     duration_minutes INTEGER DEFAULT 120,
     location TEXT,
+    google_map_url TEXT,
     notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -167,7 +168,7 @@ CREATE TABLE IF NOT EXISTS attendance (
     FOREIGN KEY (registration_id) REFERENCES registrations(id) ON DELETE CASCADE,
     FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
     FOREIGN KEY (marked_by) REFERENCES admins(id),
-    UNIQUE(registration_id, attendance_date)
+    UNIQUE(registration_id, class_id, attendance_date)
 );
 
 CREATE INDEX IF NOT EXISTS idx_attendance_registration ON attendance(registration_id);

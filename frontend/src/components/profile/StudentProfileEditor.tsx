@@ -10,6 +10,7 @@ import { formatDateVN } from '../../utils/dateUtils';
 import { persistStudentData } from '../../utils/studentDataLoader';
 import { buildStudentSelfServicePayload, STUDENT_PROFILE_SELF_SERVICE_NOTE } from '../../utils/studentProfilePolicy';
 import BirthPlaceField from '../forms/BirthPlaceField';
+import OverlayPortal from '../ui/OverlayPortal';
 
 const fieldWrapperClassName = 'space-y-2';
 const inputClassName = 'h-11 rounded-xl border-slate-200 bg-white shadow-sm transition focus-visible:ring-emerald-500/30';
@@ -17,8 +18,10 @@ const selectClassName = 'flex h-11 w-full rounded-xl border border-slate-200 bg-
 const CCCDUploader = lazy(() => import('../upload/CCCDUploader'));
 
 function normalizeProfileGender(value) {
-    if (value === 'male' || value === 'Male' || value === 'Nam' || value === 'nam') return 'Nam';
-    if (value === 'female' || value === 'Female' || value === 'Nữ' || value === 'nữ' || value === 'nu') return 'Nữ';
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === 'male' || normalized === 'nam') return 'Nam';
+    if (normalized === 'female' || normalized === 'nữ' || normalized === 'nu') return 'Nữ';
+    if (normalized === 'khác' || normalized === 'khac' || normalized === 'other') return 'Khác';
     return '';
 }
 
@@ -158,9 +161,23 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
         setError('');
 
         try {
-            const response = await api.updateStudentByCCCD(studentData.cccd, {
+            const payload = {
                 ...buildStudentSelfServicePayload(data),
-            });
+            };
+
+            const currentGender = normalizeProfileGender(studentData?.gioi_tinh);
+            const nextGender = normalizeProfileGender(payload.gioi_tinh);
+
+            // Compatibility guard: old backend normalizes gender to values
+            // that can violate deployed DB CHECK constraints.
+            // Omit unchanged gender to allow other fields (e.g. address) to save.
+            if (!nextGender || nextGender === currentGender) {
+                delete payload.gioi_tinh;
+            } else {
+                payload.gioi_tinh = nextGender;
+            }
+
+            const response = await api.updateStudentByCCCD(studentData.cccd, payload);
 
             if (response.success || response.data) {
                 if (response.data) {
@@ -213,8 +230,9 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
         : 'Cập nhật thông tin hồ sơ';
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-0 backdrop-blur-sm sm:p-5">
-            <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-slate-50 sm:h-auto sm:max-h-[92vh] sm:max-w-6xl sm:rounded-[30px] sm:border sm:border-white/60 sm:shadow-[0_40px_100px_-30px_rgba(15,23,42,0.45)]">
+        <OverlayPortal>
+            <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-950/65 p-0 backdrop-blur-sm sm:p-5">
+                <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-slate-50 sm:h-auto sm:max-h-[92vh] sm:max-w-6xl sm:rounded-[30px] sm:border sm:border-white/60 sm:shadow-[0_40px_100px_-30px_rgba(15,23,42,0.45)]">
                 <div className="border-b border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-slate-50 px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
                     <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0 space-y-3">
@@ -237,7 +255,7 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
                             <div className="rounded-2xl border border-white/80 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
                                 <p className="text-sm font-semibold text-slate-900">{studentName}</p>
                                 <p className="mt-1 text-sm text-slate-500">
-                                    Ảnh hồ sơ có thể cập nhật riêng. Các trường thông tin sẽ được lưu một lần ở cuối biểu mẫu.
+                                    Ảnh hồ sơ có thể cập nhật riêng. Riêng ảnh CCCD tải lại ở đây chỉ để thay ảnh và kiểm tra độ rõ, không tự đổi thông tin cá nhân.
                                 </p>
                             </div>
                         </div>
@@ -385,6 +403,10 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
                                         description="Khối ảnh được gom riêng để dễ kiểm tra trước khi lưu, đồng thời không làm form bị dài trên mobile."
                                     >
                                         <div className="space-y-5">
+                                            <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                                                Đổi ảnh CCCD/3x4 ở đây chỉ cập nhật ảnh. Hệ thống không OCR lại và không tự sửa các trường thông tin trong biểu mẫu.
+                                            </div>
+
                                             <div className="rounded-[22px] border border-indigo-100 bg-gradient-to-b from-indigo-50 to-white p-3 sm:p-4">
                                                 <Label className="mb-3 block text-center text-[13px] font-semibold text-indigo-700">
                                                     Ảnh thẻ 3x4
@@ -392,6 +414,7 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
                                                 <Suspense fallback={uploaderFallback}>
                                                     <CCCDUploader
                                                         type="photo_3x4"
+                                                        photoGenderHint={watch('gioi_tinh')}
                                                         onUploadSuccess={handleImageUploadSuccess('portrait')}
                                                         onUploadError={handleImageUploadError}
                                                         existingImageUrl={imagePortrait}
@@ -470,7 +493,8 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
                         </div>
                     </div>
                 </form>
+                </div>
             </div>
-        </div>
+        </OverlayPortal>
     );
 }

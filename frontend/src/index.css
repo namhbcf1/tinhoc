@@ -52,7 +52,7 @@
 @media (max-width: 768px) {
   :root {
     /* Global mobile density compression across public pages and Tailwind/rem-based views */
-    --vt-mobile-root-font-size: clamp(13px, 3.4vw, 15px);
+    --vt-mobile-root-font-size: clamp(14px, 3.2vw, 16px);
   }
 }
 

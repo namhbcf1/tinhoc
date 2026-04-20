@@ -9,15 +9,14 @@ import { tmpdir } from 'os';
 const __filename: string = fileURLToPath(import.meta.url);
 const __dirname: string = dirname(__filename);
 
-const DB_NAME = 'vantrangedu_db';
-const DB_ID = '0f9e932f-c9f2-4d27-b3e2-21f74c4eb674';
+const DB_BINDING = 'DB';
 
 function execD1(command: string, useRemote = true): string | null {
   try {
     const remoteFlag = useRemote ? '--remote' : '';
 
     const escapedCommand = command.replace(/"/g, '\\"');
-    const result = execSync(`wrangler d1 execute ${DB_NAME} ${remoteFlag} --command "${escapedCommand}"`, {
+    const result = execSync(`wrangler d1 execute ${DB_BINDING} ${remoteFlag} --command "${escapedCommand}"`, {
       encoding: 'utf-8',
       stdio: 'pipe'
     });
@@ -32,7 +31,7 @@ function execD1(command: string, useRemote = true): string | null {
 
 function execD1File(filePath: string): string | null {
   try {
-    const result = execSync(`wrangler d1 execute ${DB_NAME} --file "${filePath}"`, {
+    const result = execSync(`wrangler d1 execute ${DB_BINDING} --file "${filePath}"`, {
       encoding: 'utf-8',
       stdio: 'pipe'
     });
@@ -1438,4 +1437,3 @@ async function main(): Promise<void> {
 }
 
 main().catch(console.error);
-

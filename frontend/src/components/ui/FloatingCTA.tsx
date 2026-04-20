@@ -35,7 +35,7 @@ export default function FloatingCTA({ showAfter = 500 }) {
                 {isExpanded && (
                     <div className="flex flex-col gap-2 animate-in slide-in-from-bottom">
                         <Link
-                            to="/admissions"
+                            to="/register"
                             className="bg-white text-green-700 px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all font-bold text-sm flex items-center gap-2 whitespace-nowrap"
                         >
                             📝 Đăng ký học

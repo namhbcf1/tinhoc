@@ -15,6 +15,7 @@ import {
   updateAdminLastLogin,
   promoteLegacyTeacherAdmin,
 } from '../db/admin-queries.js';
+import { isAcceptedStudentLoginSecret } from '../services/student-service.js';
 
 const sso = new Hono<{ Bindings: Env; Variables: { user: JWTPayload } }>();
 
@@ -104,9 +105,9 @@ sso.post('/direct-login', async (c) => {
     }
 
     if (type === 'student') {
-      const phone = normalizePhone(body?.phone);
+      const loginSecret = normalizeString(body?.phone);
       const cccd = normalizeString(body?.cccd);
-      if (!phone || !cccd) {
+      if (!loginSecret || !cccd) {
         return errorResponse('Thiếu CCCD hoặc số điện thoại', 400);
       }
 
@@ -119,7 +120,7 @@ sso.post('/direct-login', async (c) => {
         `
       ).bind(cccd).first<{ id?: number; cccd?: string; ho_ten_full?: string; email?: string; sdt?: string }>();
 
-      if (!student || normalizePhone(student.sdt) !== phone) {
+      if (!student || !isAcceptedStudentLoginSecret(student.cccd, student.sdt, loginSecret)) {
         return errorResponse('Thông tin đăng nhập không chính xác', 401);
       }
 

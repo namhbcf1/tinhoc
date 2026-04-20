@@ -77,14 +77,55 @@ export async function setupDatabase() {
       FOREIGN KEY (student_id) REFERENCES students(id)
     )
   `).run();
+
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS online_class_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      online_class_id INTEGER NOT NULL,
+      session_date TEXT NOT NULL,
+      start_time TEXT,
+      end_time TEXT,
+      note TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE (online_class_id, session_date)
+    )
+  `).run();
+
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS online_class_attendance (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id INTEGER NOT NULL,
+      student_id INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      note TEXT,
+      checked_in_at TEXT,
+      zoom_join_source TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE (session_id, student_id)
+    )
+  `).run();
+
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS exam_schedules (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      zoom_link TEXT,
+      zoom_link_backup TEXT,
+      zoom_meeting_id TEXT
+    )
+  `).run();
 }
 
 // ─── Dọn dữ liệu giữa các test ───────────────────────────────────────────────
 
 export async function cleanDatabase() {
   const db = env.DB;
+  await db.prepare('DELETE FROM online_class_attendance').run();
+  await db.prepare('DELETE FROM online_class_sessions').run();
   await db.prepare('DELETE FROM online_class_enrollments').run();
   await db.prepare('DELETE FROM online_classes').run();
+  await db.prepare('DELETE FROM exam_schedules').run();
   await db.prepare('DELETE FROM students').run();
 }
 

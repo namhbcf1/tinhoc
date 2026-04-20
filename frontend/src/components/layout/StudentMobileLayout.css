@@ -14,13 +14,15 @@
     overflow-x: clip;
 }
 
+/* Không override scale xuống nhỏ — Tailwind px classes không dùng các vars này,
+   việc thu nhỏ chỉ ảnh hưởng xấu đến các component dùng var(--mb-*) trực tiếp */
 @media (max-width: 768px) {
     .student-mobile-layout {
-        --mb-space-scale: 0.42;
-        --mb-font-scale: 0.56;
-        --mb-touch-scale: 0.68;
-        --mb-radius-scale: 0.64;
-        --mb-layout-scale: 0.58;
+        --mb-space-scale: 1;
+        --mb-font-scale: 1;
+        --mb-touch-scale: 1;
+        --mb-radius-scale: 1;
+        --mb-layout-scale: 1;
     }
 }
 
@@ -32,13 +34,18 @@
     right: 0;
     z-index: 9999;
     height: var(--mb-header-height);
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
+.student-mobile-layout.ios .mobile-header {
+    height: calc(var(--mb-header-height) + env(safe-area-inset-top));
 }
 
 /* Content area - không dùng overflow-y: auto, để page scroll tự nhiên */
 .student-mobile-layout .mobile-content {
     flex: 1;
-    padding-top: calc(var(--mb-header-height) + var(--mb-md));
-    padding-bottom: calc(var(--mb-bottom-nav-height) + var(--mb-lg));
+    padding-top: calc(var(--mb-header-height) + env(safe-area-inset-top, 0px) + var(--mb-md));
+    padding-bottom: calc(var(--mb-bottom-nav-height) + env(safe-area-inset-bottom, 0px) + var(--mb-lg));
     min-height: 100vh;
     box-sizing: border-box;
     /* QUAN TRỌNG: override base overflow-y: auto
@@ -49,6 +56,10 @@
     overscroll-behavior-y: unset;
 }
 
+.student-mobile-layout.ios .mobile-content {
+    padding-top: calc(var(--mb-header-height) + env(safe-area-inset-top) + var(--mb-md));
+}
+
 /* Bottom nav cố định */
 .student-mobile-layout .mobile-bottom-nav {
     position: fixed;
@@ -57,6 +68,11 @@
     right: 0;
     z-index: 9998;
     height: var(--mb-bottom-nav-height);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.student-mobile-layout.ios .mobile-bottom-nav {
+    height: calc(var(--mb-bottom-nav-height) + env(safe-area-inset-bottom));
 }
 
 /* Drawer trên tất cả */
