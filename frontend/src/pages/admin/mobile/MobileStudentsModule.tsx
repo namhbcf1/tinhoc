@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Search, UserPlus, Phone, Mail, ChevronRight, X, User, Calendar, MapPin, GraduationCap, DollarSign, Clock, Filter, TrendingUp, AlertCircle, CheckCircle, BookOpen, FileText, ChevronDown, Edit2, Image as ImageIcon, CreditCard, Save, Upload, Download, Eye, History, RefreshCw, Trash2 } from 'lucide-react';
 import api from '../../../services/api';
 import { formatDateVN, formatTime as formatTimeUtil } from '../../../utils/dateUtils';
+import { normalizeSearchText } from '../../../utils/text';
 import { useToast } from '../../../components/ui/ToastContainer';
 import PullToRefreshWrapper from '../../../components/ui/PullToRefreshWrapper';
 import ToastContainer from '../../../components/ui/ToastContainer';
@@ -1306,8 +1307,10 @@ export default function MobileStudentsModule() {
     };
 
     let processedStudents = students.filter((s) => {
-        const name = (s.ho_ten_full || `${s.ho || ''} ${s.ten_dem || ''} ${s.ten || ''}`.trim()).toLowerCase();
-        const matchesSearch = name.includes(searchTerm.toLowerCase()) ||
+        const name = s.ho_ten_full || `${s.ho || ''} ${s.ten_dem || ''} ${s.ten || ''}`.trim();
+        const normalizedName = normalizeSearchText(name);
+        const normalizedSearch = normalizeSearchText(searchTerm);
+        const matchesSearch = normalizedName.includes(normalizedSearch) ||
             (s.email && s.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (s.sdt && s.sdt.includes(searchTerm)) ||
             (s.cccd && s.cccd.includes(searchTerm));
