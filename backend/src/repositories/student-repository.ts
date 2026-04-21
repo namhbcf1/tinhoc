@@ -1,3 +1,5 @@
+import { normalizeText } from '../utils/helpers.js';
+
 export async function getStudentById(db: any, id: number) {
   return await db.prepare('SELECT id, cccd, ho, ten_dem, ten, ho_ten_full, ho_ten_normalized, ngay_sinh, noi_sinh, gioi_tinh, dan_toc, quoc_tich, email, sdt, dia_chi, ngay_cap_cccd, don_vi_cong_tac, image_cccd_front, image_cccd_back, image_3x4, cccd_front_image_id, cccd_back_image_id, photo_3x4_image_id, created_at, updated_at FROM students WHERE id = ?').bind(id).first();
 }
@@ -12,7 +14,12 @@ export async function findStudentByEmailOrPhone(db: any, email: string, sdt: str
 }
 
 export async function searchStudents(db: any, keyword: string) {
-  const searchTerm = `%${keyword}%`;
+  // Normalize the search keyword to handle Vietnamese diacritics
+  // This allows "Đức Minh" and "duc minh" to both match "duc minh" in ho_ten_normalized
+  const normalized = normalizeText(keyword);
+  const searchTerm = `%${normalized}%`;
+  const exactPattern = `%${keyword}%`;
+
   const result = await db.prepare(`
     SELECT id, cccd, ho_ten_full, ho_ten_normalized, sdt, email, gioi_tinh, ngay_sinh, created_at, cccd_front_image_id, cccd_back_image_id, photo_3x4_image_id
     FROM students
@@ -23,7 +30,7 @@ export async function searchStudents(db: any, keyword: string) {
         OR LOWER(COALESCE(cccd, '')) LIKE 'test%'
       )
     ORDER BY created_at DESC
-  `).bind(searchTerm, searchTerm, searchTerm, searchTerm).all();
+  `).bind(searchTerm, exactPattern, exactPattern, exactPattern).all();
   return result.results || [];
 }
 

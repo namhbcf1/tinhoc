@@ -185,10 +185,14 @@ export async function searchStudents(db: D1Database, keyword: string) {
   };
 
   const normalizedPhone = normalizePhone(searchTerm);
-  const searchPattern = `%${normalized}%`;
+  // Use normalized (no diacritics) for name searches
+  const nameSearchPattern = `%${normalized}%`;
+  // Keep original term for CCCD, phone, email searches
   const exactPattern = `%${searchTerm}%`;
 
   // Comprehensive search query
+  // Key fix: Search against ho_ten_normalized using NORMALIZED keyword (no diacritics)
+  // This allows "duc minh" to match "duc minh" and "Đức Minh" to also match "duc minh"
   const query = `
     SELECT * FROM students
     WHERE (
@@ -199,6 +203,7 @@ export async function searchStudents(db: D1Database, keyword: string) {
       OR LOWER(ten) LIKE ?
       OR cccd LIKE ?
       OR sdt LIKE ?
+      OR LOWER(COALESCE(email, '')) LIKE ?
     )
     AND NOT (
       LOWER(COALESCE(ho_ten_full, '')) LIKE 'test hoc vien%'
@@ -218,18 +223,19 @@ export async function searchStudents(db: D1Database, keyword: string) {
   `;
 
   const result = await db.prepare(query).bind(
-    searchPattern,
-    `%${searchTerm.toLowerCase()}%`,
-    searchPattern,
-    searchPattern,
-    searchPattern,
-    exactPattern,
-    exactPattern,
-    searchTerm,
-    `${normalized}%`,
-    `${normalized}%`,
-    `${normalized}%`,
-    exactPattern
+    nameSearchPattern,         // ho_ten_normalized LIKE (normalized: "duc minh")
+    `%${searchTerm.toLowerCase()}%`,  // ho_ten_full LIKE (original: "%đức minh%")
+    nameSearchPattern,         // ho LIKE (normalized)
+    nameSearchPattern,         // ten_dem LIKE (normalized)
+    nameSearchPattern,         // ten LIKE (normalized)
+    exactPattern,              // cccd LIKE (exact)
+    exactPattern,              // sdt LIKE (exact)
+    `%${searchTerm.toLowerCase()}%`,  // email LIKE (lowercase)
+    searchTerm,                // exact CCCD match
+    `${normalized}%`,          // name starts with normalized
+    `${normalized}%`,          // ho starts with normalized
+    `${normalized}%`,          // ten starts with normalized
+    exactPattern               // phone exact match
   ).all();
 
   let results: any[] = result.results || [];
