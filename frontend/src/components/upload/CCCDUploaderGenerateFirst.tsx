@@ -1,4 +1,5 @@
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState, Component } from 'react';
+import type { ReactNode, ErrorInfo } from 'react';
 import { createPortal } from 'react-dom';
 import {
   AlertCircle,
@@ -8,6 +9,7 @@ import {
   ImageOff,
   Loader2,
   RefreshCw,
+  ScanSearch,
   ShieldCheck,
   Upload,
   X,
@@ -16,8 +18,7 @@ import {
 import { trackError, trackSuccess } from '../../utils/errorTracker';
 import { useIsMobile } from '../../utils/deviceDetection';
 import { resizeImage, compressImage } from '../../utils/imageUtils';
-import { detectImageQuality, convertHeicIfNeeded } from './cccd-image-quality';
-import QualityWarning from './cccd-quality-warning';
+import { convertHeicIfNeeded } from './cccd-image-quality';
 import UploadProgressBar from './cccd-upload-progress';
 import FullPreview from './cccd-full-preview';
 import { buildApiUrl } from '../../utils/api-base-url.js';
@@ -378,6 +379,49 @@ function PhotoSelectionDialog({
   );
 }
 
+// Error boundary cho lazy-loaded editor components — nếu editor crash
+// (ví dụ react-easy-crop hoặc jscanify lỗi render), hiển thị fallback thay vì
+// trắng trang toàn bộ registration form.
+class EditorErrorBoundary extends Component<{ children: ReactNode; onRetry: () => void }, { hasError: boolean; errorMessage: string }> {
+  constructor(props: { children: ReactNode; onRetry: () => void }) {
+    super(props);
+    this.state = { hasError: false, errorMessage: '' };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, errorMessage: error?.message || 'Trình chỉnh ảnh gặp lỗi không mong muốn.' };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('[EditorErrorBoundary] Image editor crashed:', error, errorInfo);
+    trackError?.({ component: 'EditorErrorBoundary', action: 'editor-crash', error, stack: error.stack, severity: 'error' });
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="upload-loading" style={{ flexDirection: 'column', gap: 12, padding: 24, textAlign: 'center' }}>
+          <AlertCircle size={32} style={{ color: '#dc2626' }} />
+          <span style={{ color: '#991b1b', fontWeight: 500 }}>{this.state.errorMessage}</span>
+          <span style={{ color: '#64748b', fontSize: 13 }}>Trình chỉnh ảnh không thể khởi động. Trang có thể đang dùng phiên bản cũ, hoặc ảnh không tương thích với trình duyệt.</span>
+          <button
+            type="button"
+            className="btn-retry-upload"
+            onClick={() => {
+              this.setState({ hasError: false, errorMessage: '' });
+              this.props.onRetry();
+            }}
+            style={{ marginTop: 4 }}
+          >
+            <RefreshCw size={14} /> Thử lại
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUploadError, onStatusChange, existingImageUrl = null, photoGenderHint = null }: Props) {
   const isPhoto = type === 'photo_3x4';
   const isMobile = useIsMobile();
@@ -399,6 +443,7 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
   const [showPhotoGuide, setShowPhotoGuide] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [documentEditorFile, setDocumentEditorFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [photoLogId, setPhotoLogId] = useState<string | null>(null);
   const [photoSourcePreview, setPhotoSourcePreview] = useState<string | null>(existingImageUrl);
@@ -409,6 +454,7 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
   const [regenerating, setRegenerating] = useState(false);
   const [showPhotoSelectionDialog, setShowPhotoSelectionDialog] = useState(false);
   const [fileCaptureMode, setFileCaptureMode] = useState<'' | 'user'>('');
+  const [templateImageError, setTemplateImageError] = useState(false);
 
   const clearPolling = useCallback(() => { if (pollingTimeoutRef.current) clearTimeout(pollingTimeoutRef.current); pollingTimeoutRef.current = null; }, []);
   const resetPhotoState = useCallback((source: string | null = null) => { setPhotoLogId(null); setPhotoSourcePreview(source); setPhotoVariants([]); setRecommendedVariantId(null); setSelectedVariantId(null); setSelectingVariantId(null); setRegenerating(false); setShowPhotoSelectionDialog(false); }, []);
@@ -427,6 +473,9 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
     setRetryCount(0);
     setProcessingStage('');
     setProcessingMessage('');
+    setShowImageEditor(false);
+    setSelectedFile(null);
+    setDocumentEditorFile(null);
     resetPhotoState(null);
   }, [clearPolling, resetPhotoState]);
 
@@ -492,41 +541,26 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
     attempt = 0,
   ): Promise<void> => {
     setStatus('uploading'); setUploadProgress(0); setError(''); setProcessingStage(''); setProcessingMessage(''); setQualityWarnings([]); resetPhotoState(null);
-    const qualityPromise = detectImageQuality(file).catch(() => null);
     try {
       let processed = await convertHeicIfNeeded(file);
       let optimizedAuxiliaryFiles = auxiliaryFiles;
       if (!processed.type.startsWith('image/')) throw new Error('Vui long chon file anh hop le.');
-      const editorBlockingReasons = !isPhoto && Array.isArray(processingMeta?.blockingReasons)
-        ? processingMeta.blockingReasons.filter(Boolean)
-        : [];
-      if (editorBlockingReasons.length > 0) {
-        setQualityWarnings(editorBlockingReasons);
-      }
+      const uploadProcessingMeta = !isPhoto && processingMeta
+        ? { ...processingMeta, qualityWarnings: [], blockingReasons: [], validationStatus: 'ok' }
+        : processingMeta;
       if (isPhoto) { processed = processed.size > 1024 * 1024 ? await compressImage(await resizeImage(processed, { maxWidth: 1920, maxHeight: 1920, quality: 0.92 }) as File, { maxSizeMB: 1.2, maxWidthOrHeight: 1920, initialQuality: 0.9 }) : processed; const v = await validatePortraitPhoto(processed, { stage: 'upload', useNativeFaceDetector: true }); setQualityWarnings([...v.warnings, ...(!v.isValid ? v.blockingReasons : [])]); }
       if (!isPhoto) {
         processed = await optimizeDocumentForOCRSpace(processed);
         optimizedAuxiliaryFiles = await optimizeDocumentAuxiliaryFiles(auxiliaryFiles);
       }
-      const formData = new FormData(); formData.append('image', processed); formData.append('type', type); if (isPhoto && photoGenderHint) formData.append('genderHint', photoGenderHint); if (!isPhoto && processingMeta) formData.append('processingMeta', JSON.stringify(processingMeta)); if (!isPhoto && optimizedAuxiliaryFiles) { if (optimizedAuxiliaryFiles.sourceOriginal) formData.append('sourceOriginal', optimizedAuxiliaryFiles.sourceOriginal); if (optimizedAuxiliaryFiles.normalizedOriginal) formData.append('normalizedOriginal', optimizedAuxiliaryFiles.normalizedOriginal); if (optimizedAuxiliaryFiles.ocrRestoreBalanced) formData.append('ocrRestoreBalanced', optimizedAuxiliaryFiles.ocrRestoreBalanced); if (optimizedAuxiliaryFiles.ocrRestoreTextPriority) formData.append('ocrRestoreTextPriority', optimizedAuxiliaryFiles.ocrRestoreTextPriority); }
+      const formData = new FormData(); formData.append('image', processed); formData.append('type', type); if (isPhoto && photoGenderHint) formData.append('genderHint', photoGenderHint); if (!isPhoto && uploadProcessingMeta) formData.append('processingMeta', JSON.stringify(uploadProcessingMeta)); if (!isPhoto && optimizedAuxiliaryFiles) { if (optimizedAuxiliaryFiles.sourceOriginal) formData.append('sourceOriginal', optimizedAuxiliaryFiles.sourceOriginal); if (optimizedAuxiliaryFiles.normalizedOriginal) formData.append('normalizedOriginal', optimizedAuxiliaryFiles.normalizedOriginal); if (optimizedAuxiliaryFiles.ocrRestoreBalanced) formData.append('ocrRestoreBalanced', optimizedAuxiliaryFiles.ocrRestoreBalanced); if (optimizedAuxiliaryFiles.ocrRestoreTextPriority) formData.append('ocrRestoreTextPriority', optimizedAuxiliaryFiles.ocrRestoreTextPriority); }
       abortControllerRef.current = new AbortController(); const timeoutId = setTimeout(() => abortControllerRef.current?.abort(), isPhoto ? PHOTO_UPLOAD_TIMEOUT_MS : DEFAULT_UPLOAD_TIMEOUT_MS);
       const response = await fetch(buildApiUrl('/cccd-upload'), { method: 'POST', body: formData, signal: abortControllerRef.current.signal }).finally(() => clearTimeout(timeoutId));
       const result = await response.json() as PhotoStatusPayload & { imageId?: string | null };
       if (!result.success) throw new Error(result.error || 'Upload that bai.');
       if (isPhoto && (result.previewUrl || result.finalPreviewUrl)) setPreview(result.finalPreviewUrl || result.previewUrl || null);
       if (!isPhoto) {
-        const editorWarnings = Array.isArray(processingMeta?.qualityWarnings) ? processingMeta.qualityWarnings : [];
-        const editorBlockingReasons = Array.isArray(processingMeta?.blockingReasons) ? processingMeta.blockingReasons : [];
-        const backendWarnings = Array.isArray(result.warnings) ? result.warnings : [];
-        const q = await qualityPromise;
-        const fallbackWarnings: string[] = [];
-        if (q) {
-          if (q.avgBrightness < 50) fallbackWarnings.push('Anh qua toi. Hay chup lai o noi sang hon.');
-          if (q.avgBrightness > 220) fallbackWarnings.push('Anh qua sang hoac bi loa. Tranh den chieu truc tiep.');
-          if (q.sharpness < 3) fallbackWarnings.push('Anh bi mo. Giu tay chac va giu yen khi chup.');
-        }
-        const combinedWarnings = [...new Set([...editorWarnings, ...editorBlockingReasons, ...backendWarnings, ...fallbackWarnings])];
-        if (combinedWarnings.length) setQualityWarnings(combinedWarnings);
+        setQualityWarnings([]);
         setStatus('success'); setUploadProgress(100); onUploadSuccess?.({ imageId: String(result.imageId || ''), processingLogId: result.processingLogId ? String(result.processingLogId) : undefined, type, imageUrl: localPreviewUrlRef.current || undefined }); return;
       }
       const logId = result.processingLogId ? String(result.processingLogId) : null; if (!logId) throw new Error('Khong tao duoc phien xu ly anh 3x4.');
@@ -541,13 +575,96 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
     }
   };
 
-  const openEditorForFile = async (file: File) => { try { setError(''); setQualityWarnings([]); const processed = await convertHeicIfNeeded(file); if (!processed.type.startsWith('image/')) throw new Error('Vui long chon file anh hop le.'); setSelectedFile(processed); setShowImageEditor(true); } catch (err: unknown) { setError(err instanceof Error ? err.message : 'Khong the mo file anh.'); } };
+  const openEditorForFile = async (file: File) => { try { setError(''); setQualityWarnings([]); const processed = await convertHeicIfNeeded(file); if (!processed.type.startsWith('image/')) throw new Error('Vui long chon file anh hop le.'); if (!isPhoto) setDocumentEditorFile(processed); setSelectedFile(processed); setShowImageEditor(true); } catch (err: unknown) { setError(err instanceof Error ? err.message : 'Khong the mo file anh.'); } };
+  // ZERO-TOUCH: cho CCCD front/back, tự auto-rotate EXIF + auto-warp 4 góc + gửi thẳng. Bỏ qua editor.
+  // User chỉ phải pick ảnh — không phải crop tay. Editor chỉ mở khi user nhấn nút "Tinh chỉnh" hoặc khi auto-warp fail trên ảnh quá tệ.
+  const autoProcessAndSend = async (file: File) => {
+    try {
+      setError(''); setQualityWarnings([]);
+      let processed = await convertHeicIfNeeded(file);
+      if (!processed.type.startsWith('image/')) throw new Error('Vui long chon file anh hop le.');
+      const { autoRotateByExif, assessImageQuality } = await import('./cccd-image-quality');
+      processed = await autoRotateByExif(processed);
+      const sourceOriginal = processed;
+      setDocumentEditorFile(sourceOriginal);
+      let warpDetected = false;
+      let warpConfidence = 0;
+      setProcessingStage('processing'); setProcessingMessage('Đang tự căn chỉnh ảnh CCCD...');
+      try {
+        const { autoWarpCCCD } = await import('./cccd-auto-warp');
+        const result = await autoWarpCCCD(processed);
+        warpDetected = result.detected;
+        warpConfidence = result.confidence;
+        if (result.detected) processed = result.file;
+      } catch (warpErr) { console.warn('auto-warp skipped:', warpErr); }
+      setDocumentPreviewFromFile(processed);
+      const quality = await assessImageQuality(processed, type as 'cccd_front' | 'cccd_back');
+      const processingMeta: DocumentProcessingMetaPayload = {
+        autoRectified: warpDetected,
+        detectionConfidence: warpConfidence,
+        cornerCount: warpDetected ? 4 : 0,
+        qualityWarnings: [],
+        blockingReasons: [],
+        validationStatus: 'ok',
+        sourceWidth: quality.width,
+        sourceHeight: quality.height,
+        outputWidth: quality.width,
+        outputHeight: quality.height,
+        usedManualAdjust: false,
+        qualityScore: Math.max(0, Math.min(100, Math.round(100 - quality.issues.length * 18))),
+        avgBrightness: quality.avgBrightness,
+        sharpness: quality.sharpness,
+        restorationMode: warpDetected ? 'normalized_original' : 'source_original',
+        recommendedCandidate: warpDetected ? 'normalized_original' : '',
+      };
+      const auxiliaryFiles: CCCDAuxiliaryFiles = {
+        sourceOriginal,
+        normalizedOriginal: warpDetected ? processed : undefined,
+      };
+      setProcessingStage(''); setProcessingMessage('');
+      await sendFile(processed, processingMeta, auxiliaryFiles, 0);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Khong the xu ly anh.';
+      setError(message);
+      setProcessingStage('');
+      setProcessingMessage('');
+      // Re-throw so handleIncomingFile can fall back to manual editor
+      throw err;
+    }
+  };
+  const handleIncomingFile = async (file: File) => {
+    if (!isPhoto) {
+      // CCCD: zero-touch auto-process (auto-rotate EXIF + auto-warp 4 góc + gửi thẳng).
+      // Bỏ qua editor nếu auto-warp thành công. Chỉ mở editor khi auto-warp thất bại
+      // hoặc người dùng nhấn nút "Tinh chỉnh".
+      try {
+        await autoProcessAndSend(file);
+        return;
+      } catch (autoErr) {
+        console.warn('Auto-process CCCD failed, falling back to manual editor:', autoErr);
+        // Fall through to open the manual editor
+      }
+    }
+    // Photo hoặc CCCD fallback: mở editor để crop/chỉnh tay
+    return openEditorForFile(file);
+  };
+  const openDocumentEditor = useCallback(() => {
+    if (isPhoto) return;
+    const file = documentEditorFile || selectedFile;
+    if (!file) {
+      setError('Chua co anh CCCD de can chinh. Vui long chon hoac chup lai anh.');
+      return;
+    }
+    setError('');
+    setSelectedFile(file);
+    setShowImageEditor(true);
+  }, [documentEditorFile, isPhoto, selectedFile]);
   const openNativePicker = (captureMode: '' | 'user' = '') => {
     setFileCaptureMode(captureMode);
     window.setTimeout(() => fileInputRef.current?.click(), 0);
   };
-  const chooseFile = async (event: React.ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; setFileCaptureMode(''); if (!file) return; if (fileInputRef.current) fileInputRef.current.value = ''; await openEditorForFile(file); };
-  const onDrop = useCallback(async (event: React.DragEvent) => { event.preventDefault(); event.stopPropagation(); dragCounterRef.current = 0; setIsDragOver(false); const file = event.dataTransfer?.files?.[0]; if (file) await openEditorForFile(file); }, []);
+  const chooseFile = async (event: React.ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; setFileCaptureMode(''); if (!file) return; if (fileInputRef.current) fileInputRef.current.value = ''; await handleIncomingFile(file); };
+  const onDrop = useCallback(async (event: React.DragEvent) => { event.preventDefault(); event.stopPropagation(); dragCounterRef.current = 0; setIsDragOver(false); const file = event.dataTransfer?.files?.[0]; if (file) await handleIncomingFile(file); }, []);
   const chooseVariant = async (variant: VariantOption) => {
     if (!photoLogId) return setError('Khong tim thay phien xu ly de chon anh.');
     try { setSelectingVariantId(variant.variantId); const response = await fetch(buildApiUrl(`/cccd-upload/photo-3x4/${photoLogId}/select`), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ variantId: variant.variantId }) }); const result = await response.json() as { success?: boolean; error?: string; imageId?: string; previewUrl?: string | null; imageUrl?: string | null; warnings?: string[]; selectedVariantId?: number | null; }; if (!result.success || !result.imageId) throw new Error(result.error || 'Khong the luu anh da chon.'); finishPhoto(result.imageId, result.previewUrl || result.imageUrl || variant.previewUrl, photoLogId, Array.isArray(result.warnings) ? result.warnings : variant.warnings, typeof result.selectedVariantId === 'number' ? result.selectedVariantId : variant.variantId); } catch (err: unknown) { const message = err instanceof Error ? err.message : 'Khong the chon anh.'; setError(message); onUploadError?.(err instanceof Error ? err : new Error(message)); } finally { setSelectingVariantId(null); }
@@ -579,7 +696,7 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
       <div className={containerClass}>
         {!preview ? (
           <div className="upload-trigger" onClick={() => openNativePicker()} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && openNativePicker()} aria-label={`Tai anh ${TYPE_LABELS[type]}`}>
-            {status === 'uploading' ? <div className="upload-placeholder upload-placeholder-loading"><Loader2 className="animate-spin icon-large" size={36} /><p className="upload-text">Dang xu ly...</p>{retryCount > 0 && <p className="upload-hint upload-hint-retry">Dang thu lai ({retryCount}/{MAX_RETRIES})...</p>}</div> : status === 'error' ? <div className="upload-placeholder"><ImageOff className="icon-large icon-error" size={36} /><p className="upload-text upload-text-error">{isPhoto ? 'Anh 3x4 khong xu ly duoc' : 'Upload that bai'}</p><p className="upload-hint">Nhan de chon anh khac</p></div> : <div className={`upload-idle-guide ${isPhoto ? 'photo-type' : 'cccd-type'} ${isPhoto && isMobile ? 'photo-mobile' : ''}`}><div className="upload-template-preview"><img src={TEMPLATE_IMAGES[type]} alt={TYPE_LABELS[type]} className="template-preview-img" draggable={false} /><div className="template-upload-overlay"><Upload size={24} /></div></div><div className="upload-idle-info"><p className="upload-idle-desc">{TYPE_DESCRIPTIONS[type]}</p>{isPhoto && <ul className="upload-idle-checklist">{PHOTO_RULES.map((rule) => <li key={rule}>{rule}</li>)}</ul>}{isPhoto && isMobile && <p className="upload-mobile-tip">Mobile nen uu tien chup selfie ro mat hoac chon anh tu thu vien roi canh lai trong khung.</p>}<div className={`upload-idle-actions ${isPhoto && isMobile ? 'photo-mobile-actions' : ''}`}><span className="upload-idle-action" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openNativePicker(); }}><Upload size={14} />Chon anh</span>{!isPhoto && <span className="upload-idle-action camera-action" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setShowCamera(true); }}><Camera size={14} />Chup anh</span>}{isPhoto && isMobile && <span className="upload-idle-action camera-action" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openNativePicker('user'); }}><Camera size={14} />Chup selfie</span>}{isPhoto && <span className="upload-idle-action secondary" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setShowPhotoGuide(true); }}><Eye size={14} />Xem huong dan</span>}</div></div>{isDragOver && <div className="upload-drag-overlay"><Upload size={28} /><span>Tha anh vao day</span></div>}</div>}
+            {status === 'uploading' ? <div className="upload-placeholder upload-placeholder-loading"><Loader2 className="animate-spin icon-large" size={36} /><p className="upload-text">Dang xu ly...</p>{retryCount > 0 && <p className="upload-hint upload-hint-retry">Dang thu lai ({retryCount}/{MAX_RETRIES})...</p>}</div> : status === 'error' ? <div className="upload-placeholder"><ImageOff className="icon-large icon-error" size={36} /><p className="upload-text upload-text-error">{isPhoto ? 'Anh 3x4 khong xu ly duoc' : 'Upload that bai'}</p><p className="upload-hint">Nhan de chon anh khac</p></div> : <div className={`upload-idle-guide ${isPhoto ? 'photo-type' : 'cccd-type'} ${isPhoto && isMobile ? 'photo-mobile' : ''}`}><div className="upload-template-preview">{templateImageError ? <div className="template-preview-fallback"><ImageOff size={24} /></div> : <img src={TEMPLATE_IMAGES[type]} alt={TYPE_LABELS[type]} className="template-preview-img" draggable={false} onError={() => setTemplateImageError(true)} />}<div className="template-upload-overlay"><Upload size={24} /></div></div><div className="upload-idle-info"><p className="upload-idle-desc">{TYPE_DESCRIPTIONS[type]}</p>{isPhoto && <ul className="upload-idle-checklist">{PHOTO_RULES.map((rule) => <li key={rule}>{rule}</li>)}</ul>}{isPhoto && isMobile && <p className="upload-mobile-tip">Mobile nen uu tien chup selfie ro mat hoac chon anh tu thu vien roi canh lai trong khung.</p>}<div className={`upload-idle-actions ${isPhoto && isMobile ? 'photo-mobile-actions' : ''}`}><span className="upload-idle-action" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openNativePicker(); }}><Upload size={14} />Chon anh</span>{!isPhoto && <span className="upload-idle-action camera-action" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setShowCamera(true); }}><Camera size={14} />Chup anh</span>}{isPhoto && isMobile && <span className="upload-idle-action camera-action" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openNativePicker('user'); }}><Camera size={14} />Chup selfie</span>}{isPhoto && <span className="upload-idle-action secondary" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setShowPhotoGuide(true); }}><Eye size={14} />Xem huong dan</span>}</div></div>{isDragOver && <div className="upload-drag-overlay"><Upload size={28} /><span>Tha anh vao day</span></div>}</div>}
           </div>
         ) : (
           <div className={`preview-container ${isPhoto ? 'photo-type' : 'cccd-type'}`}>
@@ -592,7 +709,7 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
                 {status === 'error' && <div className="status-badge error"><XCircle size={16} /><span>Loi</span></div>}
               </div>
             </div>
-            {(status === 'success' || status === 'selection') && <div className="preview-bottom-actions">{photoSelection && <button type="button" className="btn-preview-select" onClick={() => setShowPhotoSelectionDialog(true)}><CheckCircle size={14} /><span>Chon anh</span></button>}<button type="button" className="btn-preview-view" onClick={() => setShowFullPreview(true)}><Eye size={14} /><span>Xem</span></button><button type="button" className="btn-preview-change" onClick={resetUpload}><RefreshCw size={14} /><span>Doi anh</span></button></div>}
+            {(status === 'success' || status === 'selection') && <div className="preview-bottom-actions">{photoSelection && <button type="button" className="btn-preview-select" onClick={() => setShowPhotoSelectionDialog(true)}><CheckCircle size={14} /><span>Chon anh</span></button>}{!isPhoto && documentEditorFile && <button type="button" className="btn-preview-adjust" onClick={openDocumentEditor}><ScanSearch size={14} /><span>Can chinh</span></button>}<button type="button" className="btn-preview-view" onClick={() => setShowFullPreview(true)}><Eye size={14} /><span>Xem</span></button><button type="button" className="btn-preview-change" onClick={resetUpload}><RefreshCw size={14} /><span>Doi anh</span></button></div>}
           </div>
         )}
 
@@ -621,7 +738,6 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
         />
       )}
       {isPhoto && status === 'processing' && processingMessage && <div className="error-message warning" role="status"><Loader2 className="animate-spin" size={14} /><div className="error-message-body"><span>{processingMessage}</span></div></div>}
-      {!isPhoto && <QualityWarning warnings={qualityWarnings} onRetry={resetUpload} onDismiss={() => setQualityWarnings([])} />}
       {isPhoto && qualityWarnings.length > 0 && status !== 'idle' && status !== 'uploading' && <div className="photo-warning-panel"><div className="photo-warning-panel-title"><AlertCircle size={14} /><span>Luu y cho anh 3x4</span></div><ul className="photo-warning-list">{qualityWarnings.slice(0, 5).map((warning) => <li key={warning}>{warning}</li>)}</ul></div>}
 
       {photoSelection && (
@@ -644,9 +760,21 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
       <input ref={fileInputRef} type="file" accept="image/*,.heic,.heif" capture={fileCaptureMode || undefined} onChange={chooseFile} style={{ display: 'none' }} />
       {error && <div className={`error-message ${error.includes('mang') || error.includes('thu lai') ? 'warning' : ''}`} role="alert"><AlertCircle size={14} /><div className="error-message-body"><span>{error}</span><div className="error-action-row"><button type="button" className="btn-retry-upload" onClick={resetUpload}><RefreshCw size={12} /> Thu lai</button>{isPhoto && isMobile && <button type="button" className="btn-guide-upload" onClick={() => openNativePicker('user')}><Camera size={12} /> Chup selfie</button>}{isPhoto && <button type="button" className="btn-guide-upload" onClick={() => setShowPhotoGuide(true)}><Eye size={12} /> Xem huong dan</button>}</div></div></div>}
 
-      {showImageEditor && selectedFile && <Suspense fallback={<div className="upload-loading"><Loader2 className="animate-spin" size={24} /><span>Dang tai trinh chinh anh...</span></div>}>{isPhoto ? <ImageEditor imageFile={selectedFile} type={type} templateImage={TEMPLATE_IMAGES[type]} onConfirm={async (croppedFile: File) => { setShowImageEditor(false); setSelectedFile(null); setRetryCount(0); await sendFile(croppedFile); }} onCancel={() => { setShowImageEditor(false); setSelectedFile(null); }} /> : <DocumentSmartEditor imageFile={selectedFile} type={type as 'cccd_front' | 'cccd_back'} templateImage={TEMPLATE_IMAGES[type]} onConfirm={async (payload: File | { file: File; processingMeta?: DocumentProcessingMetaPayload | null; auxiliaryFiles?: CCCDAuxiliaryFiles | null }) => { setShowImageEditor(false); setSelectedFile(null); setRetryCount(0); if (payload instanceof File) { setDocumentPreviewFromFile(payload); await sendFile(payload); return; } setDocumentPreviewFromFile(payload.file); await sendFile(payload.file, payload.processingMeta || null, payload.auxiliaryFiles || null); }} onCancel={() => { setShowImageEditor(false); setSelectedFile(null); }} />}</Suspense>}
+      {showImageEditor && selectedFile && (
+        <EditorErrorBoundary onRetry={() => { setShowImageEditor(false); setSelectedFile(null); }}>
+          <Suspense fallback={<div className="upload-loading"><Loader2 className="animate-spin" size={24} /><span>Dang tai trinh chinh anh...</span></div>}>
+            {isPhoto ? <ImageEditor imageFile={selectedFile} type={type} templateImage={TEMPLATE_IMAGES[type]} onConfirm={async (croppedFile: File) => { setShowImageEditor(false); setSelectedFile(null); setRetryCount(0); await sendFile(croppedFile); }} onCancel={() => { setShowImageEditor(false); setSelectedFile(null); }} /> : <DocumentSmartEditor imageFile={selectedFile} type={type as 'cccd_front' | 'cccd_back'} templateImage={TEMPLATE_IMAGES[type]} onConfirm={async (payload: File | { file: File; processingMeta?: DocumentProcessingMetaPayload | null; auxiliaryFiles?: CCCDAuxiliaryFiles | null }) => { setShowImageEditor(false); setSelectedFile(null); setRetryCount(0); if (payload instanceof File) { setDocumentEditorFile(payload); setDocumentPreviewFromFile(payload); await sendFile(payload); return; } setDocumentEditorFile(payload.file); setDocumentPreviewFromFile(payload.file); await sendFile(payload.file, payload.processingMeta || null, payload.auxiliaryFiles || null); }} onCancel={() => { setShowImageEditor(false); setSelectedFile(null); }} />}
+          </Suspense>
+        </EditorErrorBoundary>
+      )}
       {showFullPreview && preview && <FullPreview type={type} preview={preview} label={TYPE_LABELS[type]} onClose={() => setShowFullPreview(false)} onRetake={resetUpload} />}
-      {showCamera && !isPhoto && <Suspense fallback={<div className="upload-loading"><Loader2 className="animate-spin" size={24} /><span>Dang mo camera...</span></div>}><CameraWithOverlay type={type} templateImage={TEMPLATE_IMAGES[type]} onCapture={async (file: File) => { setShowCamera(false); await openEditorForFile(file); }} onClose={() => setShowCamera(false)} /></Suspense>}
+      {showCamera && !isPhoto && (
+        <EditorErrorBoundary onRetry={() => { setShowCamera(false); }}>
+          <Suspense fallback={<div className="upload-loading"><Loader2 className="animate-spin" size={24} /><span>Dang mo camera...</span></div>}>
+            <CameraWithOverlay type={type} templateImage={TEMPLATE_IMAGES[type]} onCapture={async (file: File) => { setShowCamera(false); await handleIncomingFile(file); }} onClose={() => setShowCamera(false)} />
+          </Suspense>
+        </EditorErrorBoundary>
+      )}
       <GuideDialog open={showPhotoGuide} onClose={() => setShowPhotoGuide(false)} />
       <PhotoSelectionDialog open={showPhotoSelectionDialog && photoSelection} onClose={() => setShowPhotoSelectionDialog(false)} sourcePreview={photoSourcePreview} variants={photoVariants} recommendedVariantId={recommendedVariantId} selectedVariantId={selectedVariantId} selectingVariantId={selectingVariantId} regenerating={regenerating} onRegenerate={() => { void regenerate(); }} onChoose={(variant) => { void chooseVariant(variant); }} />
     </div>

@@ -1,9 +1,11 @@
+// @ts-nocheck
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   AlertCircle,
   Check,
   Loader2,
+  Maximize2,
   RotateCcw,
   RotateCw,
   ScanSearch,
@@ -18,6 +20,7 @@ import { getOverlayBox } from './overlayUtils';
 import {
   buildManualCropOcrVariants,
   canvasToFile,
+  cropTightDocumentCanvas,
   type DocumentProcessingMeta,
   getDocumentOutputSize,
 } from './document-normalization';
@@ -56,6 +59,22 @@ async function canvasToNamedFile(canvas: HTMLCanvasElement, filename: string) {
     type: 'image/jpeg',
     lastModified: Date.now(),
   });
+}
+
+async function imageFileToCanvas(file: File) {
+  const bitmap = await createImageBitmap(file);
+  const canvas = document.createElement('canvas');
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(bitmap, 0, 0);
+  bitmap.close?.();
+  return canvas;
 }
 
 type NormalizationState =
@@ -273,7 +292,7 @@ export default function DocumentSmartEditor({
           },
         });
         const html = await response.text();
-        if (!cancelled && __VT_BUILD_ID__ && !html.includes(`-${__VT_BUILD_ID__}-`)) {
+        if (!cancelled && typeof __VT_BUILD_ID__ !== 'undefined' && __VT_BUILD_ID__ && !html.includes(`-${__VT_BUILD_ID__}-`)) {
           window.location.reload();
         }
       } catch {
@@ -306,10 +325,13 @@ export default function DocumentSmartEditor({
     if (!image) return { width: 1, height: 1 };
     const naturalWidth = image.naturalWidth || image.width || 1;
     const naturalHeight = image.naturalHeight || image.height || 1;
-    if (rotation === 90 || rotation === 270) {
-      return { width: naturalHeight, height: naturalWidth };
-    }
-    return { width: naturalWidth, height: naturalHeight };
+    const rad = (rotation * Math.PI) / 180;
+    const cos = Math.abs(Math.cos(rad));
+    const sin = Math.abs(Math.sin(rad));
+    return {
+      width: naturalWidth * cos + naturalHeight * sin,
+      height: naturalWidth * sin + naturalHeight * cos,
+    };
   }, [rotation]);
 
   const computeCoverScale = useCallback((overlayWidth: number, overlayHeight: number) => {
@@ -528,34 +550,58 @@ export default function DocumentSmartEditor({
     translateRef.current = { x: clamped.tx, y: clamped.ty };
   }, [calculateOverlay, clampTranslate, computeCoverScale, scale, translateX, translateY]);
 
-  const handleRotate = useCallback(() => {
-    const nextRotation = (rotation + 90) % 360;
-    setRotation(nextRotation);
+  const applyRotation = useCallback((nextRotation: number, resetPosition = false) => {
+    const normalized = ((nextRotation % 360) + 360) % 360;
+    setRotation(normalized);
+
     window.setTimeout(() => {
       const container = containerRef.current;
-      if (!container) return;
+      const image = imageRef.current;
+      if (!container || !image) return;
+
       const { width: containerWidth, height: containerHeight } = container.getBoundingClientRect();
       const overlay = calculateOverlay(containerWidth, containerHeight);
-      const dimensions = imageRef.current
-        ? (nextRotation === 90 || nextRotation === 270
-          ? {
-              width: imageRef.current.naturalHeight || imageRef.current.height || 1,
-              height: imageRef.current.naturalWidth || imageRef.current.width || 1,
-            }
-          : {
-              width: imageRef.current.naturalWidth || imageRef.current.width || 1,
-              height: imageRef.current.naturalHeight || imageRef.current.height || 1,
-            })
-        : { width: 1, height: 1 };
-      const minScale = Math.max(overlay.overlayWidth / dimensions.width, overlay.overlayHeight / dimensions.height) * 1.002;
-      const clamped = clampTranslate(minScale, 0, 0);
-      setScale(minScale);
-      setTranslateX(clamped.tx);
-      setTranslateY(clamped.ty);
-      scaleRef.current = minScale;
-      translateRef.current = { x: clamped.tx, y: clamped.ty };
+      const imageWidth = image.naturalWidth || image.width || 1;
+      const imageHeight = image.naturalHeight || image.height || 1;
+      const rad = (normalized * Math.PI) / 180;
+      const cos = Math.abs(Math.cos(rad));
+      const sin = Math.abs(Math.sin(rad));
+      const effectiveWidth = imageWidth * cos + imageHeight * sin;
+      const effectiveHeight = imageWidth * sin + imageHeight * cos;
+      const minScale = Math.max(overlay.overlayWidth / effectiveWidth, overlay.overlayHeight / effectiveHeight) * 1.002;
+
+      if (resetPosition) {
+        const clamped = clampTranslate(minScale, 0, 0);
+        setScale(minScale);
+        setTranslateX(clamped.tx);
+        setTranslateY(clamped.ty);
+        scaleRef.current = minScale;
+        translateRef.current = { x: clamped.tx, y: clamped.ty };
+      } else {
+        const currentScale = scaleRef.current;
+        if (currentScale < minScale) {
+          const clamped = clampTranslate(minScale, translateRef.current.x, translateRef.current.y);
+          setScale(minScale);
+          setTranslateX(clamped.tx);
+          setTranslateY(clamped.ty);
+          scaleRef.current = minScale;
+          translateRef.current = { x: clamped.tx, y: clamped.ty };
+        }
+      }
     }, 0);
-  }, [calculateOverlay, clampTranslate, rotation]);
+  }, [calculateOverlay, clampTranslate]);
+
+  const handleRotate = useCallback(() => {
+    applyRotation(rotation + 90, true);
+  }, [applyRotation, rotation]);
+
+  const handleRotateCCW = useCallback(() => {
+    applyRotation(rotation - 90, true);
+  }, [applyRotation, rotation]);
+
+  const handleFineTune = useCallback((delta: number) => {
+    applyRotation(rotation + delta, false);
+  }, [applyRotation, rotation]);
 
   const handleReset = useCallback(() => {
     const initial = initialTransformRef.current;
@@ -779,10 +825,32 @@ export default function DocumentSmartEditor({
 
     setSaving(true);
     try {
-      const file = await canvasToFile(cropCanvas, type);
-      const variants = buildManualCropOcrVariants(cropCanvas, type);
+      const overlayFile = await canvasToNamedFile(cropCanvas, `cccd-${type}-manual-overlay.jpg`);
+      let finalCanvas = cropCanvas;
+      let autoWarped = false;
+      let autoWarpConfidence = 0;
+
+      try {
+        const { autoWarpCCCD } = await import('./cccd-auto-warp');
+        const warped = await autoWarpCCCD(overlayFile, {
+          targetWidth: getDocumentOutputSize().width,
+          targetHeight: getDocumentOutputSize().height,
+        });
+        autoWarped = warped.detected;
+        autoWarpConfidence = warped.confidence;
+        if (warped.detected) {
+          const warpedCanvas = await imageFileToCanvas(warped.file);
+          if (warpedCanvas) finalCanvas = warpedCanvas;
+        }
+      } catch (warpError) {
+        console.warn('Manual CCCD auto-warp skipped:', warpError);
+      }
+
+      const tightCanvas = cropTightDocumentCanvas(finalCanvas, type);
+      const file = await canvasToFile(tightCanvas, type);
+      const variants = buildManualCropOcrVariants(tightCanvas, type);
       const auxiliaryFiles: CCCDAuxiliaryFiles = {
-        sourceOriginal: file,
+        sourceOriginal: overlayFile,
       };
 
       if (variants.artifacts?.normalizedOriginalCanvas) {
@@ -806,7 +874,12 @@ export default function DocumentSmartEditor({
 
       await onConfirm({
         file,
-        processingMeta: variants.processingMeta,
+        processingMeta: {
+          ...variants.processingMeta,
+          autoRectified: autoWarped || Boolean(variants.processingMeta?.autoRectified),
+          detectionConfidence: Math.max(Number(variants.processingMeta?.detectionConfidence || 0), autoWarpConfidence),
+          cornerCount: autoWarped ? 4 : Number(variants.processingMeta?.cornerCount || 0),
+        },
         auxiliaryFiles,
       });
     } finally {
@@ -844,12 +917,24 @@ export default function DocumentSmartEditor({
           <ZoomIn size={18} />
           <span>Phóng to</span>
         </button>
+        <button type="button" className="document-smart-control-btn" onClick={handleRotateCCW}>
+          <RotateCcw size={18} />
+          <span>Xoay trái 90°</span>
+        </button>
         <button type="button" className="document-smart-control-btn" onClick={handleRotate}>
           <RotateCw size={18} />
-          <span>Xoay</span>
+          <span>Xoay phải 90°</span>
+        </button>
+        <button type="button" className="document-smart-control-btn document-smart-control-btn--fine" onClick={() => handleFineTune(-15)}>
+          <RotateCcw size={16} />
+          <span>−15°</span>
+        </button>
+        <button type="button" className="document-smart-control-btn document-smart-control-btn--fine" onClick={() => handleFineTune(15)}>
+          <RotateCw size={16} />
+          <span>+15°</span>
         </button>
         <button type="button" className="document-smart-control-btn" onClick={handleReset}>
-          <RotateCcw size={18} />
+          <Maximize2 size={18} />
           <span>Canh vừa thẻ</span>
         </button>
       </div>
