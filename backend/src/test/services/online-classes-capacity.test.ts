@@ -42,7 +42,7 @@ afterEach(() => {
  * Tạo class trong DB thật với max_students và status tuỳ chỉnh.
  * Trả về id của class vừa tạo.
  */
-async function seedClass(db, { maxStudents = 50, status = 'active' } = {}) {
+async function seedClass(db: D1Database, { maxStudents = 50, status = 'active' }: { maxStudents?: number; status?: string } = {}) {
   const result = await db.prepare(
     `INSERT INTO online_classes
        (class_name, schedule_rule, schedule_time, start_date, max_students, status, created_by)
@@ -54,7 +54,7 @@ async function seedClass(db, { maxStudents = 50, status = 'active' } = {}) {
 /**
  * Tạo student trong DB thật và trả về id.
  */
-async function seedStudent(db, suffix = '') {
+async function seedStudent(db: D1Database, suffix = '') {
   const result = await db.prepare(
     `INSERT INTO students (cccd, ho, ten_dem, ten, ho_ten_full, ngay_sinh, noi_sinh,
                            gioi_tinh, email, sdt, dia_chi)
@@ -72,7 +72,7 @@ async function seedStudent(db, suffix = '') {
 /**
  * Chèn N enrollment active vào 1 class để mô phỏng lớp đã đầy.
  */
-async function seedActiveEnrollments(db, classId, count) {
+async function seedActiveEnrollments(db: D1Database, classId: number, count: number) {
   for (let i = 0; i < count; i++) {
     const studentId = await seedStudent(db, `fill_${classId}_${i}`);
     await db.prepare(
@@ -85,7 +85,7 @@ async function seedActiveEnrollments(db, classId, count) {
 /**
  * Tạo enrollment pending cho 1 student, trả về enrollmentId.
  */
-async function seedPendingEnrollment(db, classId, studentId) {
+async function seedPendingEnrollment(db: D1Database, classId: number, studentId: number) {
   const result = await db.prepare(
     `INSERT INTO online_class_enrollments (online_class_id, student_id, status)
      VALUES (?, ?, 'pending')`

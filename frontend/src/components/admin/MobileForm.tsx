@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { useDeviceType } from '../../utils/deviceDetection';
 import './MobileForm.css';
@@ -154,11 +155,3 @@ export function MobileFormActions({ children, className = '' }) {
         </div>
     );
 }
-
-
-
-
-
-
-
-

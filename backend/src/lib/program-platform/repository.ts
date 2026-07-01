@@ -249,6 +249,12 @@ function boolToFlag(value: number | boolean | null | undefined) {
   return Boolean(Number(value || 0));
 }
 
+function assertEduWritable(row: { source_site?: string | null }, entityLabel: string) {
+  if (row.source_site !== 'edu') {
+    throw new Error(`${entityLabel} is read-only`);
+  }
+}
+
 function mapOrganizerRow(row: ProgramOrganizerRow) {
   return {
     id: row.id,
@@ -624,7 +630,7 @@ export async function listProgramOrganizers(
 
 export async function getProgramOrganizerByUuid(db: D1Database, uuid: string) {
   const row = await db
-    .prepare(`SELECT * FROM program_organizers WHERE uuid = ? LIMIT 1`)
+    .prepare(`SELECT * FROM program_organizers WHERE uuid = ? AND source_site IN ('edu', 'system') LIMIT 1`)
     .bind(uuid)
     .first<ProgramOrganizerRow>();
 
@@ -702,6 +708,7 @@ export async function updateProgramOrganizer(
   if (!existing) {
     throw new Error('Organizer not found');
   }
+  assertEduWritable(existing, 'Organizer');
 
   const name = normalizeString(payload.name) || existing.name;
   const code = normalizeCode(payload.code || existing.code) || existing.code;
@@ -721,7 +728,7 @@ export async function updateProgramOrganizer(
           source_site = ?,
           last_event_uuid = ?,
           updated_at = ?
-        WHERE uuid = ?
+        WHERE uuid = ? AND source_site = 'edu'
       `
     )
     .bind(
@@ -774,7 +781,7 @@ export async function listPrograms(
                o.source_site as organizer_source_site, o.last_event_uuid as organizer_last_event_uuid,
                o.created_at as organizer_created_at, o.updated_at as organizer_updated_at
         FROM programs p
-        JOIN program_organizers o ON o.uuid = p.organizer_uuid
+        JOIN program_organizers o ON o.uuid = p.organizer_uuid AND o.source_site IN ('edu', 'system')
         WHERE p.source_site IN ('edu', 'system')
           AND (? IS NULL OR p.organizer_uuid = ?)
           AND (? = 1 OR p.is_active = 1)
@@ -806,7 +813,10 @@ export async function listPrograms(
 }
 
 export async function getProgramByUuid(db: D1Database, uuid: string) {
-  const row = await db.prepare(`SELECT * FROM programs WHERE uuid = ? LIMIT 1`).bind(uuid).first<ProgramRow>();
+  const row = await db
+    .prepare(`SELECT * FROM programs WHERE uuid = ? AND source_site IN ('edu', 'system') LIMIT 1`)
+    .bind(uuid)
+    .first<ProgramRow>();
   return row || null;
 }
 
@@ -938,6 +948,7 @@ export async function updateProgram(
   if (!existing) {
     throw new Error('Program not found');
   }
+  assertEduWritable(existing, 'Program');
 
   const organizerUuid = normalizeString(payload.organizer_uuid) || existing.organizer_uuid;
   const organizer = await getProgramOrganizerByUuid(db, organizerUuid);
@@ -1000,7 +1011,7 @@ export async function updateProgram(
           source_site = ?,
           last_event_uuid = ?,
           updated_at = ?
-        WHERE uuid = ?
+        WHERE uuid = ? AND source_site = 'edu'
       `
     )
     .bind(
@@ -1041,7 +1052,7 @@ export async function updateProgram(
 
   const row = await getProgramByUuid(db, uuid);
   const levelCount = await db
-    .prepare(`SELECT COUNT(1) as total FROM program_levels WHERE program_uuid = ? AND is_active = 1`)
+    .prepare(`SELECT COUNT(1) as total FROM program_levels WHERE program_uuid = ? AND source_site IN ('edu', 'system') AND is_active = 1`)
     .bind(uuid)
     .first<{ total?: number }>();
 
@@ -1064,7 +1075,7 @@ export async function listProgramLevels(
                p.updated_by as program_updated_by, p.source_site as program_source_site,
                p.last_event_uuid as program_last_event_uuid, p.created_at as program_created_at, p.updated_at as program_updated_at
         FROM program_levels pl
-        JOIN programs p ON p.uuid = pl.program_uuid
+        JOIN programs p ON p.uuid = pl.program_uuid AND p.source_site IN ('edu', 'system')
         WHERE pl.source_site IN ('edu', 'system')
           AND (? IS NULL OR pl.program_uuid = ?)
           AND (? = 1 OR pl.is_active = 1)
@@ -1098,6 +1109,9 @@ export async function listProgramLevels(
         updated_by: row.program_updated_by ?? null,
         source_site: row.program_source_site,
         last_event_uuid: row.program_last_event_uuid ?? null,
+        assessment_mode: row.assessment_mode ?? 'none',
+        certificate_enabled: Number(row.certificate_enabled || 0),
+        schedule_model: row.schedule_model ?? 'session_based',
         created_at: row.program_created_at,
         updated_at: row.program_updated_at,
       } satisfies ProgramRow
@@ -1106,7 +1120,10 @@ export async function listProgramLevels(
 }
 
 export async function getProgramLevelByUuid(db: D1Database, uuid: string) {
-  const row = await db.prepare(`SELECT * FROM program_levels WHERE uuid = ? LIMIT 1`).bind(uuid).first<ProgramLevelRow>();
+  const row = await db
+    .prepare(`SELECT * FROM program_levels WHERE uuid = ? AND source_site IN ('edu', 'system') LIMIT 1`)
+    .bind(uuid)
+    .first<ProgramLevelRow>();
   return row || null;
 }
 
@@ -1190,6 +1207,7 @@ export async function updateProgramLevel(
   if (!existing) {
     throw new Error('Level not found');
   }
+  assertEduWritable(existing, 'Level');
 
   const programUuid = normalizeString(payload.program_uuid) || existing.program_uuid;
   const program = await getProgramByUuid(db, programUuid);
@@ -1217,7 +1235,7 @@ export async function updateProgramLevel(
           source_site = ?,
           last_event_uuid = ?,
           updated_at = ?
-        WHERE uuid = ?
+        WHERE uuid = ? AND source_site = 'edu'
       `
     )
     .bind(
@@ -1285,7 +1303,10 @@ export async function listFieldDefinitions(
 }
 
 export async function getFieldDefinitionByUuid(db: D1Database, uuid: string) {
-  const row = await db.prepare(`SELECT * FROM field_definitions WHERE uuid = ? LIMIT 1`).bind(uuid).first<FieldDefinitionRow>();
+  const row = await db
+    .prepare(`SELECT * FROM field_definitions WHERE uuid = ? AND source_site IN ('edu', 'system') LIMIT 1`)
+    .bind(uuid)
+    .first<FieldDefinitionRow>();
   return row || null;
 }
 
@@ -1396,6 +1417,7 @@ export async function updateFieldDefinition(
   if (!existing) {
     throw new Error('Field definition not found');
   }
+  assertEduWritable(existing, 'Field definition');
 
   const label = normalizeString(payload.label || payload.name) || existing.label;
   const fieldKey = normalizeCode(payload.field_key || payload.code || existing.field_key)?.toLowerCase() || existing.field_key;
@@ -1439,7 +1461,7 @@ export async function updateFieldDefinition(
           source_site = ?,
           last_event_uuid = ?,
           updated_at = ?
-        WHERE uuid = ?
+        WHERE uuid = ? AND source_site = 'edu'
       `
     )
     .bind(
@@ -1508,7 +1530,10 @@ export async function listFieldOptions(
 }
 
 export async function getFieldOptionByUuid(db: D1Database, uuid: string) {
-  const row = await db.prepare(`SELECT * FROM field_options WHERE uuid = ? LIMIT 1`).bind(uuid).first<FieldOptionRow>();
+  const row = await db
+    .prepare(`SELECT * FROM field_options WHERE uuid = ? AND source_site IN ('edu', 'system') LIMIT 1`)
+    .bind(uuid)
+    .first<FieldOptionRow>();
   return row || null;
 }
 
@@ -1592,6 +1617,7 @@ export async function updateFieldOption(
   if (!existing) {
     throw new Error('Field option not found');
   }
+  assertEduWritable(existing, 'Field option');
 
   const fieldDefinitionUuid = normalizeString(payload.field_definition_uuid) || existing.field_definition_uuid;
   const label = normalizeString(payload.label || payload.name) || existing.label;
@@ -1614,7 +1640,7 @@ export async function updateFieldOption(
           source_site = ?,
           last_event_uuid = ?,
           updated_at = ?
-        WHERE uuid = ?
+        WHERE uuid = ? AND source_site = 'edu'
       `
     )
     .bind(
@@ -1688,12 +1714,14 @@ export async function resolveProgramContext(
             SELECT 1
             FROM program_levels levels
             WHERE levels.program_uuid = p.uuid
+              AND levels.source_site IN ('edu', 'system')
               AND levels.is_active = 1
           ) as has_levels
         FROM programs p
-        JOIN program_organizers o ON o.uuid = p.organizer_uuid
-        LEFT JOIN program_levels pl ON pl.uuid = ? AND pl.program_uuid = p.uuid
+        JOIN program_organizers o ON o.uuid = p.organizer_uuid AND o.source_site IN ('edu', 'system')
+        LEFT JOIN program_levels pl ON pl.uuid = ? AND pl.program_uuid = p.uuid AND pl.source_site IN ('edu', 'system')
         WHERE p.uuid = ?
+          AND p.source_site IN ('edu', 'system')
         LIMIT 1
       `
     )

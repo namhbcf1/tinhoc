@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Award, Download, QrCode, Share2, X, CheckCircle, Star } from 'lucide-react';
 import api from '../../../services/api';

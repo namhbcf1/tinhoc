@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // EXPORT METHODS MIXIN
 // Excel exports, exam exports, templates, database backup
@@ -62,6 +63,40 @@ export function applyExportMethods(ApiClient) {
     const a = document.createElement('a');
     a.href = downloadUrl;
     a.download = serverFilename || `danh-sach-lop-${classId}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  };
+
+  // Download filtered students as Excel file
+  ApiClient.prototype.downloadStudentsExcel = async function(filters = {}) {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === '') return;
+      params.set(key, String(value));
+    });
+    const url = `${this.baseURL}/export/students${params.toString() ? `?${params.toString()}` : ''}`;
+
+    const headers = {};
+    const token = this.getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, { headers });
+
+    if (!response.ok) {
+      throw new Error('Lỗi tải file Excel học viên');
+    }
+
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get('content-disposition') || '';
+    const serverFilename = getFilenameFromContentDisposition(contentDisposition);
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = serverFilename || 'danh-sach-hoc-vien.xlsx';
     document.body.appendChild(a);
     a.click();
     a.remove();

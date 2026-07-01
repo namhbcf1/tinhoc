@@ -339,7 +339,10 @@ onlineClasses.post('/:id/enroll', async (c) => {
     const db = c.env.DB;
     if (!db) throw new Error('Database connection not available');
 
-    const classId = parseInt(c.req.param('id'));
+    const classId = Number.parseInt(c.req.param('id'), 10);
+    if (Number.isNaN(classId) || classId <= 0) {
+      return errorResponse('classId không hợp lệ', 400);
+    }
 
     // Inline auth (bypass middleware to catch low-level errors)
     let student = null;
@@ -407,7 +410,7 @@ onlineClasses.post('/:id/students', authMiddleware, adminOnly, async (c) => {
  * GET /online-classes/:id/enrollments
  * Active enrollments with student info + image URLs.
  */
-onlineClasses.get('/:id/enrollments', authMiddleware, async (c) => {
+onlineClasses.get('/:id/enrollments', authMiddleware, adminOnly, async (c) => {
   const { id } = c.req.param();
   const db = c.env.DB;
 

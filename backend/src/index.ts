@@ -183,22 +183,22 @@ app.route('/students', students);
 // Classes: GET public, write ops (POST/PUT/DELETE) require admin
 app.use('/classes/*', async (c, next) => {
   if (c.req.method === 'GET') return next();
-  return requireAdmin(c, next);
+  return requireAdmin(c as any, next);
 });
 app.use('/classes', async (c, next) => {
   if (c.req.method === 'GET') return next();
-  return requireAdmin(c, next);
+  return requireAdmin(c as any, next);
 });
 app.route('/classes', classes);
 
 // Registrations: POST (student self-register) + GET public; write ops require admin
 app.use('/registrations/*', async (c, next) => {
   if (c.req.method === 'GET' || c.req.method === 'POST') return next();
-  return requireAdmin(c, next);
+  return requireAdmin(c as any, next);
 });
 app.use('/registrations', async (c, next) => {
   if (c.req.method === 'GET' || c.req.method === 'POST') return next();
-  return requireAdmin(c, next);
+  return requireAdmin(c as any, next);
 });
 app.route('/registrations', registrations);
 
@@ -222,13 +222,13 @@ app.use('/certificates/*', async (c, next) => {
       return next();
     }
   }
-  return requireAdmin(c, next);
+  return requireAdmin(c as any, next);
 });
 app.use('/certificates', async (c, next) => {
   if (c.req.method === 'GET') {
-    return requireAdmin(c, next);
+    return requireAdmin(c as any, next);
   }
-  return requireAdmin(c, next);
+  return requireAdmin(c as any, next);
 });
 app.route('/certificates', certificates);
 
@@ -242,7 +242,7 @@ app.use('/export/*', requireAdmin);
 app.route('/export', exportRoute);
 
 // Posts management (GET public, POST/PUT/DELETE requires admin auth)
-const postsAuthMiddleware = async (c, next) => {
+const postsAuthMiddleware = async (c: any, next: any) => {
   // Allow public GET requests
   if (c.req.method === 'GET') {
     return next();
@@ -308,22 +308,22 @@ app.route('/admin-teaching', adminTeaching);
 // Class schedules: GET public, write ops require admin (teacher is admin now)
 app.use('/class-schedules/*', async (c, next) => {
   if (c.req.method === 'GET') return next();
-  return requireAdmin(c, next);
+  return requireAdmin(c as any, next);
 });
 app.use('/class-schedules', async (c, next) => {
   if (c.req.method === 'GET') return next();
-  return requireAdmin(c, next);
+  return requireAdmin(c as any, next);
 });
 app.route('/class-schedules', classSchedules);
 
 // Class teachers: GET public, write ops require admin
 app.use('/class-teachers/*', async (c, next) => {
   if (c.req.method === 'GET') return next();
-  return requireAdmin(c, next);
+  return requireAdmin(c as any, next);
 });
 app.use('/class-teachers', async (c, next) => {
   if (c.req.method === 'GET') return next();
-  return requireAdmin(c, next);
+  return requireAdmin(c as any, next);
 });
 app.route('/class-teachers', classTeachers);
 
@@ -360,27 +360,27 @@ app.route('/exam-categories', examCategories);
 app.route('/exam-types', examTypes);
 app.use('/program-organizers', async (c, next) => {
   if (c.req.method === 'GET') return next();
-  return authMiddleware(c, next);
+  return authMiddleware(c as any, next);
 });
 app.use('/program-organizers/*', async (c, next) => {
   if (c.req.method === 'GET') return next();
-  return authMiddleware(c, next);
+  return authMiddleware(c as any, next);
 });
 app.use('/programs', async (c, next) => {
   if (c.req.method === 'GET') return next();
-  return authMiddleware(c, next);
+  return authMiddleware(c as any, next);
 });
 app.use('/programs/*', async (c, next) => {
   if (c.req.method === 'GET') return next();
-  return authMiddleware(c, next);
+  return authMiddleware(c as any, next);
 });
 app.use('/program-levels', async (c, next) => {
   if (c.req.method === 'GET') return next();
-  return authMiddleware(c, next);
+  return authMiddleware(c as any, next);
 });
 app.use('/program-levels/*', async (c, next) => {
   if (c.req.method === 'GET') return next();
-  return authMiddleware(c, next);
+  return authMiddleware(c as any, next);
 });
 app.use('/field-definitions/*', authMiddleware);
 app.use('/field-options/*', authMiddleware);

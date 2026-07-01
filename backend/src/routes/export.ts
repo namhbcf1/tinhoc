@@ -10,6 +10,8 @@ import {
   type ExamRegistrationExportScope,
 } from '../db/attendance-queries.js';
 import { normalizeBirthPlaceValue } from '../utils/birth-place.js';
+import { requireAdmin } from '../middleware/auth-middleware.js';
+import * as StudentRepo from '../repositories/student-repository.js';
 
 const exportRoute = new Hono<{ Bindings: Env; Variables: { user: JWTPayload; teacher: JWTPayload } }>();
 
@@ -1150,11 +1152,85 @@ function buildExamListPreviewData(
 }
 
 // ========================================
+// GET /export/students - Xuất Excel danh sách học viên theo bộ lọc hiện tại
+// ========================================
+exportRoute.get('/students', requireAdmin, async (c) => {
+  try {
+    const url = new URL(c.req.url);
+    const filters = {
+      q: url.searchParams.get('q') || undefined,
+      status: url.searchParams.get('status') || undefined,
+      registration_type: url.searchParams.get('registration_type') || undefined,
+      has_certificate: url.searchParams.get('has_certificate') || undefined,
+      created_from: url.searchParams.get('created_from') || undefined,
+      created_to: url.searchParams.get('created_to') || undefined,
+      sort_by: url.searchParams.get('sort_by') || 'created_at',
+      sort_dir: url.searchParams.get('sort_dir') || 'desc',
+    };
+    const students = normalizeStudentsForExport(
+      excludeTestStudents(await StudentRepo.getAllStudents(c.env.DB, null, 0, filters))
+    );
+
+    const headers = [
+      'Họ tên', 'CCCD', 'Ngày sinh', 'Giới tính', 'Email', 'SĐT', 'Nơi sinh',
+      'Địa chỉ', 'Đơn vị công tác', 'Lớp học', 'Lịch thi', 'Trạng thái chính', 'Ngày tạo'
+    ];
+    const rows = students.map((student: any) => [
+      student.ho_ten_full || [student.ho, student.ten_dem, student.ten].filter(Boolean).join(' '),
+      student.cccd || '',
+      formatDateVN(student.ngay_sinh),
+      normalizeGenderLabel(student.gioi_tinh),
+      normalizeEmail(student.email),
+      student.sdt || '',
+      cleanStudentPlace(student.noi_sinh),
+      cleanStudentAddress(student.dia_chi),
+      cleanStudentWorkplace(student.don_vi_cong_tac),
+      Number(student.study_count || 0),
+      Number(student.exam_count || 0),
+      student.primary_status || 'new',
+      formatDateVN(student.created_at),
+    ]);
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    worksheet['!cols'] = [
+      { wch: 28 }, { wch: 18 }, { wch: 14 }, { wch: 10 }, { wch: 30 }, { wch: 15 },
+      { wch: 24 }, { wch: 46 }, { wch: 34 }, { wch: 10 }, { wch: 10 }, { wch: 16 }, { wch: 14 },
+    ];
+
+    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    for (let row = range.s.r; row <= range.e.r; row++) {
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+        if (!worksheet[cellAddress]) worksheet[cellAddress] = { v: '', t: 's' };
+        worksheet[cellAddress].s = row === 0
+          ? { font: { name: 'Times New Roman', sz: 11, bold: true }, border: borderStyle, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, fill: { fgColor: { rgb: 'E2EFDA' } } }
+          : { font: { name: 'Times New Roman', sz: 11 }, border: borderStyle, alignment: { horizontal: 'left', vertical: 'center', wrapText: true } };
+      }
+    }
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Hoc vien');
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    const filename = `Danh-sach-hoc-vien-${new Date().toISOString().split('T')[0]}.xlsx`;
+    return new Response(excelBuffer, {
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': buildAttachmentDisposition(filename),
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  } catch (error: any) {
+    console.error('Students export error:', error);
+    return errorResponse('Lỗi xuất danh sách học viên: ' + error.message, 500);
+  }
+});
+
+// ========================================
 // GET /export/class/:class_id - Xuất Excel danh sách theo form chuẩn
 // ========================================
-exportRoute.get('/class/:class_id', async (c) => {
+exportRoute.get('/class/:class_id', requireAdmin, async (c) => {
   try {
     const classId = parseInt(c.req.param('class_id'));
+    if (isNaN(classId)) return errorResponse('class_id không hợp lệ', 400);
 
     // 1. Lấy thông tin lớp
     const classInfo = await getClassById(c.env.DB, classId) as any;
@@ -1291,9 +1367,10 @@ exportRoute.get('/class/:class_id', async (c) => {
 // ========================================
 // GET /export/class/:class_id/json - Xuất JSON (để preview)
 // ========================================
-exportRoute.get('/class/:class_id/json', async (c) => {
+exportRoute.get('/class/:class_id/json', requireAdmin, async (c) => {
   try {
     const classId = parseInt(c.req.param('class_id'));
+    if (isNaN(classId)) return errorResponse('class_id không hợp lệ', 400);
 
     const classInfo = await getClassById(c.env.DB, classId) as any;
     if (!classInfo) {
@@ -1324,9 +1401,10 @@ exportRoute.get('/class/:class_id/json', async (c) => {
 // ========================================
 // GET /export/class/:class_id/csv - Xuất CSV
 // ========================================
-exportRoute.get('/class/:class_id/csv', async (c) => {
+exportRoute.get('/class/:class_id/csv', requireAdmin, async (c) => {
   try {
     const classId = parseInt(c.req.param('class_id'));
+    if (isNaN(classId)) return errorResponse('class_id không hợp lệ', 400);
     const classInfo = await getClassById(c.env.DB, classId) as any;
     if (!classInfo) {
       return errorResponse('Lớp không tồn tại', 404);
@@ -1391,9 +1469,10 @@ exportRoute.get('/class/:class_id/csv', async (c) => {
 // ========================================
 // GET /export/exam/:exam_id - Xuất Excel danh sách thí sinh theo form chuẩn
 // ========================================
-exportRoute.get('/exam/:exam_id', async (c) => {
+exportRoute.get('/exam/:exam_id', requireAdmin, async (c) => {
   try {
     const examId = parseInt(c.req.param('exam_id'));
+    if (isNaN(examId)) return errorResponse('exam_id không hợp lệ', 400);
 
     // 1. Lấy thông tin kỳ thi
     const examInfo = await c.env.DB.prepare(
@@ -1592,9 +1671,10 @@ exportRoute.get('/exam/:exam_id', async (c) => {
 // ========================================
 // GET /export/exam/:exam_id/exam-list - Xuất "DANH SÁCH DỰ THI" theo mẫu chuẩn
 // ========================================
-exportRoute.get('/exam/:exam_id/exam-list', async (c) => {
+exportRoute.get('/exam/:exam_id/exam-list', requireAdmin, async (c) => {
   try {
     const examId = parseInt(c.req.param('exam_id'));
+    if (isNaN(examId)) return errorResponse('exam_id không hợp lệ', 400);
     const scope = resolveExamExportScope(c.req.query('scope'));
     if (!scope) {
       return errorResponse('Phạm vi export không hợp lệ', 400);
@@ -1638,9 +1718,10 @@ exportRoute.get('/exam/:exam_id/exam-list', async (c) => {
 // ========================================
 // GET /export/exam/:exam_id/exam-list/preview - Preview dữ liệu Excel từ backend (single source of truth)
 // ========================================
-exportRoute.get('/exam/:exam_id/exam-list/preview', async (c) => {
+exportRoute.get('/exam/:exam_id/exam-list/preview', requireAdmin, async (c) => {
   try {
     const examId = parseInt(c.req.param('exam_id'));
+    if (isNaN(examId)) return errorResponse('exam_id không hợp lệ', 400);
     const scope = resolveExamExportScope(c.req.query('scope'));
     if (!scope) {
       return errorResponse('Phạm vi export không hợp lệ', 400);

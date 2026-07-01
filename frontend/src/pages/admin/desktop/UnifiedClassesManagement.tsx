@@ -35,11 +35,11 @@ export default function UnifiedClassesManagement() {
           </>
         )}
       >
-        <div className="inline-flex rounded-[24px] border border-white/80 bg-white/85 p-1.5 shadow-sm backdrop-blur-sm">
+        <div className="inline-flex rounded-[24px] border border-[rgba(36,31,24,0.10)] bg-[rgba(255,253,248,0.92)] p-1.5 shadow-[0_10px_24px_-22px_rgba(36,31,24,0.18)] backdrop-blur-sm">
           <button
             type="button"
             onClick={() => setMode('online')}
-            className={`inline-flex items-center gap-2 rounded-[18px] px-4 py-2.5 text-sm font-semibold transition ${mode === 'online' ? 'bg-violet-600 text-white shadow-[0_18px_34px_-24px_rgba(124,58,237,0.7)]' : 'text-slate-600 hover:bg-slate-100'}`}
+            className={`inline-flex items-center gap-2 rounded-[18px] px-4 py-2.5 text-sm font-black transition ${mode === 'online' ? 'border border-[rgba(169,130,58,0.22)] bg-[rgba(169,130,58,0.12)] text-[var(--admin-ink)] shadow-none' : 'text-[var(--admin-ink)] hover:bg-[rgba(36,31,24,0.05)]'}`}
           >
             <Video size={16} />
             Lớp online
@@ -47,7 +47,7 @@ export default function UnifiedClassesManagement() {
           <button
             type="button"
             onClick={() => setMode('legacy')}
-            className={`inline-flex items-center gap-2 rounded-[18px] px-4 py-2.5 text-sm font-semibold transition ${mode === 'legacy' ? 'bg-cyan-600 text-white shadow-[0_18px_34px_-24px_rgba(8,145,178,0.7)]' : 'text-slate-600 hover:bg-slate-100'}`}
+            className={`inline-flex items-center gap-2 rounded-[18px] px-4 py-2.5 text-sm font-black transition ${mode === 'legacy' ? 'border border-[rgba(169,130,58,0.22)] bg-[rgba(169,130,58,0.12)] text-[var(--admin-ink)] shadow-none' : 'text-[var(--admin-ink)] hover:bg-[rgba(36,31,24,0.05)]'}`}
           >
             <BookOpen size={16} />
             Lớp legacy

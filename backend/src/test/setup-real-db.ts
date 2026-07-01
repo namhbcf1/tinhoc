@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS students (
   email          TEXT NOT NULL,
   sdt            TEXT NOT NULL,
   dia_chi        TEXT NOT NULL,
+  don_vi_cong_tac TEXT,
+  nganh_dang_hoc TEXT,
   created_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at     DATETIME DEFAULT CURRENT_TIMESTAMP
 )`;
@@ -162,10 +164,9 @@ const SETUP_STATEMENTS = [
 /**
  * Thực thi toàn bộ DDL vào D1 binding thật được inject bởi vitest-pool-workers.
  *
- * @param {import('@cloudflare/workers-types').D1Database} db  env.DB từ cloudflare:test
- * @returns {Promise<void>}
+ * @param db  env.DB từ cloudflare:test
  */
-export async function setupRealDB(db) {
+export async function setupRealDB(db: D1Database): Promise<void> {
   if (!db || typeof db.prepare !== 'function') {
     throw new Error(
       '[setup-real-db] db không hợp lệ. ' +
@@ -183,11 +184,8 @@ export async function setupRealDB(db) {
 /**
  * Xóa toàn bộ dữ liệu (không xóa schema) giữa các test case để cô lập dữ liệu.
  * Gọi trong afterEach nếu cần.
- *
- * @param {import('@cloudflare/workers-types').D1Database} db
- * @returns {Promise<void>}
  */
-export async function clearRealDB(db) {
+export async function clearRealDB(db: D1Database): Promise<void> {
   const tables = [
     'online_class_enrollments',
     'class_schedules',

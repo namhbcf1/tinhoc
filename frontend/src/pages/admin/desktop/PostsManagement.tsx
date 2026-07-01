@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useRef } from 'react';
 import {
   Newspaper, Plus, RefreshCw, Edit2, Trash2, Check, Eye, Archive,

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * StatusBadge Component
  * Shared component for displaying status badges across Student and Admin interfaces

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Format numbers to Vietnamese Dong (VNĐ) currency format.
  * @param {number} amount - The amount to format

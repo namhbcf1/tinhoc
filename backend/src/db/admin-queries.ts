@@ -76,7 +76,7 @@ export async function createTeacherAdmin(db: D1Database, data: Record<string, an
 }
 
 export async function updateAdmin(db: D1Database, id: number, data: Record<string, unknown>) {
-  const normalizedData = {
+  const normalizedData: Record<string, unknown> = {
     ...data,
     ...(data.role !== undefined ? { role: normalizeAdminRoleValue(data.role) } : {}),
   };

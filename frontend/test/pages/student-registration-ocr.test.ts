@@ -31,7 +31,7 @@ describe('applyOCRPrefillToRegistrationForm', () => {
       setValue
     );
 
-    expect(setValue).toHaveBeenCalledWith('gioi_tinh', 'Nữ', { shouldDirty: true });
+    expect(setValue).toHaveBeenCalledWith('gioi_tinh', 'Nữ', { shouldDirty: true, shouldTouch: true, shouldValidate: true });
     expect(result.appliedFields).toContain('gioi_tinh');
   });
 

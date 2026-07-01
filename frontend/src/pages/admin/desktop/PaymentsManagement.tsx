@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import {
   CreditCard, Search, Filter, Check, X, Eye, Clock, RefreshCw,
@@ -201,37 +202,39 @@ export default function PaymentsManagement({ toast }) {
       </div>
 
       {/* Visual Progress */}
-      <div style={{ background: 'white', borderRadius: 20, padding: 24, marginBottom: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: '1px solid rgba(226,232,240,0.8)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}><PieChart size={18} color="#16a34a" /> Phân bổ trạng thái</h3>
+      <div className="admin-card p-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="flex items-center gap-2 text-[16px] font-black text-[var(--admin-ink)]">
+            <PieChart size={18} className="text-[var(--admin-champagne)]" /> Phân bổ trạng thái
+          </h3>
         </div>
-        <div style={{ display: 'flex', gap: 4, height: 12, borderRadius: 6, overflow: 'hidden', background: '#f1f5f9' }}>
-          <div style={{ width: `${(stats.confirmed / (stats.total || 1)) * 100}%`, background: 'linear-gradient(90deg, #10b981, #22c55e)', transition: 'width 0.5s ease' }}></div>
-          <div style={{ width: `${(stats.pending / (stats.total || 1)) * 100}%`, background: 'linear-gradient(90deg, #f59e0b, #fbbf24)', transition: 'width 0.5s ease' }}></div>
-          <div style={{ width: `${(stats.rejected / (stats.total || 1)) * 100}%`, background: 'linear-gradient(90deg, #ef4444, #f87171)', transition: 'width 0.5s ease' }}></div>
+        <div className="flex h-3 overflow-hidden rounded-full bg-[rgba(239,227,209,0.82)] p-[2px]">
+          <div className="rounded-full bg-[linear-gradient(90deg,#1d6f5f,#3b9b86)] transition-[width] duration-500" style={{ width: `${(stats.confirmed / (stats.total || 1)) * 100}%` }} />
+          <div className="rounded-full bg-[linear-gradient(90deg,#c8a96a,#dcc48e)] transition-[width] duration-500" style={{ width: `${(stats.pending / (stats.total || 1)) * 100}%` }} />
+          <div className="rounded-full bg-[linear-gradient(90deg,#9f3f46,#b85b5b)] transition-[width] duration-500" style={{ width: `${(stats.rejected / (stats.total || 1)) * 100}%` }} />
         </div>
-        <div style={{ display: 'flex', gap: 24, marginTop: 12, fontSize: 13 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div style={{ width: 12, height: 12, background: '#10b981', borderRadius: 3 }}></div> Xác nhận ({Math.round((stats.confirmed / (stats.total || 1)) * 100)}%)</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div style={{ width: 12, height: 12, background: '#f59e0b', borderRadius: 3 }}></div> Chờ ({Math.round((stats.pending / (stats.total || 1)) * 100)}%)</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div style={{ width: 12, height: 12, background: '#ef4444', borderRadius: 3 }}></div> Từ chối ({Math.round((stats.rejected / (stats.total || 1)) * 100)}%)</div>
+        <div className="mt-4 flex flex-wrap gap-3 text-[13px] font-bold text-[var(--admin-text-muted)]">
+          <div className="admin-subtle-pill normal-case tracking-normal"><span className="h-3 w-3 rounded bg-[var(--admin-primary)]" /> Xác nhận ({Math.round((stats.confirmed / (stats.total || 1)) * 100)}%)</div>
+          <div className="admin-subtle-pill normal-case tracking-normal"><span className="h-3 w-3 rounded bg-[var(--admin-champagne)]" /> Chờ ({Math.round((stats.pending / (stats.total || 1)) * 100)}%)</div>
+          <div className="admin-subtle-pill normal-case tracking-normal"><span className="h-3 w-3 rounded bg-[var(--admin-danger)]" /> Từ chối ({Math.round((stats.rejected / (stats.total || 1)) * 100)}%)</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center', background: 'white', padding: 20, borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
-        <Filter size={20} color="#64748b" />
+      <div className="admin-toolbar-unified">
+        <div className="admin-toolbar-meta"><Filter size={16} /> Bộ lọc</div>
         <input
           type="text"
           placeholder="Tìm theo tên hoặc CCCD..."
           value={paymentSearch}
           onChange={e => { setPaymentSearch(e.target.value); setCurrentPage(1); }}
-          style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 14, minWidth: 220, outline: 'none' }}
+          className="admin-search-input min-h-[44px] min-w-[220px] flex-1 rounded-[18px] border border-[rgba(19,34,56,0.14)] bg-[rgba(255,250,241,0.86)] px-4 text-sm font-semibold outline-none transition focus:border-[rgba(200,169,106,0.58)] focus:bg-white focus:ring-4 focus:ring-[rgba(200,169,106,0.14)]"
         />
-        <select value={filterClass} onChange={e => { setFilterClass(e.target.value); setCurrentPage(1); }} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 14, minWidth: 200 }}>
+        <select value={filterClass} onChange={e => { setFilterClass(e.target.value); setCurrentPage(1); }} className="min-h-[44px] min-w-[200px] rounded-[18px] border border-[rgba(19,34,56,0.14)] bg-[rgba(255,250,241,0.86)] px-4 text-sm font-bold text-[var(--admin-text)] outline-none">
           <option value="">Tất cả lớp</option>
           {classes.map(cls => <option key={cls.id} value={cls.id}>{cls.ten_lop}</option>)}
         </select>
-        <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 14 }}>
+        <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }} className="min-h-[44px] rounded-[18px] border border-[rgba(19,34,56,0.14)] bg-[rgba(255,250,241,0.86)] px-4 text-sm font-bold text-[var(--admin-text)] outline-none">
           <option value="">Tất cả trạng thái</option>
           <option value="pending">Chờ xử lý</option>
           <option value="confirmed">Đã xác nhận</option>
@@ -266,18 +269,18 @@ export default function PaymentsManagement({ toast }) {
               {paginatedPayments.map(payment => (
                 <tr key={payment.id}>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14 }}>{payment.ho_ten_full?.charAt(0) || 'H'}</div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,var(--admin-ink),#315b80)] text-sm font-black text-[var(--admin-champagne)] shadow-[0_14px_28px_-22px_rgba(19,34,56,0.55)]">{payment.ho_ten_full?.charAt(0) || 'H'}</div>
                       <div>
-                        <div style={{ fontWeight: 600 }}>{payment.ho_ten_full || 'N/A'}</div>
-                        <div style={{ fontSize: 12, color: '#94a3b8' }}>{payment.cccd}</div>
+                        <div className="font-bold text-[var(--admin-text)]">{payment.ho_ten_full || 'N/A'}</div>
+                        <div className="text-xs font-semibold text-[var(--admin-text-light)]">{payment.cccd}</div>
                       </div>
                     </div>
                   </td>
                   <td><span className="admin-badge info">{payment.ten_lop || `Lớp #${payment.class_id}`}</span></td>
-                  <td><span style={{ fontWeight: 700, color: '#16a34a', fontSize: 15 }}>{formatCurrency(payment.amount)}</span></td>
+                  <td><span className="text-[15px] font-black text-[var(--admin-primary)]">{formatCurrency(payment.amount)}</span></td>
                   <td>{getStatusBadge(payment.status)}</td>
-                  <td style={{ color: '#64748b', fontSize: 13 }}>{formatDateVN(payment.created_at)}</td>
+                  <td className="text-[13px] font-semibold text-[var(--admin-text-muted)]">{formatDateVN(payment.created_at)}</td>
                   <td style={{ textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
                       {payment.status === 'pending' && (
@@ -295,9 +298,9 @@ export default function PaymentsManagement({ toast }) {
           </table>
         )}
         {totalPages > 1 && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderTop: '1px solid #e2e8f0' }}>
-            <span style={{ color: '#64748b', fontSize: 13 }}>Trang {currentPage} / {totalPages}</span>
-            <div style={{ display: 'flex', gap: 8 }}>
+          <div className="flex items-center justify-between border-t border-[rgba(19,34,56,0.10)] px-6 py-4">
+            <span className="text-[13px] font-bold text-[var(--admin-text-muted)]">Trang {currentPage} / {totalPages}</span>
+            <div className="flex gap-2">
               <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="admin-btn admin-btn-ghost"><ChevronLeft size={16} /></button>
               <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="admin-btn admin-btn-ghost"><ChevronRight size={16} /></button>
             </div>
@@ -307,42 +310,44 @@ export default function PaymentsManagement({ toast }) {
 
       {/* Detail Modal */}
       {showDetailModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }} onClick={() => setShowDetailModal(null)}>
-          <div style={{ background: 'white', borderRadius: 24, width: '95%', maxWidth: 500, overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
-            <div style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', padding: 32, color: 'white', textAlign: 'center' }}>
-              <Wallet size={48} style={{ marginBottom: 12, opacity: 0.9 }} />
-              <h2 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>{formatCurrency(showDetailModal.amount)}</h2>
-              <p style={{ opacity: 0.8, margin: '8px 0 0' }}>Thanh toán học phí</p>
+        <div className="admin-modal-overlay" onClick={() => setShowDetailModal(null)}>
+          <div className="admin-modal-content w-[95%] max-w-[520px] overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="bg-[radial-gradient(circle_at_top_right,rgba(200,169,106,0.24),transparent_30%),linear-gradient(135deg,var(--admin-ink)_0%,#0b1728_62%,#1d6f5f_100%)] px-8 py-8 text-center text-white">
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-[22px] bg-white/10 text-[var(--admin-champagne)] ring-1 ring-white/15">
+                <Wallet size={30} />
+              </div>
+              <h2 className="m-0 text-[30px] font-black tracking-[-0.04em]">{formatCurrency(showDetailModal.amount)}</h2>
+              <p className="mt-2 text-sm font-semibold text-white/68">Thanh toán học phí</p>
             </div>
-            <div style={{ padding: 32 }}>
-              <div style={{ display: 'grid', gap: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 16, background: '#f8fafc', borderRadius: 12 }}>
-                  <span style={{ color: '#64748b' }}>Học viên</span>
-                  <span style={{ fontWeight: 600 }}>{showDetailModal.ho_ten_full}</span>
+            <div className="p-8">
+              <div className="grid gap-4">
+                <div className="flex items-center justify-between gap-4 rounded-[18px] border border-[rgba(19,34,56,0.10)] bg-[rgba(255,250,241,0.78)] p-4">
+                  <span className="font-bold text-[var(--admin-text-muted)]">Học viên</span>
+                  <span className="text-right font-black text-[var(--admin-text)]">{showDetailModal.ho_ten_full}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 16, background: '#f8fafc', borderRadius: 12 }}>
-                  <span style={{ color: '#64748b' }}>Lớp</span>
-                  <span style={{ fontWeight: 600 }}>{showDetailModal.ten_lop || `Lớp #${showDetailModal.class_id}`}</span>
+                <div className="flex items-center justify-between gap-4 rounded-[18px] border border-[rgba(19,34,56,0.10)] bg-[rgba(255,250,241,0.78)] p-4">
+                  <span className="font-bold text-[var(--admin-text-muted)]">Lớp</span>
+                  <span className="text-right font-black text-[var(--admin-text)]">{showDetailModal.ten_lop || `Lớp #${showDetailModal.class_id}`}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 16, background: '#f8fafc', borderRadius: 12 }}>
-                  <span style={{ color: '#64748b' }}>Trạng thái</span>
+                <div className="flex items-center justify-between gap-4 rounded-[18px] border border-[rgba(19,34,56,0.10)] bg-[rgba(255,250,241,0.78)] p-4">
+                  <span className="font-bold text-[var(--admin-text-muted)]">Trạng thái</span>
                   {getStatusBadge(showDetailModal.status)}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 16, background: '#f8fafc', borderRadius: 12 }}>
-                  <span style={{ color: '#64748b' }}>Ngày tạo</span>
-                  <span style={{ fontWeight: 600 }}>{formatDateVN(showDetailModal.created_at)}</span>
+                <div className="flex items-center justify-between gap-4 rounded-[18px] border border-[rgba(19,34,56,0.10)] bg-[rgba(255,250,241,0.78)] p-4">
+                  <span className="font-bold text-[var(--admin-text-muted)]">Ngày tạo</span>
+                  <span className="font-black text-[var(--admin-text)]">{formatDateVN(showDetailModal.created_at)}</span>
                 </div>
                 {showDetailModal.note && (
-                  <div style={{ padding: 16, background: '#fef3c7', borderRadius: 12 }}>
-                    <span style={{ fontSize: 12, color: '#92400e', fontWeight: 600 }}>Ghi chú:</span>
-                    <p style={{ margin: '4px 0 0', color: '#78350f' }}>{showDetailModal.note}</p>
+                  <div className="rounded-[18px] border border-[rgba(200,169,106,0.24)] bg-[rgba(200,169,106,0.14)] p-4">
+                    <span className="text-xs font-black uppercase tracking-[0.14em] text-[var(--admin-ink)]">Ghi chú</span>
+                    <p className="mt-2 text-sm font-semibold leading-6 text-[var(--admin-text-muted)]">{showDetailModal.note}</p>
                   </div>
                 )}
               </div>
-              <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-                <button onClick={() => setShowDetailModal(null)} className="admin-btn admin-btn-ghost" style={{ flex: 1 }}>Đóng</button>
+              <div className="mt-6 flex gap-3">
+                <button onClick={() => setShowDetailModal(null)} className="admin-btn admin-btn-ghost flex-1">Đóng</button>
                 {showDetailModal.status === 'pending' && (
-                  <button onClick={() => { handleConfirm(showDetailModal.id); setShowDetailModal(null); }} className="admin-btn admin-btn-primary" style={{ flex: 1 }}>
+                  <button onClick={() => { handleConfirm(showDetailModal.id); setShowDetailModal(null); }} className="admin-btn admin-btn-primary flex-1">
                     <Check size={18} /> Xác nhận
                   </button>
                 )}

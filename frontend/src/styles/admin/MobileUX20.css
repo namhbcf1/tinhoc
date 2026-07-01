@@ -71,7 +71,7 @@
 .admin-mobile-page {
     padding: var(--mobile-space-md);
     background: var(--mobile-bg);
-    min-height: 100vh;
+    min-height: 100dvh;
     overflow-x: hidden;
     max-width: 100%;
     box-sizing: border-box;

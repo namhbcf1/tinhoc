@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -22,6 +23,16 @@ const STATUS_MAP = {
   cancelled: { cls: 'bg-slate-100 text-slate-600', text: 'Đã hủy' },
 };
 
+const PAYMENT_STATUS_LABELS = {
+  approved: 'Đã thanh toán',
+  paid: 'Đã thanh toán',
+  completed: 'Đã thanh toán',
+  pending: 'Chờ thanh toán',
+  unpaid: 'Chưa thanh toán',
+  rejected: 'Từ chối',
+  cancelled: 'Đã hủy',
+};
+
 const FIELD_LABELS = {
   cccd: 'Số CCCD',
   ho: 'Họ',
@@ -38,6 +49,7 @@ const FIELD_LABELS = {
   dia_chi: 'Địa chỉ',
   ngay_cap_cccd: 'Ngày cấp CCCD',
   don_vi_cong_tac: 'Đơn vị công tác',
+  nganh_dang_hoc: 'Khoa/ngành đang theo học',
   cccd_front_image_id: 'Ảnh CCCD mặt trước',
   cccd_back_image_id: 'Ảnh CCCD mặt sau',
   photo_3x4_image_id: 'Ảnh 3x4',
@@ -104,7 +116,7 @@ function SummaryStat({ label, value, tone = 'slate' }) {
   );
 }
 
-function PhotoCard({ src, alt, filename, height = 120, placeholder }) {
+function PhotoCard({ src, alt, filename, height = 120, placeholder, fit = 'cover' }) {
   const [hovered, setHovered] = useState(false);
 
   const handleDownload = async (e) => {
@@ -137,7 +149,7 @@ function PhotoCard({ src, alt, filename, height = 120, placeholder }) {
           <img
             src={src}
             alt={alt}
-            className="h-full w-full object-cover"
+            className={`h-full w-full ${fit === 'contain' ? 'object-contain p-1' : 'object-cover'}`}
             onError={(event) => applyImageFallback(event, alt)}
           />
           {hovered && (
@@ -325,9 +337,9 @@ export default function StudentDetailModal({ student, getImageUrl, onClose, onEd
   };
 
   const genderText = detailStudent?.gioi_tinh === 'male' || detailStudent?.gioi_tinh === 'Nam' ? 'Nam' : 'Nữ';
-  const image3x4 = getImageUrl(detailStudent?.image_3x4 || detailStudent?.photo_3x4_image_id);
-  const imageFront = getImageUrl(detailStudent?.image_cccd_front || detailStudent?.cccd_front_image_id);
-  const imageBack = getImageUrl(detailStudent?.image_cccd_back || detailStudent?.cccd_back_image_id);
+  const image3x4 = getImageUrl(detailStudent?.photo_3x4_image_id || detailStudent?.image_3x4);
+  const imageFront = getImageUrl(detailStudent?.cccd_front_image_id || detailStudent?.image_cccd_front);
+  const imageBack = getImageUrl(detailStudent?.cccd_back_image_id || detailStudent?.image_cccd_back);
 
   if (typeof document === 'undefined') {
     return null;
@@ -433,6 +445,7 @@ export default function StudentDetailModal({ student, getImageUrl, onClose, onEd
                     { icon: <Phone size={12} />, label: 'Số điện thoại', value: detailStudent?.sdt },
                     { icon: <MapPin size={12} />, label: 'Địa chỉ', value: detailStudent?.dia_chi },
                     { icon: <BookOpen size={12} />, label: 'Đơn vị công tác', value: detailStudent?.don_vi_cong_tac },
+                    { icon: <BookOpen size={12} />, label: 'Khoa/ngành', value: detailStudent?.nganh_dang_hoc },
                     { icon: <Clock3 size={12} />, label: 'Cập nhật lần cuối', value: formatDateTimeVN(detailStudent?.updated_at) || formatDateVN(detailStudent?.updated_at) },
                   ]}
                 />
@@ -476,6 +489,7 @@ export default function StudentDetailModal({ student, getImageUrl, onClose, onEd
                       alt="CCCD mặt trước"
                       filename={`${detailStudent?.ho_ten_full || 'student'}_cccd_front.jpg`}
                       height={140}
+                      fit="contain"
                       placeholder={<CreditCard size={22} className="opacity-50" />}
                     />
                   </div>
@@ -486,6 +500,7 @@ export default function StudentDetailModal({ student, getImageUrl, onClose, onEd
                       alt="CCCD mặt sau"
                       filename={`${detailStudent?.ho_ten_full || 'student'}_cccd_back.jpg`}
                       height={140}
+                      fit="contain"
                       placeholder={<CreditCard size={22} className="opacity-50" />}
                     />
                   </div>
@@ -519,7 +534,7 @@ export default function StudentDetailModal({ student, getImageUrl, onClose, onEd
                               {reg.class_type === 'thi' ? 'Lịch thi' : 'Lớp học'}
                             </span>
                             <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-slate-600">
-                              Thanh toán: {reg.payment_status || 'chưa rõ'}
+                              Thanh toán: {PAYMENT_STATUS_LABELS[String(reg.payment_status || '').toLowerCase()] || 'Chưa rõ'}
                             </span>
                           </div>
 

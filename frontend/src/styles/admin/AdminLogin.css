@@ -1,10 +1,10 @@
 /* Admin Login Page - Premium Dark Purple Theme */
 .admin-login-page {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
   position: relative;
   overflow: hidden;
@@ -248,8 +248,11 @@
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-radius: 12px !important;
   color: #ffffff !important;
-  font-size: 15px !important;
+  font-size: 16px !important;
   transition: all 0.2s ease !important;
+  touch-action: manipulation;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .admin-login-input::placeholder {

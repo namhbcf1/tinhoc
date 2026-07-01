@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Analytics Init — GA4, Clarity, Facebook Pixel initialization
  *

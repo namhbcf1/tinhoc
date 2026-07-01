@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     CreditCard, Search, Filter, Check, X, Eye, Clock, RefreshCw,

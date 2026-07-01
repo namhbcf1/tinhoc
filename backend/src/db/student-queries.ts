@@ -31,7 +31,7 @@ export async function createStudent(db: D1Database, data: Record<string, any>) {
   const {
     cccd, ho, ten_dem, ten, ho_ten_full, ho_ten_normalized,
     ngay_sinh, noi_sinh, gioi_tinh, dan_toc, quoc_tich, email, sdt, dia_chi,
-    ngay_cap_cccd, don_vi_cong_tac,
+    ngay_cap_cccd, don_vi_cong_tac, nganh_dang_hoc,
     image_cccd_front, image_cccd_back, image_3x4,
     cccd_front_image_id, cccd_back_image_id, photo_3x4_image_id
   } = data;
@@ -40,14 +40,14 @@ export async function createStudent(db: D1Database, data: Record<string, any>) {
     INSERT INTO students (
       cccd, ho, ten_dem, ten, ho_ten_full, ho_ten_normalized,
       ngay_sinh, noi_sinh, gioi_tinh, dan_toc, quoc_tich, email, sdt, dia_chi,
-      ngay_cap_cccd, don_vi_cong_tac,
+      ngay_cap_cccd, don_vi_cong_tac, nganh_dang_hoc,
       image_cccd_front, image_cccd_back, image_3x4,
       cccd_front_image_id, cccd_back_image_id, photo_3x4_image_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     cccd, ho, ten_dem, ten, ho_ten_full, ho_ten_normalized,
     ngay_sinh, noi_sinh, gioi_tinh, dan_toc || 'KINH', quoc_tich || 'VIỆT NAM',
-    email, sdt, dia_chi, ngay_cap_cccd || null, don_vi_cong_tac || null,
+    email, sdt, dia_chi, ngay_cap_cccd || null, don_vi_cong_tac || null, nganh_dang_hoc || null,
     image_cccd_front || null, image_cccd_back || null, image_3x4 || null,
     cccd_front_image_id || null, cccd_back_image_id || null, photo_3x4_image_id || null
   ).run();
@@ -94,6 +94,10 @@ export async function updateStudent(db: D1Database, id: number, data: Record<str
   if (data.don_vi_cong_tac !== undefined) {
     updates.push('don_vi_cong_tac = ?');
     values.push(data.don_vi_cong_tac);
+  }
+  if (data.nganh_dang_hoc !== undefined) {
+    updates.push('nganh_dang_hoc = ?');
+    values.push(data.nganh_dang_hoc);
   }
   if (data.cccd_front_image_id !== undefined) {
     updates.push('cccd_front_image_id = ?');

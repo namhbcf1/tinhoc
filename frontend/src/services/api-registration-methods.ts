@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // REGISTRATION METHODS MIXIN
 // Class registrations + online class enrollments

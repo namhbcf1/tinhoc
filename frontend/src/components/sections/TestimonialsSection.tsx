@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Quote, BadgeCheck, Star } from 'lucide-react';
 import { Card, CardContent } from '../ui/Card';

@@ -1,5 +1,100 @@
 import { normalizeText } from '../utils/helpers.js';
 
+const STUDENT_SELECT_FIELDS = 'id, cccd, ho, ten_dem, ten, ho_ten_full, ho_ten_normalized, ngay_sinh, noi_sinh, gioi_tinh, dan_toc, quoc_tich, email, sdt, dia_chi, ngay_cap_cccd, don_vi_cong_tac, image_cccd_front, image_cccd_back, image_3x4, cccd_front_image_id, cccd_back_image_id, photo_3x4_image_id, created_at, updated_at';
+
+const STUDENT_SORT_COLUMNS: Record<string, string> = {
+  created_at: 'created_at',
+  updated_at: 'updated_at',
+  name: 'ho_ten_normalized',
+  cccd: 'cccd',
+  email: "LOWER(COALESCE(email, ''))",
+  status: 'primary_status',
+  study_count: 'study_count',
+  exam_count: 'exam_count',
+};
+
+const EXCLUDED_TEST_STUDENT_SQL = `
+  NOT (
+    LOWER(COALESCE(s.ho_ten_full, '')) LIKE 'test hoc vien%'
+    OR LOWER(COALESCE(s.email, '')) LIKE '%@student.local'
+    OR LOWER(COALESCE(s.cccd, '')) LIKE 'test%'
+  )
+`;
+
+function buildStudentQueryFilters(filters: any = {}) {
+  const where = [EXCLUDED_TEST_STUDENT_SQL];
+  const binds: any[] = [];
+
+  const keyword = String(filters.q || '').trim();
+  if (keyword) {
+    const normalized = normalizeText(keyword);
+    const normalizedTerm = `%${normalized}%`;
+    const exactTerm = `%${keyword}%`;
+    where.push('(s.ho_ten_normalized LIKE ? OR s.cccd LIKE ? OR s.sdt LIKE ? OR LOWER(COALESCE(s.email, \'\')) LIKE LOWER(?))');
+    binds.push(normalizedTerm, exactTerm, exactTerm, exactTerm);
+  }
+
+  const status = String(filters.status || '').trim().toLowerCase();
+  if (status) {
+    where.push('EXISTS (SELECT 1 FROM all_regs ar WHERE ar.student_id = s.id AND LOWER(ar.status) = ?)');
+    binds.push(status);
+  }
+
+  const registrationType = String(filters.registration_type || '').trim().toLowerCase();
+  if (registrationType === 'hoc') {
+    where.push('EXISTS (SELECT 1 FROM registrations r WHERE r.student_id = s.id)');
+  } else if (registrationType === 'thi') {
+    where.push('EXISTS (SELECT 1 FROM exam_registrations er WHERE er.student_id = s.id)');
+  } else if (registrationType === 'none') {
+    where.push('NOT EXISTS (SELECT 1 FROM all_regs ar WHERE ar.student_id = s.id)');
+  }
+
+  const hasCertificate = String(filters.has_certificate || '').trim().toLowerCase();
+  if (hasCertificate === 'true' || hasCertificate === '1') {
+    where.push("EXISTS (SELECT 1 FROM certificates cert WHERE cert.student_id = s.id AND cert.status IN ('active', 'issued'))");
+  } else if (hasCertificate === 'false' || hasCertificate === '0') {
+    where.push("NOT EXISTS (SELECT 1 FROM certificates cert WHERE cert.student_id = s.id AND cert.status IN ('active', 'issued'))");
+  }
+
+  if (filters.created_from) {
+    where.push('date(s.created_at) >= date(?)');
+    binds.push(filters.created_from);
+  }
+
+  if (filters.created_to) {
+    where.push('date(s.created_at) <= date(?)');
+    binds.push(filters.created_to);
+  }
+
+  return { whereSql: where.join(' AND '), binds };
+}
+
+function buildStudentsBaseSql(whereSql: string) {
+  return `
+    WITH all_regs AS (
+      SELECT student_id, status, 'hoc' AS registration_type FROM registrations
+      UNION ALL
+      SELECT student_id, status, 'thi' AS registration_type FROM exam_registrations
+    ), student_rollups AS (
+      SELECT
+        s.${STUDENT_SELECT_FIELDS.replace(/, /g, ', s.')},
+        COALESCE(SUM(CASE WHEN ar.registration_type = 'hoc' THEN 1 ELSE 0 END), 0) AS study_count,
+        COALESCE(SUM(CASE WHEN ar.registration_type = 'thi' THEN 1 ELSE 0 END), 0) AS exam_count,
+        COALESCE(MAX(CASE WHEN ar.status IN ('studying', 'active', 'approved') THEN ar.status END), MAX(ar.status), 'new') AS primary_status
+      FROM students s
+      LEFT JOIN all_regs ar ON ar.student_id = s.id
+      WHERE ${whereSql}
+      GROUP BY s.id
+    )
+  `;
+}
+
+function resolveStudentSort(filters: any = {}) {
+  const sortBy = STUDENT_SORT_COLUMNS[String(filters.sort_by || 'created_at')] ? String(filters.sort_by || 'created_at') : 'created_at';
+  const direction = String(filters.sort_dir || 'desc').toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+  return `${STUDENT_SORT_COLUMNS[sortBy]} ${direction}, id DESC`;
+}
+
 export async function getStudentById(db: any, id: number) {
   return await db.prepare('SELECT id, cccd, ho, ten_dem, ten, ho_ten_full, ho_ten_normalized, ngay_sinh, noi_sinh, gioi_tinh, dan_toc, quoc_tich, email, sdt, dia_chi, ngay_cap_cccd, don_vi_cong_tac, image_cccd_front, image_cccd_back, image_3x4, cccd_front_image_id, cccd_back_image_id, photo_3x4_image_id, created_at, updated_at FROM students WHERE id = ?').bind(id).first();
 }
@@ -34,25 +129,28 @@ export async function searchStudents(db: any, keyword: string) {
   return result.results || [];
 }
 
-export async function getAllStudents(db: any, limit: number | null, offset: number) {
-  const sql = limit && limit > 0
-    ? `
-        SELECT id, cccd, ho, ten_dem, ten, ho_ten_full, ho_ten_normalized, ngay_sinh, noi_sinh, gioi_tinh, dan_toc, quoc_tich, email, sdt, dia_chi, ngay_cap_cccd, don_vi_cong_tac, image_cccd_front, image_cccd_back, image_3x4, cccd_front_image_id, cccd_back_image_id, photo_3x4_image_id, created_at, updated_at
-        FROM students ORDER BY created_at DESC LIMIT ? OFFSET ?
-      `
-    : `
-        SELECT id, cccd, ho, ten_dem, ten, ho_ten_full, ho_ten_normalized, ngay_sinh, noi_sinh, gioi_tinh, dan_toc, quoc_tich, email, sdt, dia_chi, ngay_cap_cccd, don_vi_cong_tac, image_cccd_front, image_cccd_back, image_3x4, cccd_front_image_id, cccd_back_image_id, photo_3x4_image_id, created_at, updated_at
-        FROM students ORDER BY created_at DESC
-      `;
-  const stmt = db.prepare(sql);
-  const result = limit && limit > 0
-    ? await stmt.bind(limit, offset).all()
-    : await stmt.all();
+export async function getAllStudents(db: any, limit: number | null, offset: number, filters: any = {}) {
+  const { whereSql, binds } = buildStudentQueryFilters(filters);
+  const baseSql = buildStudentsBaseSql(whereSql);
+  const orderSql = resolveStudentSort(filters);
+  const pagingSql = limit && limit > 0 ? 'LIMIT ? OFFSET ?' : '';
+  const result = await db.prepare(`
+    ${baseSql}
+    SELECT ${STUDENT_SELECT_FIELDS}, study_count, exam_count, primary_status
+    FROM student_rollups
+    ORDER BY ${orderSql}
+    ${pagingSql}
+  `).bind(...binds, ...(limit && limit > 0 ? [limit, offset] : [])).all();
   return result.results || [];
 }
 
-export async function countAllStudents(db: any): Promise<number> {
-  const result = await db.prepare('SELECT COUNT(*) as count FROM students').first();
+export async function countAllStudents(db: any, filters: any = {}): Promise<number> {
+  const { whereSql, binds } = buildStudentQueryFilters(filters);
+  const baseSql = buildStudentsBaseSql(whereSql);
+  const result = await db.prepare(`
+    ${baseSql}
+    SELECT COUNT(*) as count FROM student_rollups
+  `).bind(...binds).first();
   return result?.count || 0;
 }
 

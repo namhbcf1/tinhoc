@@ -77,8 +77,8 @@ export async function getClassList(db: D1Database, query: {
   status?: string;
   search?: string;
 }, viewer: { isAdmin: boolean; studentId?: number }): Promise<any> {
-  const limit = parseInt(String(query.limit ?? 20));
-  const offset = parseInt(String(query.offset ?? 0));
+  const limit = Math.max(1, Math.min(200, Number.parseInt(String(query.limit ?? 20), 10) || 20));
+  const offset = Math.max(0, Number.parseInt(String(query.offset ?? 0), 10) || 0);
 
   const { rows, total } = await listClasses(db, {
     status: query.status,
@@ -482,6 +482,11 @@ export async function adminAddStudent(db: D1Database, classId: number | string, 
   const cls = await findClassById(db, classId);
   if (!cls) throw Object.assign(new Error('Không tìm thấy lớp học'), { statusCode: 404 });
 
+  const currentCount = await countActiveEnrollments(db, classId);
+  if (cls.max_students && currentCount >= cls.max_students) {
+    throw Object.assign(new Error('Lớp học đã đủ số lượng học viên'), { statusCode: 400 });
+  }
+
   const student: any = await findStudentById(db, studentId);
   if (!student) throw Object.assign(new Error('Không tìm thấy học viên'), { statusCode: 404 });
 
@@ -508,6 +513,7 @@ export async function approveEnrollmentById(db: D1Database, classId: number | st
 
   // Check capacity
   const cls = await findClassById(db, classId);
+  if (!cls) throw Object.assign(new Error('Không tìm thấy lớp học'), { statusCode: 404 });
   const activeCount = await countActiveEnrollments(db, classId);
   if (cls.max_students && activeCount >= cls.max_students) {
     throw Object.assign(new Error('Lớp học đã đủ số lượng học viên. Không thể duyệt thêm.'), { statusCode: 400 });

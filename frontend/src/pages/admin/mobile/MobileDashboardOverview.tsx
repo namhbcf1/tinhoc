@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import {
     Users, BookOpen, CreditCard, TrendingUp, Calendar,

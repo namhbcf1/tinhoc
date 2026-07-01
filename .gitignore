@@ -99,3 +99,18 @@ backend/**/temp_*.sql
 
 # Generated build outputs
 backend/dist/
+
+# --- Added 2026-06-11: prevent committed artifacts/junk ---
+# Source snapshots / profiling / agent worktrees
+frontend/src.zip
+*.cpuprofile
+.claude/
+.claude/worktrees/
+# Local screenshots (not part of the app)
+frontend/screenshots/
+# Committed ID-card / PII images must never be tracked
+*cccd*.jpg
+*cccd*.jpeg
+*cccd*.png
+# Added by code-review-graph
+.code-review-graph/

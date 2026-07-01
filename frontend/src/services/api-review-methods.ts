@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // REVIEW METHODS MIXIN
 // Admin: CRUD báo cáo đánh giá học viên

@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { Env, JWTPayload } from '../types/env.js';
 import { errorResponse, jsonResponse } from '../utils/helpers.js';
+import { requireAdmin } from '../middleware/auth-middleware.js';
 import {
   createCertificate,
   getCertificateById,
@@ -241,10 +242,12 @@ certificates.get('/:id/qr-code', async (c) => {
 // ========================================
 // GET /certificates - Admin list with shipment summary
 // ========================================
-certificates.get('/', async (c) => {
+certificates.get('/', requireAdmin, async (c) => {
   try {
-    const limit = Number.parseInt(c.req.query('limit') as string, 10) || 100;
-    const offset = Number.parseInt(c.req.query('offset') as string, 10) || 0;
+    const rawLimit = Number.parseInt(c.req.query('limit') as string, 10);
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 500) : 100;
+    const rawOffset = Number.parseInt(c.req.query('offset') as string, 10);
+    const offset = Number.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0;
     const classId = parsePositiveInteger(c.req.query('class_id'));
     const studentId = parsePositiveInteger(c.req.query('student_id'));
     const status = c.req.query('status');
@@ -331,7 +334,7 @@ certificates.get('/', async (c) => {
 // ========================================
 // GET /certificates/class/:id/eligible
 // ========================================
-certificates.get('/class/:id/eligible', async (c) => {
+certificates.get('/class/:id/eligible', requireAdmin, async (c) => {
   try {
     const classId = Number.parseInt(c.req.param('id'), 10);
     const result = await c.env.DB.prepare(`
@@ -380,7 +383,7 @@ certificates.get('/class/:id/eligible', async (c) => {
 // ========================================
 // POST /certificates - Issue a single certificate
 // ========================================
-certificates.post('/', async (c) => {
+certificates.post('/', requireAdmin, async (c) => {
   try {
     const { class_id, student_id } = await c.req.json() as any;
     const classId = parsePositiveInteger(class_id);
@@ -405,7 +408,7 @@ certificates.post('/', async (c) => {
 // ========================================
 // POST /certificates/bulk - Bulk issue certificates
 // ========================================
-certificates.post('/bulk', async (c) => {
+certificates.post('/bulk', requireAdmin, async (c) => {
   try {
     const { class_id, student_ids } = await c.req.json() as any;
     const classId = parsePositiveInteger(class_id);
@@ -446,7 +449,7 @@ certificates.post('/bulk', async (c) => {
 // ========================================
 // GET /certificates/:id/shipment - Current shipment
 // ========================================
-certificates.get('/:id/shipment', async (c) => {
+certificates.get('/:id/shipment', requireAdmin, async (c) => {
   try {
     const certificateId = Number.parseInt(c.req.param('id'), 10);
     const cert = await getCertificateById(c.env.DB, certificateId);
@@ -470,7 +473,7 @@ certificates.get('/:id/shipment', async (c) => {
 // ========================================
 // POST /certificates/:id/shipment - Create Viettel Post shipment
 // ========================================
-certificates.post('/:id/shipment', async (c) => {
+certificates.post('/:id/shipment', requireAdmin, async (c) => {
   const certificateId = Number.parseInt(c.req.param('id'), 10);
   let draftShipmentId: number | null = null;
 
@@ -647,9 +650,12 @@ certificates.get('/:id', async (c) => {
 // ========================================
 // PUT /certificates/:id/revoke
 // ========================================
-certificates.put('/:id/revoke', async (c) => {
+certificates.put('/:id/revoke', requireAdmin, async (c) => {
   try {
     const id = Number.parseInt(c.req.param('id'), 10);
+    if (!Number.isFinite(id) || id <= 0) return errorResponse('ID không hợp lệ', 400);
+    const existing = await getCertificateById(c.env.DB, id);
+    if (!existing) return errorResponse('Không tìm thấy chứng chỉ', 404);
     await updateCertificateStatus(c.env.DB, id, 'revoked');
 
     return jsonResponse({

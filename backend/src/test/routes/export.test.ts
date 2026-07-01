@@ -3,6 +3,13 @@ import { env } from 'cloudflare:test';
 import { Hono } from 'hono';
 import XLSX from 'xlsx-js-style';
 import exportRoute from '../../routes/export.js';
+import { generateJWT } from '../../utils/helpers.js';
+
+const JWT_SECRET = 'test-secret-key';
+
+// A valid admin token reused across requests. The export routes are protected
+// by requireAdmin (JWT in Authorization header), so tests must authenticate.
+let adminToken = '';
 
 function createTestApp(r2?: any) {
   const app = new Hono();
@@ -10,11 +17,17 @@ function createTestApp(r2?: any) {
   app.use('*', async (c, next) => {
     c.env = {
       DB: env.DB,
+      JWT_SECRET,
       R2: r2 ?? {
         get: vi.fn().mockResolvedValue(null),
         put: vi.fn().mockResolvedValue(undefined),
       },
     } as any;
+    // Inject a default admin Authorization header when the caller didn't set
+    // one, so existing app.request('/export/...') calls stay unchanged.
+    if (!c.req.raw.headers.has('Authorization')) {
+      c.req.raw.headers.set('Authorization', `Bearer ${adminToken}`);
+    }
     await next();
   });
 
@@ -102,6 +115,7 @@ async function setupDatabase() {
       dia_chi TEXT,
       ngay_cap_cccd TEXT,
       don_vi_cong_tac TEXT,
+      nganh_dang_hoc TEXT,
       image_3x4 TEXT,
       photo_3x4_image_id TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -162,10 +176,10 @@ async function seedStudentRegistration(examId: number, overrides: Partial<Record
   const studentResult = await env.DB.prepare(`
     INSERT INTO students (
       ho, ten_dem, ten, ho_ten_full, ngay_sinh, noi_sinh, gioi_tinh,
-      dan_toc, quoc_tich, email, sdt, cccd, dia_chi, ngay_cap_cccd, don_vi_cong_tac,
+      dan_toc, quoc_tich, email, sdt, cccd, dia_chi, ngay_cap_cccd, don_vi_cong_tac, nganh_dang_hoc,
       image_3x4, photo_3x4_image_id
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     overrides.ho ?? 'Nguyễn',
     overrides.ten_dem ?? 'Văn',
@@ -182,6 +196,7 @@ async function seedStudentRegistration(examId: number, overrides: Partial<Record
     overrides.dia_chi ?? 'Hà Nội',
     overrides.ngay_cap_cccd ?? '2020-06-01',
     overrides.don_vi_cong_tac ?? 'ĐH ABC',
+    overrides.nganh_dang_hoc ?? 'Cong nghe thong tin',
     overrides.image_3x4 ?? null,
     overrides.photo_3x4_image_id ?? null
   ).run();
@@ -196,6 +211,10 @@ async function seedStudentRegistration(examId: number, overrides: Partial<Record
 
 describe('export routes', () => {
   beforeEach(async () => {
+    adminToken = await generateJWT(
+      { id: 1, role: 'admin', exp: Math.floor(Date.now() / 1000) + 60 * 60 },
+      JWT_SECRET
+    );
     await setupDatabase();
     await cleanDatabase();
   });
@@ -321,6 +340,7 @@ describe('export routes', () => {
       sdt: '0988000111',
       email: 'phuong@example.com',
       don_vi_cong_tac: 'PTIT',
+      nganh_dang_hoc: 'Khoa ngoai ngu',
     });
 
     const app = createTestApp({
@@ -347,6 +367,7 @@ describe('export routes', () => {
     expect(worksheet.I5?.v).toBe('0988000111');
     expect(worksheet.J5?.v).toBe('phuong@example.com');
     expect(worksheet.K5?.v).toBe('PTIT');
+    expect(worksheet.L5?.v).toBe('KHOA NGOAI NGU');
     expect(worksheet.M5?.v).toBe('B2');
     expect(worksheet.N5?.v).toBe('15/04/2026');
     expect(worksheet.T5?.v).toBe('PHÒNG A1');
@@ -461,6 +482,7 @@ describe('export routes', () => {
       noi_sinh: 'Đà Nẵng',
       dia_chi: '123 Đường A, Quận B, TP.HCM',
       don_vi_cong_tac: 'ĐH XYZ',
+      nganh_dang_hoc: 'Khoa Kinh te',
       image_3x4: 'https://cdn.example.com/images/long.jpg',
       photo_3x4_image_id: 'img_long_01',
       status: 'registered',
@@ -491,6 +513,7 @@ describe('export routes', () => {
     expect(worksheet.M7?.v).toBe('ĐÀ NẴNG');
     expect(worksheet.N7?.v).toBe('123 ĐƯỜNG A, QUẬN B, TP.HCM');
     expect(worksheet.O7?.v).toBe('ĐH XYZ');
+    expect(worksheet.P7?.v).toBe('KHOA KINH TE');
   });
 
   it('returns server-side preview matching exam-list export format for VanTrang full template', async () => {
@@ -508,6 +531,7 @@ describe('export routes', () => {
       noi_sinh: 'TP.HCM',
       dia_chi: '20 Đường 32, Hiệp Bình, TPHCM',
       don_vi_cong_tac: 'Sinh viên',
+      nganh_dang_hoc: 'Ngon ngu Anh',
       status: 'approved',
     });
 
@@ -527,6 +551,8 @@ describe('export routes', () => {
     expect(payload?.data?.rows?.[0]?.[4]).toBe('NGUYỄN THỊ ÁNH');
     expect(payload?.data?.rows?.[0]?.[8]).toBe('079193000123');
     expect(payload?.data?.rows?.[0]?.[11]).toBe('anh@example.com');
+    expect(payload?.data?.headers).toContain('Khoa/ngành đang theo học');
+    expect(payload?.data?.rows?.[0]).toContain('NGON NGU ANH');
   });
 
   it('keeps default exam-list export scoped to approved registrations only', async () => {

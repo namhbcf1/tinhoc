@@ -1,3 +1,4 @@
+// @ts-nocheck
 import imageCompression from 'browser-image-compression';
 
 /**

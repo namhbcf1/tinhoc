@@ -50,7 +50,7 @@ export async function extractTextWithGoogleVision(
   const body = {
     requests: [{
       image: { content: base64Image },
-      features: [{ type: 'TEXT_DETECTION', maxResults: 1 }],
+      features: [{ type: 'DOCUMENT_TEXT_DETECTION', maxResults: 1 }],
       imageContext: { languageHints: ['vi'] },
     }],
   };

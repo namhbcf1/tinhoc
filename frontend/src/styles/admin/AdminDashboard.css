@@ -11,7 +11,7 @@
 .dashboard-container {
   display: flex; background: #f8fafc;
   margin: 0; padding: 0;
-  width: 100%; min-height: 100vh;
+  width: 100%; min-height: 100dvh;
 }
 
 /* Legacy sidebar - only used in old pages, AdminLayout uses Tailwind classes */
@@ -21,7 +21,7 @@
   color: #0f172a;
   display: flex; flex-direction: column;
   box-shadow: 2px 0 16px rgba(15,23,42,0.06);
-  height: 100vh; overflow: hidden; flex-shrink: 0;
+  height: 100dvh; overflow: hidden; flex-shrink: 0;
   z-index: 100; border-right: 1px solid #e2e8f0;
 }
 
@@ -78,7 +78,7 @@
   min-width: 0;
   padding: clamp(16px, 2.5vw, 28px);
   overflow-y: auto; overflow-x: hidden;
-  background: #f8fafc; min-height: 100vh;
+  background: #f8fafc; min-height: 100dvh;
   display: flex; flex-direction: column;
 }
 
@@ -351,7 +351,7 @@ tbody tr:last-child td { border-bottom: none; }
    ============================================================ */
 
 .modal-overlay {
-  position: fixed; inset: 0; width: 100vw; height: 100vh;
+  position: fixed; inset: 0; width: 100dvw; height: 100dvh;
   background: rgba(15,23,42,0.45); backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center;
   z-index: 9999; padding: clamp(12px, 1.4vw, 16px);

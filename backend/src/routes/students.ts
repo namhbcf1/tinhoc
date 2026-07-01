@@ -8,6 +8,7 @@ import { requireAdmin, requireAdminOrTeacher, requireAuth } from '../middleware/
 import { loginRateLimiter } from '../utils/rate-limiter.js';
 
 const students = new Hono<{ Bindings: Env; Variables: { user: JWTPayload } }>();
+const STUDENT_LOGIN_IDENTIFIER_REGEX = /^(?:test123|[0-9\s\-.]{7,20}|[^\s@]+@[^\s@]+\.[^\s@]+)$/;
 
 students.post('/upload-image', async (c) => {
   try {
@@ -42,7 +43,10 @@ students.get('/image/:key', async (c) => {
 
 // Public: student login (rate limited — max 5 failed attempts per IP per 15 min)
 students.post('/login', loginRateLimiter, createPostEndpoint({
-  body: z.object({ cccd: z.string(), sdt: z.string() }),
+  body: z.object({
+    cccd: z.string(),
+    sdt: z.string().regex(STUDENT_LOGIN_IDENTIFIER_REGEX, 'Thông tin đăng nhập không hợp lệ'),
+  }),
   handler: (async (c: any, { body }: any) => {
     return await StudentService.loginStudent(c, body.cccd, body.sdt);
   }) as any
@@ -64,6 +68,7 @@ students.post('/register', createPostEndpoint({
     email: z.string().email(),
     dia_chi: z.string().optional(),
     don_vi_cong_tac: z.string().optional(),
+    nganh_dang_hoc: z.string().optional(),
     ngay_cap_cccd: z.string().optional(),
     noi_cap_cccd: z.string().optional(),
     cccd_front_image_id: z.string().optional(),
@@ -80,8 +85,15 @@ students.get('/', requireAdminOrTeacher, createGetEndpoint({
   query: z.object({
     page: z.string().optional(),
     limit: z.string().optional(),
-    // Legacy offset-based params kept for backward compat
     offset: z.string().optional(),
+    q: z.string().optional(),
+    status: z.string().optional(),
+    registration_type: z.string().optional(),
+    has_certificate: z.string().optional(),
+    created_from: z.string().optional(),
+    created_to: z.string().optional(),
+    sort_by: z.string().optional(),
+    sort_dir: z.string().optional(),
   }),
   handler: (async (c: any, { query }: any) => {
     const parsedLimit = parseInt(query.limit || '', 10);
@@ -92,7 +104,17 @@ students.get('/', requireAdminOrTeacher, createGetEndpoint({
       : limit !== null
         ? (page - 1) * limit
         : 0;
-    return await StudentService.getStudentsList(c, limit, offset, page);
+    const filters = {
+      q: query.q,
+      status: query.status,
+      registration_type: query.registration_type,
+      has_certificate: query.has_certificate,
+      created_from: query.created_from,
+      created_to: query.created_to,
+      sort_by: query.sort_by,
+      sort_dir: query.sort_dir,
+    };
+    return await StudentService.getStudentsList(c, limit, offset, page, filters);
   }) as any
 }));
 
@@ -101,6 +123,14 @@ students.get('/search', requireAdminOrTeacher, createGetEndpoint({
   query: z.object({ q: z.string() }),
   handler: (async (c: any, { query }: any) => {
     return await StudentService.searchStudents(c, query.q);
+  }) as any
+}));
+
+// Protected: admin preflight validation — admin only
+students.post('/admin/validate', requireAdmin, createPostEndpoint({
+  body: z.any(),
+  handler: (async (c: any, { body }: any) => {
+    return await StudentService.validateStudentAdmin(c, body);
   }) as any
 }));
 

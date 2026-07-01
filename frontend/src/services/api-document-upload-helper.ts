@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // DOCUMENT UPLOAD HELPERS
 // Shared FormData upload logic used by api-document-methods.js

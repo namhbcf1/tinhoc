@@ -1,14 +1,24 @@
 import type { Env } from '../types/env.js';
 import { generateSignedImageURL } from '../utils/cloudflare-images.js';
-import { type CCCDExtractionResult } from './cccd-ocr-parser.js';
+import { type CCCDExtractionResult, normalizeFullName } from './cccd-ocr-parser.js';
 
 type CCCDImageType = 'cccd_front' | 'cccd_back';
 
-const OCR_SPACE_API_KEY = 'K81400402488957';
+const DEFAULT_OCR_SPACE_API_KEY = 'K81400402488957';
+// Resolved at request time from env (Cloudflare secret) with a fallback to the
+// legacy embedded key so OCR keeps working even if the secret isn't set yet.
+let resolvedOcrSpaceApiKey = DEFAULT_OCR_SPACE_API_KEY;
+
+function resolveOcrSpaceApiKey(env: Env): string {
+  const fromEnv = typeof env?.OCR_SPACE_API_KEY === 'string' ? env.OCR_SPACE_API_KEY.trim() : '';
+  resolvedOcrSpaceApiKey = fromEnv || DEFAULT_OCR_SPACE_API_KEY;
+  return resolvedOcrSpaceApiKey;
+}
 const OCR_SPACE_API_URL = 'https://api.ocr.space/parse/image';
 const OCR_SPACE_MAX_BYTES = 1024 * 1024;
-const OCR_SPACE_TIMEOUT_MS = 15000;
-const OCR_SPACE_TIMEOUT_ENGINE3_MS = 25000;
+const OCR_SPACE_TIMEOUT_MS = 12000;
+const OCR_SPACE_TIMEOUT_ENGINE3_MS = 15000;
+const OCR_SPACE_RETRY_NETWORK_DELAY_MS = 600;
 
 interface OCRSpaceResult {
   ParsedResults?: Array<{ ParsedText: string }>;
@@ -97,7 +107,7 @@ async function callOCRSpaceAttempt(input: OCRSpaceInput, attempt: OCRSpaceAttemp
   try {
     response = await fetch(OCR_SPACE_API_URL, {
       method: 'POST',
-      headers: { apikey: OCR_SPACE_API_KEY },
+      headers: { apikey: resolvedOcrSpaceApiKey },
       body: formData,
       signal: controller.signal,
     });
@@ -132,42 +142,73 @@ async function extractWithOCRSpace(
   type: CCCDImageType,
   attemptsLog: OCRSpaceAttempt[],
 ): Promise<{ text: string; parsed: CCCDExtractionResult }> {
+  // OCR.space only. Engine 2 supports Vietnamese (vnm); Engine 1 does not.
   const attempts: OCRSpaceAttempt[] = [
-    { engine: '3', language: 'auto', status: 'pending', timeoutMs: OCR_SPACE_TIMEOUT_ENGINE3_MS },
-    { engine: '2', language: 'auto', status: 'pending' },
     { engine: '2', language: 'vnm', status: 'pending' },
+    { engine: '2', language: 'auto', status: 'pending' },
     { engine: '2', language: 'eng', status: 'pending' },
-    { engine: '1', language: 'vnm', status: 'pending' },
+    { engine: '3', language: 'auto', status: 'pending', timeoutMs: OCR_SPACE_TIMEOUT_ENGINE3_MS },
     { engine: '1', language: 'eng', status: 'pending' },
   ];
 
   let lastError: Error | null = null;
   let sawTextWithoutUsefulFields = false;
+  let bestUsefulResult: { text: string; parsed: CCCDExtractionResult; score: number } | null = null;
 
-  for (const attempt of attempts) {
-    try {
-      const text = await callOCRSpaceAttempt(input, attempt);
-      const parsed = parseOCRTextToPrefill(text, type);
-      attempt.status = 'success';
-      attempt.parseStatus = hasUsefulExtraction(parsed) ? 'useful' : 'no_useful_data';
-      attemptsLog.push({ ...attempt });
-      console.log('[OCR] Parsed:', JSON.stringify(parsed));
+  for (let i = 0; i < attempts.length; i += 1) {
+    const attempt = attempts[i];
+    let text: string | null = null;
+    let networkRetried = false;
 
-      if (hasUsefulExtraction(parsed)) {
+    for (let pass = 0; pass < 2; pass += 1) {
+      try {
+        text = await callOCRSpaceAttempt(input, attempt);
+        break;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const isNetwork = /HTTP 5\d\d|fetch failed|network|ECONN|timeout/i.test(message);
+        if (pass === 0 && isNetwork) {
+          networkRetried = true;
+          await new Promise((resolve) => setTimeout(resolve, OCR_SPACE_RETRY_NETWORK_DELAY_MS));
+          continue;
+        }
+        attempt.status = 'failed';
+        attempt.error = networkRetried ? `${message} (after retry)` : message;
+        attemptsLog.push({ ...attempt });
+        lastError = error instanceof Error ? error : new Error(message);
+        console.warn(
+          `[OCR] attempt failed engine=${attempt.engine} lang=${attempt.language} transport=${attempt.transport || 'pending'}: ${message}`,
+        );
+        break;
+      }
+    }
+
+    if (text === null) continue;
+
+    const parsed = parseOCRTextToPrefill(text, type);
+    attempt.status = 'success';
+    attempt.parseStatus = hasUsefulExtraction(parsed) ? 'useful' : 'no_useful_data';
+    attemptsLog.push({ ...attempt });
+    console.log('[OCR] Parsed:', JSON.stringify(parsed));
+
+    if (hasUsefulExtraction(parsed)) {
+      const score = scoreCandidatePrefill(parsed, type);
+      if (!bestUsefulResult || score > bestUsefulResult.score) {
+        bestUsefulResult = { text, parsed, score };
+      }
+
+      if (hasRequiredCriticalFields(parsed, type)) {
         return { text, parsed };
       }
 
-      sawTextWithoutUsefulFields = true;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      attempt.status = 'failed';
-      attempt.error = message;
-      attemptsLog.push({ ...attempt });
-      lastError = error instanceof Error ? error : new Error(message);
-      console.warn(
-        `[OCR] OCR.space attempt failed engine=${attempt.engine} lang=${attempt.language} transport=${attempt.transport || 'pending'}: ${message}`,
-      );
+      continue;
     }
+
+    sawTextWithoutUsefulFields = true;
+  }
+
+  if (bestUsefulResult) {
+    return { text: bestUsefulResult.text, parsed: bestUsefulResult.parsed };
   }
 
   if (sawTextWithoutUsefulFields) {
@@ -194,8 +235,11 @@ function foldOCRValue(value: string): string {
 }
 
 function lineHasAnyFragment(line: string, fragments: string[]): boolean {
-  const folded = foldOCRValue(line);
-  return fragments.some((fragment) => folded.includes(fragment));
+  const folded = foldOCRValue(line).replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return fragments.some((fragment) => {
+    const normalizedFragment = foldOCRValue(fragment).replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+    return folded.includes(normalizedFragment);
+  });
 }
 
 function looksLikeFieldLabel(line: string): boolean {
@@ -242,6 +286,19 @@ function cleanInlineValue(value: string): string {
   return value.replace(/^[\s:./-]+/, '').replace(/\s+/g, ' ').trim();
 }
 
+function cleanOCRTextArtifacts(value: string): string {
+  if (!value) return '';
+  return value
+    .replace(/\*{1,2}/g, '')          // bold/italic markers
+    .replace(/`{1,3}/g, '')           // backticks
+    .replace(/^#{1,6}\s*/gm, '')      // markdown headers
+    .replace(/_{2}/g, '')             // __underline__
+    .replace(/^[\s:./\-]+/, '')       // leading punctuation
+    .replace(/[\s:./\-]+$/, '')       // trailing punctuation
+    .replace(/\s+/g, ' ')            // collapse spaces
+    .trim();
+}
+
 function cleanPlaceValue(value: string): string {
   return value
     .replace(
@@ -284,14 +341,86 @@ function extractGenderAndNationalityFromLine(line: string): { gender: string; na
   };
 }
 
+function extractValueFromFoldedLabelLine(
+  lines: string[],
+  labelFragments: string[],
+  labelRegex: RegExp,
+  stopRegex?: RegExp,
+): string {
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (!lineHasAnyFragment(line, labelFragments)) {
+      continue;
+    }
+
+    let value = cleanInlineValue(line.replace(labelRegex, ''));
+    if (!value || value === line) {
+      const parts = line.split(/[:：]/);
+      value = parts.length > 1 ? parts.slice(1).join(':') : '';
+    }
+
+    if (!value && i + 1 < lines.length && !looksLikeFieldLabel(lines[i + 1]) && !looksLikeNonDataLine(lines[i + 1])) {
+      value = lines[i + 1];
+    }
+
+    if (stopRegex) {
+      value = value.split(stopRegex)[0] || value;
+    }
+
+    value = cleanOCRTextArtifacts(value);
+    if (value) {
+      return value;
+    }
+  }
+
+  return '';
+}
+
+function extractGenderFromFoldedLines(lines: string[]): string {
+  for (const line of lines) {
+    if (!lineHasAnyFragment(line, ['gioi tinh', 'sex', 'gender'])) {
+      continue;
+    }
+
+    const folded = ` ${foldOCRValue(line).replace(/[^a-z0-9]+/g, ' ')} `;
+    if (/\b(nu|female|f)\b/.test(folded)) return 'Nữ';
+    if (/\b(nam|male|m)\b/.test(folded)) return 'Nam';
+  }
+
+  return '';
+}
+
 function normalizeDateParts(day: string, month: string, year: string): string {
   return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+}
+
+function normalizeDigitConfusables(value: string): string {
+  return value
+    .replace(/[Oo]/g, '0')
+    .replace(/[Il|]/g, '1')
+    .replace(/[Bb](?=\d|[\s.\-]*$)/g, '8')
+    .replace(/[Ss](?=\d|[\s.\-]*$)/g, '5')
+    .replace(/[Zz](?=\d|[\s.\-]*$)/g, '2');
+}
+
+function extractCCCDNumberFromText(value: string): string {
+  const normalized = normalizeDigitConfusables(value);
+  const candidates = normalized.match(/(?:\d[\s.\-]*){12,}/g) || [];
+
+  for (const candidate of candidates) {
+    const digits = candidate.replace(/\D/g, '');
+    if (digits.length >= 12) {
+      return digits.slice(0, 12);
+    }
+  }
+
+  return '';
 }
 
 function extractDateFromText(value: string): string {
   if (!value) return '';
 
-  const normalizedValue = value.replace(/\s+/g, ' ').trim();
+  const normalizedValue = normalizeDigitConfusables(value).replace(/\s+/g, ' ').trim();
   const separatedMatch = normalizedValue.match(/\b(\d{1,2})\s*[\/\-\. ]\s*(\d{1,2})\s*[\/\-\. ]\s*(\d{4})\b/);
   if (separatedMatch) {
     return normalizeDateParts(separatedMatch[1], separatedMatch[2], separatedMatch[3]);
@@ -334,14 +463,15 @@ function extractDateNearLabels(
 }
 
 function extractDateByYearRange(text: string, minYear: number, maxYear: number): string {
-  for (const match of text.matchAll(/\b(\d{1,2})\s*[\/\-\. ]\s*(\d{1,2})\s*[\/\-\. ]\s*(\d{4})\b/g)) {
+  const normalizedText = normalizeDigitConfusables(text);
+  for (const match of normalizedText.matchAll(/\b(\d{1,2})\s*[\/\-\. ]\s*(\d{1,2})\s*[\/\-\. ]\s*(\d{4})\b/g)) {
     const year = Number.parseInt(match[3], 10);
     if (year >= minYear && year <= maxYear) {
       return normalizeDateParts(match[1], match[2], match[3]);
     }
   }
 
-  for (const match of text.matchAll(/\b(\d{2})(\d{2})(\d{4})\b/g)) {
+  for (const match of normalizedText.matchAll(/\b(\d{2})(\d{2})(\d{4})\b/g)) {
     const year = Number.parseInt(match[3], 10);
     if (year >= minYear && year <= maxYear) {
       return normalizeDateParts(match[1], match[2], match[3]);
@@ -374,6 +504,55 @@ function extractLabeledMultilineValue(text: string, labelRegex: RegExp, maxExtra
     const parts = [value, ...extras].filter(Boolean);
     if (parts.length > 0) {
       return parts.join(', ').replace(/\s+,/g, ',').trim();
+    }
+  }
+
+  return '';
+}
+
+function looksLikePersonName(value: string): boolean {
+  const cleaned = cleanOCRTextArtifacts(value)
+    .replace(/(?:full\s*name|name|ho\s*va\s*ten|họ\s*và\s*tên)/giu, '')
+    .replace(/[^\p{L}\s.'-]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!cleaned || looksLikeFieldLabel(cleaned) || looksLikeNonDataLine(cleaned)) {
+    return false;
+  }
+
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+  return parts.length >= 2 && parts.length <= 7;
+}
+
+function extractFullNameFromFrontText(text: string): string {
+  const lines = splitLines(text);
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (!lineHasAnyFragment(line, ['ho va ten', 'full name', 'name'])) {
+      continue;
+    }
+
+    const inlineValue = cleanInlineValue(
+      line
+        .replace(/^.*?full\s*name\s*[:\/.\-]*/iu, '')
+        .replace(/^.*?ho\s*(?:va\s*)?ten\s*[:\/.\-]*/iu, '')
+        .replace(/^.*?name\s*[:\/.\-]*/iu, ''),
+    );
+
+    if (looksLikePersonName(inlineValue)) {
+      return inlineValue;
+    }
+
+    for (let j = i + 1; j < lines.length && j <= i + 3; j += 1) {
+      const nextLine = lines[j];
+      if (looksLikeFieldLabel(nextLine) || looksLikeNonDataLine(nextLine)) {
+        break;
+      }
+      if (looksLikePersonName(nextLine)) {
+        return nextLine;
+      }
     }
   }
 
@@ -413,8 +592,7 @@ function parseOCRTextToPrefill(text: string, type: CCCDImageType): CCCDExtractio
   }
 
   if (type === 'cccd_front') {
-    const cccdMatch = text.match(/\b(\d{12})\b/);
-    cccd = cccdMatch ? cccdMatch[1] : '';
+    cccd = extractCCCDNumberFromText(text);
 
     const multilineNamePatterns = [
       /(?:họ[,\s]*(?:chữ\s*đệm\s*)?(?:và\s*)?tên|ho\s*(?:va\s*)?ten|full\s*name)[^\n]*$/iu,
@@ -422,6 +600,10 @@ function parseOCRTextToPrefill(text: string, type: CCCDImageType): CCCDExtractio
     for (const pattern of multilineNamePatterns) {
       fullName = extractLabeledMultilineValue(text, pattern, 1);
       if (fullName) break;
+    }
+
+    if (!fullName) {
+      fullName = extractFullNameFromFrontText(text);
     }
 
     if (!fullName) {
@@ -461,6 +643,9 @@ function parseOCRTextToPrefill(text: string, type: CCCDImageType): CCCDExtractio
     if (genderValue) {
       gender = normalizeOCRGenderValue(genderValue);
     }
+    if (!gender) {
+      gender = extractGenderFromFoldedLines(lines);
+    }
 
     const ethMatch = text.match(/(?:dân\s*tộc|dan\s*toc|ethnicity)[\s:\/.\-]*([^\n,]{1,30})/iu);
     if (!gender || !nationality) {
@@ -484,18 +669,43 @@ function parseOCRTextToPrefill(text: string, type: CCCDImageType): CCCDExtractio
     }
 
     ethnicity = ethMatch ? ethMatch[1].trim() : '';
+    if (!ethnicity) {
+      ethnicity = extractValueFromFoldedLabelLine(
+        lines,
+        ['dan toc', 'ethnicity'],
+        /.*?(?:dân\s*tộc|dan\s*toc|ethnicity)\s*(?:\/\s*ethnicity)?\s*[:：\/.\-]*/iu,
+        /(?:quốc\s*tịch|quoc\s*tich|nationality)/iu,
+      );
+    }
 
     const natMatch = text.match(/(?:quốc\s*tịch\s*\/\s*nationality|quoc\s*tich\s*\/\s*nationality|nationality|quốc\s*tịch|quoc\s*tich)[\s:\/.\-]*([^\n,]{1,30})/iu);
     nationality = nationality || (natMatch ? natMatch[1].trim() : '');
+    if (!nationality) {
+      nationality = extractValueFromFoldedLabelLine(
+        lines,
+        ['quoc tich', 'nationality'],
+        /.*?(?:quốc\s*tịch|quoc\s*tich|nationality)\s*(?:\/\s*nationality)?\s*[:：\/.\-]*/iu,
+      );
+    }
   }
+
+  const normalizedName = normalizeFullName(cleanOCRTextArtifacts(
+    (fullName.split(/(?:ngày\s*sinh|ngay\s*sinh|date\s*of\s*birth|giới\s*tính|gioi\s*tinh|sex|gender)/iu)[0] || fullName),
+  ));
+  const cleanedEthnicity = cleanOCRTextArtifacts(
+    ethnicity.split(/(?:quốc\s*tịch|quoc\s*tich|nationality)/iu)[0] || ethnicity,
+  );
+  const cleanedNationality = cleanOCRTextArtifacts(
+    nationality.split(/(?:quê\s*quán|que\s*quan|place\s*of\s*origin|nơi\s*thường\s*trú|noi\s*thuong\s*tru|place\s*of\s*residence)/iu)[0] || nationality,
+  );
 
   return {
     cccd,
-    fullName,
+    fullName: normalizedName.value,
     dateOfBirth,
     gender,
-    ethnicity,
-    nationality,
+    ethnicity: cleanedEthnicity,
+    nationality: cleanedNationality,
     placeOfOrigin: cleanPlaceValue(placeOfOrigin),
     placeOfResidence: cleanPlaceValue(placeOfResidence),
     issueDate,
@@ -519,6 +729,7 @@ export interface OCRDebugInfo {
   imageSize: number;
   ocrSpaceStatus: string;
   ocrSpaceText: string;
+  ocrSpaceError?: string;
   ocrSpaceAttempts: OCRSpaceAttempt[];
 }
 
@@ -545,7 +756,9 @@ export interface OCRArbitrationDebug {
   }>;
 }
 
-function normalizeCriticalValue(field: keyof CCCDExtractionResult, value: string) {
+type CCCDStringField = Exclude<keyof CCCDExtractionResult, 'confidence'>;
+
+function normalizeCriticalValue(field: CCCDStringField, value: string) {
   if (!value) return '';
   if (field === 'cccd') {
     return value.replace(/\D/g, '');
@@ -589,7 +802,7 @@ function detectCriticalConflicts(
   results: Array<{ prefill: CCCDExtractionResult }>,
   type: CCCDImageType,
 ) {
-  const fields: Array<keyof CCCDExtractionResult> = type === 'cccd_front'
+  const fields: Array<CCCDStringField> = type === 'cccd_front'
     ? ['cccd', 'fullName', 'dateOfBirth']
     : ['issueDate'];
 
@@ -597,7 +810,7 @@ function detectCriticalConflicts(
   for (const field of fields) {
     const uniqueValues = [...new Set(
       results
-        .map((result) => normalizeCriticalValue(field, result.prefill[field] || ''))
+        .map((result) => normalizeCriticalValue(field, (result.prefill[field] as string) || ''))
         .filter(Boolean),
     )];
     if (uniqueValues.length > 1) {
@@ -627,13 +840,13 @@ function mergeCandidatePrefills(
     issueDate: '',
   };
 
-  const fieldOrder: Array<keyof CCCDExtractionResult> = type === 'cccd_front'
+  const fieldOrder: Array<CCCDStringField> = type === 'cccd_front'
     ? ['cccd', 'fullName', 'dateOfBirth', 'gender', 'ethnicity', 'nationality', 'placeOfOrigin', 'placeOfResidence']
     : ['issueDate', 'placeOfOrigin', 'placeOfResidence', 'cccd'];
 
   for (const field of fieldOrder) {
     for (const result of ordered) {
-      const value = (result.prefill[field] || '').trim();
+      const value = ((result.prefill[field] as string) || '').trim();
       if (!value) continue;
 
       if (!merged[field]) {
@@ -641,7 +854,7 @@ function mergeCandidatePrefills(
         break;
       }
 
-      if ((field === 'placeOfOrigin' || field === 'placeOfResidence' || field === 'fullName') && value.length > merged[field].length + 6) {
+      if ((field === 'placeOfOrigin' || field === 'placeOfResidence' || field === 'fullName') && value.length > (merged[field] as string).length + 6) {
         merged[field] = value;
         break;
       }
@@ -664,6 +877,7 @@ export async function extractRegistrationPrefillFromImage(
   };
 
   const imageBytes = await getImageBytes(env, imageId);
+  resolveOcrSpaceApiKey(env);
   const imageUrl = await buildOCRSpaceImageUrl(env, imageId).catch((error) => {
     console.warn('[OCR] Failed to build OCR.space image URL:', error);
     return null;
@@ -671,13 +885,21 @@ export async function extractRegistrationPrefillFromImage(
   debug.imageSize = imageBytes.length;
   console.log(`[OCR] imageId=${imageId.slice(0, 50)} size=${imageBytes.length} type=${type}`);
 
-  debug.ocrSpaceStatus = 'calling';
-  const { text: ocrText, parsed } = await extractWithOCRSpace({ imageData: imageBytes, imageUrl }, type, debug.ocrSpaceAttempts);
-  debug.ocrSpaceText = ocrText.slice(0, 800);
-  debug.ocrSpaceStatus = 'success';
-  console.log(`[OCR] OCR.space text (${ocrText.length} chars):`, ocrText.slice(0, 400));
+  try {
+    debug.ocrSpaceStatus = 'calling';
+    const { text: ocrText, parsed } = await extractWithOCRSpace({ imageData: imageBytes, imageUrl }, type, debug.ocrSpaceAttempts);
+    debug.ocrSpaceText = ocrText.slice(0, 1200);
+    debug.ocrSpaceStatus = 'success';
+    console.log(`[OCR] OCR.space text (${ocrText.length} chars):`, ocrText.slice(0, 400));
 
-  return { prefill: parsed, model: 'OCR.space', debug };
+    return { prefill: parsed, model: 'OCR.space', debug };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    debug.ocrSpaceStatus = 'failed';
+    debug.ocrSpaceError = message;
+    console.warn('[OCR] OCR.space failed:', message);
+    throw error instanceof Error ? error : new Error(message);
+  }
 }
 
 export async function extractRegistrationPrefillFromCandidates(
@@ -786,8 +1008,8 @@ export async function extractRegistrationPrefillFromCandidates(
   }
 
   const mergedPrefill = mergeCandidatePrefills(successfulResults, type);
-  for (const field of conflictFields as Array<keyof CCCDExtractionResult>) {
-    mergedPrefill[field] = winner.prefill[field];
+  for (const field of conflictFields as Array<CCCDStringField>) {
+    (mergedPrefill[field] as string) = (winner.prefill[field] as string) || '';
   }
   arbitration.selectedImageId = winner.imageId;
   arbitration.selectedMode = winner.mode || null;

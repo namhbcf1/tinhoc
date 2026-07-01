@@ -23,6 +23,9 @@ export interface Env {
 
   // Cloudflare Images
   CLOUDFLARE_IMAGES_API_TOKEN?: string;
+  // OCR.space API key (set via: wrangler secret put OCR_SPACE_API_KEY).
+  // Falls back to a legacy embedded key if unset so OCR never hard-fails.
+  OCR_SPACE_API_KEY?: string;
   PHOTO_3X4_AI_ENABLED?: string;
   PHOTO_3X4_GENERATIVE_ENABLED?: string;
   PHOTO_3X4_PIPELINE_VERSION?: string;

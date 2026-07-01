@@ -48,20 +48,20 @@ function AvatarBlock({ name, avatarUrl }: { name: string; avatarUrl?: string }) 
     : 'SV';
 
   return (
-    <div className="relative w-16 h-16 shrink-0">
+    <div className="relative w-20 h-20 shrink-0">
       {avatarUrl ? (
         <img
           src={avatarUrl}
           alt={name}
-          className="w-16 h-16 rounded-xl object-cover border-2 border-white shadow-md"
+          className="w-20 h-20 rounded-[1.35rem] object-cover border-2 border-[var(--vt-paper)] shadow-[var(--vt-shadow-card)]"
         />
       ) : (
-        <div className="w-16 h-16 rounded-xl bg-emerald-100 border-2 border-white shadow-md flex items-center justify-center">
-          <span className="text-xl font-extrabold text-emerald-600">{initials}</span>
+        <div className="w-20 h-20 rounded-[1.35rem] bg-[var(--vt-paper)] border-2 border-[var(--vt-champagne-soft)] shadow-[var(--vt-shadow-card)] flex items-center justify-center">
+          <span className="text-2xl font-black text-[var(--vt-emerald)]">{initials}</span>
         </div>
       )}
-      <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-lg bg-white border border-slate-200 shadow-sm flex items-center justify-center">
-        <Camera size={11} className="text-slate-400" />
+      <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-xl bg-[var(--vt-ink)] border border-white/20 shadow-sm flex items-center justify-center">
+        <Camera size={13} className="text-[var(--vt-champagne)]" />
       </div>
     </div>
   );
@@ -79,13 +79,13 @@ function InfoRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0">
-      <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
-        <Icon size={14} className="text-slate-400" />
+    <div className="flex items-center gap-3 rounded-2xl border border-[var(--vt-line)] bg-white/65 px-3 py-3 shadow-sm">
+      <div className="w-9 h-9 rounded-xl bg-[var(--vt-paper)] border border-[var(--vt-champagne-soft)] flex items-center justify-center shrink-0">
+        <Icon size={15} className="text-[var(--vt-emerald)]" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
-        <p className="text-[13px] font-extrabold text-slate-800 truncate mt-0.5">{value || '—'}</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--vt-muted)]">{label}</p>
+        <p className="text-[13px] font-black text-[var(--vt-ink)] truncate mt-0.5">{value || '—'}</p>
       </div>
     </div>
   );
@@ -130,6 +130,8 @@ export default function PersonalInfo({
   const phone        = s.phone || s.sdt || s.so_dien_thoai || '—';
   const email        = s.email || '—';
   const address      = s.address || s.dia_chi || '—';
+  const workplace    = s.don_vi_cong_tac || '—';
+  const major        = s.nganh_dang_hoc || '—';
   const dob          = (s.date_of_birth || s.ngay_sinh)
     ? new Date(s.date_of_birth || s.ngay_sinh).toLocaleDateString('vi-VN')
     : '—';
@@ -154,7 +156,7 @@ export default function PersonalInfo({
           <button
             type="button"
             onClick={() => setIsEditorOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 transition-all shadow-sm"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--vt-ink)] bg-[var(--vt-ink)] px-4 py-2 text-xs font-black text-white transition-all shadow-[var(--vt-shadow-card)] hover:bg-[var(--vt-ink-soft)]"
           >
             <Edit3 size={13} />
             Cập nhật
@@ -162,59 +164,60 @@ export default function PersonalInfo({
         }
       >
         {/* Profile identity card */}
-        <StudentInfoCard>
-          <div className="flex items-center gap-4">
-            <AvatarBlock name={fullName} avatarUrl={avatarUrl} />
-            <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-extrabold text-slate-900 leading-tight truncate">{fullName}</h2>
-              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                <StudentPill tone="emerald">
-                  <GraduationCap size={10} className="mr-1" />
-                  Học viên
-                </StudentPill>
-                {studentCode !== '—' ? (
-                  <span className="text-[11px] font-bold text-slate-400 font-mono">{studentCode}</span>
-                ) : null}
+        <div className="relative overflow-hidden rounded-[2rem] border border-[var(--vt-line)] bg-[linear-gradient(135deg,var(--vt-ink),#0b1728)] p-5 text-white shadow-[var(--vt-shadow-soft)] sm:p-6">
+          <div aria-hidden="true" className="absolute right-[-5rem] top-[-6rem] h-56 w-56 rounded-full bg-[var(--vt-champagne-soft)] blur-3xl" />
+          <div aria-hidden="true" className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[var(--vt-champagne)] to-transparent" />
+          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-4">
+              <AvatarBlock name={fullName} avatarUrl={avatarUrl} />
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--vt-champagne)]">Hồ sơ học viên</p>
+                <h2 className="mt-1 text-2xl font-black leading-tight tracking-[-0.04em] text-white sm:text-3xl">{fullName}</h2>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-black text-white/85">
+                    <GraduationCap size={11} className="mr-1 text-[var(--vt-champagne)]" />
+                    Học viên
+                  </span>
+                  {studentCode !== '—' ? (
+                    <span className="text-[11px] font-bold text-white/55 font-mono">{studentCode}</span>
+                  ) : null}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Stats row */}
-          <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-100">
-            {[
-              { label: 'Kỳ thi',     value: examCount,    tone: 'emerald' },
-              { label: 'Đang xử lý', value: pendingCount, tone: 'blue'    },
-              { label: 'Hồ sơ',      value: profileState, tone: profileState === 'Đầy đủ' ? 'emerald' : 'amber' },
-            ].map((item) => (
-              <div key={item.label} className="text-center rounded-lg bg-slate-50 border border-slate-100 py-2.5 px-2">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">{item.label}</p>
-                <p className={[
-                  'text-sm font-extrabold',
-                  item.tone === 'emerald' ? 'text-emerald-600' : item.tone === 'blue' ? 'text-blue-600' : 'text-amber-600',
-                ].join(' ')}>
-                  {item.value}
-                </p>
-              </div>
-            ))}
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:min-w-[340px]">
+              {[
+                { label: 'Kỳ thi',     value: examCount },
+                { label: 'Đang xử lý', value: pendingCount },
+                { label: 'Hồ sơ',      value: profileState },
+              ].map((item) => (
+                <div key={item.label} className="rounded-2xl border border-white/10 bg-white/10 px-3 py-3 text-center backdrop-blur">
+                  <p className="text-[9px] font-black uppercase tracking-[0.15em] text-white/50 mb-1">{item.label}</p>
+                  <p className="text-sm font-black text-[var(--vt-champagne)]">{item.value}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </StudentInfoCard>
+        </div>
 
         {/* Save success banner */}
         {saved ? (
-          <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700">
+          <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700 shadow-sm">
             <CheckCircle size={15} />
-            <span className="text-xs font-bold">Thông tin cá nhân đã được cập nhật thành công.</span>
+            <span className="text-xs font-black">Thông tin cá nhân đã được cập nhật thành công.</span>
           </div>
         ) : null}
 
         {/* 2-column info */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
           {/* Personal info */}
           <StudentSection title="Thông tin cá nhân">
-            <StudentInfoCard>
+            <StudentInfoCard className="space-y-3">
               <InfoRow icon={CreditCard} label="Số CCCD"   value={cccd}   />
               <InfoRow icon={Calendar}   label="Ngày sinh"  value={dob}    />
               <InfoRow icon={User}       label="Giới tính"  value={gender} />
+              <InfoRow icon={GraduationCap} label="Khoa/ngành" value={major} />
+              <InfoRow icon={GraduationCap} label="Đơn vị công tác" value={workplace} />
               <InfoRow icon={MapPin}     label="Địa chỉ"    value={address}/>
             </StudentInfoCard>
           </StudentSection>
@@ -222,20 +225,20 @@ export default function PersonalInfo({
           {/* Contact + Security */}
           <div className="space-y-4">
             <StudentSection title="Thông tin liên hệ">
-              <StudentInfoCard>
+              <StudentInfoCard className="space-y-3">
                 <InfoRow icon={Phone} label="Số điện thoại" value={phone} />
                 <InfoRow icon={Mail}  label="Email"          value={email} />
               </StudentInfoCard>
             </StudentSection>
 
             {/* Security note */}
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5 flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">
-                <Shield size={14} className="text-amber-600" />
+            <div className="flex items-start gap-3 rounded-[1.65rem] border border-[var(--vt-champagne-soft)] bg-[var(--vt-champagne-soft)] p-4 shadow-sm sm:p-5">
+              <div className="w-9 h-9 rounded-xl bg-[var(--vt-paper)] border border-[var(--vt-champagne-soft)] flex items-center justify-center shrink-0">
+                <Shield size={15} className="text-[var(--vt-ink)]" />
               </div>
               <div>
-                <p className="text-xs font-extrabold text-amber-900 mb-0.5">Bảo mật hồ sơ</p>
-                <p className="text-[11px] text-amber-700 leading-relaxed">
+                <p className="text-xs font-black text-[var(--vt-ink)] mb-0.5">Bảo mật hồ sơ</p>
+                <p className="text-[11px] font-semibold text-[var(--vt-muted)] leading-relaxed">
                   Bạn có thể cập nhật thông tin liên hệ. Riêng CCCD và dữ liệu định danh gốc được khóa để tránh sai lệch hồ sơ thi.
                 </p>
               </div>

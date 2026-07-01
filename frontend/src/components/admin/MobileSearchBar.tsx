@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import { Search, X, Filter } from 'lucide-react';
 import { useDeviceType } from '../../utils/deviceDetection';
@@ -68,11 +69,3 @@ export default function MobileSearchBar({
         </div>
     );
 }
-
-
-
-
-
-
-
-

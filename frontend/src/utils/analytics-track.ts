@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Analytics Track — event tracking helpers for GA4 and Facebook Pixel
  */

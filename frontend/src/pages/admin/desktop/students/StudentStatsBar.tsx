@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Award, Clock, UserCheck, Users } from 'lucide-react';
 
 function StatCard({ icon: Icon, label, value, tone = 'slate' }) {

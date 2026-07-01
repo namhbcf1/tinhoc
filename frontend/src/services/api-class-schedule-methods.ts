@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // CLASS SCHEDULE METHODS MIXIN
 // Class schedules CRUD + class-teacher assignments

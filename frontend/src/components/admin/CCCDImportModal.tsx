@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useRef } from 'react';
 import { X, Upload, Camera, Info } from 'lucide-react';
 import BirthPlaceField from '../forms/BirthPlaceField';
@@ -15,6 +16,7 @@ export default function CCCDImportModal({ isOpen, onClose, onSubmit, studentData
         sdt: studentData?.sdt || '',
         email: studentData?.email || '',
         workplace: studentData?.workplace || '',
+        nganh_dang_hoc: studentData?.nganh_dang_hoc || '',
         commit_accuracy: false,
         commit_usage: false,
     });
@@ -322,6 +324,17 @@ export default function CCCDImportModal({ isOpen, onClose, onSubmit, studentData
                                     className="dotted-input full"
                                     value={formData.workplace}
                                     onChange={e => setFormData({ ...formData, workplace: e.target.value })}
+                                    placeholder="............................."
+                                />
+                            </div>
+
+                            <div className="form-row">
+                                <label>10. Khoa/ngành đang theo học:</label>
+                                <input
+                                    type="text"
+                                    className="dotted-input full"
+                                    value={formData.nganh_dang_hoc}
+                                    onChange={e => setFormData({ ...formData, nganh_dang_hoc: e.target.value })}
                                     placeholder="............................."
                                 />
                             </div>

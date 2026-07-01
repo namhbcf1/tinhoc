@@ -10,7 +10,7 @@ function getAuthHeaders(env: Env): Record<string, string> {
     if ((env as any).CLOUDFLARE_EMAIL) {
         return {
             'X-Auth-Email': (env as any).CLOUDFLARE_EMAIL,
-            'X-Auth-Key': env.CLOUDFLARE_IMAGES_API_TOKEN
+            'X-Auth-Key': env.CLOUDFLARE_IMAGES_API_TOKEN ?? ''
         };
     }
     return {

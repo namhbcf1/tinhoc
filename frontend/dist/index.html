@@ -8,33 +8,16 @@
     content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
 
   <!-- ========== SEO CORE ========== -->
+  <!--
+    Per-page <title>, description, robots, canonical, Open Graph and Twitter tags
+    are managed at runtime by src/components/common/SEO.tsx using React 19 native
+    document metadata. We keep ONLY a static <title> + keywords here as the
+    no-JS / first-paint crawler fallback. React replaces <title> by identity but
+    does NOT de-duplicate <meta>, so page-specific metas must not be duplicated here.
+  -->
   <title>CÔNG TY TNHH TƯ VẤN GIÁO DỤC SƠN TRANG - VAN TRANG EDUCATION</title>
-  <meta name="description"
-    content="VanTrangEdu - Hệ thống đào tạo và quản lý giáo dục hàng đầu. Đăng ký học, tra cứu chứng chỉ, lịch thi và kết quả học tập trực tuyến." />
   <meta name="keywords"
     content="VanTrangEdu, Sơn Trang, Tư vấn giáo dục, Chứng chỉ tin học, Đào tạo từ xa, Tra cứu văn bằng, VSTEP, B1, B2, tiếng Anh cấp tốc" />
-  <meta name="author" content="Van Trang Education" />
-  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-  <link rel="canonical" href="https://vantrangedu.com/" />
-
-  <!-- ========== OPEN GRAPH (Facebook, Zalo) ========== -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://vantrangedu.com/" />
-  <meta property="og:site_name" content="Van Trang Education" />
-  <meta property="og:title" content="Van Trang Education - Hỗ Trợ Ngoại Ngữ Cấp Tốc" />
-  <meta property="og:description"
-    content="Đơn vị hàng đầu về đào tạo ngoại ngữ cấp tốc và tư vấn giáo dục tại Việt Nam. Đăng ký ngay!" />
-  <meta property="og:image" content="https://vantrangedu.com/logo.jpg" />
-  <meta property="og:image:width" content="512" />
-  <meta property="og:image:height" content="512" />
-  <meta property="og:locale" content="vi_VN" />
-
-  <!-- ========== TWITTER CARD ========== -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Van Trang Education - Hỗ Trợ Ngoại Ngữ Cấp Tốc" />
-  <meta name="twitter:description"
-    content="Đơn vị hàng đầu về đào tạo ngoại ngữ cấp tốc và tư vấn giáo dục tại Việt Nam." />
-  <meta name="twitter:image" content="https://vantrangedu.com/logo.jpg" />
 
   <!-- ========== PERFORMANCE HINTS (Core Web Vitals) ========== -->
   <link rel="preconnect" href="https://images.unsplash.com" />
@@ -161,8 +144,11 @@
   <!-- ========== FAVICON & THEME ========== -->
   <link rel="icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" href="/logo.jpg" />
-  <meta name="theme-color" content="#16a34a" />
-  <meta name="msapplication-TileColor" content="#16a34a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#1d6f5f" />
+  <meta name="msapplication-TileColor" content="#1d6f5f" />
+  <meta name="format-detection" content="telephone=no" />
 
   <!-- ========== STYLES ========== -->
   <style>
@@ -233,10 +219,10 @@
       animation: fadeIn 0.5s ease-out;
     }
   </style>
-  <script type="module" crossorigin src="/assets/index-mo7b44fd-DHcYKGYm.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/react-vendor-v4-mo7b44fd-5MYIym5F.js">
-  <link rel="modulepreload" crossorigin href="/assets/icon-vendor-v4-mo7b44fd-CamEuNy4.js">
-  <link rel="stylesheet" crossorigin href="/assets/index-mo7b44fd-DydcBM7O.css">
+  <script type="module" crossorigin src="/assets/index-mr23mc6o-BTJa4_xb.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/react-vendor-v4-mr23mc6o-DNuhND0h.js">
+  <link rel="modulepreload" crossorigin href="/assets/icon-vendor-v4-mr23mc6o-Dk0FMwUj.js">
+  <link rel="stylesheet" crossorigin href="/assets/index-mr23mc6o-C6pUXulb.css">
 </head>
 
 <body>

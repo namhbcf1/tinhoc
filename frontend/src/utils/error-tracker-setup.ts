@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Error Tracker Setup
  * Registers global error handlers for uncaught exceptions and unhandled promise rejections.

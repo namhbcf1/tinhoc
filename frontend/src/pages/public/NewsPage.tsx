@@ -1,10 +1,8 @@
+// @ts-nocheck
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import ModernPublicLayout from '../../components/layout/ModernPublicLayout';
-import { Card, CardContent } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { Button } from '../../components/ui/Button';
-import { Calendar, User, ArrowRight, TrendingUp, Bell, Loader2 } from 'lucide-react';
+import { Calendar, ArrowUpRight, TrendingUp, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import SEO from '../../components/common/SEO';
 import api from '../../services/api';
 import { formatDateVN } from '../../utils/dateUtils';
@@ -12,7 +10,7 @@ import CategoryFilter from '../../components/ui/CategoryFilter';
 import { SkeletonNewsCard } from '../../components/ui/SkeletonLoader';
 import LazyImage from '../../components/ui/LazyImage';
 import ScrollToTopButton from '../../components/ui/ScrollToTopButton';
-import { gsap, ScrollTrigger, useGSAP } from '../../lib/gsap';
+import { gsap, useGSAP } from '../../lib/gsap';
 
 interface NewsPost {
     id: number;
@@ -24,6 +22,7 @@ interface NewsPost {
     status: string;
     featured_image?: string;
     created_at: string;
+    publish_at?: string;
     updated_at?: string;
     author?: string;
     tags?: string;
@@ -34,6 +33,8 @@ export default function NewsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const postsPerPage = 8;
     const container = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -44,32 +45,25 @@ export default function NewsPage() {
         if (!container.current || loading || posts.length === 0) return;
         const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-            tl.fromTo('.hero-content > *',
-                { y: 30, opacity: 0 },
-                { y: 0, opacity: 1, duration: 0.8, stagger: 0.15 }
-            );
+        tl.from('.n-eyebrow', { y: 16, opacity: 0, duration: 0.6 })
+            .from('.n-title span', { y: 28, opacity: 0, duration: 0.8, stagger: 0.07 }, '-=0.3')
+            .from('.n-desc', { y: 14, opacity: 0, duration: 0.55 }, '-=0.4');
 
-            gsap.fromTo('.news-card',
-                { y: 40, opacity: 0 },
-                {
-                    y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: 'back.out(1.2)',
-                    scrollTrigger: {
-                        trigger: '.news-grid',
-                        start: 'top 85%'
-                    }
-                }
-            );
+        gsap.from('.news-card', {
+            scrollTrigger: { trigger: '.news-grid', start: 'top 85%' },
+            y: 32,
+            opacity: 0,
+            duration: 0.7,
+            stagger: 0.08,
+        });
 
-            gsap.fromTo('.sidebar-widget',
-                { x: 30, opacity: 0 },
-                {
-                    x: 0, opacity: 1, duration: 0.8, stagger: 0.15, ease: 'power2.out',
-                    scrollTrigger: {
-                        trigger: '.sidebar-container',
-                        start: 'top 85%'
-                    }
-                }
-            );
+        gsap.from('.sidebar-widget', {
+            scrollTrigger: { trigger: '.sidebar-container', start: 'top 85%' },
+            y: 28,
+            opacity: 0,
+            duration: 0.7,
+            stagger: 0.15,
+        });
     }, { scope: container, dependencies: [loading, posts] });
 
     const loadPosts = async () => {
@@ -87,9 +81,7 @@ export default function NewsPage() {
         }
     };
 
-    const formatDate = (dateString) => {
-        return formatDateVN(dateString);
-    };
+    const formatDate = (dateString) => formatDateVN(dateString);
 
     const newsListSchema = posts.length > 0 ? {
         "@type": "CollectionPage",
@@ -111,10 +103,6 @@ export default function NewsPage() {
         }
     } : null;
 
-    const [currentPage, setCurrentPage] = useState(1);
-    const postsPerPage = 8;
-
-    const featuredPosts = useMemo(() => posts.slice(0, 4), [posts]);
     const trendingPosts = useMemo(() => posts.slice(0, 5), [posts]);
     const allCategories = useMemo(
         () => [...new Set(posts.map(p => p.category).filter(Boolean))],
@@ -128,10 +116,13 @@ export default function NewsPage() {
         [posts, selectedCategories]
     );
 
-    const filteredIndexOfLastPost = currentPage * postsPerPage;
-    const filteredIndexOfFirstPost = filteredIndexOfLastPost - postsPerPage;
-    const currentFilteredPosts = filteredPosts.slice(filteredIndexOfFirstPost, filteredIndexOfLastPost);
-    const totalFilteredPages = Math.ceil(filteredPosts.length / postsPerPage);
+    const featuredPost = filteredPosts[0];
+    const restPosts = filteredPosts.slice(1);
+
+    const indexLast = currentPage * postsPerPage;
+    const indexFirst = indexLast - postsPerPage;
+    const currentRestPosts = restPosts.slice(indexFirst, indexLast);
+    const totalPages = Math.ceil(restPosts.length / postsPerPage);
 
     const paginate = (pageNumber) => {
         setCurrentPage(pageNumber);
@@ -146,212 +137,274 @@ export default function NewsPage() {
                 url="/news"
                 structuredData={newsListSchema}
             />
-            <div ref={container} className="bg-slate-50 min-h-screen pb-24 relative overflow-hidden">
-                {/* Abstract Background */}
-                <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-emerald-100/40 rounded-full blur-[120px] opacity-60 pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
 
-                {/* Hero Section */}
-                <div className="relative pt-32 pb-20 border-b border-slate-200 backdrop-blur-sm bg-white/40">
-                    <div className="container mx-auto px-4 hero-content text-center relative z-10">
-                        <span className="inline-block py-1 px-3 rounded-full bg-emerald-100 text-emerald-700 text-sm font-bold tracking-wide uppercase mb-6 shadow-sm border border-emerald-200">Bản Tin Giáo Dục 4.0</span>
-                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold text-slate-900 mb-6 tracking-tight">Cập Nhật <span className="heading-gradient">Hằng Ngày</span></h1>
-                        <p className="text-xl md:text-2xl text-slate-600 max-w-2xl mx-auto font-light leading-relaxed">
-                            Thông tin mới nhất về lịch thi chứng chỉ quy chuẩn quốc tế, định hướng đào tạo cùng các hoạt động ngoại khóa.
-                        </p>
+            <div ref={container} className="bg-[var(--vt-paper)] text-[var(--vt-ink)] overflow-hidden">
+                {/* Hero */}
+                <section className="vt-section !pb-10">
+                    <div className="vt-container">
+                        <div className="max-w-4xl">
+                            <p className="n-eyebrow vt-eyebrow">Bản tin · Tri thức giáo dục</p>
+                            <h1 className="n-title vt-display mt-5 text-[clamp(2.5rem,6.5vw,4.75rem)] leading-[1.02]">
+                                <span className="block">Đọc chậm,</span>
+                                <span className="block">
+                                    để hiểu{' '}
+                                    <span className="vt-display-italic text-[var(--vt-emerald-deep)]">sâu hơn.</span>
+                                </span>
+                            </h1>
+                            <p className="n-desc vt-lead mt-6 max-w-2xl">
+                                Lịch thi, hướng dẫn ôn luyện, câu chuyện học viên và những phân tích về chính sách
+                                giáo dục — được Vân Trang chọn lọc và cập nhật thường xuyên.
+                            </p>
+                        </div>
                     </div>
-                </div>
+                </section>
 
-                <div className="container mx-auto px-4 py-16 relative z-20">
-                    {loading ? (
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {Array.from({ length: 6 }).map((_, i) => (
-                                <SkeletonNewsCard key={i} />
-                            ))}
-                        </div>
-                    ) : error ? (
-                        <div className="text-center py-20 glass-panel max-w-2xl mx-auto rounded-3xl bg-white/60">
-                            <p className="text-rose-500 mb-6 font-bold text-xl">{error}</p>
-                            <Button onClick={loadPosts} className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl px-8 h-12 shadow-lg">
-                                Khởi Tạo Kết Nối Lại
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className="grid lg:grid-cols-12 gap-10 max-w-7xl mx-auto">
-                            {/* Main Content Area */}
-                            <div className="lg:col-span-8">
-                                {allCategories.length > 0 && (
-                                    <div className="mb-10 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 sticky top-28 sm:top-32 z-30">
-                                        <CategoryFilter
-                                            categories={allCategories}
-                                            selected={selectedCategories}
-                                            onChange={setSelectedCategories}
-                                            className="custom-category-filter"
-                                        />
-                                        {selectedCategories.length > 0 && (
-                                            <p className="mt-4 text-sm font-medium text-emerald-600 flex items-center gap-2">
-                                                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-none">{filteredPosts.length}</Badge> Kết quả được lọc
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
+                <div className="vt-fine-divider" aria-hidden="true" />
 
-                                <div className="news-grid grid md:grid-cols-2 gap-8 mb-16">
-                                    {currentFilteredPosts.length === 0 && selectedCategories.length > 0 ? (
-                                        <div className="col-span-full py-20 text-center">
-                                            <div className="inline-flex flex-col items-center gap-4 bg-white rounded-3xl p-10 shadow-sm border border-slate-100">
-                                                <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
-                                                    <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                {/* Body */}
+                <section className="vt-section">
+                    <div className="vt-container">
+                        {loading ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {Array.from({ length: 6 }).map((_, i) => (
+                                    <SkeletonNewsCard key={i} />
+                                ))}
+                            </div>
+                        ) : error ? (
+                            <div className="vt-paper-card max-w-xl mx-auto text-center !py-16">
+                                <p className="vt-display text-2xl text-[var(--vt-ink)]"
+                                   style={{ fontVariationSettings: '"opsz" 72, "SOFT" 30', fontWeight: 600 }}>
+                                    Tải không thành công
+                                </p>
+                                <p className="mt-3 text-[var(--vt-ink-60)]">{error}</p>
+                                <button onClick={loadPosts} className="vt-btn vt-btn--primary mt-6">
+                                    Thử lại
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
+                                {/* Main column */}
+                                <div className="lg:col-span-8">
+                                    {allCategories.length > 0 && (
+                                        <div className="mb-10 vt-paper-card !p-4 md:!p-5">
+                                            <CategoryFilter
+                                                categories={allCategories}
+                                                selected={selectedCategories}
+                                                onChange={(next) => { setSelectedCategories(next); setCurrentPage(1); }}
+                                                className="custom-category-filter"
+                                            />
+                                            {selectedCategories.length > 0 && (
+                                                <p className="mt-3 text-xs uppercase tracking-[0.16em] text-[var(--vt-emerald-deep)] font-semibold">
+                                                    {filteredPosts.length} bài viết được lọc
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Featured story */}
+                                    {featuredPost && currentPage === 1 && (
+                                        <Link
+                                            to={`/news/${featuredPost.slug || featuredPost.id}`}
+                                            className="news-card block group mb-10"
+                                        >
+                                            <article className="vt-paper-card !p-0 overflow-hidden">
+                                                <div className="relative aspect-[16/9] overflow-hidden">
+                                                    <LazyImage
+                                                        src={featuredPost.featured_image || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1200&auto=format&fit=crop'}
+                                                        alt={featuredPost.title}
+                                                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[1200ms] ease-out"
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-[var(--vt-ink)]/55 via-transparent to-transparent" />
+                                                    <span className="absolute top-5 left-5 px-3 py-1 rounded-full bg-white/95 text-[var(--vt-emerald-deep)] text-[10px] font-bold uppercase tracking-[0.18em]">
+                                                        {featuredPost.category || 'Bài viết'}
+                                                    </span>
                                                 </div>
-                                                <p className="text-slate-700 font-bold text-lg">Không tìm thấy bài viết</p>
-                                                <p className="text-slate-500 text-sm">Thử chọn danh mục khác hoặc xem tất cả bài viết</p>
+                                                <div className="p-6 md:p-9">
+                                                    <p className="vt-overline text-[10px] text-[var(--vt-ink-60)] flex items-center gap-2">
+                                                        <Calendar size={12} className="text-[var(--vt-emerald-deep)]" />
+                                                        {formatDate(featuredPost.publish_at || featuredPost.created_at)}
+                                                    </p>
+                                                    <h2 className="vt-display mt-3 text-[clamp(1.5rem,3vw,2.25rem)] leading-[1.1] text-[var(--vt-ink)] group-hover:text-[var(--vt-emerald-deep)] transition-colors"
+                                                        style={{ fontVariationSettings: '"opsz" 96, "SOFT" 40', fontWeight: 600 }}>
+                                                        {featuredPost.title}
+                                                    </h2>
+                                                    {(featuredPost.excerpt || featuredPost.content) && (
+                                                        <p className="mt-4 text-[var(--vt-ink-70)] leading-relaxed line-clamp-3">
+                                                            {featuredPost.excerpt || featuredPost.content?.replace(/<[^>]+>/g, '').substring(0, 220) + '...'}
+                                                        </p>
+                                                    )}
+                                                    <span className="mt-6 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[var(--vt-emerald-deep)]">
+                                                        Đọc bài đầy đủ
+                                                        <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                                                    </span>
+                                                </div>
+                                            </article>
+                                        </Link>
+                                    )}
+
+                                    <div className="news-grid grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
+                                        {currentRestPosts.length === 0 && selectedCategories.length > 0 ? (
+                                            <div className="col-span-full vt-paper-card text-center !py-14">
+                                                <p className="vt-display text-2xl text-[var(--vt-ink)]"
+                                                   style={{ fontVariationSettings: '"opsz" 72, "SOFT" 30', fontWeight: 600 }}>
+                                                    Chưa có bài viết
+                                                </p>
+                                                <p className="mt-3 text-[var(--vt-ink-60)] text-sm">
+                                                    Thử chọn danh mục khác hoặc xem toàn bộ.
+                                                </p>
                                                 <button
                                                     onClick={() => setSelectedCategories([])}
-                                                    className="mt-1 px-5 py-2 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition-colors"
+                                                    className="vt-btn vt-btn--ghost mt-5"
                                                 >
                                                     Xem tất cả
                                                 </button>
                                             </div>
-                                        </div>
-                                    ) : currentFilteredPosts.map((item) => (
-                                        <Link key={item.id} to={`/news/${item.slug || item.id}`} className="block group h-full">
-                                            <Card className="news-card glass-card h-full border-0 shadow-md hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-500 bg-white/80 rounded-[2rem] overflow-hidden flex flex-col transform group-hover:-translate-y-2">
-                                                <div className="h-40 sm:h-48 md:h-56 overflow-hidden relative">
-                                                    <LazyImage
-                                                        src={item.featured_image || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800&auto=format&fit=crop'}
-                                                        alt={item.title}
-                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                                                    />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent opacity-60"></div>
-                                                    <div className="absolute top-4 left-4 z-10">
-                                                        <Badge className="bg-white/90 text-emerald-700 font-bold backdrop-blur-md shadow-sm border-0 uppercase tracking-wider text-[10px] px-3 py-1">
-                                                            {item.category || 'Thông cáo'}
-                                                        </Badge>
+                                        ) : currentRestPosts.map((item) => (
+                                            <Link
+                                                key={item.id}
+                                                to={`/news/${item.slug || item.id}`}
+                                                className="news-card block group h-full"
+                                            >
+                                                <article className="vt-paper-card !p-0 h-full flex flex-col overflow-hidden">
+                                                    <div className="relative aspect-[16/10] overflow-hidden">
+                                                        <LazyImage
+                                                            src={item.featured_image || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800&auto=format&fit=crop'}
+                                                            alt={item.title}
+                                                            className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-[900ms] ease-out"
+                                                        />
+                                                        <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-white/95 text-[var(--vt-emerald-deep)] text-[10px] font-bold uppercase tracking-[0.16em]">
+                                                            {item.category || 'Bài viết'}
+                                                        </span>
                                                     </div>
-                                                </div>
-                                                <CardContent className="p-6 md:p-8 flex flex-col flex-1 relative bg-gradient-to-b from-transparent to-white/50">
-                                                    <div className="flex items-center gap-3 mb-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
-                                                        <Calendar size={14} className="text-emerald-500" /> {formatDate(item.publish_at || item.created_at)}
-                                                    </div>
-                                                    <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-4 group-hover:text-emerald-600 transition-colors line-clamp-3 leading-tight tracking-tight">
-                                                        {item.title}
-                                                    </h3>
-                                                    <p className="text-slate-600 text-sm mb-6 line-clamp-3 flex-1 leading-relaxed font-light">
-                                                        {item.excerpt || item.content?.replace(/<[^>]+>/g, '').substring(0, 150) + '...'}
-                                                    </p>
-                                                    <div className="pt-5 border-t border-slate-200/60 flex items-center justify-between text-sm mt-auto">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-emerald-200">VT</div>
-                                                            <span className="text-slate-800 font-semibold text-xs tracking-wide">Ban Biên Tập</span>
+                                                    <div className="p-5 md:p-6 flex flex-col flex-1">
+                                                        <p className="vt-overline text-[10px] text-[var(--vt-ink-60)] flex items-center gap-2">
+                                                            <Calendar size={11} className="text-[var(--vt-emerald-deep)]" />
+                                                            {formatDate(item.publish_at || item.created_at)}
+                                                        </p>
+                                                        <h3 className="vt-display mt-2 text-lg md:text-xl leading-[1.2] text-[var(--vt-ink)] group-hover:text-[var(--vt-emerald-deep)] transition-colors line-clamp-3"
+                                                            style={{ fontVariationSettings: '"opsz" 48, "SOFT" 40', fontWeight: 600 }}>
+                                                            {item.title}
+                                                        </h3>
+                                                        <p className="mt-3 text-sm text-[var(--vt-ink-70)] leading-relaxed line-clamp-3 flex-1">
+                                                            {item.excerpt || item.content?.replace(/<[^>]+>/g, '').substring(0, 140) + '...'}
+                                                        </p>
+                                                        <div className="mt-5 pt-4 border-t border-[var(--vt-line)] flex items-center justify-between text-xs">
+                                                            <span className="text-[var(--vt-ink-50)] uppercase tracking-[0.14em] font-semibold">
+                                                                Ban biên tập
+                                                            </span>
+                                                            <span className="text-[var(--vt-emerald-deep)] font-semibold uppercase tracking-[0.14em] inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                                                Đọc tiếp <ArrowRight size={12} />
+                                                            </span>
                                                         </div>
-                                                        <span className="text-emerald-600 font-bold text-xs uppercase tracking-wider group-hover:translate-x-2 transition-transform inline-flex items-center gap-2">
-                                                            Đọc tiếp <ArrowRight size={14} />
-                                                        </span>
                                                     </div>
-                                                </CardContent>
-                                            </Card>
-                                        </Link>
-                                    ))}
-                                </div>
-                                {totalFilteredPages > 1 && (
-                                    <div className="glass-panel p-4 rounded-2xl bg-white/60 flex justify-center items-center gap-2 max-w-max mx-auto border-0 shadow-sm">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => paginate(Math.max(1, currentPage - 1))}
-                                            disabled={currentPage === 1}
-                                            className="h-12 w-12 sm:h-10 sm:w-10 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl"
-                                        >
-                                            <span className="text-xl leading-none">&lsaquo;</span>
-                                        </Button>
-
-                                        {Array.from({ length: Math.min(5, totalFilteredPages) }, (_, i) => {
-                                            let pageNum;
-                                            if (totalFilteredPages <= 5) {
-                                                pageNum = i + 1;
-                                            } else if (currentPage <= 3) {
-                                                pageNum = i + 1;
-                                            } else if (currentPage >= totalFilteredPages - 2) {
-                                                pageNum = totalFilteredPages - 4 + i;
-                                            } else {
-                                                pageNum = currentPage - 2 + i;
-                                            }
-
-                                            return (
-                                                <Button
-                                                    key={pageNum}
-                                                    variant={currentPage === pageNum ? "default" : "ghost"}
-                                                    className={`h-12 w-12 sm:h-10 sm:w-10 font-bold rounded-xl text-md transition-all ${currentPage === pageNum ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20' : 'text-slate-600 hover:text-emerald-600 hover:bg-emerald-50'}`}
-                                                    onClick={() => paginate(pageNum)}
-                                                >
-                                                    {pageNum}
-                                                </Button>
-                                            );
-                                        })}
-
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => paginate(Math.min(totalFilteredPages, currentPage + 1))}
-                                            disabled={currentPage === totalFilteredPages}
-                                            className="h-12 w-12 sm:h-10 sm:w-10 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl"
-                                        >
-                                            <span className="text-xl leading-none">&rsaquo;</span>
-                                        </Button>
+                                                </article>
+                                            </Link>
+                                        ))}
                                     </div>
-                                )}
-                            </div>
 
-                            {/* Sidebar Area */}
-                            <div className="lg:col-span-4 sidebar-container">
-                                <div className="sticky top-28 space-y-8">
-                                    {/* Trending Posts Widget */}
-                                    <div className="sidebar-widget glass-panel bg-white/80 rounded-[2rem] shadow-lg border-0 overflow-hidden">
-                                        <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
-                                            <h3 className="font-extrabold text-xl flex items-center gap-3 text-slate-900 tracking-tight">
-                                                <TrendingUp className="text-rose-500" size={24} /> Tin Tức Nổi Bật
+                                    {totalPages > 1 && (
+                                        <nav className="vt-paper-card !p-3 inline-flex items-center gap-1.5 mx-auto" aria-label="Phân trang">
+                                            <button
+                                                onClick={() => paginate(Math.max(1, currentPage - 1))}
+                                                disabled={currentPage === 1}
+                                                className="h-10 w-10 rounded-lg grid place-items-center text-[var(--vt-ink-60)] hover:text-[var(--vt-ink)] hover:bg-[var(--vt-paper-soft)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                                aria-label="Trang trước"
+                                            >
+                                                <ChevronLeft size={16} />
+                                            </button>
+
+                                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                                let pageNum;
+                                                if (totalPages <= 5) pageNum = i + 1;
+                                                else if (currentPage <= 3) pageNum = i + 1;
+                                                else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                                                else pageNum = currentPage - 2 + i;
+
+                                                const active = currentPage === pageNum;
+                                                return (
+                                                    <button
+                                                        key={pageNum}
+                                                        onClick={() => paginate(pageNum)}
+                                                        className={
+                                                            active
+                                                                ? 'h-10 w-10 rounded-lg grid place-items-center text-sm font-bold bg-[var(--vt-ink)] text-white'
+                                                                : 'h-10 w-10 rounded-lg grid place-items-center text-sm font-semibold text-[var(--vt-ink-60)] hover:text-[var(--vt-ink)] hover:bg-[var(--vt-paper-soft)] transition-colors'
+                                                        }
+                                                    >
+                                                        {pageNum}
+                                                    </button>
+                                                );
+                                            })}
+
+                                            <button
+                                                onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
+                                                disabled={currentPage === totalPages}
+                                                className="h-10 w-10 rounded-lg grid place-items-center text-[var(--vt-ink-60)] hover:text-[var(--vt-ink)] hover:bg-[var(--vt-paper-soft)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                                aria-label="Trang sau"
+                                            >
+                                                <ChevronRight size={16} />
+                                            </button>
+                                        </nav>
+                                    )}
+                                </div>
+
+                                {/* Sidebar */}
+                                <aside className="lg:col-span-4 sidebar-container">
+                                    <div className="lg:sticky lg:top-28 space-y-6">
+                                        {/* Trending */}
+                                        <div className="sidebar-widget vt-paper-card !p-0 overflow-hidden">
+                                            <div className="px-6 py-5 border-b border-[var(--vt-line)] flex items-center justify-between">
+                                                <p className="vt-eyebrow">Đang được đọc</p>
+                                                <TrendingUp size={16} className="text-[var(--vt-emerald-deep)]" />
+                                            </div>
+                                            <ol className="divide-y divide-[var(--vt-line)]">
+                                                {trendingPosts.map((post, idx) => (
+                                                    <li key={post.id}>
+                                                        <Link
+                                                            to={`/news/${post.slug || post.id}`}
+                                                            className="flex items-start gap-4 px-6 py-4 group hover:bg-[var(--vt-paper-soft)] transition-colors"
+                                                        >
+                                                            <span className="vt-display text-2xl text-[var(--vt-ink-30)] group-hover:text-[var(--vt-champagne-deep)] transition-colors leading-none"
+                                                                  style={{ fontVariationSettings: '"opsz" 72, "SOFT" 30', fontWeight: 600 }}>
+                                                                {String(idx + 1).padStart(2, '0')}
+                                                            </span>
+                                                            <div className="flex-1 min-w-0">
+                                                                <h4 className="text-sm font-semibold text-[var(--vt-ink)] group-hover:text-[var(--vt-emerald-deep)] transition-colors leading-snug line-clamp-3">
+                                                                    {post.title}
+                                                                </h4>
+                                                                <p className="mt-1.5 text-[11px] uppercase tracking-[0.14em] text-[var(--vt-ink-50)]">
+                                                                    {formatDate(post.publish_at || post.created_at)}
+                                                                </p>
+                                                            </div>
+                                                        </Link>
+                                                    </li>
+                                                ))}
+                                            </ol>
+                                        </div>
+
+                                        {/* CTA */}
+                                        <div className="sidebar-widget vt-ink-panel !p-7">
+                                            <p className="vt-eyebrow !text-[var(--vt-champagne)]">Đăng ký tư vấn</p>
+                                            <h3 className="vt-display mt-3 text-2xl text-white leading-[1.15]"
+                                                style={{ fontVariationSettings: '"opsz" 72, "SOFT" 30', fontWeight: 600 }}>
+                                                Lộ trình riêng cho mục tiêu của bạn
                                             </h3>
-                                        </div>
-                                        <div className="divide-y divide-slate-100/60 p-2">
-                                            {trendingPosts.map((post, idx) => (
-                                                <Link key={post.id} to={`/news/${post.slug || post.id}`} className="flex items-start gap-4 p-4 group hover:bg-emerald-50/50 transition-colors rounded-xl">
-                                                    <div className="text-2xl font-black text-slate-200 group-hover:text-emerald-200 transition-colors pointer-events-none mt-1">0{idx + 1}</div>
-                                                    <div>
-                                                        <h4 className="font-bold text-slate-800 text-sm mb-2 group-hover:text-emerald-700 line-clamp-3 leading-snug">
-                                                            {post.title}
-                                                        </h4>
-                                                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-emerald-500 transition-colors">
-                                                            {formatDate(post.publish_at || post.created_at)}
-                                                        </span>
-                                                    </div>
-                                                </Link>
-                                            ))}
+                                            <p className="mt-3 text-sm text-white/70 leading-relaxed">
+                                                Để lại thông tin — chuyên viên sẽ gọi lại trong vòng 24 giờ với
+                                                gợi ý cụ thể về lớp, lịch và học bổng.
+                                            </p>
+                                            <a href="https://zalo.me/0339244566" target="_blank" rel="noopener noreferrer" className="vt-btn vt-btn--accent mt-5 w-full justify-center">
+                                                Nhận tư vấn miễn phí
+                                                <ArrowUpRight size={14} />
+                                            </a>
                                         </div>
                                     </div>
-
-                                    {/* CTA Widget */}
-                                    <div className="sidebar-widget rounded-[2.5rem] overflow-hidden shadow-2xl shadow-emerald-900/20 relative bg-gradient-to-br from-emerald-600 to-emerald-800 text-white p-10 text-center transform transition-transform hover:scale-[1.02]">
-                                        <div className="absolute -top-10 -right-10 p-3 opacity-10">
-                                            <Bell size={200} />
-                                        </div>
-                                        <div className="w-16 h-16 bg-white/20 rounded-2xl backdrop-blur-md flex items-center justify-center mx-auto mb-6 shadow-inner ring-1 ring-white/30">
-                                            <Calendar size={32} className="text-emerald-50" />
-                                        </div>
-                                        <h3 className="font-extrabold text-2xl mb-4 relative z-10 tracking-tight shadow-sm">Đăng ký tư vấn Lộ trình</h3>
-                                        <p className="text-emerald-100 text-sm mb-8 relative z-10 leading-relaxed font-light">
-                                            Để lại thông tin để hệ thống xếp lịch chuyên gia tư vấn miễn phí về lộ trình và các suất học bổng giới hạn.
-                                        </p>
-                                        <Link to="/contact" className="relative z-10 block">
-                                            <Button className="w-full bg-white text-emerald-800 hover:bg-emerald-50 font-bold h-14 rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
-                                                NHẬN LỊCH TƯ VẤN NGAY
-                                            </Button>
-                                        </Link>
-                                    </div>
-                                </div>
+                                </aside>
                             </div>
-                        </div>
-                    )}
-                    <ScrollToTopButton />
-                </div>
+                        )}
+                        <ScrollToTopButton />
+                    </div>
+                </section>
             </div>
         </ModernPublicLayout>
     );

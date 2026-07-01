@@ -4,22 +4,25 @@
 
 /* ── Root wrapper ─────────────────────────────────────────────────────────── */
 .admin-mobile-layout {
+    --admin-mobile-page-x: 10px;
+    --admin-mobile-card-radius: 18px;
     min-height: 100dvh;
-    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
-    background: var(--mb-bg);
+    background: linear-gradient(180deg, #f0f9ff 0%, #dff3ff 52%, #bae6fd 100%);
+    color: var(--admin-ink, #102033);
     position: relative;
     overflow-x: clip;
 }
 
 @media (max-width: 768px) {
     .admin-mobile-layout {
-        --mb-space-scale: 0.72;
-        --mb-font-scale: 0.8;
-        --mb-touch-scale: 1.0; /* Never scale touch targets below 44px - WCAG 2.2 requirement */
-        --mb-radius-scale: 0.82;
-        --mb-layout-scale: 0.8;
+        --mb-space-scale: 0.50;
+        --mb-font-scale: 0.56;
+        --mb-touch-scale: 0.72;
+        --mb-radius-scale: 0.58;
+        --mb-layout-scale: 0.56;
     }
 }
 
@@ -41,9 +44,9 @@
 /* Content area - dùng page scroll tự nhiên, không tạo scroll container */
 .admin-mobile-layout .mobile-content {
     flex: 1;
-    padding-top: calc(var(--mb-header-height) + var(--mb-sm));
-    padding-bottom: calc(var(--mb-bottom-nav-height) + env(safe-area-inset-bottom, 0px) + var(--mb-md));
-    min-height: 100vh;
+    padding-top: calc(var(--mb-header-height) + 6px);
+    padding-bottom: calc(var(--mb-bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 14px);
+    min-height: 100dvh;
     box-sizing: border-box;
     overflow-x: clip;
     overflow-y: unset;
@@ -52,7 +55,13 @@
 }
 
 .admin-mobile-layout.ios .mobile-content {
-    padding-top: calc(var(--mb-header-height) + env(safe-area-inset-top) + var(--mb-sm));
+    padding-top: calc(var(--mb-header-height) + env(safe-area-inset-top) + 8px);
+}
+
+.admin-mobile-layout.ios .mobile-header {
+    top: env(safe-area-inset-top);
+    height: var(--mb-header-height);
+    padding-top: 0;
 }
 
 body.admin-overlay-open .admin-mobile-layout .mobile-content {
@@ -73,6 +82,7 @@ body.admin-overlay-open .admin-mobile-layout .mobile-content {
     flex: 1 1 0;
     min-width: 0;
     padding-inline: 4px;
+    min-height: 50px;
 }
 
 .admin-mobile-layout .mobile-bottom-nav-label {
@@ -91,25 +101,158 @@ body.admin-overlay-open .admin-mobile-layout .mobile-content {
     z-index: 9999;
 }
 
-/* Admin active = blue */
+/* Admin mobile operations deck */
+.admin-mobile-layout .mobile-header {
+    width: calc(100% - 14px);
+    top: 6px;
+    left: 7px;
+    right: 7px;
+    height: calc(var(--mb-header-height) - 12px);
+    border-radius: 0 0 18px 18px;
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--admin-ink, #102033);
+    box-shadow: 0 10px 26px -24px rgba(14, 165, 233, 0.16);
+    border: 1px solid rgba(14, 165, 233, 0.18);
+    backdrop-filter: blur(16px);
+}
+
+.admin-mobile-layout .mobile-header-content {
+    height: 100%;
+    padding-inline: 7px;
+    gap: 6px;
+}
+
+.admin-mobile-layout .mobile-header-btn {
+    border-radius: 12px;
+    background: rgba(14, 165, 233, 0.12);
+    color: var(--admin-ink, #102033);
+    box-shadow: none;
+}
+
+.admin-mobile-layout .mobile-header-title {
+    align-items: center;
+    text-align: center;
+}
+
+.admin-mobile-layout .mobile-header-kicker {
+    color: var(--admin-champagne, #2563eb);
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.admin-mobile-layout .mobile-header-heading {
+    color: var(--admin-ink, #102033);
+    font-size: 13px;
+    font-weight: 950;
+    letter-spacing: -0.035em;
+    max-width: 58vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-mobile-layout .mobile-drawer {
+    width: min(86vw, 340px);
+    background: linear-gradient(180deg, #ffffff 0%, #e0f2fe 56%, #bae6fd 100%);
+    color: var(--admin-ink, #102033);
+    border-right: 1px solid rgba(14, 165, 233, 0.18);
+    box-shadow: 14px 0 38px -34px rgba(14, 165, 233, 0.16);
+}
+
+.admin-mobile-layout .mobile-overlay {
+    background: rgba(14, 165, 233, 0.16);
+    backdrop-filter: blur(4px);
+}
+
+.admin-mobile-layout .mobile-drawer-header.admin {
+    padding: calc(env(safe-area-inset-top,0px) + 12px) 12px 10px;
+    border-bottom: 1px solid rgba(14, 165, 233, 0.18);
+}
+
+.admin-mobile-layout .mobile-drawer-avatar {
+    background: rgba(14, 165, 233, 0.14);
+    color: var(--admin-ink, #102033);
+    box-shadow: none;
+}
+
+.admin-mobile-layout .mobile-drawer-name {
+    color: var(--admin-ink, #102033);
+    font-weight: 950;
+}
+
+.admin-mobile-layout .mobile-drawer-role,
+.admin-mobile-layout .mobile-drawer-subtitle {
+    color: var(--admin-ink, #102033);
+}
+
+.admin-mobile-layout .mobile-drawer-group-label {
+    padding: 11px 13px 5px;
+    color: var(--admin-ink, #102033);
+    font-size: 8px;
+    font-weight: 950;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.admin-mobile-layout .mobile-drawer-item {
+    margin-inline: 7px;
+    margin-bottom: 3px;
+    min-height: 40px;
+    border-radius: 13px;
+    color: var(--admin-ink, #102033);
+}
+
+.admin-mobile-layout .mobile-drawer-item-icon {
+    background: rgba(14, 165, 233, 0.11);
+    color: var(--admin-ink, #102033);
+}
+
 .admin-mobile-layout .mobile-drawer-item.active {
-    background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
-    color: #ffffff;
-    font-weight: var(--mb-font-semibold);
+    background: #ffffff;
+    color: var(--admin-ink, #102033);
+    font-weight: var(--mb-font-bold);
+    box-shadow: 0 10px 22px -20px rgba(14, 165, 233, 0.16);
+    border: 1px solid rgba(14, 165, 233, 0.22);
 }
 
 .admin-mobile-layout .mobile-drawer-item.active .mobile-drawer-item-icon {
-    background: rgba(255,255,255,0.14);
-    color: var(--mb-text-inverse);
+    background: rgba(14, 165, 233, 0.14);
+    color: var(--admin-ink, #102033);
+}
+
+.admin-mobile-layout .mobile-drawer-btn.profile,
+.admin-mobile-layout .mobile-drawer-btn.logout {
+    border-radius: 18px;
+}
+
+.admin-mobile-layout .mobile-bottom-nav {
+    left: 7px;
+    right: 7px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+    height: calc(var(--mb-bottom-nav-height) - 12px);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(14, 165, 233, 0.18);
+    box-shadow: 0 -8px 24px -22px rgba(14, 165, 233, 0.16), 0 14px 32px -28px rgba(14, 165, 233, 0.16);
+    backdrop-filter: blur(18px);
+    padding: 4px;
+}
+
+.mobile-bottom-nav.admin .mobile-bottom-nav-item {
+    border-radius: 13px;
 }
 
 .mobile-bottom-nav.admin .mobile-bottom-nav-item.active {
-    background: linear-gradient(135deg, rgba(29,78,216,0.14), rgba(16,185,129,0.12));
+    background: #ffffff;
+    box-shadow: 0 10px 22px -20px rgba(14, 165, 233, 0.16);
+    border: 1px solid rgba(14, 165, 233, 0.22);
 }
 
 .mobile-bottom-nav.admin .mobile-bottom-nav-item.active .mobile-bottom-nav-icon,
 .mobile-bottom-nav.admin .mobile-bottom-nav-item.active .mobile-bottom-nav-label {
-    color: var(--mb-admin);
+    color: var(--admin-ink, #102033);
 }
 
 /* Drawer animation */

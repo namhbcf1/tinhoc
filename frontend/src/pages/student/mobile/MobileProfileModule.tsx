@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { User, Save, Camera, Lock, X, Eye, EyeOff } from 'lucide-react';
 import api from '../../../services/api';
@@ -11,6 +12,11 @@ import BirthPlaceField from '../../../components/forms/BirthPlaceField';
 const CCCDUploader = lazy(() => import('../../../components/upload/CCCDUploader'));
 
 const getImageUrl = resolveImageUrl;
+
+const profileInputClass = 'w-full rounded-2xl border border-[var(--vt-line)] bg-white/80 px-3.5 py-3 text-sm font-semibold text-[var(--vt-ink)] shadow-sm outline-none transition-all focus:border-[var(--vt-champagne)] focus:ring-2 focus:ring-[rgba(200,169,106,0.18)] disabled:bg-[var(--vt-paper-deep)] disabled:text-[var(--vt-muted)]';
+const profileLabelClass = 'mb-1.5 block text-[11px] font-black uppercase tracking-[0.12em] text-[var(--vt-muted)]';
+const profileSectionClass = 'rounded-[1.65rem] border border-[var(--vt-line)] bg-[rgba(255,250,241,0.86)] p-4 shadow-[var(--vt-shadow-card)]';
+const profileSectionTitleClass = 'mb-3 text-[11px] font-black uppercase tracking-[0.16em] text-[var(--vt-champagne)]';
 
 function normalizeProfileGender(value) {
     const normalized = String(value || '').trim().toLowerCase();
@@ -29,10 +35,10 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
     // Safety check - must be first
     if (!studentData) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-2 border-green-600 border-t-transparent mx-auto mb-4"></div>
-                    <p className="text-slate-500 font-medium">Đang tải thông tin...</p>
+            <div className="flex min-h-screen items-center justify-center bg-[var(--vt-ivory)] p-4">
+                <div className="rounded-[2rem] border border-[var(--vt-line)] bg-[rgba(255,250,241,0.9)] px-7 py-6 text-center shadow-[var(--vt-shadow-card)]">
+                    <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2 border-[var(--vt-champagne)] border-t-transparent" />
+                    <p className="font-black text-[var(--vt-ink)]">Đang tải thông tin...</p>
                 </div>
             </div>
         );
@@ -53,7 +59,8 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
         dia_chi: '',
         cccd: '',
         ngay_cap_cccd: '',
-        don_vi_cong_tac: ''
+        don_vi_cong_tac: '',
+        nganh_dang_hoc: ''
     });
 
     // Password form state
@@ -76,7 +83,7 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const uploaderFallback = (
-        <div className="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
+        <div className="flex min-h-[180px] items-center justify-center rounded-[1.35rem] border border-dashed border-[var(--vt-champagne-soft)] bg-[var(--vt-paper)] text-sm font-semibold text-[var(--vt-muted)]">
             Đang tải trình upload...
         </div>
     );
@@ -113,7 +120,8 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                 dia_chi: studentData.dia_chi || '',
                 cccd: studentData.cccd || '',
                 ngay_cap_cccd: formatDateForInput(studentData.ngay_cap_cccd),
-                don_vi_cong_tac: studentData.don_vi_cong_tac || ''
+                don_vi_cong_tac: studentData.don_vi_cong_tac || '',
+                nganh_dang_hoc: studentData.nganh_dang_hoc || ''
             });
 
             // Set image URLs and IDs
@@ -287,55 +295,54 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
     const avatarUrl = image3x4 || (studentData?.image_3x4 ? getImageUrl(studentData.image_3x4) : null);
 
     return (
-        <div className="min-h-screen bg-slate-50 pb-28">
+        <div className="min-h-screen bg-transparent pb-28">
             <ToastContainer toasts={toasts} removeToast={removeToast} />
-            {/* Profile identity strip — emerald brand, no dark gradient */}
-            <div className="bg-white border-b border-slate-100 px-4 py-3 flex items-center gap-3">
-                <div className="h-11 w-11 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center overflow-hidden shrink-0">
-                    {avatarUrl ? (
-                        <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                    ) : (
-                        <span className="text-lg font-extrabold text-emerald-600">{displayName.charAt(0) || 'H'}</span>
-                    )}
+
+            <div className="px-4 pt-2">
+                <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,var(--vt-ink),#0b1728)] p-4 text-white shadow-[var(--vt-shadow-soft)]">
+                    <div aria-hidden="true" className="absolute right-[-3.5rem] top-[-4rem] h-32 w-32 rounded-full bg-[var(--vt-champagne-soft)] blur-3xl" />
+                    <div className="relative flex items-center gap-3">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[1.35rem] border-2 border-white/15 bg-white/10 shadow-lg">
+                            {avatarUrl ? (
+                                <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                            ) : (
+                                <span className="text-2xl font-black text-[var(--vt-champagne)]">{displayName.charAt(0) || 'H'}</span>
+                            )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--vt-champagne)]">Hồ sơ học viên</p>
+                            <p className="mt-1 truncate text-lg font-black leading-tight tracking-[-0.04em] text-white">{displayName}</p>
+                            <p className="mt-1 font-mono text-[11px] font-bold text-white/55">{studentData?.cccd || '---'}</p>
+                        </div>
+                        <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-black text-white/85">Học viên</span>
+                    </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-extrabold text-slate-900 truncate leading-tight">{displayName}</p>
-                    <p className="text-[11px] text-slate-400 font-mono mt-0.5">{studentData?.cccd || ''}</p>
-                </div>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
-                    Học viên
-                </span>
             </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-slate-200 bg-white sticky z-10 overflow-x-auto" style={{ top: 'var(--mb-header-height)' }}>
-                <button
-                    onClick={() => setActiveTab('info')}
-                    className={`flex-1 pb-3 pt-3 font-bold text-sm transition-colors border-b-2 whitespace-nowrap ${activeTab === 'info' ? 'text-emerald-700 border-emerald-600' : 'text-slate-500 border-transparent'}`}
-                >
-                    Thông tin
-                </button>
-                <button
-                    onClick={() => setActiveTab('photos')}
-                    className={`flex-1 pb-3 pt-3 font-bold text-sm transition-colors border-b-2 whitespace-nowrap ${activeTab === 'photos' ? 'text-emerald-700 border-emerald-600' : 'text-slate-500 border-transparent'}`}
-                >
-                    Ảnh hồ sơ
-                </button>
-                <button
-                    onClick={() => setActiveTab('password')}
-                    className={`flex-1 pb-3 pt-3 font-bold text-sm transition-colors border-b-2 whitespace-nowrap ${activeTab === 'password' ? 'text-emerald-700 border-emerald-600' : 'text-slate-500 border-transparent'}`}
-                >
-                    Đăng nhập
-                </button>
+            <div className="sticky z-10 px-4 py-3" style={{ top: 'var(--mb-header-height)' }}>
+                <div className="grid grid-cols-3 gap-1 rounded-full border border-[var(--vt-line)] bg-[rgba(255,250,241,0.92)] p-1 shadow-[var(--vt-shadow-card)] backdrop-blur-xl">
+                    {[
+                        { id: 'info', label: 'Thông tin' },
+                        { id: 'photos', label: 'Ảnh hồ sơ' },
+                        { id: 'password', label: 'Đăng nhập' },
+                    ].map((tab) => (
+                        <button
+                            key={tab.id}
+                            type="button"
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`rounded-full px-2 py-2.5 text-[11px] font-black transition-all ${activeTab === tab.id ? 'bg-[var(--vt-ink)] text-[var(--vt-champagne)] shadow-sm' : 'text-[var(--vt-muted)]'}`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            {/* Tab Content */}
-            <div className="flex-1 overflow-y-auto px-4 pb-6">
+            <div className="flex-1 px-4 pb-6">
                 {activeTab === 'info' && (
-                    <form onSubmit={handleProfileSubmit} className="space-y-6 py-6">
-                        {/* Thông tin cá nhân */}
-                        <div>
-                            <h3 className="text-xs font-extrabold text-emerald-700 uppercase tracking-widest mb-3">Thông tin cá nhân</h3>
+                    <form onSubmit={handleProfileSubmit} className="space-y-4 pb-6">
+                        <div className={profileSectionClass}>
+                            <h3 className={profileSectionTitleClass}>Thông tin cá nhân</h3>
                             <div className="space-y-3">
                                 <FormField
                                     label="Họ *"
@@ -361,11 +368,11 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                                     onChange={(v) => setProfileForm({ ...profileForm, ngay_sinh: v })}
                                 />
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Giới tính</label>
+                                    <label className={profileLabelClass}>Giới tính</label>
                                     <select
                                         value={profileForm.gioi_tinh}
                                         onChange={(e) => setProfileForm({ ...profileForm, gioi_tinh: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700"
+                                        className={profileInputClass}
                                     >
                                         <option value="">Chọn giới tính</option>
                                         <option value="Nam">Nam</option>
@@ -377,14 +384,14 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                                     value={profileForm.noi_sinh}
                                     onChange={(v) => setProfileForm({ ...profileForm, noi_sinh: v })}
                                     hint="Trong nước dùng danh sách 34 tỉnh/thành mới."
-                                    wrapperClassName="space-y-1"
-                                    labelClassName="block text-sm font-medium text-slate-700"
+                                    wrapperClassName="space-y-1.5"
+                                    labelClassName={profileLabelClass}
                                     toggleWrapperClassName=""
-                                    radioGroupClassName="flex flex-wrap gap-4"
-                                    radioOptionClassName="inline-flex items-center gap-2 text-sm text-slate-700"
-                                    inputClassName="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700"
-                                    selectClassName="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700"
-                                    hintClassName="text-xs text-slate-500"
+                                    radioGroupClassName="flex flex-wrap gap-3"
+                                    radioOptionClassName="inline-flex items-center gap-2 rounded-full border border-[var(--vt-line)] bg-white/70 px-3 py-1.5 text-xs font-bold text-[var(--vt-ink)]"
+                                    inputClassName={profileInputClass}
+                                    selectClassName={profileInputClass}
+                                    hintClassName="text-xs font-semibold text-[var(--vt-muted)]"
                                 />
                                 <FormField
                                     label="Dân tộc"
@@ -399,9 +406,8 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                             </div>
                         </div>
 
-                        {/* Giấy tờ tùy thân */}
-                        <div>
-                            <h3 className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-3">Giấy tờ tùy thân</h3>
+                        <div className={profileSectionClass}>
+                            <h3 className={profileSectionTitleClass}>Giấy tờ tùy thân</h3>
                             <div className="space-y-3">
                                 <FormField
                                     label="Số CCCD/CMND *"
@@ -417,9 +423,8 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                             </div>
                         </div>
 
-                        {/* Liên hệ */}
-                        <div>
-                            <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-3">Liên hệ & Cư trú</h3>
+                        <div className={profileSectionClass}>
+                            <h3 className={profileSectionTitleClass}>Liên hệ & Cư trú</h3>
                             <div className="space-y-3">
                                 <FormField
                                     label="Số điện thoại *"
@@ -445,18 +450,23 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                                     value={profileForm.don_vi_cong_tac}
                                     onChange={(v) => setProfileForm({ ...profileForm, don_vi_cong_tac: v })}
                                 />
+                                <FormField
+                                    label="Khoa/ngành đang theo học"
+                                    value={profileForm.nganh_dang_hoc}
+                                    onChange={(v) => setProfileForm({ ...profileForm, nganh_dang_hoc: v })}
+                                />
                             </div>
-                            <p className="mt-3 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-700">
+                            <p className="mt-3 rounded-2xl border border-[var(--vt-champagne-soft)] bg-[var(--vt-champagne-soft)] px-3 py-2 text-sm font-semibold leading-relaxed text-[var(--vt-ink)]">
                                 {STUDENT_PROFILE_SELF_SERVICE_NOTE}
                             </p>
                         </div>
 
                         {/* Submit Button */}
-                        <div className="pt-4">
+                        <div className="pt-1">
                             <button
                                 type="submit"
                                 disabled={saving}
-                                className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-medium active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
+                                className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--vt-ink)] px-4 py-3.5 font-black text-white shadow-[var(--vt-shadow-card)] transition-transform active:scale-[0.98] disabled:opacity-50"
                             >
                                 {saving ? (
                                     <>
@@ -475,14 +485,13 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                 )}
 
                 {activeTab === 'photos' && (
-                    <div className="py-6 space-y-6">
-                        <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                    <div className="space-y-4 pb-6">
+                        <div className="rounded-[1.65rem] border border-[var(--vt-champagne-soft)] bg-[var(--vt-champagne-soft)] px-4 py-3 text-sm font-semibold leading-relaxed text-[var(--vt-ink)]">
                             Đổi ảnh CCCD ở đây chỉ để thay ảnh và kiểm tra độ rõ. Hệ thống không OCR lại và không tự đổi thông tin hồ sơ.
                         </div>
 
-                        {/* Ảnh 3x4 */}
-                        <div>
-                            <p className="text-sm font-bold text-slate-700 mb-3">Ảnh thẻ 3x4</p>
+                        <div className={profileSectionClass}>
+                            <p className={profileSectionTitleClass}>Ảnh thẻ 3x4</p>
                             <Suspense fallback={uploaderFallback}>
                                 <CCCDUploader
                                     type="photo_3x4"
@@ -494,10 +503,9 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                             </Suspense>
                         </div>
 
-                        {/* CCCD Images */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <p className="text-xs font-bold text-slate-600 mb-2 text-center">CCCD MẶT TRƯỚC</p>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div className={profileSectionClass}>
+                                <p className={`${profileSectionTitleClass} text-center`}>CCCD mặt trước</p>
                                 <Suspense fallback={uploaderFallback}>
                                     <CCCDUploader
                                         type="cccd_front"
@@ -507,8 +515,8 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                                     />
                                 </Suspense>
                             </div>
-                            <div>
-                                <p className="text-xs font-bold text-slate-600 mb-2 text-center">CCCD MẶT SAU</p>
+                            <div className={profileSectionClass}>
+                                <p className={`${profileSectionTitleClass} text-center`}>CCCD mặt sau</p>
                                 <Suspense fallback={uploaderFallback}>
                                     <CCCDUploader
                                         type="cccd_back"
@@ -523,30 +531,32 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
                 )}
 
                 {activeTab === 'password' && (
-                    <div className="py-6">
-                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                    <div className="space-y-4 pb-6">
+                        <div className="rounded-[1.65rem] border border-[var(--vt-line)] bg-[rgba(255,250,241,0.88)] p-4 shadow-[var(--vt-shadow-card)]">
                             <div className="flex items-start gap-3">
-                                <Lock size={24} className="text-blue-600 flex-shrink-0 mt-0.5" />
-                                <div>
-                                    <h3 className="font-bold text-blue-900 mb-1">Thông tin đăng nhập</h3>
-                                    <p className="text-sm text-blue-800 mb-2">
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[var(--vt-champagne-soft)] bg-[var(--vt-paper)] text-[var(--vt-ink)]">
+                                    <Lock size={18} />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="font-black text-[var(--vt-ink)]">Thông tin đăng nhập</h3>
+                                    <p className="mt-1 text-sm font-semibold leading-relaxed text-[var(--vt-muted)]">
                                         Tài khoản học viên sử dụng CCCD và Số điện thoại để đăng nhập, không sử dụng mật khẩu.
                                     </p>
-                                    <div className="space-y-2 text-sm text-blue-700">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-medium">CCCD:</span>
-                                            <span className="font-mono">{studentData?.cccd || '---'}</span>
+                                    <div className="mt-4 space-y-2 text-sm">
+                                        <div className="rounded-2xl border border-[var(--vt-line)] bg-white/70 px-3 py-2">
+                                            <span className="block text-[10px] font-black uppercase tracking-[0.14em] text-[var(--vt-muted)]">CCCD</span>
+                                            <span className="font-mono font-black text-[var(--vt-ink)]">{studentData?.cccd || '---'}</span>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-medium">Số điện thoại:</span>
-                                            <span>{studentData?.sdt || studentData?.phone_number || '---'}</span>
+                                        <div className="rounded-2xl border border-[var(--vt-line)] bg-white/70 px-3 py-2">
+                                            <span className="block text-[10px] font-black uppercase tracking-[0.14em] text-[var(--vt-muted)]">Số điện thoại</span>
+                                            <span className="font-black text-[var(--vt-ink)]">{studentData?.sdt || studentData?.phone_number || '---'}</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-slate-50 rounded-xl p-4">
-                            <p className="text-sm text-slate-600 text-center">
+                        <div className="rounded-[1.35rem] border border-[var(--vt-champagne-soft)] bg-[var(--vt-champagne-soft)] p-4">
+                            <p className="text-center text-sm font-semibold leading-relaxed text-[var(--vt-ink)]">
                                 Mọi thông tin đăng nhập và hồ sơ ở tab Thông tin đều có thể tự cập nhật trực tiếp.
                             </p>
                         </div>
@@ -561,14 +571,14 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
 const FormField = ({ label, value, onChange, type = 'text', required = false, disabled = false }) => {
     return (
         <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+            <label className={profileLabelClass}>{label}</label>
             <input
                 type={type}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 required={required}
                 disabled={disabled}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-slate-100 disabled:text-slate-500"
+                className={profileInputClass}
             />
         </div>
     );

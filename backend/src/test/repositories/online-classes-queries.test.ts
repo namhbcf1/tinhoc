@@ -20,14 +20,14 @@ import {
 } from '../../lib/repositories/online-classes.js';
 
 // ─── Tiện ích: không được dùng SELECT * (ngoại trừ COUNT(*)) ────────────────
-const expectNoSelectStarQuery = (sql) => {
+const expectNoSelectStarQuery = (sql: string) => {
   if (sql.toUpperCase().includes('SELECT') && !sql.toUpperCase().includes('COUNT(*)')) {
     expect(sql).not.toMatch(/SELECT\s+\*\s+FROM/i);
   }
 };
 
 // ─── Helpers tạo dữ liệu thật ───────────────────────────────────────────────
-async function seedClass(db, overrides = {}) {
+async function seedClass(db: D1Database, overrides: Record<string, unknown> = {}) {
   return insertClass(db, {
     class_name: 'Lớp Test Online',
     description: 'Mô tả lớp test',
@@ -41,7 +41,7 @@ async function seedClass(db, overrides = {}) {
   });
 }
 
-async function seedStudent(db, overrides = {}) {
+async function seedStudent(db: D1Database, overrides: Record<string, string> = {}) {
   const cccd = overrides.cccd ?? '012345678901';
   await db.prepare(`
     INSERT OR IGNORE INTO students
@@ -66,7 +66,7 @@ async function seedStudent(db, overrides = {}) {
 }
 
 // ─── Setup: tạo bảng nếu chưa có ──────────────────────────────────────────
-async function setupTables(db) {
+async function setupTables(db: D1Database) {
   await db.prepare(`
     CREATE TABLE IF NOT EXISTS admins (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -151,7 +151,7 @@ async function setupTables(db) {
 }
 
 // ─── Xoá dữ liệu sau mỗi test ───────────────────────────────────────────────
-async function cleanTables(db) {
+async function cleanTables(db: D1Database) {
   await db.prepare('DELETE FROM online_class_enrollments').run();
   await db.prepare('DELETE FROM online_classes').run();
   await db.prepare('DELETE FROM students').run();

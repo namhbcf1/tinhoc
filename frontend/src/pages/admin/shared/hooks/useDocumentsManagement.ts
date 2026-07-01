@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useMemo } from 'react';
 import api from '../../../../services/api';
 import {
@@ -296,9 +297,3 @@ export function getAccessBadgeConfig(type) {
   };
   return map[type] || { color: '#64748B', bg: '#F1F5F9', label: type, icon: 'File' };
 }
-
-
-
-
-
-

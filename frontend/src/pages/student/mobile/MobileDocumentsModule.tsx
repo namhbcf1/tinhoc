@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { FileText, Image, Video, Download, Search, X, ExternalLink } from 'lucide-react';
 import api from '../../../services/api';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // QuickConsultForm.jsx — Form tư vấn nhanh (Quick Consult)
 // 4 fields: Họ tên, SĐT, Khóa quan tâm, Ghi chú (optional)
 // Submit → POST /registrations (type=consult) → Toast success

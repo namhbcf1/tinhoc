@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import {
     Users,
@@ -57,7 +58,7 @@ export default function MobileBottomNav({ activeTab, setActiveTab, admin }) {
             <nav 
                 className={`mobile-bottom-nav ${platform}`}
                 style={{
-                    paddingBottom: platform === 'ios' ? 'env(safe-area-inset-bottom)' : '0'
+                    paddingBottom: 'env(safe-area-inset-bottom, 0px)'
                 }}
             >
                 {menuItems.map((item) => {

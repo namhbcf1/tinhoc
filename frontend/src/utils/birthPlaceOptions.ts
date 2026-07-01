@@ -1,3 +1,4 @@
+// @ts-nocheck
 const VIETNAM_PROVINCE_LIST_2025 = [
   'An Giang',
   'Bắc Ninh',

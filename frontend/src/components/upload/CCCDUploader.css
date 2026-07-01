@@ -99,6 +99,25 @@
     padding: 20px 16px 18px;
     position: relative;
     text-align: center;
+    flex: 1;
+    min-height: 280px;
+}
+
+.upload-idle-guide .upload-idle-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.upload-idle-guide .upload-idle-info .upload-idle-desc {
+    margin-bottom: 8px;
+}
+
+.upload-idle-guide .upload-idle-info .upload-idle-actions {
+    margin-top: auto;
+    justify-content: center;
 }
 
 .upload-template-preview {
@@ -127,6 +146,16 @@
     display: block;
     opacity: 0.75;
     transition: opacity 0.2s;
+}
+
+.template-preview-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e5e7eb;
+    color: #9ca3af;
 }
 
 .upload-trigger:hover .template-preview-img {
@@ -455,7 +484,8 @@
 
 .btn-preview-view,
 .btn-preview-change,
-.btn-preview-select {
+.btn-preview-select,
+.btn-preview-adjust {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -475,6 +505,12 @@
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
 
+.btn-preview-adjust {
+    background: rgba(37, 99, 235, 0.95);
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.24);
+}
+
 .btn-preview-select {
     background: rgba(37, 99, 235, 0.95);
     color: #fff;
@@ -483,6 +519,11 @@
 
 .btn-preview-select:hover {
     background: #1d4ed8;
+}
+
+.btn-preview-adjust:hover {
+    background: #1d4ed8;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
 }
 
 .btn-preview-view:hover {
@@ -1459,7 +1500,8 @@
 
     .preview-container.photo-type .btn-preview-view,
     .preview-container.photo-type .btn-preview-change,
-    .preview-container.photo-type .btn-preview-select {
+    .preview-container.photo-type .btn-preview-select,
+    .preview-container.photo-type .btn-preview-adjust {
         justify-content: center;
         min-height: 40px;
         border-radius: 10px;
@@ -1578,5 +1620,135 @@
     .photo-selection-dialog-header,
     .full-preview-header {
         padding-top: max(14px, env(safe-area-inset-top, 14px));
+    }
+}
+
+@media (max-width: 768px) {
+    .upload-idle-guide {
+        min-height: 0;
+        padding: 14px;
+        align-items: stretch;
+        text-align: left;
+    }
+
+    .upload-idle-guide .upload-idle-info {
+        align-items: stretch;
+    }
+
+    .upload-idle-guide .upload-idle-info .upload-idle-actions {
+        margin-top: 10px;
+        justify-content: stretch;
+    }
+
+    .cccd-type .upload-template-preview {
+        width: min(190px, 62vw);
+        height: auto;
+        aspect-ratio: 1.585 / 1;
+        margin: 0 auto;
+    }
+
+    .photo-type .upload-template-preview {
+        width: 86px;
+        height: 116px;
+        margin: 0 auto;
+    }
+
+    .upload-idle-desc {
+        margin: 0;
+        text-align: center;
+        font-size: 12px;
+    }
+
+    .upload-idle-checklist {
+        display: none;
+    }
+
+    .upload-mobile-tip {
+        margin: 8px 0 0;
+    }
+
+    .upload-idle-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        width: 100%;
+    }
+
+    .photo-mobile-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .upload-idle-action {
+        justify-content: center;
+        min-height: 40px;
+        padding: 8px 10px;
+        border-radius: 8px;
+    }
+
+    .upload-idle-guide.cccd-type {
+        display: grid;
+        grid-template-columns: 112px minmax(0, 1fr);
+        align-items: center;
+        gap: 12px;
+    }
+
+    .upload-idle-guide.cccd-type .upload-template-preview {
+        width: 112px;
+        height: 72px;
+        margin: 0;
+    }
+
+    .upload-idle-guide.cccd-type .upload-idle-desc {
+        text-align: left;
+        margin-bottom: 8px;
+    }
+
+    .upload-idle-guide.cccd-type .upload-idle-actions {
+        margin-top: 0;
+    }
+
+    .upload-idle-guide.photo-type {
+        padding: 12px 14px;
+    }
+
+    .upload-idle-guide.photo-type .upload-template-preview {
+        width: 70px;
+        height: 94px;
+    }
+
+    .upload-idle-guide.photo-type .upload-idle-desc {
+        font-size: 11.5px;
+        line-height: 1.45;
+    }
+
+    .upload-idle-guide.photo-type .upload-mobile-tip {
+        font-size: 11.5px;
+        line-height: 1.4;
+        padding: 8px 9px;
+    }
+
+    .preview-container {
+        padding: 10px;
+    }
+
+    .preview-frame {
+        min-height: 156px;
+    }
+
+    .preview-container.cccd-type img {
+        max-height: 148px;
+    }
+
+    .preview-bottom-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .btn-preview-view,
+    .btn-preview-change,
+    .btn-preview-select,
+    .btn-preview-adjust {
+        justify-content: center;
+        min-height: 38px;
     }
 }

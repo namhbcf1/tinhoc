@@ -1,432 +1,278 @@
+/* ==============================
+   ImageEditor — clean, modern design
+   ============================== */
+
 .image-editor-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100vw;
-    height: 100vh;
-    background:
-        radial-gradient(circle at top, rgba(16, 185, 129, 0.12), transparent 30%),
-        radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.1), transparent 28%),
-        rgba(3, 7, 18, 0.88);
-    backdrop-filter: blur(14px);
-    z-index: 999999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    overflow: auto;
+  --image-editor-vh: 100dvh;
+  --image-editor-vw: 100vw;
+  --image-editor-safe-top: env(safe-area-inset-top, 0px);
+  --image-editor-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --image-editor-padding: clamp(10px, 2vw, 20px);
+
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(10px);
+  z-index: 999999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--image-editor-padding);
+  padding-top: max(var(--image-editor-padding), var(--image-editor-safe-top));
+  padding-bottom: max(var(--image-editor-padding), var(--image-editor-safe-bottom));
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
+/* --- Content panel --- */
 .image-editor-content {
-    width: 100%;
-    max-width: clamp(760px, 88vw, 1180px);
-    max-height: min(92vh, 980px);
-    background: linear-gradient(180deg, #07111f 0%, #020617 100%);
-    border-radius: 24px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    box-shadow: 0 24px 90px rgba(2, 6, 23, 0.58);
+  width: 100%;
+  max-width: min(720px, calc(var(--image-editor-vw) - (var(--image-editor-padding) * 2)));
+  background: #fff;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(0, 0, 0, 0.08);
+  margin: auto 0;
 }
 
+/* --- Header --- */
 .image-editor-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 16px 24px 12px;
-    background: linear-gradient(180deg, rgba(2, 6, 23, 0.96) 0%, rgba(2, 6, 23, 0.78) 100%);
-    color: white;
-    z-index: 10;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-    flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fafafa;
+  flex-shrink: 0;
 }
 
-.image-editor-header-copy {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 0;
-}
-
-.image-editor-eyebrow {
-    display: inline-flex;
-    align-items: center;
-    width: fit-content;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: rgba(16, 185, 129, 0.12);
-    border: 1px solid rgba(16, 185, 129, 0.22);
-    color: #a7f3d0;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-}
-
-.image-editor-title-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.image-editor-header h3 {
-    margin: 0;
-    font-size: clamp(18px, 2vw, 24px);
-    line-height: 1.1;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-}
-
-.image-editor-subtitle {
-    margin: 0;
-    max-width: 780px;
-    color: rgba(226, 232, 240, 0.82);
-    font-size: 14px;
-    line-height: 1.5;
-}
-
-.image-editor-status-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 88px;
-    padding: 7px 12px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    background: rgba(255, 255, 255, 0.08);
-    color: #f8fafc;
-}
-
-.image-editor-status-badge.status-detected {
-    background: rgba(16, 185, 129, 0.16);
-    border-color: rgba(16, 185, 129, 0.28);
-    color: #d1fae5;
-}
-
-.image-editor-status-badge.status-checking {
-    background: rgba(59, 130, 246, 0.16);
-    border-color: rgba(59, 130, 246, 0.28);
-    color: #dbeafe;
-}
-
-.image-editor-status-badge.status-manual {
-    background: rgba(249, 115, 22, 0.18);
-    border-color: rgba(249, 115, 22, 0.28);
-    color: #ffedd5;
+.image-editor-header-copy h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  letter-spacing: -0.01em;
 }
 
 .editor-close-btn {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: white;
-    width: 44px;
-    height: 44px;
-    flex-shrink: 0;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
 }
 
 .editor-close-btn:hover {
-    background: rgba(255, 255, 255, 0.16);
+  background: #f3f4f6;
+  color: #111827;
 }
 
-.editor-action-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-    transform: none;
-    box-shadow: none;
-}
-
-.image-editor-stage-summary {
-    display: flex;
-    align-items: stretch;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px 24px 0;
-    background: linear-gradient(180deg, rgba(2, 6, 23, 0.72) 0%, rgba(2, 6, 23, 0) 100%);
-}
-
-.image-editor-guidance-card {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-width: 720px;
-    padding: 10px 14px;
-    border-radius: 14px;
-    background: rgba(15, 23, 42, 0.74);
-    border: 1px solid rgba(148, 163, 184, 0.14);
-}
-
-.image-editor-guidance-label {
-    color: #93c5fd;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.image-editor-guidance-card p {
-    margin: 0;
-    color: rgba(241, 245, 249, 0.9);
-    font-size: 14px;
-    line-height: 1.45;
-}
-
-.image-editor-telemetry {
-    display: flex;
-    align-items: center;
-    align-content: flex-start;
-    justify-content: flex-end;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.image-editor-telemetry span {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 12px;
-    border-radius: 999px;
-    background: rgba(15, 23, 42, 0.68);
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    color: rgba(226, 232, 240, 0.88);
-    font-size: 12px;
-    font-weight: 600;
-}
-
+/* --- Canvas area --- */
 .image-editor-canvas-container {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-    min-height: 280px;
-    max-height: calc(min(92vh, 980px) - 420px);
-    margin: 14px 24px 16px;
-    border-radius: 22px;
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    background:
-        linear-gradient(180deg, rgba(15, 23, 42, 0.3) 0%, rgba(2, 6, 23, 0.2) 100%),
-        radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 34%),
-        #000;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.06),
-        0 12px 40px rgba(2, 6, 23, 0.28);
+  position: relative;
+  width: 100%;
+  height: clamp(220px, calc(var(--image-editor-vh) * 0.42), 420px);
+  background: #111827;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
-.image-editor-canvas-container::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+.image-editor-canvas-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: #9ca3af;
+  font-size: 14px;
 }
 
-.image-editor-canvas-container::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.3);
+.image-editor-canvas-hint {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.45));
+  pointer-events: none;
 }
 
-.image-editor-canvas-container::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
+/* --- Toolbar (zoom + rotate) --- */
+.image-editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+  flex-shrink: 0;
 }
 
-.image-editor-canvas-container::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
+.image-editor-tool-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.image-editor-canvas {
-    display: block;
-    margin: auto;
-    max-width: 100%;
-    max-height: 100%;
-    cursor: grab;
+.image-editor-divider {
+  width: 1px;
+  height: 24px;
+  background: #e5e7eb;
 }
 
-.image-editor-canvas-container:active .image-editor-canvas {
-    cursor: grabbing;
+.editor-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
 }
 
-.image-editor-controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 0 24px 12px;
-    background: transparent;
-    border-top: none;
-    flex-wrap: wrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    flex-shrink: 0;
+.editor-tool-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #d1d5db;
 }
 
-.image-editor-controls::-webkit-scrollbar {
-    display: none;
+.editor-tool-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
-.editor-btn {
-    flex-shrink: 0;
-    min-width: 80px;
-    min-height: 64px;
-    padding: 10px 8px;
-    border-radius: 14px;
-    background: rgba(15, 23, 42, 0.78);
-    border: 1px solid rgba(148, 163, 184, 0.16);
-    color: white;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
+.editor-tool-btn:active:not(:disabled) {
+  background: #e5e7eb;
 }
 
-.editor-btn:hover {
-    background: rgba(30, 41, 59, 0.92);
-    border-color: rgba(148, 163, 184, 0.28);
-    transform: translateY(-1px);
+.image-editor-zoom-label {
+  min-width: 40px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  font-variant-numeric: tabular-nums;
 }
 
-.editor-btn:active {
-    transform: scale(0.95);
-    background: rgba(255, 255, 255, 0.2);
+/* --- Error --- */
+.image-editor-error {
+  padding: 10px 16px;
+  margin: 0 16px;
+  font-size: 13px;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
 }
 
-.editor-btn.active {
-    background: rgba(249, 115, 22, 0.2);
-    border-color: rgba(249, 115, 22, 0.42);
-    color: #ffedd5;
-}
-
-.editor-btn svg {
-    width: 20px;
-    height: 20px;
-}
-
-.editor-btn-label {
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    color: rgba(226, 232, 240, 0.9);
-}
-
+/* --- Action buttons --- */
 .image-editor-actions {
-    display: flex;
-    gap: 12px;
-    padding: 0 24px 20px;
-    padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
-    background: transparent;
-    border-top: none;
-    flex-shrink: 0;
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  background: #fafafa;
+  flex-shrink: 0;
 }
 
 .editor-action-btn {
-    flex: 1;
-    padding: 16px 22px;
-    border-radius: 18px;
-    font-size: 15px;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    min-height: 56px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+}
+
+.editor-action-btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .cancel-btn {
-    background: rgba(15, 23, 42, 0.82);
-    color: white;
-    border: 1px solid rgba(148, 163, 184, 0.18);
+  background: #f3f4f6;
+  color: #374151;
 }
 
-.cancel-btn:hover {
-    background: rgba(30, 41, 59, 0.92);
+.cancel-btn:hover:not(:disabled) {
+  background: #e5e7eb;
 }
 
 .confirm-btn {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
+  background: #10b981;
+  color: #fff;
 }
 
-.confirm-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 24px rgba(16, 185, 129, 0.24);
+.confirm-btn:hover:not(:disabled) {
+  background: #059669;
 }
 
-.confirm-btn:active {
-    transform: translateY(0);
+.confirm-btn:disabled,
+.cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-/* Desktop only - Mobile uses separate ImageEditorMobile component */
+/* --- Mobile adjustments --- */
+@media (max-width: 640px) {
+  .image-editor-modal {
+    align-items: flex-start;
+    padding: 8px;
+    padding-top: 8px;
+  }
 
-@media (max-width: 1024px) {
-    .image-editor-content {
-        max-width: 94vw;
-    }
+  .image-editor-content {
+    border-radius: 14px;
+  }
 
-    .image-editor-stage-summary {
-        flex-direction: column;
-    }
+  .image-editor-canvas-container {
+    height: clamp(200px, 45vw, 300px);
+  }
 
-    .image-editor-telemetry {
-        justify-content: flex-start;
-    }
-}
+  .editor-action-btn {
+    height: 44px;
+    font-size: 15px;
+  }
 
-@media (max-width: 768px) {
-    .image-editor-modal {
-        padding: 12px;
-    }
+  .editor-tool-btn {
+    height: 36px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
 
-    .image-editor-content {
-        border-radius: 20px;
-    }
-
-    .image-editor-header {
-        padding: 14px 18px 12px;
-    }
-
-    .image-editor-stage-summary {
-        padding: 8px 18px 0;
-    }
-
-    .image-editor-canvas-container {
-        min-height: 220px;
-        max-height: calc(100vh - 360px);
-        margin: 12px 18px 14px;
-        border-radius: 18px;
-    }
-
-    .image-editor-controls {
-        padding: 0 18px 12px;
-        justify-content: flex-start;
-    }
-
-    .editor-btn {
-        min-width: 70px;
-        min-height: 60px;
-    }
-
-    .image-editor-actions {
-        padding: 0 18px 16px;
-    }
+  .image-editor-toolbar {
+    padding: 8px 12px;
+    gap: 12px;
+  }
 }

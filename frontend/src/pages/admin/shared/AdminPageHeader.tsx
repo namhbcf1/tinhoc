@@ -20,10 +20,11 @@ export function AdminPageHeader({
 }: AdminPageHeaderProps) {
   return (
     <div className="admin-header admin-header-split">
-      <div className="min-w-0">
+      <div className="admin-header-main min-w-0">
         <div className={`admin-header-copy ${align === 'center' ? 'admin-header-copy-center' : ''}`}>
+          <div className="admin-header-kicker">Vận hành học viện</div>
           <h1>
-            {Icon ? <Icon size={30} /> : null}
+            {Icon ? <span className="admin-header-icon"><Icon size={26} strokeWidth={2.5} /></span> : null}
             {title}
           </h1>
           {description ? <p>{description}</p> : null}

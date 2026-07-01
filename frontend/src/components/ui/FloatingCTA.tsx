@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Phone, X } from 'lucide-react';
+import { Phone, X, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
@@ -30,19 +30,28 @@ export default function FloatingCTA({ showAfter = 500 }) {
     return (
         <>
             {/* Main Floating Button */}
-            <div className="fixed bottom-24 right-6 z-40 flex flex-col gap-3">
+            <div className="fixed bottom-20 right-4 sm:bottom-24 sm:right-6 z-40 flex flex-col gap-3">
                 {/* Expanded Options */}
                 {isExpanded && (
-                    <div className="flex flex-col gap-2 animate-in slide-in-from-bottom">
+                    <div className="flex flex-col gap-3 animate-in slide-in-from-bottom">
+                        <a
+                            href="https://zalo.me/0339244566"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-white text-blue-700 px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all font-bold text-sm flex items-center gap-2 whitespace-nowrap"
+                        >
+                            <MessageCircle size={16} />
+                            Tư vấn Zalo
+                        </a>
                         <Link
                             to="/register"
                             className="bg-white text-green-700 px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all font-bold text-sm flex items-center gap-2 whitespace-nowrap"
                         >
-                            📝 Đăng ký học
+                            📝 Đăng ký học viên
                         </Link>
                         <a
                             href="tel:0962445963"
-                            className="bg-white text-blue-700 px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all font-bold text-sm flex items-center gap-2 whitespace-nowrap"
+                            className="bg-white text-emerald-700 px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all font-bold text-sm flex items-center gap-2 whitespace-nowrap"
                         >
                             <Phone size={16} />
                             096 244 5963

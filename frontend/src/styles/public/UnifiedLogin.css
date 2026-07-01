@@ -1,5 +1,5 @@
 .unified-login-page {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -203,6 +203,54 @@
   background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.vt-login-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 78% 16%, rgba(200, 169, 106, 0.2), transparent 28%),
+    radial-gradient(circle at 16% 90%, rgba(29, 111, 95, 0.12), transparent 32%);
+}
+
+.vt-login-page .bg-green-50,
+.vt-login-page .bg-blue-50 {
+  background-color: rgba(255, 250, 241, 0.9);
+  border-color: var(--vt-line);
+}
+
+.vt-login-page .text-green-700,
+.vt-login-page .text-blue-700,
+.vt-login-page .text-green-600,
+.vt-login-page .text-blue-600 {
+  color: var(--vt-emerald);
+}
+
+.vt-login-page .border-green-200,
+.vt-login-page .border-blue-100,
+.vt-login-page .border-green-100 {
+  border-color: var(--vt-champagne-soft);
+}
+
+.vt-login-page .bg-green-100 {
+  background-color: var(--vt-champagne-soft);
+}
+
+.vt-login-page main label,
+.vt-login-page main h1,
+.vt-login-page main h2 {
+  color: var(--vt-ink);
+}
+
+.vt-login-page input[type='checkbox'] {
+  accent-color: var(--vt-emerald);
+}
+
+.vt-login-page [role='dialog'] > div {
+  background: linear-gradient(145deg, rgba(255, 250, 241, 0.98), rgba(255, 255, 255, 0.94));
+  border: 1px solid var(--vt-line);
 }
 
 @media (max-width: 768px) {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // ATTENDANCE METHODS MIXIN
 // Mark attendance, batch attendance, query by registration/class

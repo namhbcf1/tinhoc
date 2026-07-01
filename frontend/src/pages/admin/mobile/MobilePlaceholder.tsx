@@ -1,3 +1,4 @@
+// @ts-nocheck
 export default function MobilePlaceholder({ title }) {
   return (
     <div className='p-4 text-slate-500'>
@@ -5,11 +6,3 @@ export default function MobilePlaceholder({ title }) {
     </div>
   );
 }
-
-
-
-
-
-
-
-

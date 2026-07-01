@@ -29,15 +29,13 @@ export default function FullPreview({ type, preview, label, onClose, onRetake }:
                     {type !== 'photo_3x4' ? (
                         <ul>
                             <li>Đúng mặt ({type === 'cccd_front' ? 'mặt có ảnh & số CCCD' : 'mặt có mã QR'})?</li>
-                            <li>Nhìn rõ 4 góc CCCD?</li>
-                            <li>Chữ số CCCD đọc được không?</li>
-                            <li>Ảnh không bị mờ, tối hay chói?</li>
+                            <li>Ảnh rõ, không bị mờ hay tối?</li>
+                            <li>Ảnh không bị lệch hay méo?</li>
                         </ul>
                     ) : (
                         <ul>
-                            <li>Phông nền trắng/sáng?</li>
                             <li>Khuôn mặt rõ, nhìn thẳng?</li>
-                            <li>Không đeo kính màu?</li>
+                            <li>Ảnh rõ, không bị mờ hay tối?</li>
                             <li>Ảnh trong 6 tháng gần nhất?</li>
                         </ul>
                     )}

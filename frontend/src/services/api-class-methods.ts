@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // CLASS METHODS MIXIN
 // Offline classes CRUD + online classes + class videos

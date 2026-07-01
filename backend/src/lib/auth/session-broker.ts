@@ -111,7 +111,7 @@ export function buildSessionUser(session: Pick<
 function buildJwtPayload(
   session: ActiveSessionRecord,
   audience: SessionAudience,
-  expiresAtSeconds: number,
+  expiresAtSeconds: number | null,  // null = no expiry (student tokens)
 ) {
   const payload: JWTPayload = {
     id: session.user_id,
@@ -131,8 +131,12 @@ function buildJwtPayload(
     ho_ten: session.display_name || undefined,
     display_name: session.display_name || undefined,
     iat: Math.floor(Date.now() / 1000),
-    exp: expiresAtSeconds,
   };
+
+  // Student tokens never expire. Admin tokens have standard TTL.
+  if (expiresAtSeconds !== null) {
+    payload.exp = expiresAtSeconds;
+  }
 
   return payload;
 }
@@ -229,7 +233,10 @@ export async function issueSessionToken(
     throw new Error('Không thể tạo auth session');
   }
 
-  const expiresAtSeconds = Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60;
+  const isStudent = principal.userType === 'student';
+  const expiresAtSeconds = isStudent
+    ? null  // Student tokens never expire
+    : Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60;
   const token = await generateJWT(buildJwtPayload(session, audience, expiresAtSeconds), env.JWT_SECRET);
   await touchSession(db, session.sid);
 

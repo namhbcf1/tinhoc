@@ -9,10 +9,18 @@
             "ESNext"
         ],
         "types": [
+            "node",
             "@cloudflare/workers-types"
         ]
     },
     "include": [
         "src/**/*"
+    ],
+    "exclude": [
+        "src/**/*.test.ts",
+        "src/test/repositories/**/*",
+        "src/test/routes/**/*",
+        "src/test/setup-real-db.*",
+        "src/test/services/online-classes-*.test.*"
     ]
 }

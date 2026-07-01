@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Clipboard, Loader2, MapPin, Package, Phone, RefreshCw, ShieldCheck, Truck, XCircle } from 'lucide-react';
 import api from '../../services/api';

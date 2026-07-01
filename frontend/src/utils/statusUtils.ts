@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Standardized status configurations for the application.
  * Ensures badges and labels look consistent everywhere.

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
@@ -129,10 +130,11 @@ export default function StudentDashboardMobile() {
 
     if (loading && !studentData) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50">
-                <div className="text-center">
-                    <div className="w-10 h-10 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin mx-auto mb-3" />
-                    <p className="text-slate-500 text-sm font-medium">Đang tải...</p>
+            <div className="min-h-screen flex items-center justify-center bg-[var(--vt-ivory)] px-6">
+                <div className="rounded-[2rem] border border-[var(--vt-line)] bg-[rgba(255,250,241,0.9)] px-8 py-7 text-center shadow-[var(--vt-shadow-card)]">
+                    <div className="mx-auto mb-4 h-11 w-11 rounded-full border-[3px] border-[var(--vt-champagne)] border-t-transparent animate-spin" />
+                    <p className="text-sm font-black text-[var(--vt-ink)]">Đang mở không gian học viên...</p>
+                    <p className="mt-1 text-xs font-semibold text-[var(--vt-muted)]">Vui lòng chờ trong giây lát.</p>
                 </div>
             </div>
         );

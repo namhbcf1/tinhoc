@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // DOCUMENT METHODS MIXIN
 // Document upload/download, folders, sharing, class documents

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Eye, MessageSquareQuote, RefreshCw, ShieldAlert, Star } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';

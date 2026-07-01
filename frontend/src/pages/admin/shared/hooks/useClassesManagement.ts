@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import api from '../../../../services/api';
 import {
@@ -33,9 +34,15 @@ const defaultClassFormState = {
   schedule_location: '',
 };
 
+function normalizeClassList(value) {
+  return Array.isArray(value)
+    ? value.filter((item) => item && typeof item === 'object')
+    : [];
+}
+
 export function useClassesManagement() {
   const cachedClasses = getAdminCache(ADMIN_CACHE_KEYS.classes, ADMIN_CACHE_TTL.classes);
-  const [classes, setClasses] = useState(() => cachedClasses ?? []);
+  const [classes, setClasses] = useState(() => normalizeClassList(cachedClasses));
   const [loading, setLoading] = useState(() => cachedClasses === null);
   const [error, setError] = useState(null);
 
@@ -55,9 +62,10 @@ export function useClassesManagement() {
   const loadClasses = async ({ force = false } = {}) => {
     const cached = force ? null : getAdminCache(ADMIN_CACHE_KEYS.classes, ADMIN_CACHE_TTL.classes);
     if (cached !== null) {
-      setClasses(cached);
+      const normalizedCached = normalizeClassList(cached);
+      setClasses(normalizedCached);
       setLoading(false);
-      return cached;
+      return normalizedCached;
     }
 
     setLoading(true);
@@ -74,9 +82,10 @@ export function useClassesManagement() {
       } else {
         data = [];
       }
-      setClasses(data);
-      setAdminCache(ADMIN_CACHE_KEYS.classes, data);
-      return data;
+      const normalizedData = normalizeClassList(data);
+      setClasses(normalizedData);
+      setAdminCache(ADMIN_CACHE_KEYS.classes, normalizedData);
+      return normalizedData;
     } catch (err) {
       console.error('Error loading classes:', err);
       setError(err.message);

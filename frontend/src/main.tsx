@@ -1,12 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { HelmetProvider } from 'react-helmet-async';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { initViewportFix } from './utils/viewportFix';
 import { initAnalytics } from './utils/analytics-init';
 import { initAdaptiveViewport } from './utils/deviceDetection';
 import './index.css';
 import App from './App';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/query-client';
@@ -82,16 +82,12 @@ const rootEl = document.getElementById('root');
 if (!rootEl) throw new Error('[vantrangedu] Root element #root not found in DOM');
 ReactDOM.createRoot(rootEl).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <HelmetProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
         <LanguageProvider>
           <App />
         </LanguageProvider>
-      </HelmetProvider>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );
-
-// Dispatch render-event after React mounts — used by vite-plugin-prerender (Puppeteer)
-// to know when to take the HTML snapshot for static prerendering
-document.dispatchEvent(new Event('render-event'));

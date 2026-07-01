@@ -32,7 +32,6 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "hono": "^4.12.3",
-    "vantrangedu-api": "file:",
     "xlsx-js-style": "^1.2.0",
     "zod": "^4.3.6"
   },

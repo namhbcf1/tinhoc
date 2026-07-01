@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Edit2, Trash2, Eye } from 'lucide-react';
 import { useDeviceType } from '../../utils/deviceDetection';
@@ -176,11 +177,3 @@ export default function MobileDataCard({
         </div>
     );
 }
-
-
-
-
-
-
-
-

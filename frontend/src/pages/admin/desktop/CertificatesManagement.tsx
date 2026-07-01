@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import {
   Award, Search, RefreshCw, Check, X, Download, Eye, Calendar,

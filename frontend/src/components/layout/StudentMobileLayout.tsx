@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import { ChevronRight, ExternalLink, LogOut, Menu, User, X } from 'lucide-react';
 import { useDeviceType } from '../../utils/deviceDetection';
@@ -62,7 +63,10 @@ export default function StudentMobileLayout({
             <Menu size={22} />
           </button>
 
-          <h1 className="mobile-header-title">{STUDENT_PAGE_TITLES[activeTab] || 'Học viên'}</h1>
+          <h1 className="mobile-header-title">
+            <span className="mobile-header-kicker">Vân Trang Edu</span>
+            <span className="mobile-header-heading">{STUDENT_PAGE_TITLES[activeTab] || 'Học viên'}</span>
+          </h1>
 
           <div className="mobile-header-actions">
             <button

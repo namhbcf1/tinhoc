@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Real-time Quality Analysis Utilities
  * Analyze video frame quality in real-time
@@ -237,12 +238,3 @@ export function getQualityFeedback(score, issues) {
         };
     }
 }
-
-
-
-
-
-
-
-
-

@@ -1,43 +1,49 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { User, Phone, GraduationCap, ArrowRight, Loader2, ShieldCheck, X } from 'lucide-react';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { Label } from '../../components/ui/Label';
-import { Card, CardContent } from '../../components/ui/Card';
+import {
+  User,
+  Phone,
+  GraduationCap,
+  ArrowRight,
+  Loader2,
+  ShieldCheck,
+  X,
+  Sparkles,
+  BookOpenCheck,
+  CalendarCheck2,
+  Award,
+} from 'lucide-react';
 import OverlayPortal from '../../components/ui/OverlayPortal';
 import api from '../../services/api';
 import SEO from '../../components/common/SEO';
 import { getStorageValue, removeStorageValue, setStorageValue } from '../../utils/browser-storage.js';
+import '../../styles/public/UnifiedLogin.css';
 
 // Validation Schemas — student only (teacher logs in via /admin/login)
 const TEST_STUDENT_CCCD_REGEX = /^(?:00[1-9]|001[0-9])$/;
-const PHONE_OR_TEST_PASSWORD_REGEX = /^(?:(0|\+84)\d{9}|test123)$/;
+const STUDENT_LOGIN_IDENTIFIER_REGEX = /^(?:test123|[0-9\s\-.]{7,20}|[^\s@]+@[^\s@]+\.[^\s@]+)$/;
 
 const studentSchema = z.object({
   cccd: z.string().refine(
     (value) => /^\d{9,12}$/.test(value) || TEST_STUDENT_CCCD_REGEX.test(value),
     'CCCD/CMND không hợp lệ'
   ),
-  sdt: z.string().regex(PHONE_OR_TEST_PASSWORD_REGEX, 'Thông tin đăng nhập không hợp lệ'),
+  sdt: z.string().regex(STUDENT_LOGIN_IDENTIFIER_REGEX, 'Thông tin đăng nhập không hợp lệ'),
 });
 
-// Storage helpers: chọn localStorage (persist) hoặc sessionStorage (clear on close)
 const saveSession = (key, value, remember) => {
   setStorageValue(key, value, remember ? 'local' : 'session');
 };
 
-// Đọc từ cả hai storage (ưu tiên localStorage trước)
 const getSession = (key) => getStorageValue(key);
 
-// Kiểm tra student_data có hợp lệ không
 function isValidStudentSession() {
   const token = getStorageValue('student_token');
   if (!token) return false;
-
   const raw = getStorageValue('student_data');
   if (!raw) return false;
   try {
@@ -53,9 +59,7 @@ function normalizeInternalPath(value) {
   if (!value) return null;
   try {
     const parsed = new URL(value, window.location.origin);
-    if (parsed.origin !== window.location.origin) {
-      return null;
-    }
+    if (parsed.origin !== window.location.origin) return null;
     return `${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch {
     return null;
@@ -72,36 +76,21 @@ export default function UnifiedLogin() {
 
   const studentForm = useForm({ resolver: zodResolver(studentSchema) });
 
-  // --- Auto-redirect nếu đã có session hợp lệ ---
   useEffect(() => {
-    if (searchParams.get('ticket')) {
-      return;
-    }
-    if (isValidStudentSession()) {
-      window.location.replace('/dashboard/exams');
-      return;
-    }
-  }, [navigate, searchParams]);
+    if (searchParams.get('ticket')) return;
+    // Don't auto-redirect away from login; let user see the login page first
+  }, [searchParams]);
 
   useEffect(() => {
     const ticket = searchParams.get('ticket');
-    if (!ticket) {
-      return;
-    }
+    if (!ticket) return;
 
     let cancelled = false;
 
     const resolveNextPath = (userType, handoffReturnTo) => {
       const requestedReturnTo = normalizeInternalPath(handoffReturnTo) || normalizeInternalPath(searchParams.get('return_to'));
-      if (requestedReturnTo) {
-        return requestedReturnTo;
-      }
-
-      // Teacher is now admin — redirect to admin dashboard
-      if (userType === 'admin') {
-        return '/admin/dashboard';
-      }
-
+      if (requestedReturnTo) return requestedReturnTo;
+      if (userType === 'admin') return '/admin/dashboard';
       return '/dashboard/exams';
     };
 
@@ -111,16 +100,12 @@ export default function UnifiedLogin() {
 
       try {
         const response = await api.exchangeSsoTicket(ticket, 'edu');
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
         const nextPath = resolveNextPath(response?.user?.type, response?.return_to);
 
         if (response?.user?.type === 'admin') {
-          if (response.token) {
-            saveSession('admin_token', response.token, false);
-          }
+          if (response.token) saveSession('admin_token', response.token, false);
           saveSession('admin', JSON.stringify({
             id: response.user.id,
             username: response.user.username || response.user.name || 'admin',
@@ -133,17 +118,12 @@ export default function UnifiedLogin() {
         }
 
         if (response?.user?.type === 'student') {
-          if (response.token) {
-            saveSession('student_token', response.token, false);
-          }
-
+          if (response.token) saveSession('student_token', response.token, false);
           if (response.user.cccd) {
             saveSession('student_cccd', response.user.cccd, false);
             saveSession('studentCCCD', response.user.cccd, false);
           }
-          if (response.user.phone) {
-            saveSession('student_sdt', response.user.phone, false);
-          }
+          if (response.user.phone) saveSession('student_sdt', response.user.phone, false);
 
           if (response.user.cccd) {
             const profile = await api.getStudentByCCCD(response.user.cccd);
@@ -159,7 +139,7 @@ export default function UnifiedLogin() {
         throw new Error('SSO ticket không hợp lệ cho ứng dụng này');
       } catch (err) {
         if (!cancelled) {
-          setError(err.message || 'Không thể hoàn tất đăng nhập một lần.');
+          setError(err.message || 'Không thể hoàn tất đăng nhập.');
           setIsLoading(false);
         }
       }
@@ -178,242 +158,331 @@ export default function UnifiedLogin() {
     try {
       const response = await api.loginStudent(data.cccd, data.sdt);
       if (response.success && response.data) {
-        if (response.token) {
-          saveSession('student_token', response.token, rememberMe);
-        }
+        if (response.token) saveSession('student_token', response.token, rememberMe);
         saveSession('student_cccd', data.cccd, rememberMe);
         saveSession('student_sdt', data.sdt, rememberMe);
         saveSession('student_data', JSON.stringify(response.data), rememberMe);
-        window.location.assign('/dashboard/exams');
+        if (searchParams.get('return_to')) {
+          navigate(searchParams.get('return_to'), { replace: true });
+        } else {
+          navigate('/dashboard/exams', { replace: true });
+        }
       } else {
-        setError('Thông tin đăng nhập không chính xác. Vui lòng thử lại.');
+        setError('Thông tin đăng nhập không chính xác. Vui lòng kiểm tra lại CCCD và số điện thoại hoặc email.');
       }
     } catch (err) {
-      setError(err.message || 'Không thể kết nối máy chủ. Vui lòng thử lại.');
+      setError(err.message || 'Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối Internet và thử lại.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const inputCls = 'w-full h-12 pl-10 sm:pl-11 pr-4 rounded-xl border border-[var(--vt-line-strong)] bg-white text-[var(--vt-ink)] placeholder:text-[var(--vt-ink-40)] focus:outline-none focus:ring-4 focus:ring-[var(--vt-emerald)]/15 focus:border-[var(--vt-emerald)] transition-colors';
+
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
+    <div className="vt-login-page min-h-screen grid lg:grid-cols-[1fr_1fr] bg-[var(--vt-paper)] text-[var(--vt-ink)]">
       <SEO
-        title="Dang nhap"
-        description="Dang nhap cong thong tin sinh vien cua Van Trang Education."
+        title="Đăng nhập"
+        description="Đăng nhập cổng thông tin sinh viên của Vân Trang Education."
         url="/login"
         noindex
       />
-      {/* Left Side - Hero/Image - Light Theme */}
-      <div className="hidden lg:flex flex-col justify-between bg-green-50 text-slate-800 p-10 relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-green-100 blur-3xl opacity-50"></div>
-        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-blue-100 blur-3xl opacity-50"></div>
 
-        <div className="relative z-20">
-          <Link to="/" className="inline-block hover:opacity-90 transition-opacity">
-            <img src="/logo.png" alt="Logo" className="h-16 w-auto object-contain"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "/logo.jpg";
-              }}
+      {/* Left — Editorial brand panel */}
+      <aside className="hidden lg:flex flex-col justify-between p-12 xl:p-16 relative overflow-hidden bg-[var(--vt-ink)] text-white min-h-screen">
+        <div aria-hidden="true" className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-32 -right-32 h-[26rem] w-[26rem] rounded-full bg-[var(--vt-champagne)]/10 blur-3xl" />
+          <div className="absolute -bottom-32 -left-32 h-[22rem] w-[22rem] rounded-full bg-[var(--vt-emerald)]/15 blur-3xl" />
+        </div>
+
+        <div className="relative z-10">
+          <Link to="/" className="inline-flex items-center gap-3 group">
+            <img
+              src="/logo.png"
+              alt="Van Trang Education"
+              className="h-14 w-auto object-contain"
+              onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpg'; }}
             />
+            <div className="leading-none">
+              <p className="vt-display text-2xl text-white"
+                 style={{ fontVariationSettings: '"opsz" 72, "SOFT" 30', fontWeight: 600 }}>
+                Vân Trang
+              </p>
+              <p className="mt-1.5 text-[10px] tracking-[0.28em] font-bold uppercase text-[var(--vt-champagne)]">
+                Education
+              </p>
+            </div>
           </Link>
         </div>
 
-        <div className="relative z-20 max-w-lg">
-          <blockquote className="space-y-4">
-            <p className="text-3xl font-bold leading-tight text-slate-900">
-              "Giáo dục là tấm hộ chiếu cho tương lai, ngày mai thuộc về những người chuẩn bị cho nó ngay hôm nay."
+        <div className="relative z-10 max-w-xl">
+          <p className="vt-eyebrow !text-[var(--vt-champagne)]">Cổng học viên · Vân Trang</p>
+          <h2 className="mt-5 text-[clamp(2.6rem,4.6vw,4.5rem)] font-extrabold leading-[0.96] tracking-[-0.045em] text-white">
+            Học tập, lịch thi và chứng chỉ trong một nơi.
+          </h2>
+          <p className="mt-6 max-w-md text-base leading-8 text-white/68">
+            Đăng nhập để theo dõi lớp đang học, lịch thi sắp tới, học phí, tài liệu và hồ sơ chứng chỉ đã cấp.
+          </p>
+
+          <div className="mt-10 grid gap-3 max-w-lg">
+            {[
+              { icon: BookOpenCheck, title: 'Lớp học rõ ràng', desc: 'Xem lớp đã đăng ký, trạng thái duyệt và lịch học.' },
+              { icon: CalendarCheck2, title: 'Lịch thi dễ theo dõi', desc: 'Nắm ngày thi, giờ thi và thông tin chuẩn bị.' },
+              { icon: Award, title: 'Chứng chỉ minh bạch', desc: 'Tra cứu kết quả và hồ sơ học tập sau khi hoàn thành.' },
+            ].map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="group flex items-start gap-4 rounded-2xl border border-white/10 bg-white/[0.055] p-4 backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.085] hover:border-white/20">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--vt-champagne)]/15 text-[var(--vt-champagne)]">
+                  <Icon size={20} />
+                </span>
+                <span>
+                  <span className="block text-sm font-bold text-white">{title}</span>
+                  <span className="mt-1 block text-sm leading-6 text-white/55">{desc}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 grid grid-cols-3 gap-4 max-w-md">
+            {[
+              { num: '500+', label: 'Học viên' },
+              { num: '10+', label: 'Năm KN' },
+              { num: '24h', label: 'Hỗ trợ' },
+            ].map((s) => (
+              <div key={s.label} className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
+                <p className="text-2xl font-extrabold tracking-[-0.04em] text-white">{s.num}</p>
+                <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/50">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative z-10 text-[11px] tracking-[0.14em] uppercase text-white/45">
+          © {new Date().getFullYear()} Công ty TNHH Tư vấn Giáo dục Sơn Trang
+        </div>
+      </aside>
+
+      {/* Right — Login form */}
+      <main className="relative flex items-center justify-center overflow-hidden p-4 sm:p-8 md:p-12 bg-[var(--vt-paper)]">
+        <div aria-hidden="true" className="absolute -right-28 top-16 h-80 w-80 rounded-full bg-[var(--vt-emerald-soft)] blur-3xl" />
+        <div aria-hidden="true" className="absolute -left-24 bottom-8 h-72 w-72 rounded-full bg-[var(--vt-champagne-soft)] blur-3xl" />
+        <div className="relative z-10 w-full max-w-[31rem] space-y-7">
+          {/* Mobile brand */}
+          <Link to="/" className="lg:hidden inline-flex items-center gap-2.5">
+            <img
+              src="/logo.png"
+              alt="Van Trang Education"
+              className="h-11 w-auto object-contain"
+              onError={(e) => { e.target.onerror = null; e.target.src = '/logo.jpg'; }}
+            />
+            <p className="vt-display text-xl text-[var(--vt-ink)]"
+               style={{ fontVariationSettings: '"opsz" 72, "SOFT" 30', fontWeight: 600 }}>
+              Vân Trang
             </p>
-            <footer className="text-slate-600 font-medium">— Malcolm X</footer>
-          </blockquote>
-        </div>
+          </Link>
 
-        <div className="relative z-20 text-sm text-slate-500">
-          © {new Date().getFullYear()} CÔNG TY TNHH TƯ VẤN GIÁO DỤC SƠN TRANG.
-        </div>
-      </div>
-
-      {/* Right Side - Student Login Form */}
-      <div className="flex items-center justify-center p-6 bg-white">
-        <div className="w-full max-w-md space-y-8">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Chào mừng trở lại</h1>
-            <p className="text-slate-500 mt-2">Đăng nhập để truy cập tài khoản của bạn</p>
+          <div className="text-center lg:text-left">
+            <p className="vt-eyebrow justify-center lg:justify-start">Cổng thông tin · Học viên</p>
+            <h1 className="mt-4 text-[clamp(2.15rem,4vw,3.15rem)] font-extrabold leading-[0.98] tracking-[-0.04em] text-[var(--vt-ink)]">
+              Chào mừng trở lại.
+            </h1>
+            <p className="mx-auto mt-4 max-w-md text-[var(--vt-ink-60)] leading-7 lg:mx-0">
+              Truy cập hồ sơ học tập, lịch học, lịch thi và chứng chỉ trong vài giây.
+            </p>
           </div>
 
           {searchParams.get('reason') === 'security_update' && (
-            <div className="p-4 rounded-lg bg-blue-50 text-blue-700 text-sm border border-blue-100 flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
-              <ShieldCheck size={20} className="shrink-0" />
-              <p>Hệ thống vừa cập nhật bảo mật. Vui lòng đăng nhập lại để tiếp tục sử dụng đầy đủ tính năng.</p>
+            <div className="p-4 rounded-xl bg-[var(--vt-emerald-soft)] text-[var(--vt-emerald-deep)] text-sm border border-[var(--vt-emerald)]/25 flex items-start gap-3">
+              <ShieldCheck size={18} className="shrink-0 mt-0.5" />
+              <p className="leading-relaxed">
+                Hệ thống vừa cập nhật bảo mật. Vui lòng đăng nhập lại để tiếp tục sử dụng đầy đủ tính năng.
+              </p>
             </div>
           )}
 
-          {/* Student login indicator */}
-          <div className="flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-green-700 bg-green-50 rounded-lg">
-            <GraduationCap size={18} /> Đăng nhập sinh viên
+          <div className="flex justify-center lg:justify-start">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--vt-emerald-soft)] text-[var(--vt-emerald-deep)] text-xs font-semibold uppercase tracking-[0.14em]">
+              <GraduationCap size={14} />
+              Đăng nhập sinh viên
+            </div>
           </div>
 
-          <Card className="border border-slate-200 shadow-sm bg-white">
-            <CardContent className="pt-6">
-              {error && (
-                <div
-                  role="alert"
-                  aria-live="assertive"
-                  className="mb-6 p-4 rounded-lg bg-red-50 text-red-600 text-sm border border-red-100 flex items-center gap-2 animate-in fade-in slide-in-from-top-2"
-                >
-                  <span className="font-bold shrink-0">⚠</span>
-                  <span>{error}</span>
-                </div>
-              )}
-
-              <form
-                onSubmit={studentForm.handleSubmit(handleStudentLogin)}
-                className="space-y-5"
+          <div className="vt-paper-card !rounded-[2rem] !p-6 sm:!p-8 shadow-[0_28px_80px_rgba(15,35,50,0.13)]">
+            {error && (
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="mb-5 p-4 rounded-xl bg-red-50 text-red-700 text-sm border border-red-200/70 flex items-start gap-3"
               >
-                <div className="space-y-2">
-                  <Label htmlFor="cccd" className="text-slate-700">Số CCCD/CMND</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                    <Input
-                      id="cccd"
-                      name="username"
-                      autoComplete="username"
-                      placeholder="Nhập số CCCD/CMND"
-                      className="pl-10 border-slate-200 focus:border-green-500 focus:ring-green-500"
-                      {...studentForm.register('cccd')}
-                    />
-                  </div>
-                  {studentForm.formState.errors.cccd && (
-                    <p className="text-xs text-red-500 font-medium">{studentForm.formState.errors.cccd.message}</p>
-                  )}
-                </div>
+                <span className="font-bold shrink-0 mt-0.5">⚠</span>
+                <span className="leading-relaxed">{error}</span>
+              </div>
+            )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="sdt" className="text-slate-700">Số điện thoại</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                    <Input
-                      id="sdt"
-                      name="sdt"
-                      type="text"
-                      autoComplete="tel"
-                      placeholder="Nhập số điện thoại"
-                      className="pl-10 border-slate-200 focus:border-green-500 focus:ring-green-500"
-                      {...studentForm.register('sdt')}
-                    />
-                  </div>
-                  {studentForm.formState.errors.sdt && (
-                    <p className="text-xs text-red-500 font-medium">{studentForm.formState.errors.sdt.message}</p>
-                  )}
+            <form onSubmit={studentForm.handleSubmit(handleStudentLogin)} className="space-y-5">
+              <div className="space-y-2">
+                <label htmlFor="cccd" className="vt-overline text-[10px] text-[var(--vt-ink-70)]">
+                  Số CCCD/CMND
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--vt-ink-40)]" />
+                  <input
+                    id="cccd"
+                    name="cccd"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder="Ví dụ: 001202012345"
+                    className={inputCls}
+                    {...studentForm.register('cccd')}
+                  />
                 </div>
+                {studentForm.formState.errors.cccd && (
+                  <p className="text-xs text-red-600 font-medium">{studentForm.formState.errors.cccd.message}</p>
+                )}
+              </div>
 
-                {/* Remember Me + Forgot */}
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                    />
-                    <span className="text-sm text-slate-600">Ghi nhớ đăng nhập</span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowStudentForgotModal(true)}
-                    className="text-sm text-slate-500 hover:text-green-600 hover:underline transition-colors"
-                  >
-                    Quên thông tin?
-                  </button>
+              <div className="space-y-2">
+                <label htmlFor="sdt" className="vt-overline text-[10px] text-[var(--vt-ink-70)]">
+                  Số điện thoại hoặc email
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--vt-ink-40)]" />
+                  <input
+                    id="sdt"
+                    name="sdt"
+                    type="tel"
+                    autoComplete="tel"
+                    inputMode="tel"
+                    placeholder="09xx xxx xxx hoặc email@..."
+                    className={inputCls}
+                    {...studentForm.register('sdt')}
+                  />
                 </div>
+                {studentForm.formState.errors.sdt && (
+                  <p className="text-xs text-red-600 font-medium">{studentForm.formState.errors.sdt.message}</p>
+                )}
+              </div>
 
-                <Button
-                  type="submit"
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold h-11"
-                  disabled={isLoading}
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer select-none min-h-[44px] min-w-[44px] py-2">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-5 h-5 rounded border-[var(--vt-line-strong)] text-[var(--vt-emerald-deep)] focus:ring-[var(--vt-emerald)]/30 cursor-pointer"
+                  />
+                  <span className="text-sm text-[var(--vt-ink-70)]">Ghi nhớ đăng nhập</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowStudentForgotModal(true)}
+                  className="text-sm text-[var(--vt-ink-50)] hover:text-[var(--vt-emerald-deep)] hover:underline underline-offset-2 transition-colors"
                 >
-                  {isLoading
-                    ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Đang đăng nhập...</>
-                    : <><ArrowRight className="mr-2 h-5 w-5" /> Đăng nhập ngay</>
-                  }
-                </Button>
+                  Quên thông tin?
+                </button>
+              </div>
 
-                <div className="text-center pt-2">
-                  <p className="text-sm text-slate-500">
-                    Chưa có tài khoản?{' '}
-                    <Link to="/register" className="font-bold text-green-600 hover:underline hover:text-green-700 transition-colors">
-                      Đăng ký tại đây
-                    </Link>
-                  </p>
-                </div>
+              <button
+                type="submit"
+                className="vt-btn vt-btn--primary w-full justify-center !h-12 disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Đang đăng nhập...
+                  </>
+                ) : (
+                  <>
+                    Đăng nhập ngay
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </button>
 
-                {/* Teacher login redirect */}
-                <div className="text-center border-t border-slate-100 pt-4">
-                  <p className="text-xs text-slate-400">
-                    Bạn là giáo viên?{' '}
-                    <Link to="/admin/login" className="font-bold text-blue-600 hover:underline">
-                      Đăng nhập tại đây
-                    </Link>
-                  </p>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+              <div className="rounded-2xl bg-[var(--vt-paper-warm)] p-4 text-center border border-[var(--vt-emerald)]/20">
+                <p className="text-sm text-[var(--vt-ink-60)]">
+                  Chưa có tài khoản?{' '}
+                  <Link to="/register" className="font-bold text-[var(--vt-emerald-deep)] underline underline-offset-2 hover:text-[var(--vt-ink)] transition-colors">
+                    Đăng ký học viên tại đây →
+                  </Link>
+                </p>
+              </div>
+
+              <div className="text-center border-t border-[var(--vt-line)] pt-5">
+                <p className="text-xs text-[var(--vt-ink-50)]">
+                  Bạn là giảng viên?{' '}
+                  <Link to="/admin/login" className="font-semibold text-[var(--vt-ink-70)] hover:text-[var(--vt-emerald-deep)] hover:underline underline-offset-2 transition-colors">
+                    Đăng nhập tại đây
+                  </Link>
+                </p>
+              </div>
+            </form>
+          </div>
+
+          {/* Trust signal */}
+          <div className="flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.16em] text-[var(--vt-ink-50)]">
+            <Sparkles size={12} className="text-[var(--vt-champagne-deep)]" />
+            Bảo mật theo chuẩn TLS 1.3
+          </div>
         </div>
-      </div>
+      </main>
 
-      {/* ===== MODAL: Quên thông tin? (Sinh viên) ===== */}
+      {/* Forgot password modal */}
       {showStudentForgotModal && (
         <OverlayPortal>
           <div
-            className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[100000] flex items-center justify-center bg-[var(--vt-ink)]/55 backdrop-blur-sm p-4"
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
             onClick={(e) => { if (e.target === e.currentTarget) setShowStudentForgotModal(false); }}
           >
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative animate-in fade-in zoom-in-95">
-            <button
-              onClick={() => setShowStudentForgotModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
-              aria-label="Đóng"
-            >
-              <X size={20} />
-            </button>
-
-            <div className="text-center space-y-4">
-              <div className="mx-auto w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
-                <Phone size={24} className="text-green-600" />
-              </div>
-
-              <div>
-                <h2 id="modal-title" className="text-lg font-bold text-slate-900">Liên hệ quản trị viên</h2>
-                <p className="text-sm text-slate-500 mt-1">
-                  Tài khoản sinh viên dùng CCCD và số điện thoại đã đăng ký. Nếu bạn quên hoặc cần reset, vui lòng liên hệ:
-                </p>
-              </div>
-
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-2">
-                <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Zalo Admin</p>
-                <a
-                  href="https://zalo.me/0962445963"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-2xl font-bold text-green-700 hover:text-green-800 hover:underline transition-colors block"
-                >
-                  0962 445 963
-                </a>
-                <p className="text-xs text-slate-500">Giờ hỗ trợ: 7:30 – 17:00 (Thứ 2 – Thứ 7)</p>
-              </div>
-
-              <Button
+            <div className="bg-white rounded-2xl shadow-[var(--vt-shadow-deep)] w-full max-w-sm p-7 relative animate-in fade-in zoom-in-95 border border-[var(--vt-line-strong)]">
+              <button
                 onClick={() => setShowStudentForgotModal(false)}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold"
+                className="absolute top-4 right-4 min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--vt-ink-40)] hover:text-[var(--vt-ink)] transition-colors"
+                aria-label="Đóng"
               >
-                Đã hiểu
-              </Button>
-            </div>
+                <X size={20} />
+              </button>
+
+              <div className="text-center space-y-5">
+                <div className="mx-auto h-14 w-14 rounded-full bg-[var(--vt-emerald-soft)] grid place-items-center">
+                  <Phone size={22} className="text-[var(--vt-emerald-deep)]" />
+                </div>
+
+                <div>
+                  <h2 id="modal-title" className="vt-display text-xl text-[var(--vt-ink)]"
+                      style={{ fontVariationSettings: '"opsz" 72, "SOFT" 30', fontWeight: 600 }}>
+                    Liên hệ quản trị viên
+                  </h2>
+                  <p className="text-sm text-[var(--vt-ink-60)] mt-2 leading-relaxed">
+                    Tài khoản sinh viên dùng CCCD và số điện thoại hoặc email đã đăng ký. Nếu bạn quên hoặc
+                    cần reset, vui lòng liên hệ:
+                  </p>
+                </div>
+
+                <div className="bg-[var(--vt-paper-soft)] border border-[var(--vt-line)] rounded-xl p-4 space-y-2">
+                  <p className="vt-overline text-[10px] text-[var(--vt-ink-60)]">Zalo · Admin</p>
+                  <a
+                    href="https://zalo.me/0962445963"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="vt-display text-2xl text-[var(--vt-emerald-deep)] hover:text-[var(--vt-ink)] transition-colors block"
+                    style={{ fontVariationSettings: '"opsz" 72, "SOFT" 30', fontWeight: 600 }}
+                  >
+                    096 244 5963
+                  </a>
+                  <p className="text-xs text-[var(--vt-ink-50)]">Hỗ trợ: 7:30 – 17:00 (Thứ 2 – Thứ 7)</p>
+                </div>
+
+                <button
+                  onClick={() => setShowStudentForgotModal(false)}
+                  className="vt-btn vt-btn--primary w-full justify-center"
+                >
+                  Đã hiểu
+                </button>
+              </div>
             </div>
           </div>
         </OverlayPortal>

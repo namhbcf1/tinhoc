@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../../services/api';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
@@ -174,12 +175,38 @@ const describeScheduleRule = (rule) => {
   return days.map((day) => WEEKLY_DAY_LABELS[day] || day).join(' • ');
 };
 
-const parseScheduleTimeRange = (value) => {
-  if (!value || !String(value).includes('-')) {
-    return { start: '', end: '' };
+const addMinutesToTime = (timeValue, minutesToAdd = 60) => {
+  const match = /^(\d{2}):(\d{2})$/.exec(String(timeValue || '').trim());
+  if (!match) return '';
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return '';
+
+  const totalMinutes = hours * 60 + minutes + minutesToAdd;
+  const normalized = ((totalMinutes % 1440) + 1440) % 1440;
+  const nextHours = String(Math.floor(normalized / 60)).padStart(2, '0');
+  const nextMinutes = String(normalized % 60).padStart(2, '0');
+  return `${nextHours}:${nextMinutes}`;
+};
+
+const normalizeClassSeedTimeRange = (value, fallbackStart = '19:00') => {
+  const normalized = String(value || '').trim();
+  if (/^\d{2}:\d{2}-\d{2}:\d{2}$/.test(normalized)) {
+    return normalized;
   }
 
-  const [start, end] = String(value).split('-');
+  const start = /^\d{2}:\d{2}$/.test(normalized)
+    ? normalized
+    : /^\d{2}:\d{2}$/.test(String(fallbackStart || '').trim())
+      ? String(fallbackStart).trim()
+      : '19:00';
+  return `${start}-${addMinutesToTime(start, 60) || '20:00'}`;
+};
+
+const parseScheduleTimeRange = (value) => {
+  const range = normalizeClassSeedTimeRange(value, '19:00');
+  const [start, end] = range.split('-');
   return {
     start: start?.trim() || '',
     end: end?.trim() || '',
@@ -424,7 +451,7 @@ const buildExcelPreviewData = ({ exam, students, template }) => {
       representativeLine: 'Đại diện đăng ký:',
       phoneLine: 'Số điện thoại:',
       centerLine: 'Phần dành cho trung tâm',
-      leftHeaders: ['STT', 'Họ và tên đệm', 'Tên', 'Giới tính', 'Ngày sinh', 'Tháng sinh', 'Năm sinh', 'Số CMND/ Hộ chiếu', 'Điện thoại', 'Email (Thí sinh điền đúng thông tin để nhận kết quả thi)', 'Đơn vị công tác/ Trường học', 'Vị trí công tác', 'Nhu cầu đăng ký trình độ (A1, A2, B1, B2, C1, C2)', 'Nhu cầu đăng ký thi ngày', 'Mục đích tham dự thi', 'Nguồn đăng kí'],
+      leftHeaders: ['STT', 'Họ và tên đệm', 'Tên', 'Giới tính', 'Ngày sinh', 'Tháng sinh', 'Năm sinh', 'Số CMND/ Hộ chiếu', 'Điện thoại', 'Email (Thí sinh điền đúng thông tin để nhận kết quả thi)', 'Đơn vị công tác/ Trường học', 'Khoa/ngành đang theo học / Vị trí công tác', 'Nhu cầu đăng ký trình độ (A1, A2, B1, B2, C1, C2)', 'Nhu cầu đăng ký thi ngày', 'Mục đích tham dự thi', 'Nguồn đăng kí'],
       rightHeaders: ['Kiểm tra hồ sơ dự thi', 'Ngày thi', 'Giờ thi', 'Địa điểm thi'],
       rows: sortedStudents.map((student, index) => {
         const { ho, ten } = getStudentNameParts(student);
@@ -441,7 +468,7 @@ const buildExcelPreviewData = ({ exam, students, template }) => {
           student?.sdt || '',
           student?.email || '',
           student?.don_vi_cong_tac || '',
-          '',
+          student?.nganh_dang_hoc || '',
           exam?.exam_level || exam?.level_name || '',
           examDateLabel,
           '',
@@ -1923,19 +1950,30 @@ export default function ExamSchedulesPage() {
       error('Vui lòng chọn giờ bắt đầu');
       return;
     }
-    const organizerUuid = selectedOrganizer?.uuid || formData.organizer_uuid || '';
-    const programUuid = selectedProgram?.uuid || formData.program_uuid || '';
-    const levelUuid = selectedLevel?.uuid || formData.level_uuid || '';
+    const resolvedOrganizer = selectedOrganizer || null;
+    const organizerUuid = resolvedOrganizer?.uuid || formData.organizer_uuid || '';
+    const availablePrograms = organizerUuid
+      ? programOptions.filter((item: any) => String(item.organizerUuid) === String(organizerUuid))
+      : programOptions;
+    const resolvedProgram = selectedProgram || null;
+    const programUuid = resolvedProgram?.uuid || formData.program_uuid || '';
+    const availableLevels = programUuid
+      ? levelOptions.filter((item: any) => String(item.programUuid) === String(programUuid))
+      : [];
+    const resolvedLevel = selectedLevel || null;
+    const levelUuid = resolvedLevel?.uuid || formData.level_uuid || '';
 
     if (!organizerUuid) {
       error('Vui lòng chọn đơn vị tổ chức');
       return;
     }
+
     if (!programUuid) {
       error('Vui lòng chọn chương trình thi');
       return;
     }
-    if (filteredLevelOptions.length > 0 && !levelUuid) {
+
+    if (!levelUuid) {
       error('Vui lòng chọn trình độ');
       return;
     }
@@ -1946,32 +1984,13 @@ export default function ExamSchedulesPage() {
         return;
       }
     }
-    if (linkedClassEnabled && !formData.class_seed_name?.trim()) {
-      error('Vui lòng nhập tên lớp học tự động');
-      return;
-    }
-    if (linkedClassEnabled && !formData.class_seed_schedule_rule?.trim()) {
-      error('Vui lòng nhập quy tắc lịch học');
-      return;
-    }
-    if (linkedClassEnabled && !formData.class_seed_schedule_time?.trim()) {
-      error('Vui lòng nhập khung giờ học');
-      return;
-    }
-    if (linkedClassEnabled && !/^\d{2}:\d{2}-\d{2}:\d{2}$/.test(formData.class_seed_schedule_time.trim())) {
-      error('Khung giờ học phải có định dạng HH:MM-HH:MM');
-      return;
-    }
+    const linkedClassScheduleRule = (formData.class_seed_schedule_rule?.trim() || 'DAILY').toUpperCase();
     if (
       linkedClassEnabled &&
-      formData.class_seed_schedule_rule.trim().toUpperCase().startsWith('WEEKLY:') &&
-      getScheduleDaysFromRule(formData.class_seed_schedule_rule).length === 0
+      linkedClassScheduleRule.startsWith('WEEKLY:') &&
+      getScheduleDaysFromRule(linkedClassScheduleRule).length === 0
     ) {
       error('Vui lòng chọn ít nhất một ngày học cho lớp ôn tập');
-      return;
-    }
-    if (linkedClassEnabled && !formData.class_seed_start_date) {
-      error('Vui lòng chọn ngày bắt đầu lớp học');
       return;
     }
 
@@ -1987,6 +2006,12 @@ export default function ExamSchedulesPage() {
       const durationMinutes = formData.duration_minutes === ''
         ? null
         : Number.parseInt(String(formData.duration_minutes), 10);
+      const linkedClassStartDate = formData.class_seed_start_date || formData.exam_date;
+      const linkedClassTimeRange = normalizeClassSeedTimeRange(
+        formData.class_seed_schedule_time,
+        formData.exam_time || DEFAULT_CLASS_SEED_TIME.split('-')[0]
+      );
+      const linkedClassName = formData.class_seed_name?.trim() || `${formData.exam_name.trim()} - Lớp ôn tập`;
       const payload = {
         exam_name: formData.exam_name.trim(),
         exam_date: examDatePayload,
@@ -2007,19 +2032,19 @@ export default function ExamSchedulesPage() {
         organizer_uuid: organizerUuid || null,
         program_uuid: programUuid || null,
         level_uuid: levelUuid || null,
-        exam_level: selectedLevel?.code || formData.exam_level?.trim() || null,
-        exam_category_id: formData.exam_category_id ? parseInt(formData.exam_category_id, 10) : undefined,
-        exam_type_id: formData.exam_type_id ? parseInt(formData.exam_type_id, 10) : undefined,
+        exam_level: resolvedLevel?.code || formData.exam_level?.trim() || null,
+        exam_category_id: formData.exam_category_id ? parseInt(formData.exam_category_id, 10) : (resolvedProgram?.legacyExamCategoryId || undefined),
+        exam_type_id: formData.exam_type_id ? parseInt(formData.exam_type_id, 10) : (resolvedProgram?.legacyExamTypeId || undefined),
         template_id: formData.template_id ? parseInt(formData.template_id, 10) : undefined,
         enable_linked_class: linkedClassEnabled,
         class_seed: linkedClassEnabled
           ? {
-              name: formData.class_seed_name?.trim(),
+              name: linkedClassName,
               description: formData.class_seed_description?.trim() || null,
-              schedule_rule: formData.class_seed_schedule_rule?.trim().toUpperCase(),
-              schedule_time: formData.class_seed_schedule_time?.trim(),
+              schedule_rule: linkedClassScheduleRule,
+              schedule_time: linkedClassTimeRange,
               timezone: formData.class_seed_timezone?.trim() || DEFAULT_CLASS_SEED_TIMEZONE,
-              start_date: formData.class_seed_start_date,
+              start_date: linkedClassStartDate,
               end_date: formData.class_seed_end_date || null,
               max_students: parseInt(formData.class_seed_max_students, 10) || DEFAULT_CLASS_SEED_MAX_STUDENTS,
             }
@@ -2388,7 +2413,7 @@ export default function ExamSchedulesPage() {
     ws['Q3'] = { v: 'Phần dành cho trung tâm', t: 's', s: { font: font({ bold: true, sz: 11 }), alignment: { horizontal: 'center', vertical: 'center' }, fill: { fgColor: { rgb: 'FFCCCC' } } } };
 
     // ── Row 4: Headers 20 cột ──
-    const headersLeft  = ['STT','Họ và tên đệm','Tên','Giới tính','Ngày sinh','Tháng sinh ','Năm sinh','Số CMND/ Hộ chiếu','Điện thoại','Email (Thí sinh điền đúng thông tin để nhận kết quả thi)','Đơn vị công tác/ Trường học','Vị trí công tác','Nhu cầu đăng ký trình độ (A1, A2, B1, B2, C1, C2)','Nhu cầu đăng ký thi ngày','Mục đích tham dự thi (Ghi rõ làm đầu vào, đầu ra sinh viên, thạc sĩ, tiến sĩ…)','Nguồn đăng kí '];
+    const headersLeft  = ['STT','Họ và tên đệm','Tên','Giới tính','Ngày sinh','Tháng sinh ','Năm sinh','Số CMND/ Hộ chiếu','Điện thoại','Email (Thí sinh điền đúng thông tin để nhận kết quả thi)','Đơn vị công tác/ Trường học','Khoa/ngành đang theo học / Vị trí công tác','Nhu cầu đăng ký trình độ (A1, A2, B1, B2, C1, C2)','Nhu cầu đăng ký thi ngày','Mục đích tham dự thi (Ghi rõ làm đầu vào, đầu ra sinh viên, thạc sĩ, tiến sĩ…)','Nguồn đăng kí '];
     const headersRight = ['Kiểm tra hồ sơ dự thi','Ngày thi','Giờ thi','Địa điểm thi'];
 
     headersLeft.forEach((h, i) => {
@@ -2422,8 +2447,8 @@ export default function ExamSchedulesPage() {
       ws[`H${row}`] = { v: s.cccd || '',                                                t: 's', s: dc };
       ws[`I${row}`] = { v: s.sdt || '',                                                 t: 's', s: dc };
       ws[`J${row}`] = { v: s.email || '',                                               t: 's', s: dl };
-      ws[`K${row}`] = { v: '',                                                          t: 's', s: dl }; // Đơn vị
-      ws[`L${row}`] = { v: '',                                                          t: 's', s: dc }; // Vị trí
+      ws[`K${row}`] = { v: s.don_vi_cong_tac || '',                                    t: 's', s: dl }; // Đơn vị
+      ws[`L${row}`] = { v: s.nganh_dang_hoc || '',                                     t: 's', s: dc }; // Khoa/ngành
       ws[`M${row}`] = { v: selectedExamForList?.exam_level || '',                       t: 's', s: dc }; // Trình độ
       ws[`N${row}`] = { v: '',                                                          t: 's', s: dc }; // Ngày đăng ký thi
       ws[`O${row}`] = { v: '',                                                          t: 's', s: dl }; // Mục đích

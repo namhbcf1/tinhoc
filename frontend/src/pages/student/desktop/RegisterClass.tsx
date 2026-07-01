@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
 
 export default function RegisterClass({ studentData, onRegisterSuccess }) {

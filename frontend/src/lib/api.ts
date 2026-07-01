@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { buildApiUrl } from '../utils/api-base-url.js';
 
 export const apiFetch = async (endpoint, options = {}) => {

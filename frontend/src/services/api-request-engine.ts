@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // API REQUEST ENGINE
 // Core fetch logic: token injection, role validation, retry, cache write

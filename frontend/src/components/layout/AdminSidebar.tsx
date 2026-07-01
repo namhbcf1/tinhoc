@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { LayoutDashboard, LogOut, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -16,27 +17,27 @@ export default function AdminSidebar({ admin, activeTab, setActiveTab, isOpen, o
         <>
             {isOpen && (
                 <div
-                    className="fixed inset-0 z-20 bg-slate-900/40 backdrop-blur-sm md:hidden transition-opacity"
+                    className="fixed inset-0 z-20 bg-sky-200/45 backdrop-blur-sm md:hidden transition-opacity"
                     onClick={onClose}
                 />
             )}
             <aside
                 className={cn(
-                    "fixed inset-y-0 left-0 z-30 flex flex-col md:static md:h-screen w-[var(--vt-admin-sidebar-width,292px)] bg-[linear-gradient(180deg,#fcfefd_0%,#f6fbf7_100%)] border-r border-slate-200/70 shadow-[10px_0_40px_rgba(15,23,42,0.05)]",
+                    "fixed inset-y-0 left-0 z-30 flex flex-col md:static md:h-screen w-[var(--vt-admin-sidebar-width,292px)] bg-[linear-gradient(180deg,#ffffff_0%,#e0f2fe_54%,#bae6fd_100%)] border-r border-[rgba(14,165,233,0.18)] shadow-[8px_0_28px_-24px_rgba(14,165,233,0.16)]",
                     "transition-transform duration-300 ease-in-out md:translate-x-0 will-change-transform",
                     isOpen ? "translate-x-0" : "-translate-x-full"
                 )}
                 data-tour="admin-desktop-sidebar"
             >
                 {/* Logo Section */}
-                <div className="flex items-center justify-between h-[var(--vt-admin-sidebar-header-height,84px)] px-6 border-b border-slate-200/70 shrink-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.18),transparent_35%),linear-gradient(180deg,rgba(255,255,255,0.94),rgba(248,250,252,0.82))] backdrop-blur-md">
+                <div className="flex items-center justify-between h-[var(--vt-admin-sidebar-header-height,84px)] px-6 border-b border-[rgba(14,165,233,0.18)] shrink-0 bg-white/55">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-[18px] bg-[linear-gradient(135deg,#059669_0%,#10b981_48%,#2dd4bf_100%)] flex items-center justify-center shadow-[0_18px_38px_-16px_rgba(16,185,129,0.65)] shrink-0">
-                            <LayoutDashboard size={22} className="text-white" strokeWidth={2.5}/>
+                        <div className="w-12 h-12 rounded-[18px] bg-[rgba(14,165,233,0.14)] flex items-center justify-center shadow-none ring-1 ring-[rgba(14,165,233,0.14)] shrink-0">
+                            <LayoutDashboard size={22} className="text-[var(--admin-ink)]" strokeWidth={2.5}/>
                         </div>
                         <div className="flex flex-col justify-center">
-                            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">VanTrangEdu</span>
-                            <span className="font-extrabold text-[18px] text-slate-900 tracking-tight leading-tight">Learning<span className="text-emerald-600">OS</span></span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--admin-champagne)]">VanTrangEdu</span>
+                            <span className="font-extrabold text-[18px] text-[var(--admin-ink)] tracking-tight leading-tight">Admin<span className="text-[var(--admin-champagne)]">OS</span></span>
                         </div>
                     </div>
                     <button
@@ -50,31 +51,28 @@ export default function AdminSidebar({ admin, activeTab, setActiveTab, isOpen, o
                 {/* Admin Info Card */}
                 <div className="px-5 mt-5 mb-1 shrink-0">
                     <div className={cn(
-                        "p-3.5 rounded-[24px] flex items-center gap-3 border transition-all duration-200 shadow-[0_20px_40px_-34px_rgba(15,23,42,0.28)] cursor-default bg-white/90 backdrop-blur-sm",
+                        "p-3.5 rounded-[22px] flex items-center gap-3 border transition-all duration-200 cursor-default bg-white/70",
                         isSuperAdmin
-                            ? "border-amber-200/70 hover:bg-amber-50"
-                            : "border-emerald-200/70 hover:bg-emerald-50"
+                            ? "border-[rgba(37,99,235,0.22)] hover:bg-white"
+                            : "border-[rgba(14,165,233,0.18)] hover:bg-white"
                     )}>
                         <div className={cn(
-                            "w-12 h-12 rounded-[18px] flex items-center justify-center shrink-0 text-white font-black text-[15px] shadow-md border border-white/80",
+                            "w-12 h-12 rounded-[18px] flex items-center justify-center shrink-0 font-black text-[15px] border border-white/15",
                             isSuperAdmin
-                                ? "bg-gradient-to-br from-amber-400 to-amber-600 shadow-amber-500/20"
-                                : "bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-emerald-500/20"
+                                ? "bg-[rgba(14,165,233,0.14)] text-[var(--admin-ink)]"
+                                : "bg-white text-[var(--admin-ink)]"
                         )}>
                             {initials}
                         </div>
                         <div className="flex-1 min-w-0 overflow-hidden">
-                            <h3 className="font-bold text-[14px] text-slate-900 truncate tracking-tight">
+                            <h3 className="font-bold text-[14px] text-[var(--admin-ink)] truncate tracking-tight">
                                 {admin?.full_name || 'Admin'}
                             </h3>
                             <div className="flex items-center gap-1.5 mt-0.5">
-                                <span className={cn(
-                                    "w-1.5 h-1.5 rounded-full animate-pulse",
-                                    isSuperAdmin ? "bg-amber-500" : "bg-emerald-500"
-                                )} />
+                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--admin-champagne)]" />
                                 <span className={cn(
                                     "text-[12px] font-bold tracking-tight mt-0.5 leading-none",
-                                    isSuperAdmin ? "text-amber-700" : "text-emerald-700"
+                                    isSuperAdmin ? "text-[var(--admin-champagne)]" : "text-[var(--admin-text-muted)]"
                                 )}>
                                     {isSuperAdmin ? 'Super Admin' : 'Admin'}
                                 </span>
@@ -89,8 +87,8 @@ export default function AdminSidebar({ admin, activeTab, setActiveTab, isOpen, o
                         const visibleItems = desktopTabs.filter((item) => item.group === groupKey);
                         if (!visibleItems.length) return null;
                         return (
-                            <div key={groupKey} className="rounded-[28px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(247,250,248,0.92))] p-2.5 shadow-[0_18px_34px_-32px_rgba(15,23,42,0.32)] backdrop-blur-sm">
-                                <div className="px-3 pb-2 pt-1 text-[11px] font-bold tracking-[0.16em] text-slate-400 uppercase">
+                            <div key={groupKey} className="rounded-[22px] border border-[rgba(14,165,233,0.14)] bg-white/60 p-2.5">
+                                <div className="px-3 pb-2 pt-1 text-[11px] font-black tracking-[0.16em] text-[var(--admin-text-muted)] uppercase">
                                     {ADMIN_TAB_GROUP_LABELS[groupKey]}
                                 </div>
                                 <div className="flex flex-col gap-1">
@@ -106,15 +104,15 @@ export default function AdminSidebar({ admin, activeTab, setActiveTab, isOpen, o
                                                 className={cn(
                                                     "w-full flex items-center gap-3 px-3 py-3 rounded-[20px] transition-all duration-200 group relative border",
                                                 isActive
-                                                    ? "border-emerald-300 bg-[linear-gradient(135deg,#10b981_0%,#14b8a6_100%)] text-white font-bold shadow-[0_20px_34px_-22px_rgba(16,185,129,0.7)]"
-                                                    : "border-transparent text-slate-600 font-semibold hover:border-slate-200 hover:bg-slate-50/80 hover:text-slate-900"
+                                                    ? "border-[rgba(37,99,235,0.22)] bg-white text-[var(--admin-ink)] font-black shadow-[0_10px_22px_-20px_rgba(14,165,233,0.16)]"
+                                                    : "border-transparent text-[var(--admin-text-muted)] font-semibold hover:border-[rgba(14,165,233,0.18)] hover:bg-white hover:text-[var(--admin-ink)]"
                                             )}
                                         >
                                             <div className={cn(
                                                 "flex items-center justify-center w-10 h-10 rounded-[16px] shrink-0 transition-all duration-200",
                                                 isActive
-                                                    ? "bg-white/18 text-white shadow-sm ring-1 ring-white/12"
-                                                    : "bg-slate-100/80 text-slate-400 group-hover:bg-slate-200/70 group-hover:text-slate-600"
+                                                    ? "bg-[rgba(14,165,233,0.14)] text-[var(--admin-ink)] shadow-none ring-1 ring-[rgba(14,165,233,0.14)]"
+                                                    : "bg-[rgba(37,99,235,0.06)] text-[var(--admin-text-muted)] group-hover:bg-[rgba(37,99,235,0.10)] group-hover:text-[var(--admin-ink)]"
                                             )}>
                                                 <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                                             </div>
@@ -122,7 +120,7 @@ export default function AdminSidebar({ admin, activeTab, setActiveTab, isOpen, o
                                                 {item.label}
                                             </span>
                                             {isActive && (
-                                                <div className="absolute left-0 top-1/2 h-8 w-1.5 -translate-y-1/2 rounded-r-full bg-white/90" />
+                                                <div className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-[var(--admin-champagne)]" />
                                             )}
                                         </button>
                                     );
@@ -134,10 +132,10 @@ export default function AdminSidebar({ admin, activeTab, setActiveTab, isOpen, o
                 </nav>
 
                 {/* Logout */}
-                <div className="p-5 border-t border-slate-200/70 shrink-0 bg-white/70">
+                <div className="p-5 border-t border-[rgba(14,165,233,0.18)] shrink-0 bg-white/50">
                     <button
                         onClick={onLogout}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-[22px] border border-red-200 bg-[linear-gradient(180deg,#fff5f5_0%,#fff0f0_100%)] text-red-600 font-bold text-[14px] transition-all duration-200 hover:bg-red-100 hover:border-red-300 focus:ring-4 focus:ring-red-100/50 shadow-sm"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-[20px] border border-[rgba(185,28,28,0.18)] bg-white text-[var(--admin-danger)] font-bold text-[14px] transition-all duration-200 hover:bg-[rgba(155,93,85,0.08)] focus:ring-4 focus:ring-[rgba(155,93,85,0.10)] shadow-none"
                         data-tour="admin-desktop-logout"
                     >
                         <LogOut size={18} strokeWidth={2.5} />

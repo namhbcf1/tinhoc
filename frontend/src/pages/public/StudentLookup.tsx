@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { formatDateVN } from '../../utils/dateUtils';

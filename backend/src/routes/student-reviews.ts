@@ -228,6 +228,9 @@ studentReviews.post('/class/:classId/student/:studentId', requireAdmin, async (c
 studentReviews.put('/:id/publish', requireAdmin, async (c) => {
   try {
     const id = parseInt(c.req.param('id'), 10);
+    if (isNaN(id)) return errorResponse('ID không hợp lệ', 400) as Response;
+    const exists = await c.env.DB.prepare('SELECT id FROM student_reviews WHERE id = ?').bind(id).first();
+    if (!exists) return errorResponse('Không tìm thấy báo cáo', 404) as Response;
     const user = c.get('user');
     await c.env.DB.prepare(
       'UPDATE student_reviews SET status = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
@@ -241,6 +244,9 @@ studentReviews.put('/:id/publish', requireAdmin, async (c) => {
 studentReviews.put('/:id/unpublish', requireAdmin, async (c) => {
   try {
     const id = parseInt(c.req.param('id'), 10);
+    if (isNaN(id)) return errorResponse('ID không hợp lệ', 400) as Response;
+    const exists = await c.env.DB.prepare('SELECT id FROM student_reviews WHERE id = ?').bind(id).first();
+    if (!exists) return errorResponse('Không tìm thấy báo cáo', 404) as Response;
     const user = c.get('user');
     await c.env.DB.prepare(
       'UPDATE student_reviews SET status = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
@@ -254,6 +260,9 @@ studentReviews.put('/:id/unpublish', requireAdmin, async (c) => {
 studentReviews.put('/:id', requireAdmin, async (c) => {
   try {
     const id = parseInt(c.req.param('id'), 10);
+    if (isNaN(id)) return errorResponse('ID không hợp lệ', 400) as Response;
+    const exists = await c.env.DB.prepare('SELECT id FROM student_reviews WHERE id = ?').bind(id).first();
+    if (!exists) return errorResponse('Không tìm thấy báo cáo', 404) as Response;
     const user = c.get('user');
     const body = await c.req.json() as any;
     const {
@@ -295,6 +304,9 @@ studentReviews.put('/:id', requireAdmin, async (c) => {
 studentReviews.delete('/:id', requireAdmin, async (c) => {
   try {
     const id = parseInt(c.req.param('id'), 10);
+    if (isNaN(id)) return errorResponse('ID không hợp lệ', 400) as Response;
+    const exists = await c.env.DB.prepare('SELECT id FROM student_reviews WHERE id = ?').bind(id).first();
+    if (!exists) return errorResponse('Không tìm thấy báo cáo', 404) as Response;
     await c.env.DB.prepare('DELETE FROM student_reviews WHERE id = ?').bind(id).run();
     return successResponse({ deleted: true, id }) as Response;
   } catch (err: any) {

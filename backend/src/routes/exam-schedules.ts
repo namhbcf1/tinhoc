@@ -548,14 +548,27 @@ function parseTimeRangeBoundary(value: string, fieldName: string) {
   return hours * 60 + minutes;
 }
 
+function formatMinutesAsTime(totalMinutes: number) {
+  const normalized = ((totalMinutes % 1440) + 1440) % 1440;
+  const hours = String(Math.floor(normalized / 60)).padStart(2, '0');
+  const minutes = String(normalized % 60).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
 function normalizeClassSeedScheduleTime(value: string | null) {
   if (!value) {
     return null;
   }
 
   const normalized = value.trim();
+  const singleTimeMatch = /^(\d{2}:\d{2})$/.exec(normalized);
+  if (singleTimeMatch) {
+    const startMinutes = parseTimeRangeBoundary(singleTimeMatch[1], 'Giờ bắt đầu lớp');
+    return `${singleTimeMatch[1]}-${formatMinutesAsTime(startMinutes + 60)}`;
+  }
+
   if (!CLASS_SEED_TIME_RE.test(normalized)) {
-    throw Object.assign(new Error('class_seed.schedule_time phải có định dạng HH:MM-HH:MM'), { statusCode: 400 });
+    throw Object.assign(new Error('class_seed.schedule_time phải có định dạng HH:MM hoặc HH:MM-HH:MM'), { statusCode: 400 });
   }
 
   const [startTime, endTime] = normalized.split('-');
@@ -688,6 +701,22 @@ async function normalizeExamSchedulePayload(db: D1Database, rawInput: any) {
     throw Object.assign(new Error('Thiếu thông tin bắt buộc: exam_name'), { statusCode: 400 });
   }
 
+  const organizerInput = trimNullable(rawInput?.organizer_uuid);
+  if (!organizerInput) {
+    throw Object.assign(new Error('Thiếu thông tin bắt buộc: organizer_uuid'), { statusCode: 400 });
+  }
+
+  const programInput = trimNullable(rawInput?.program_uuid);
+  if (!programInput) {
+    throw Object.assign(new Error('Thiếu thông tin bắt buộc: program_uuid'), { statusCode: 400 });
+  }
+
+  const levelInput = trimNullable(rawInput?.level_uuid);
+  // NOTE: level_uuid is validated conditionally below, after we resolve the
+  // program context. It is only required when the selected program actually
+  // has levels (matches the frontend, which submits null for level-less
+  // programs and only marks the field required when level options exist).
+
   if (!rawInput?.exam_date) {
     throw Object.assign(new Error('Thiếu thông tin bắt buộc: exam_date'), { statusCode: 400 });
   }
@@ -704,33 +733,32 @@ async function normalizeExamSchedulePayload(db: D1Database, rawInput: any) {
     throw Object.assign(new Error('Thời lượng phải là số dương'), { statusCode: 400 });
   }
 
-  const organizerInput = trimNullable(rawInput?.organizer_uuid);
   const organizerUuid =
     (await resolveProgramOrganizerIdentifier(db, organizerInput)) ??
     organizerInput;
-  const programInput = trimNullable(rawInput?.program_uuid);
   const programUuid =
     (await resolveProgramIdentifier(db, programInput, organizerUuid)) ??
     (await resolveProgramIdentifier(db, programInput, null)) ??
-    (await inferSingleProgramIdentifierForOrganizer(db, organizerUuid)) ??
     programInput;
-  const levelInput = trimNullable(rawInput?.level_uuid);
-  const levelUuid =
-    (await resolveProgramLevelIdentifier(db, levelInput, programUuid)) ??
-    levelInput;
+  const levelUuid = levelInput
+    ? ((await resolveProgramLevelIdentifier(db, levelInput, programUuid)) ?? levelInput)
+    : null;
   const programContext = await resolveProgramContext(db, {
     organizerUuid,
     programUuid,
     levelUuid,
   });
 
+  // Require a level only when the program defines levels. Programs without
+  // levels (e.g. some tin học programs) legitimately submit level_uuid = null.
+  if (!levelUuid && programContext?.hasLevels) {
+    throw Object.assign(new Error('Thiếu thông tin bắt buộc: level_uuid'), { statusCode: 400 });
+  }
+
   const examCategoryId =
     parseOptionalInt(rawInput?.exam_category_id, 'exam_category_id') ??
     programContext?.legacyExamCategoryId ??
     null;
-  if (!examCategoryId) {
-    throw Object.assign(new Error('Thiếu thông tin bắt buộc: program_uuid hoặc exam_category_id'), { statusCode: 400 });
-  }
 
   const examTypeId =
     parseOptionalInt(rawInput?.exam_type_id, 'exam_type_id') ??
@@ -956,7 +984,8 @@ examSchedules.get('/my-exams', async (c) => {
 // ========================================
 examSchedules.get('/upcoming', async (c) => {
   try {
-    const limit = parseInt(c.req.query('limit') ?? '', 10) || 10;
+    const rawLimit = parseInt(c.req.query('limit') ?? '', 10);
+    const limit = !isNaN(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 100) : 10;
     const exams = await getUpcomingExams(c.env.DB, limit);
 
     return jsonResponse({
@@ -1018,8 +1047,10 @@ examSchedules.get('/', async (c) => {
     const denied = requireExamAdmin(user, 'Chỉ admin mới có quyền xem tất cả lịch thi');
     if (denied) return denied;
 
-    const limit = parseInt(c.req.query('limit') ?? '', 10) || 100;
-    const offset = parseInt(c.req.query('offset') ?? '', 10) || 0;
+    const rawLimit = parseInt(c.req.query('limit') ?? '', 10);
+    const limit = !isNaN(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 500) : 100;
+    const rawOffset = parseInt(c.req.query('offset') ?? '', 10);
+    const offset = !isNaN(rawOffset) && rawOffset >= 0 ? rawOffset : 0;
 
     // Get all active exam schedules (not deleted)
     const exams = await c.env.DB.prepare(`
@@ -1284,6 +1315,7 @@ examSchedules.put('/:id', async (c) => {
 
     const { id } = c.req.param();
     const examId = parseInt(id);
+    if (isNaN(examId)) return errorResponse('ID không hợp lệ', 400);
     const updateData = await normalizeExamSchedulePayload(c.env.DB, await c.req.json());
 
     await updateExamSchedule(c.env.DB, examId, updateData);
@@ -1321,6 +1353,7 @@ examSchedules.delete('/:id', async (c) => {
 
     const { id } = c.req.param();
     const examId = parseInt(id);
+    if (isNaN(examId)) return errorResponse('ID không hợp lệ', 400);
 
     await deleteLinkedOnlineClassForExamSchedule(c.env.DB, c.env, examId);
     await deleteExamSchedule(c.env.DB, examId);
@@ -1357,6 +1390,7 @@ examSchedules.post('/:id/restore', async (c) => {
 
     const { id } = c.req.param();
     const examId = parseInt(id);
+    if (isNaN(examId)) return errorResponse('ID không hợp lệ', 400);
 
     const result = await restoreExamSchedule(c.env.DB, examId);
 
@@ -1398,6 +1432,7 @@ examSchedules.delete('/:id/permanent', async (c) => {
 
     const { id } = c.req.param();
     const examId = parseInt(id);
+    if (isNaN(examId)) return errorResponse('ID không hợp lệ', 400);
 
     await deleteLinkedOnlineClassForExamSchedule(c.env.DB, c.env, examId);
     const result = await permanentlyDeleteExamSchedule(c.env.DB, examId);
@@ -1437,11 +1472,13 @@ examSchedules.post('/:id/register', async (c) => {
       return errorResponse('Chỉ sinh viên mới có thể đăng ký thi', 403);
     }
     const { id } = c.req.param();
+    const examId = parseInt(id);
+    if (isNaN(examId)) return errorResponse('ID không hợp lệ', 400);
 
     // Lấy thông tin kỳ thi để kiểm tra
     const exam = await c.env.DB.prepare(`
       SELECT exam_date, exam_name FROM exam_schedules WHERE id = ? AND deleted_at IS NULL
-    `).bind(parseInt(id)).first();
+    `).bind(examId).first();
 
     if (!exam) {
       return errorResponse('Không tìm thấy kỳ thi', 404);
@@ -1450,8 +1487,8 @@ examSchedules.post('/:id/register', async (c) => {
 
 
     try {
-      await registerStudentForExam(c.env.DB, parseInt(id), user.id);
-      await syncLinkedClassSessionsForExamSchedule(c.env.DB, parseInt(id));
+      await registerStudentForExam(c.env.DB, examId, user.id);
+      await syncLinkedClassSessionsForExamSchedule(c.env.DB, examId);
     } catch (e: any) {
       if (e?.code === 'TEST_STUDENT_NOT_ALLOWED') {
         return jsonResponse({
@@ -1499,9 +1536,11 @@ examSchedules.post('/:id/cancel', async (c) => {
       return errorResponse('Chỉ sinh viên mới có thể hủy đăng ký', 403);
     }
     const { id } = c.req.param();
-    await cancelExamRegistration(c.env.DB, parseInt(id), user.id);
-    await revokeExamRegistrationFromOnlineClass(c.env.DB, parseInt(id), user.id);
-    await syncLinkedClassSessionsForExamSchedule(c.env.DB, parseInt(id));
+    const cancelExamId = parseInt(id);
+    if (isNaN(cancelExamId)) return errorResponse('ID không hợp lệ', 400);
+    await cancelExamRegistration(c.env.DB, cancelExamId, user.id);
+    await revokeExamRegistrationFromOnlineClass(c.env.DB, cancelExamId, user.id);
+    await syncLinkedClassSessionsForExamSchedule(c.env.DB, cancelExamId);
 
     return jsonResponse({ success: true, message: 'Hủy đăng ký thành công' });
   } catch (error: any) {
@@ -1520,6 +1559,7 @@ examSchedules.get('/:id/students', async (c) => {
 
     const { id } = c.req.param();
     const examId = parseInt(id);
+    if (isNaN(examId)) return errorResponse('ID không hợp lệ', 400);
     const withZoomCheckin = c.req.query('with_zoom_checkin') === '1';
 
     const students = await getExamRegistrations(c.env.DB, examId);
@@ -1688,8 +1728,8 @@ examSchedules.get('/:id/learning-attendance', async (c) => {
     return jsonResponse({
       success: true,
       data: {
-        online_class_id: onlineClass.id,
-        class_name: onlineClass.class_name,
+        online_class_id: onlineClass!.id,
+        class_name: onlineClass!.class_name,
         sessions,
         students: studentRows,
       },

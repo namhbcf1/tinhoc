@@ -5,83 +5,25 @@ import { useOverlayLayer, useOverlayLock } from '../../../components/ui/overlay-
 
 type MobileAdminTone = 'slate' | 'blue' | 'emerald' | 'amber' | 'violet' | 'rose';
 
-const mobileToneStyles: Record<MobileAdminTone, {
-  hero: string;
-  title: string;
-  description: string;
-  meta: string;
-  icon: string;
-  stat: string;
-  statLabel: string;
-  statValue: string;
-  primaryButton: string;
-}> = {
-  slate: {
-    hero: 'border-slate-300/30 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.16),transparent_25%),linear-gradient(145deg,#0f172a_0%,#1e293b_100%)]',
-    title: 'text-white',
-    description: 'text-slate-200/80',
-    meta: 'border-white/12 bg-white/[0.10] text-white/90',
-    icon: 'bg-white/14 text-white ring-1 ring-white/10',
-    stat: 'border-white/10 bg-white/[0.10] backdrop-blur-sm',
-    statLabel: 'text-white/60',
-    statValue: 'text-white',
-    primaryButton: 'bg-white text-slate-900 hover:bg-slate-100',
-  },
-  blue: {
-    hero: 'border-blue-400/20 bg-[radial-gradient(circle_at_top_right,rgba(125,211,252,0.24),transparent_24%),linear-gradient(145deg,#0f172a_0%,#1d4ed8_50%,#2563eb_100%)]',
-    title: 'text-white',
-    description: 'text-blue-50/80',
-    meta: 'border-white/12 bg-white/[0.10] text-white/90',
-    icon: 'bg-white/14 text-white ring-1 ring-white/10',
-    stat: 'border-white/10 bg-white/[0.10] backdrop-blur-sm',
-    statLabel: 'text-white/60',
-    statValue: 'text-white',
-    primaryButton: 'bg-white text-blue-700 hover:bg-blue-50',
-  },
-  emerald: {
-    hero: 'border-emerald-400/20 bg-[radial-gradient(circle_at_top_right,rgba(110,231,183,0.24),transparent_24%),linear-gradient(145deg,#022c22_0%,#047857_48%,#0f766e_100%)]',
-    title: 'text-white',
-    description: 'text-emerald-50/80',
-    meta: 'border-white/12 bg-white/[0.10] text-white/90',
-    icon: 'bg-white/14 text-white ring-1 ring-white/10',
-    stat: 'border-white/10 bg-white/[0.10] backdrop-blur-sm',
-    statLabel: 'text-white/60',
-    statValue: 'text-white',
-    primaryButton: 'bg-white text-emerald-700 hover:bg-emerald-50',
-  },
-  amber: {
-    hero: 'border-amber-400/20 bg-[radial-gradient(circle_at_top_right,rgba(253,224,71,0.22),transparent_24%),linear-gradient(145deg,#451a03_0%,#b45309_48%,#d97706_100%)]',
-    title: 'text-white',
-    description: 'text-amber-50/80',
-    meta: 'border-white/12 bg-white/[0.10] text-white/90',
-    icon: 'bg-white/14 text-white ring-1 ring-white/10',
-    stat: 'border-white/10 bg-white/[0.10] backdrop-blur-sm',
-    statLabel: 'text-white/60',
-    statValue: 'text-white',
-    primaryButton: 'bg-white text-amber-700 hover:bg-amber-50',
-  },
-  violet: {
-    hero: 'border-violet-400/20 bg-[radial-gradient(circle_at_top_right,rgba(221,214,254,0.22),transparent_24%),linear-gradient(145deg,#1e1b4b_0%,#6d28d9_48%,#7c3aed_100%)]',
-    title: 'text-white',
-    description: 'text-violet-50/80',
-    meta: 'border-white/12 bg-white/[0.10] text-white/90',
-    icon: 'bg-white/14 text-white ring-1 ring-white/10',
-    stat: 'border-white/10 bg-white/[0.10] backdrop-blur-sm',
-    statLabel: 'text-white/60',
-    statValue: 'text-white',
-    primaryButton: 'bg-white text-violet-700 hover:bg-violet-50',
-  },
-  rose: {
-    hero: 'border-rose-400/20 bg-[radial-gradient(circle_at_top_right,rgba(251,207,232,0.22),transparent_24%),linear-gradient(145deg,#4c0519_0%,#be185d_48%,#e11d48_100%)]',
-    title: 'text-white',
-    description: 'text-rose-50/80',
-    meta: 'border-white/12 bg-white/[0.10] text-white/90',
-    icon: 'bg-white/14 text-white ring-1 ring-white/10',
-    stat: 'border-white/10 bg-white/[0.10] backdrop-blur-sm',
-    statLabel: 'text-white/60',
-    statValue: 'text-white',
-    primaryButton: 'bg-white text-rose-700 hover:bg-rose-50',
-  },
+const quietHeroTone = {
+  hero: 'border-[rgba(14,165,233,0.18)] bg-[linear-gradient(180deg,#ffffff_0%,#dff3ff_58%,#bae6fd_100%)]',
+  title: 'text-[var(--admin-ink)]',
+  description: 'text-[var(--admin-ink)]',
+  meta: 'border-[rgba(14,165,233,0.18)] bg-[rgba(14,165,233,0.12)] text-[var(--admin-ink)]',
+  icon: 'bg-[rgba(14,165,233,0.14)] text-[var(--admin-ink)] ring-1 ring-[rgba(14,165,233,0.14)]',
+  stat: 'border-[rgba(14,165,233,0.18)] bg-white/70 backdrop-blur-sm',
+  statLabel: 'text-[var(--admin-ink)]',
+  statValue: 'text-[var(--admin-ink)]',
+  primaryButton: 'bg-white text-[var(--admin-ink)] ring-1 ring-[rgba(14,165,233,0.24)] hover:bg-[var(--admin-paper-deep)]',
+};
+
+const mobileToneStyles: Record<MobileAdminTone, typeof quietHeroTone> = {
+  slate: quietHeroTone,
+  blue: quietHeroTone,
+  emerald: quietHeroTone,
+  amber: quietHeroTone,
+  violet: quietHeroTone,
+  rose: quietHeroTone,
 };
 
 export function MobileAdminHeroCard({
@@ -112,37 +54,38 @@ export function MobileAdminHeroCard({
   const styles = mobileToneStyles[tone];
 
   return (
-    <div className={`relative mx-4 mt-2 overflow-hidden rounded-[24px] border p-3 shadow-[0_18px_44px_-32px_rgba(15,23,42,0.36)] ${styles.hero}`}>
-      <div className="pointer-events-none absolute -right-10 top-0 h-36 w-36 rounded-full bg-white/10 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 left-0 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
-
+    <div className={`relative mx-[var(--admin-mobile-page-x,10px)] mt-2 overflow-hidden rounded-[20px] border px-3 pb-3 pt-2.5 shadow-[0_12px_28px_-24px_rgba(14,165,233,0.16)] ${styles.hero}`}>
       <div className="relative">
-        <div className="min-w-0">
-          <div className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.14em] ${styles.meta}`}>
-            <span>{eyebrow}</span>
-            <span>mobile</span>
-          </div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className={`inline-flex items-center gap-2 rounded-full border px-2 py-0.5 text-[7px] font-black uppercase tracking-[0.16em] ${styles.meta}`}>
+              <span>{eyebrow}</span>
+              <span className="h-1 w-1 rounded-full bg-current opacity-60" />
+              <span>console</span>
+            </div>
 
-          <div className="mt-2 flex items-start gap-2">
-            {Icon ? (
-              <div className={`flex h-9 w-9 items-center justify-center rounded-[14px] shadow-sm backdrop-blur-sm ${styles.icon}`}>
-                <Icon size={17} strokeWidth={2.3} />
+            <div className="mt-2 flex items-start gap-2">
+              {Icon ? (
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] shadow-none ${styles.icon}`}>
+                  <Icon size={16} strokeWidth={2.35} />
+                </div>
+              ) : null}
+
+              <div className="min-w-0 pt-0.5">
+                <h2 className={`text-[15px] font-black leading-[1.05] tracking-[-0.055em] ${styles.title}`}>{title}</h2>
+                {description ? <p className={`mt-1.5 line-clamp-2 text-[10px] font-bold leading-4 ${styles.description}`}>{description}</p> : null}
               </div>
-            ) : null}
-
-            <div className="min-w-0">
-              <h2 className={`text-[16px] font-black tracking-[-0.04em] ${styles.title}`}>{title}</h2>
             </div>
           </div>
         </div>
 
-        {actions ? <div className="mt-2.5 flex flex-wrap gap-1.5">{actions}</div> : null}
+        {actions ? <div className="mt-2 flex flex-wrap gap-1.5">{actions}</div> : null}
 
-        {children ? <div className="mt-2.5">{children}</div> : null}
-        {stats ? <div className="mt-2.5">{stats}</div> : null}
-        {search ? <div className="mt-2.5">{search}</div> : null}
-        {filters ? <div className="mt-2">{filters}</div> : null}
-        {footer ? <div className={`mt-2.5 rounded-xl px-2.5 py-1.5 text-[10px] font-medium ${styles.meta}`}>{footer}</div> : null}
+        {children ? <div className="mt-2">{children}</div> : null}
+        {stats ? <div className="mt-2 rounded-[16px] border border-[rgba(14,165,233,0.18)] bg-white/70 p-1.5 backdrop-blur-sm text-[var(--admin-ink)]">{stats}</div> : null}
+        {search ? <div className="mt-2">{search}</div> : null}
+        {filters ? <div className="mt-1.5">{filters}</div> : null}
+        {footer ? <div className={`mt-2 rounded-[14px] border px-2.5 py-1.5 text-[9px] font-bold leading-3 ${styles.meta}`}>{footer}</div> : null}
       </div>
     </div>
   );
@@ -160,13 +103,13 @@ export function MobileAdminSectionCard({
   children: ReactNode;
 }) {
   return (
-    <div className="mx-4 mb-3 rounded-[22px] border border-slate-200 bg-white/95 p-3 shadow-[0_18px_36px_-32px_rgba(15,23,42,0.28)]">
-      <div className="mb-3 flex items-start justify-between gap-3">
+    <div className="mx-[var(--admin-mobile-page-x,10px)] mb-2.5 rounded-[18px] border border-[rgba(14,165,233,0.18)] bg-[rgba(255,255,255,0.98)] p-2.5 text-[var(--admin-ink)] shadow-[0_10px_24px_-22px_rgba(14,165,233,0.16)]">
+      <div className="mb-2.5 flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-800">{title}</h3>
-          {description ? <p className="mt-1 text-[13px] leading-5 text-slate-500">{description}</p> : null}
+          <h3 className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--admin-ink)]">{title}</h3>
+          {description ? <p className="mt-1 text-[10px] font-bold leading-4 text-[var(--admin-ink)]">{description}</p> : null}
         </div>
-        {actions ? <div className="flex shrink-0 gap-2">{actions}</div> : null}
+        {actions ? <div className="flex shrink-0 flex-wrap justify-end gap-2">{actions}</div> : null}
       </div>
       {children}
     </div>
@@ -185,19 +128,19 @@ export function MobileAdminStatCard({
   hint?: ReactNode;
 }) {
   const toneClass = {
-    slate: 'bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] text-slate-900 border-slate-200',
-    blue: 'bg-[linear-gradient(180deg,#eff6ff_0%,#dbeafe_100%)] text-blue-900 border-blue-200',
-    emerald: 'bg-[linear-gradient(180deg,#ecfdf5_0%,#d1fae5_100%)] text-emerald-900 border-emerald-200',
-    amber: 'bg-[linear-gradient(180deg,#fffbeb_0%,#fef3c7_100%)] text-amber-900 border-amber-200',
-    violet: 'bg-[linear-gradient(180deg,#f5f3ff_0%,#ede9fe_100%)] text-violet-900 border-violet-200',
-    rose: 'bg-[linear-gradient(180deg,#fff1f2_0%,#ffe4e6_100%)] text-rose-900 border-rose-200',
+    slate: 'bg-[rgba(255,255,255,0.98)] text-[var(--admin-ink)] border-[rgba(14,165,233,0.18)]',
+    blue: 'bg-[rgba(255,255,255,0.98)] text-[var(--admin-ink)] border-[rgba(14,165,233,0.18)]',
+    emerald: 'bg-[rgba(255,255,255,0.98)] text-[var(--admin-ink)] border-[rgba(14,165,233,0.18)]',
+    amber: 'bg-[rgba(255,255,255,0.98)] text-[var(--admin-ink)] border-[rgba(37,99,235,0.18)]',
+    violet: 'bg-[rgba(255,255,255,0.98)] text-[var(--admin-ink)] border-[rgba(14,165,233,0.18)]',
+    rose: 'bg-[rgba(255,255,255,0.98)] text-[var(--admin-ink)] border-[rgba(14,165,233,0.18)]',
   }[tone];
 
   return (
-    <div className={`rounded-[18px] border px-3 py-2.5 shadow-[0_14px_24px_-24px_rgba(15,23,42,0.35)] ${toneClass}`}>
-      <p className="text-[9px] font-black uppercase tracking-[0.12em] opacity-70">{label}</p>
-      <p className="mt-1.5 text-[18px] font-black leading-none tracking-[-0.04em]">{value}</p>
-      {hint ? <p className="mt-1.5 text-[10px] font-medium opacity-70">{hint}</p> : null}
+    <div className={`min-h-[60px] rounded-[16px] border px-2.5 py-2 shadow-[0_8px_20px_-18px_rgba(14,165,233,0.16)] ${toneClass}`}>
+      <p className="text-[7px] font-black uppercase tracking-[0.12em] opacity-100 text-[var(--admin-ink)]">{label}</p>
+      <p className="mt-1.5 text-[15px] font-black leading-none tracking-[-0.05em]">{value}</p>
+      {hint ? <p className="mt-1.5 text-[8px] font-bold leading-3 opacity-100 text-[var(--admin-ink)]">{hint}</p> : null}
     </div>
   );
 }
@@ -215,19 +158,19 @@ export function MobileAdminSearchField({
 }) {
   return (
     <div className="relative">
-      <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+      <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--admin-champagne)]" />
       <input
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="h-10 w-full rounded-[18px] border border-white/10 bg-white/[0.96] pl-10 pr-10 text-[13px] text-slate-900 outline-none shadow-[0_10px_22px_-22px_rgba(15,23,42,0.3)] transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100"
+        className="h-9 w-full rounded-[16px] border border-[rgba(14,165,233,0.18)] bg-[rgba(255,255,255,0.98)] pl-9 pr-8 text-[11px] font-bold text-[var(--admin-ink)] outline-none shadow-none transition placeholder:text-[rgba(16,32,51,0.58)] focus:border-[rgba(37,99,235,0.42)] focus:bg-white focus:ring-2 focus:ring-[rgba(14,165,233,0.14)]"
       />
       {value ? (
         <button
           type="button"
           onClick={onClear}
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-slate-200 p-1 text-slate-500"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full bg-[rgba(14,165,233,0.14)] p-0.5 text-[var(--admin-ink)]"
         >
           <X size={14} />
         </button>
@@ -240,7 +183,7 @@ export function MobileAdminPrimaryButton({ children, className = '', ...props }:
   return (
     <button
       type="button"
-      className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-[16px] bg-[linear-gradient(135deg,#0f172a_0%,#1d4ed8_100%)] px-3 py-1.5 text-[12px] font-black text-white shadow-[0_16px_28px_-22px_rgba(29,78,216,0.58)] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`inline-flex min-h-8 items-center justify-center gap-1 rounded-[13px] border border-[rgba(14,165,233,0.24)] bg-white px-2.5 py-1 text-[10px] font-black text-[var(--admin-ink)] shadow-none transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       {...props}
     >
       {children}
@@ -252,7 +195,7 @@ export function MobileAdminSecondaryButton({ children, className = '', ...props 
   return (
     <button
       type="button"
-      className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-[16px] border border-white/10 bg-white/[0.96] px-3 py-1.5 text-[12px] font-semibold text-slate-700 shadow-[0_12px_24px_-22px_rgba(15,23,42,0.32)] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`inline-flex min-h-8 items-center justify-center gap-1 rounded-[13px] border border-[rgba(14,165,233,0.18)] bg-[rgba(255,255,255,0.98)] px-2.5 py-1 text-[10px] font-bold text-[var(--admin-ink)] shadow-none transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       {...props}
     >
       {children}
@@ -264,7 +207,7 @@ export function MobileAdminFloatingAction({ children, className = '', ...props }
   return (
     <button
       type="button"
-      className={`fixed bottom-[calc(var(--mb-bottom-nav-height)+env(safe-area-inset-bottom,0px)+18px)] right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[linear-gradient(135deg,#0f172a_0%,#2563eb_100%)] text-white shadow-[0_22px_40px_-20px_rgba(29,78,216,0.58)] transition-transform active:scale-95 ${className}`}
+      className={`fixed bottom-[calc(var(--mb-bottom-nav-height)+env(safe-area-inset-bottom,0px)+12px)] right-3 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(14,165,233,0.24)] bg-white text-[var(--admin-ink)] shadow-[0_8px_20px_-18px_rgba(14,165,233,0.16)] transition-transform active:scale-95 ${className}`}
       {...props}
     >
       {children}
@@ -307,25 +250,26 @@ export function MobileAdminBottomSheet({
     <div className="fixed inset-0" style={{ zIndex: overlayLayer }}>
       <button
         type="button"
-        className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm"
+        className="absolute inset-0 bg-[rgba(11,23,40,0.58)] backdrop-blur-md"
         onClick={onClose}
         aria-label="Đóng"
       />
-      <div className="absolute inset-0 bg-white shadow-2xl" style={{ height, maxHeight: '100dvh' }}>
-        <div className="flex items-center justify-between border-b border-white/10 bg-[linear-gradient(135deg,#0f172a_0%,#1d4ed8_100%)] px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+12px)] text-white">
-          <div>
-            <div className="text-[9px] font-black uppercase tracking-[0.16em] text-white/60">Admin mobile</div>
-            <h3 className="mt-1 text-[15px] font-black tracking-tight text-white">{title}</h3>
+      <div className="absolute inset-x-2 bottom-2 top-[max(env(safe-area-inset-top,0px),8px)] overflow-hidden rounded-t-[30px] rounded-b-[26px] border border-[rgba(14,165,233,0.18)] bg-[var(--admin-paper)] shadow-[0_18px_48px_-34px_rgba(14,165,233,0.16)]" style={{ height, maxHeight: 'calc(100dvh - 16px)' }}>
+        <div className="flex items-center justify-between border-b border-[rgba(14,165,233,0.18)] bg-[rgba(255,255,255,0.98)] px-4 pb-4 pt-3 text-[var(--admin-ink)]">
+          <div className="min-w-0">
+            <div className="mb-2 h-1 w-10 rounded-full bg-[rgba(37,99,235,0.42)]" />
+            <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--admin-champagne)]">Admin console</div>
+            <h3 className="mt-1 text-[17px] font-black leading-tight tracking-[-0.04em] text-[var(--admin-ink)]">{title}</h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-[rgba(14,165,233,0.12)] text-[var(--admin-ink)] ring-1 ring-[rgba(14,165,233,0.14)] transition active:scale-95"
           >
             <X size={18} />
           </button>
         </div>
-        <div className="overflow-y-auto bg-[#f4f7fb] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-4" style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top,0px) - 88px)' }}>
+        <div className="overflow-y-auto bg-[linear-gradient(180deg,#ffffff_0%,#eef6ff_100%)] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+18px)] pt-4" style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top,0px) - 104px)' }}>
           {children}
         </div>
       </div>

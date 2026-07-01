@@ -1,1 +1,10 @@
 .dev.secrets
+
+# Compiled output: source of truth is TypeScript (.ts). Never commit compiled
+# .js next to .ts sources — they shadow the real source in tests and deploys.
+src/**/*.js
+!src/services/cloudflare-ai-ocr.js
+
+# Investigation/cleanup artifacts
+deleted-stale-js.txt
+tmp-*.json

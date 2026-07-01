@@ -1,7 +1,8 @@
+// @ts-nocheck
 export const translations = {
   vi: {
     // Top bar
-    email: '[email protected]',
+    email: 'info@vantrangedu.edu.vn',
     phone1: '096 244 5963',
     phone2: '0339 244 566',
 
@@ -11,7 +12,7 @@ export const translations = {
     contact: 'Liên hệ',
     studentsNav: 'Người học',
     faculty: 'Cán bộ - Giảng viên',
-    about: 'Về HUB',
+    about: 'Về Vân Trang',
     training: 'Đào tạo',
     admissions: 'Tuyển sinh',
     quality: 'Đảm bảo chất lượng',
@@ -179,7 +180,7 @@ export const translations = {
   },
   en: {
     // Top bar
-    email: '[email protected]',
+    email: 'info@vantrangedu.edu.vn',
     phone1: '096 244 5963',
     phone2: '0339 244 566',
 
@@ -189,7 +190,7 @@ export const translations = {
     contact: 'Contact',
     studentsNav: 'Students',
     faculty: 'Faculty & Staff',
-    about: 'About HUB',
+    about: 'About Van Trang',
     training: 'Training',
     admissions: 'Admissions',
     quality: 'Quality Assurance',

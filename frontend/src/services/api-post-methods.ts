@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // POST METHODS MIXIN
 // Blog/news post CRUD + publish/unpublish

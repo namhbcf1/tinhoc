@@ -27,7 +27,7 @@ import {
 
 // ─── Khởi tạo schema thật cho DB test ────────────────────────────────────────
 
-async function setupRealDB(db) {
+async function setupRealDB(db: D1Database) {
   await db.prepare(`
     CREATE TABLE IF NOT EXISTS students (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -96,7 +96,7 @@ async function setupRealDB(db) {
   `).run();
 }
 
-async function clearRealDB(db) {
+async function clearRealDB(db: D1Database) {
   await db.prepare('DELETE FROM online_class_enrollments').run();
   await db.prepare('DELETE FROM online_classes').run();
   await db.prepare('DELETE FROM students').run();
@@ -105,7 +105,7 @@ async function clearRealDB(db) {
 // ─── Helpers để seed data độc lập cho từng test ───────────────────────────────
 
 /** Tạo student với cccd duy nhất, trả về studentId */
-async function insertStudent(db, cccd, hoTenFull, email, sdt) {
+async function insertStudent(db: D1Database, cccd: string, hoTenFull: string, email: string, sdt: string) {
   const parts = hoTenFull.split(' ');
   const ten = parts[parts.length - 1];
   const ho = parts[0];
@@ -118,7 +118,7 @@ async function insertStudent(db, cccd, hoTenFull, email, sdt) {
 }
 
 /** Tạo lớp học, trả về classId */
-async function insertClass(db, className) {
+async function insertClass(db: D1Database, className: string) {
   const result = await db.prepare(`
     INSERT INTO online_classes (class_name, schedule_rule, schedule_time, start_date)
     VALUES (?, 'WEEKLY:2,4', '19:00-21:00', '2026-03-01')
@@ -133,7 +133,7 @@ function nextId() {
 }
 
 /** Seed một student + class + enrollment pending, trả về { db, classId, studentId, enrollmentId } */
-async function seedPendingEnrollment(db) {
+async function seedPendingEnrollment(db: D1Database) {
   const n = nextId();
   const studentId = await insertStudent(db, `0123456789${n}`, `Nguyen Van ${n}`, `s${n}@test.com`, `090100${n}`);
   const classId = await insertClass(db, `Lop Test ${n}`);
@@ -143,7 +143,7 @@ async function seedPendingEnrollment(db) {
 }
 
 /** Seed enrollment với status active trực tiếp */
-async function seedActiveEnrollment(db) {
+async function seedActiveEnrollment(db: D1Database) {
   const n = nextId();
   const studentId = await insertStudent(db, `0123456789${n}`, `Tran Thi ${n}`, `s${n}@test.com`, `090100${n}`);
   const classId = await insertClass(db, `Lop Active ${n}`);
@@ -155,7 +155,7 @@ async function seedActiveEnrollment(db) {
 // ─── Test Suite ───────────────────────────────────────────────────────────────
 
 describe('online-classes repository - Enrollments (DB thật)', () => {
-  let db;
+  let db: D1Database;
 
   beforeAll(async () => {
     db = env.DB;

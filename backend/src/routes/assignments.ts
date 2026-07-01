@@ -354,7 +354,7 @@ assignments.post('/:id/submit', studentAuth, strictRateLimiter, async (c) => {
     WHERE assignment_id = ? AND student_id = ?
   `).bind(id, student.id).first() as any;
 
-    if (submissionCount.count >= assignment.max_attempts) {
+    if ((submissionCount?.count ?? 0) >= assignment.max_attempts) {
         return errorResponse(`Bạn đã nộp tối đa ${assignment.max_attempts} lần`, 400);
     }
 

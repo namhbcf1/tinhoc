@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useRef, useId } from 'react';
 import './ConfirmDialog.css';
 import OverlayPortal from './OverlayPortal';

@@ -1,15 +1,19 @@
 // ========================================
 // DATE UTILITIES - Format ngày tháng theo GMT+7 (Hà Nội)
 // ========================================
+// Logic runtime giữ NGUYÊN như bản cũ (đã chạy production). Chỉ bổ sung kiểu
+// TypeScript và bỏ `@ts-nocheck` để có an toàn kiểu, không đổi hành vi.
+
+type DateInput = string | number | Date | null | undefined;
 
 /**
  * Chuyển đổi date string hoặc Date object sang Date object với múi giờ GMT+7
  * Đảm bảo logic Việt Nam 100%
  */
-export function toVietnamDate(date) {
+export function toVietnamDate(date: DateInput): Date | null {
   if (!date) return null;
 
-  let d;
+  let d: Date;
   if (typeof date === 'string') {
     // Nếu là định dạng dd/mm/yyyy
     if (date.includes('/')) {
@@ -51,7 +55,7 @@ export function toVietnamDate(date) {
 /**
  * Format ngày tháng theo định dạng Việt Nam: dd/mm/yyyy
  */
-export function formatDateVN(date, includeTime = false) {
+export function formatDateVN(date: DateInput, includeTime = false): string {
   if (!date) return '';
 
   const d = toVietnamDate(date);
@@ -73,23 +77,23 @@ export function formatDateVN(date, includeTime = false) {
 /**
  * Format ngày tháng và giờ đầy đủ: dd/mm/yyyy HH:mm
  */
-export function formatDateTimeVN(date) {
+export function formatDateTimeVN(date: DateInput): string {
   return formatDateVN(date, true);
 }
 
 /**
  * Format ngày tháng cho input (dd/mm/yyyy)
- * Lưu ý: Input type="date" thường bắt yyyy-mm-dd, 
+ * Lưu ý: Input type="date" thường bắt yyyy-mm-dd,
  * nhưng user yêu cầu hiển thị dd/mm/yyyy ở mọi nơi.
  */
-export function formatDateInput(date) {
+export function formatDateInput(date: DateInput): string {
   return formatDateVN(date);
 }
 
 /**
  * Format thời gian cho input datetime-local (yyyy-mm-ddTHH:mm) - Giữ nguyên cho browser compatibility
  */
-export function formatDateTimeInput(date) {
+export function formatDateTimeInput(date: DateInput): string {
   if (!date) return '';
 
   const d = toVietnamDate(date);
@@ -107,7 +111,7 @@ export function formatDateTimeInput(date) {
 /**
  * Parse date string từ input (yyyy-mm-dd) sang Date object với GMT+7
  */
-export function parseDateInput(dateString) {
+export function parseDateInput(dateString: string | null | undefined): Date | null {
   if (!dateString) return null;
 
   if (dateString.includes('/')) {
@@ -128,7 +132,7 @@ export function parseDateInput(dateString) {
 /**
  * Parse date string từ định dạng Việt Nam (dd/mm/yyyy) sang Date object với GMT+7
  */
-export function parseVNDate(dateString) {
+export function parseVNDate(dateString: string | null | undefined): Date | null {
   if (!dateString) return null;
 
   // Parse dd/mm/yyyy
@@ -152,14 +156,14 @@ export function parseVNDate(dateString) {
 /**
  * Parse datetime string từ input (yyyy-mm-ddTHH:mm) sang Date object với GMT+7
  */
-export function parseDateTimeInput(dateTimeString) {
+export function parseDateTimeInput(dateTimeString: string | null | undefined): Date | null {
   if (!dateTimeString) return null;
 
   // Parse yyyy-mm-ddTHH:mm
   const [datePart, timePart] = dateTimeString.split('T');
   if (!datePart) return null;
 
-  let year, month, day;
+  let year: number, month: number, day: number;
   if (datePart.includes('/')) {
     [day, month, year] = datePart.split('/').map(Number);
   } else {
@@ -183,7 +187,7 @@ export function parseDateTimeInput(dateTimeString) {
 /**
  * Format ngày tháng ngắn gọn: dd/mm
  */
-export function formatDateShort(date) {
+export function formatDateShort(date: DateInput): string {
   if (!date) return '';
 
   const d = toVietnamDate(date);
@@ -198,7 +202,7 @@ export function formatDateShort(date) {
 /**
  * Format thời gian: HH:mm
  */
-export function formatTime(date) {
+export function formatTime(date: DateInput): string {
   if (!date) return '';
 
   const d = toVietnamDate(date);
@@ -213,7 +217,7 @@ export function formatTime(date) {
 /**
  * Format giá trị ngày cho input type="date" theo múi giờ Việt Nam.
  */
-export function formatVietnamDateInputValue(date) {
+export function formatVietnamDateInputValue(date: DateInput): string {
   if (!date) return '';
 
   const d = toVietnamDate(date);
@@ -228,7 +232,10 @@ export function formatVietnamDateInputValue(date) {
 /**
  * Tạo ISO string cố định theo giờ Việt Nam để tránh lệch múi giờ do browser locale.
  */
-export function buildVietnamDateTimePayload(dateValue, timeValue = '00:00') {
+export function buildVietnamDateTimePayload(
+  dateValue: string | null | undefined,
+  timeValue: string | null | undefined = '00:00'
+): string | null {
   if (!dateValue) return null;
 
   const [year, month, day] = String(dateValue).split('-').map(Number);
@@ -256,9 +263,9 @@ export function buildVietnamDateTimePayload(dateValue, timeValue = '00:00') {
 
 /**
  * Lấy ngày hiện tại theo GMT+7
- * @param {boolean} asString - Nếu true, trả về string yyyy-MM-dd cho HTML date input
+ * @param asString - Nếu true, trả về string yyyy-MM-dd cho HTML date input
  */
-export function getCurrentDateVN(asString = false) {
+export function getCurrentDateVN(asString = false): Date | string {
   const d = new Date();
   const utcTime = d.getTime() + (d.getTimezoneOffset() * 60000);
   const vietnamDate = new Date(utcTime + (7 * 3600000));
@@ -272,9 +279,3 @@ export function getCurrentDateVN(asString = false) {
 
   return vietnamDate;
 }
-
-
-
-
-
-

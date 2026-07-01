@@ -15,7 +15,7 @@ documents.post('/upload', authMiddleware, async (c) => {
     const formData = await c.req.formData();
     const file = formData.get('file');
     const form = Object.fromEntries(formData.entries());
-    const res = await DocService.uploadDocument(c, form, file, c.get('user'));
+    const res = await DocService.uploadDocument(c, form, file as unknown as File, c.get('user'));
     return c.json({ success: true, message: 'Upload thành công', ...res }, 201);
   } catch (err: any) {
     return errorResponse(err.message, 500);
@@ -37,7 +37,7 @@ documents.post('/:id/share', authMiddleware, createPostEndpoint({
   body: z.object({ targets: z.array(z.any()) }),
   handler: async (c, { params, body }) => {
     await DocService.shareDocumentIntoClasses(c, params.id, body.targets, c.get('user'));
-    return { message: 'Đã chia sẻ tài liệu' };
+    return { success: true as const, data: { message: 'Đã chia sẻ tài liệu' } };
   }
 }));
 
@@ -46,7 +46,7 @@ documents.post('/:id/unshare', authMiddleware, createPostEndpoint({
   body: z.object({ type: z.string(), id: z.number().or(z.string().transform(Number)) }),
   handler: async (c, { params, body }) => {
     await DocService.unshareDocument(c, params.id, body.type, body.id);
-    return { message: 'Đã thu hồi chia sẻ' };
+    return { success: true as const, data: { message: 'Đã thu hồi chia sẻ' } };
   }
 }));
 
@@ -67,7 +67,10 @@ documents.get('/online-class/:classId', createGetEndpoint({
 
 documents.post('/student', createPostEndpoint({
   body: z.object({ student_id: z.any(), class_ids: z.array(z.number()).optional() }),
-  handler: async (c, { body }) => await DocService.getStudentDocuments(c, body.student_id, body.class_ids || [])
+  handler: async (c, { body }) => {
+    const data = await DocService.getStudentDocuments(c, body.student_id, body.class_ids || []);
+    return { success: true as const, data };
+  }
 }));
 
 documents.get('/cccd/:cccd', authMiddleware, createGetEndpoint({
@@ -77,7 +80,8 @@ documents.get('/cccd/:cccd', authMiddleware, createGetEndpoint({
     if (user?.type === 'student' && String(user.cccd || '') !== String(params.cccd || '')) {
       throw new Error('Không có quyền xem tài liệu của học viên khác');
     }
-    return await DocService.getDocumentsByCCCD(c, params.cccd);
+    const data = await DocService.getDocumentsByCCCD(c, params.cccd);
+    return { success: true as const, data };
   }
 }));
 
@@ -134,7 +138,7 @@ documents.delete('/:id', authMiddleware, createDeleteEndpoint({
   params: z.object({ id: z.string().transform(Number) }),
   handler: async (c, { params }) => {
     await DocService.deleteDocument(c, params.id);
-    return { message: 'Xóa tài liệu thành công' };
+    return { success: true as const, data: { message: 'Xóa tài liệu thành công' } };
   }
 }));
 

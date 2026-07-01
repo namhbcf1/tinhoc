@@ -12,7 +12,7 @@
  */
 
 import type { Env } from '../types/env.js';
-import { getGoogleAccessToken } from './google-auth.js';
+import { getGoogleAccessToken, importPrivateKey } from './google-auth.js';
 
 const CALENDAR_SCOPES = [
   'https://www.googleapis.com/auth/calendar',

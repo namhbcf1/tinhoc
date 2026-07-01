@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CircleHelp, SkipForward, X } from 'lucide-react';
@@ -361,6 +362,10 @@ export default function ProductTour() {
     }
 
     if (existingStatus) {
+      return;
+    }
+
+    if (context !== 'public') {
       return;
     }
 

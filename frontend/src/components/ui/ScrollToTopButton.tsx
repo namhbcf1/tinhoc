@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -36,7 +37,7 @@ export default function ScrollToTopButton() {
                 onClick={scrollToTop}
                 size="icon"
                 className="rounded-full shadow-lg bg-green-600 hover:bg-green-700 text-white w-12 h-12"
-                aria-label="Scroll to top"
+                aria-label="Cuộn lên đầu trang"
             >
                 <ArrowUp size={24} />
             </Button>

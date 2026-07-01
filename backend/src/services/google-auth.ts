@@ -24,7 +24,7 @@ function arrayBufferToBase64URL(buffer: ArrayBuffer): string {
 
 // ── PEM key import ───────────────────────────────────────────────
 
-async function importPrivateKey(pemKey: string): Promise<CryptoKey> {
+export async function importPrivateKey(pemKey: string): Promise<CryptoKey> {
   const pemContents = pemKey
     .replace(/-----BEGIN PRIVATE KEY-----/g, '')
     .replace(/-----END PRIVATE KEY-----/g, '')

@@ -319,6 +319,9 @@ auth.post('/reset-password', async (c) => {
     if (newPassword.length < 8) {
       return errorResponse('Mật khẩu phải có ít nhất 8 ký tự', 400);
     }
+    if (newPassword.length > 128) {
+      return errorResponse('Mật khẩu không được vượt quá 128 ký tự', 400);
+    }
 
     // Find token
     const resetToken = await findPasswordResetToken(c.env.DB, token) as any;
@@ -375,6 +378,9 @@ auth.post('/change-password', async (c) => {
 
     if (newPassword.length < 8) {
       return errorResponse('Mật khẩu phải có ít nhất 8 ký tự', 400);
+    }
+    if (newPassword.length > 128) {
+      return errorResponse('Mật khẩu không được vượt quá 128 ký tự', 400);
     }
 
     // Get admin

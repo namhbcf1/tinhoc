@@ -1,0 +1,395 @@
+- generic [ref=e21]:
+  - banner [ref=e22]:
+    - generic [ref=e23]:
+      - link "Van Trang Education — Trang chủ" [ref=e24] [cursor=pointer]:
+        - /url: /
+        - img "Van Trang Education" [ref=e25]
+      - generic [ref=e26]:
+        - link "Gọi hotline 096 244 5963" [ref=e27] [cursor=pointer]:
+          - /url: tel:0962445963
+          - img [ref=e28]
+        - button "Đóng menu" [expanded] [active] [ref=e306]:
+          - img [ref=e307]
+    - dialog "Điều hướng chính" [ref=e312]:
+      - generic [ref=e313]:
+        - generic [ref=e315]:
+          - paragraph [ref=e316]: Vân Trang
+          - paragraph [ref=e317]: Education
+        - button "Đóng menu" [ref=e318]:
+          - img [ref=e319]
+      - link "Tư vấn miễn phí 24h" [ref=e323] [cursor=pointer]:
+        - /url: /register
+        - button "Tư vấn miễn phí 24h" [ref=e324]:
+          - img [ref=e325]
+          - text: Tư vấn miễn phí 24h
+      - navigation [ref=e328]:
+        - paragraph [ref=e329]: Điều hướng
+        - list [ref=e330]:
+          - listitem [ref=e331]:
+            - link "Trang chủ Trang chủ" [ref=e332] [cursor=pointer]:
+              - /url: /
+              - generic [ref=e333]:
+                - generic [ref=e334]: Trang chủ
+                - generic [ref=e335]: Trang chủ
+              - img [ref=e336]
+          - listitem [ref=e338]:
+            - link "Đào tạo Chương trình đào tạo" [ref=e339] [cursor=pointer]:
+              - /url: /training
+              - generic [ref=e340]:
+                - generic [ref=e341]: Đào tạo
+                - generic [ref=e342]: Chương trình đào tạo
+              - img [ref=e343]
+          - listitem [ref=e345]:
+            - link "Về HUB Giới thiệu Vân Trang" [ref=e346] [cursor=pointer]:
+              - /url: /about
+              - generic [ref=e347]:
+                - generic [ref=e348]: Về HUB
+                - generic [ref=e349]: Giới thiệu Vân Trang
+              - img [ref=e350]
+          - listitem [ref=e352]:
+            - link "Tin tức Tin tức & bài viết" [ref=e353] [cursor=pointer]:
+              - /url: /news
+              - generic [ref=e354]:
+                - generic [ref=e355]: Tin tức
+                - generic [ref=e356]: Tin tức & bài viết
+              - img [ref=e357]
+          - listitem [ref=e359]:
+            - link "Hướng dẫn Hướng dẫn học viên" [ref=e360] [cursor=pointer]:
+              - /url: /guides
+              - generic [ref=e361]:
+                - generic [ref=e362]: Hướng dẫn
+                - generic [ref=e363]: Hướng dẫn học viên
+              - img [ref=e364]
+          - listitem [ref=e366]:
+            - link "Liên hệ Liên hệ trung tâm" [ref=e367] [cursor=pointer]:
+              - /url: /contact
+              - generic [ref=e368]:
+                - generic [ref=e369]: Liên hệ
+                - generic [ref=e370]: Liên hệ trung tâm
+              - img [ref=e371]
+          - listitem [ref=e373]:
+            - link "Tuyển sinh Đăng ký tư vấn miễn phí" [ref=e374] [cursor=pointer]:
+              - /url: /register
+              - generic [ref=e375]:
+                - generic [ref=e376]: Tuyển sinh
+                - generic [ref=e377]: Đăng ký tư vấn miễn phí
+              - img [ref=e378]
+          - listitem [ref=e380]:
+            - link "Feedback Cảm nhận học viên" [ref=e381] [cursor=pointer]:
+              - /url: /feedback
+              - generic [ref=e382]:
+                - generic [ref=e383]: Feedback
+                - generic [ref=e384]: Cảm nhận học viên
+              - img [ref=e385]
+          - listitem [ref=e387]:
+            - link "Tra cứu chứng chỉ Xác minh kết quả học tập" [ref=e388] [cursor=pointer]:
+              - /url: /certificate/lookup
+              - generic [ref=e389]:
+                - generic [ref=e390]: Tra cứu chứng chỉ
+                - generic [ref=e391]: Xác minh kết quả học tập
+              - img [ref=e392]
+          - listitem [ref=e394]:
+            - link "Tra cứu hồ sơ Kiểm tra thông tin học viên" [ref=e395] [cursor=pointer]:
+              - /url: /student-lookup
+              - generic [ref=e396]:
+                - generic [ref=e397]: Tra cứu hồ sơ
+                - generic [ref=e398]: Kiểm tra thông tin học viên
+              - img [ref=e399]
+        - generic [ref=e401]:
+          - paragraph [ref=e402]: Tài khoản
+          - generic [ref=e403]:
+            - link "Đăng nhập" [ref=e404] [cursor=pointer]:
+              - /url: /login
+              - button "Đăng nhập" [ref=e405]
+            - link "Đăng ký ngay" [ref=e406] [cursor=pointer]:
+              - /url: /register
+              - button "Đăng ký ngay" [ref=e407]:
+                - text: Đăng ký ngay
+                - img [ref=e408]
+        - generic [ref=e410]:
+          - paragraph [ref=e411]: Ngôn ngữ
+          - generic [ref=e412]:
+            - button "🇻🇳 Tiếng Việt" [pressed] [ref=e413]
+            - button "🇬🇧 English" [ref=e414]
+      - generic [ref=e415]:
+        - paragraph [ref=e416]: Liên hệ nhanh
+        - generic [ref=e417]:
+          - link "096 244 5963 Hotline 8h–21h hằng ngày" [ref=e418] [cursor=pointer]:
+            - /url: tel:0962445963
+            - img [ref=e420]
+            - generic [ref=e422]:
+              - paragraph [ref=e423]: 096 244 5963
+              - paragraph [ref=e424]: Hotline 8h–21h hằng ngày
+          - link "Chat Zalo Phản hồi trong vài phút" [ref=e425] [cursor=pointer]:
+            - /url: https://zalo.me/0962445963
+            - img [ref=e427]
+            - generic [ref=e429]:
+              - paragraph [ref=e430]: Chat Zalo
+              - paragraph [ref=e431]: Phản hồi trong vài phút
+  - main [ref=e32]:
+    - generic [ref=e33]:
+      - generic [ref=e36]:
+        - paragraph [ref=e37]: Liên hệ · Tư vấn 1-1
+        - heading "Một cuộc trò chuyện đủ để bạn an tâm." [level=1] [ref=e38]:
+          - generic [ref=e39]: Một cuộc trò chuyện
+          - generic [ref=e40]: đủ để bạn an tâm.
+        - paragraph [ref=e41]: Đội ngũ Vân Trang lắng nghe mục tiêu — chứng chỉ, du học, hay phục vụ công việc — rồi tư vấn lộ trình phù hợp nhất. Bạn chọn kênh tiện nhất, chúng tôi đảm bảo phản hồi nhanh.
+        - generic [ref=e42]:
+          - link "Gọi 096 244 5963" [ref=e43] [cursor=pointer]:
+            - /url: tel:0962445963
+            - img [ref=e44]
+            - text: Gọi 096 244 5963
+          - link "Nhắn Zalo" [ref=e46] [cursor=pointer]:
+            - /url: https://zalo.me/0962445963
+            - img [ref=e47]
+            - text: Nhắn Zalo
+      - generic [ref=e51]:
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - paragraph [ref=e54]: Kênh chính · Phản hồi nhanh
+            - heading "Ba cách tốt nhất để bắt đầu" [level=2] [ref=e55]
+          - paragraph [ref=e56]: Chọn cách phù hợp với bạn. Mọi kênh đều dẫn về một đội ngũ duy nhất.
+        - generic [ref=e57]:
+          - article [ref=e58]:
+            - generic [ref=e59]:
+              - img [ref=e61]
+              - generic [ref=e63]:
+                - paragraph [ref=e64]: Hotline · 24/7
+                - heading "Tư vấn nhanh qua điện thoại" [level=3] [ref=e65]
+            - list [ref=e66]:
+              - listitem [ref=e67]:
+                - link "096 244 5963" [ref=e68] [cursor=pointer]:
+                  - /url: tel:0962445963
+              - listitem [ref=e69]:
+                - link "033 924 4566" [ref=e70] [cursor=pointer]:
+                  - /url: tel:0339244566
+            - paragraph [ref=e71]: Phản hồi trong vòng 2 phút giờ hành chính.
+          - article [ref=e72]:
+            - generic [ref=e73]:
+              - img [ref=e75]
+              - generic [ref=e78]:
+                - paragraph [ref=e79]: Email · Hồ sơ
+                - heading "Hộp thư chính thức" [level=3] [ref=e80]
+            - list [ref=e81]:
+              - listitem [ref=e82]:
+                - link "info@vantrangedu.edu.vn" [ref=e83] [cursor=pointer]:
+                  - /url: mailto:info@vantrangedu.edu.vn
+            - paragraph [ref=e84]: Phù hợp gửi tài liệu, đối tác và yêu cầu hợp tác.
+          - article [ref=e85]:
+            - generic [ref=e86]:
+              - img [ref=e88]
+              - generic [ref=e90]:
+                - paragraph [ref=e91]: Zalo · Chat
+                - heading "Trò chuyện qua Zalo" [level=3] [ref=e92]
+            - list [ref=e93]:
+              - listitem [ref=e94]:
+                - link "zalo.me/0962445963" [ref=e95] [cursor=pointer]:
+                  - /url: https://zalo.me/0962445963
+            - paragraph [ref=e96]: Gửi ảnh chụp hồ sơ, lịch học và đặt câu hỏi tức thì.
+      - generic [ref=e99]:
+        - generic [ref=e100]:
+          - paragraph [ref=e101]: Gửi yêu cầu chi tiết
+          - heading "Mô tả mục tiêu, nhận lộ trình." [level=2] [ref=e102]
+          - paragraph [ref=e103]: Chúng tôi sẽ phản hồi bằng email hoặc gọi lại trong giờ hành chính. Mọi thông tin được bảo mật và chỉ dùng cho mục đích tư vấn.
+          - generic [ref=e104]:
+            - generic [ref=e105]:
+              - generic [ref=e106]:
+                - generic [ref=e107]: Họ và tên *
+                - textbox "Họ và tên *" [ref=e108]:
+                  - /placeholder: "Ví dụ: Nguyễn Văn A"
+              - generic [ref=e109]:
+                - generic [ref=e110]: Số điện thoại *
+                - textbox "Số điện thoại *" [ref=e111]:
+                  - /placeholder: 09xx xxx xxx
+            - generic [ref=e112]:
+              - generic [ref=e113]:
+                - generic [ref=e114]: Email *
+                - textbox "Email *" [ref=e115]:
+                  - /placeholder: email@domain.com
+              - generic [ref=e116]:
+                - generic [ref=e117]: Chủ đề *
+                - textbox "Chủ đề *" [ref=e118]:
+                  - /placeholder: Tư vấn lộ trình VSTEP B2...
+            - generic [ref=e119]:
+              - generic [ref=e120]: Nội dung chi tiết *
+              - textbox "Nội dung chi tiết *" [ref=e121]:
+                - /placeholder: Mô tả năng lực hiện tại, mục tiêu và mốc thời gian mong muốn...
+            - generic [ref=e122]:
+              - paragraph [ref=e123]:
+                - text: Bằng việc gửi, bạn đồng ý với
+                - link "chính sách bảo mật" [ref=e124] [cursor=pointer]:
+                  - /url: /privacy
+                - text: của Vân Trang.
+              - button "Gửi yêu cầu" [ref=e125]:
+                - img [ref=e126]
+                - text: Gửi yêu cầu
+        - complementary [ref=e129]:
+          - generic [ref=e130]:
+            - img [ref=e132]
+            - generic [ref=e135]:
+              - heading "Trụ sở" [level=3] [ref=e136]
+              - paragraph [ref=e137]: 418 Đê La Thành, P. Ô Chợ Dừa, Q. Đống Đa, Hà Nội
+              - link "Xem bản đồ" [ref=e138] [cursor=pointer]:
+                - /url: https://maps.google.com/?q=418+%C4%90%C3%AA+La+Th%C3%A0nh+H%C3%A0+N%E1%BB%99i
+                - text: Xem bản đồ
+                - img [ref=e139]
+          - generic [ref=e142]:
+            - img [ref=e144]
+            - generic [ref=e146]:
+              - heading "Cộng đồng Facebook" [level=3] [ref=e147]
+              - paragraph [ref=e148]: "@Englishvantrang · cập nhật học liệu & lịch khai giảng"
+              - link "Theo dõi" [ref=e149] [cursor=pointer]:
+                - /url: https://www.facebook.com/Englishvantrang
+                - text: Theo dõi
+                - img [ref=e150]
+          - generic [ref=e153]:
+            - img [ref=e155]
+            - generic [ref=e158]:
+              - heading "Giờ tiếp đón" [level=3] [ref=e159]
+              - paragraph [ref=e160]: "Thứ 2 – Thứ 7: 08:00 – 21:00 · Chủ nhật: 08:00 – 17:00"
+          - generic [ref=e161]:
+            - paragraph [ref=e162]: Cần gấp?
+            - heading "Gọi trực tiếp giảng viên đào tạo" [level=3] [ref=e163]
+            - paragraph [ref=e164]: Đường dây dành cho học viên đang theo học cần hỗ trợ khẩn — lịch thi, sự cố học liệu, hoặc thay đổi lịch lớp.
+            - link "033 924 4566" [ref=e165] [cursor=pointer]:
+              - /url: tel:0339244566
+              - img [ref=e166]
+              - text: 033 924 4566
+  - contentinfo [ref=e168]:
+    - generic [ref=e170]:
+      - list [ref=e172]:
+        - listitem [ref=e173]:
+          - img [ref=e175]
+          - generic [ref=e178]:
+            - paragraph [ref=e179]: VSTEP · IELTS · TOEIC
+            - paragraph [ref=e180]: Lộ trình học và thi rõ ràng
+        - listitem [ref=e181]:
+          - img [ref=e183]
+          - generic [ref=e186]:
+            - paragraph [ref=e187]: 5.000+ học viên
+            - paragraph [ref=e188]: Đang theo học & đã tốt nghiệp
+        - listitem [ref=e189]:
+          - img [ref=e191]
+          - generic [ref=e194]:
+            - paragraph [ref=e195]: Hồ sơ minh bạch
+            - paragraph [ref=e196]: Quản lý học viên, lớp và chứng chỉ
+        - listitem [ref=e197]:
+          - img [ref=e199]
+          - generic [ref=e202]:
+            - paragraph [ref=e203]: Tư vấn 1-1
+            - paragraph [ref=e204]: Chọn đúng khóa trước khi đăng ký
+      - generic [ref=e206]:
+        - generic [ref=e207]:
+          - link "Van Trang Education — Trang chủ" [ref=e208] [cursor=pointer]:
+            - /url: /
+            - img "Van Trang Education" [ref=e209]
+            - generic [ref=e210]:
+              - paragraph [ref=e211]: Vân Trang
+              - paragraph [ref=e212]: Education
+          - paragraph [ref=e213]: Hệ sinh thái đào tạo ngoại ngữ, tin học và quản lý hồ sơ học viên — chuẩn mực, đáng tin cậy, dễ theo dõi.
+          - generic [ref=e214]:
+            - paragraph [ref=e215]: Công ty TNHH Tư vấn Giáo dục Sơn Trang
+            - paragraph [ref=e216]: "Mã số thuế: 0110058563"
+            - paragraph [ref=e217]: "Người đại diện: Phạm Thị Vân Trang"
+          - generic [ref=e218]:
+            - link "Facebook" [ref=e219] [cursor=pointer]:
+              - /url: https://www.facebook.com/Englishvantrang
+              - img [ref=e220]
+            - link "Chat Zalo" [ref=e222] [cursor=pointer]:
+              - /url: https://zalo.me/0962445963
+              - img [ref=e223]
+            - link "Email" [ref=e225] [cursor=pointer]:
+              - /url: mailto:info@vantrangedu.edu.vn
+              - img [ref=e226]
+        - group [ref=e229]:
+          - generic "Dịch vụ" [ref=e230] [cursor=pointer]:
+            - generic [ref=e231]: Dịch vụ
+            - img [ref=e232]
+          - list [ref=e234]:
+            - listitem [ref=e235]:
+              - link "Đào tạo" [ref=e236] [cursor=pointer]:
+                - /url: /training
+                - text: Đào tạo
+            - listitem [ref=e238]:
+              - link "Đăng ký khóa học" [ref=e239] [cursor=pointer]:
+                - /url: /register
+                - text: Đăng ký khóa học
+            - listitem [ref=e241]:
+              - link "Tin tức & Blog" [ref=e242] [cursor=pointer]:
+                - /url: /news
+                - text: Tin tức & Blog
+            - listitem [ref=e244]:
+              - link "Về chúng tôi" [ref=e245] [cursor=pointer]:
+                - /url: /about
+                - text: Về chúng tôi
+            - listitem [ref=e247]:
+              - link "Liên hệ" [ref=e248] [cursor=pointer]:
+                - /url: /contact
+                - text: Liên hệ
+        - group [ref=e250]:
+          - generic "Chương trình" [ref=e251] [cursor=pointer]:
+            - generic [ref=e252]: Chương trình
+            - img [ref=e253]
+          - list [ref=e255]:
+            - listitem [ref=e256]:
+              - link "Tiếng Anh Giao Tiếp" [ref=e257] [cursor=pointer]:
+                - /url: /training
+            - listitem [ref=e258]:
+              - link "Luyện Thi Chứng Chỉ" [ref=e259] [cursor=pointer]:
+                - /url: /training
+            - listitem [ref=e260]:
+              - link "Hỗ Trợ Tiếng Anh" [ref=e261] [cursor=pointer]:
+                - /url: /ho-tro-tieng-anh
+            - listitem [ref=e262]:
+              - link "Dạy Ngôn Ngữ" [ref=e263] [cursor=pointer]:
+                - /url: /day-ngon-ngu
+            - listitem [ref=e264]:
+              - link "Trung Tâm Tiếng Anh" [ref=e265] [cursor=pointer]:
+                - /url: /trung-tam-tieng-anh
+            - listitem [ref=e266]:
+              - link "English Support Services" [ref=e267] [cursor=pointer]:
+                - /url: /english-support
+            - listitem [ref=e268]:
+              - link "Language Center" [ref=e269] [cursor=pointer]:
+                - /url: /language-center
+        - group [ref=e270]:
+          - generic "Liên hệ" [ref=e271] [cursor=pointer]:
+            - generic [ref=e272]: Liên hệ
+            - img [ref=e273]
+          - list [ref=e275]:
+            - listitem [ref=e276]:
+              - paragraph [ref=e277]:
+                - img [ref=e278]
+                - text: Hotline
+              - link "096 244 5963" [ref=e280] [cursor=pointer]:
+                - /url: tel:0962445963
+              - link "0339 244 566" [ref=e281] [cursor=pointer]:
+                - /url: tel:0339244566
+            - listitem [ref=e282]:
+              - paragraph [ref=e283]:
+                - img [ref=e284]
+                - text: Email
+              - link "info@vantrangedu.edu.vn" [ref=e287] [cursor=pointer]:
+                - /url: mailto:info@vantrangedu.edu.vn
+            - listitem [ref=e288]:
+              - paragraph [ref=e289]:
+                - img [ref=e290]
+                - text: Zalo
+              - link "zalo.me/0962445963" [ref=e292] [cursor=pointer]:
+                - /url: https://zalo.me/0962445963
+            - listitem [ref=e293]:
+              - paragraph [ref=e294]:
+                - img [ref=e295]
+                - text: Văn phòng
+              - paragraph [ref=e298]: Hà Nội · Hỗ trợ Online toàn quốc
+      - generic [ref=e300]:
+        - paragraph [ref=e301]: © 2026 Công ty TNHH Tư vấn Giáo dục Sơn Trang. Bảo lưu mọi quyền.
+        - generic [ref=e302]:
+          - link "Chính sách bảo mật" [ref=e303] [cursor=pointer]:
+            - /url: /privacy
+          - generic [ref=e304]: ·
+          - link "Điều khoản sử dụng" [ref=e305] [cursor=pointer]:
+            - /url: /terms
+  - generic:
+    - button "Scroll to top":
+      - img

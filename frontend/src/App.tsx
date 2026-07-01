@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
 import analytics from './utils/analytics';

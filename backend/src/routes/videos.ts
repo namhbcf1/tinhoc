@@ -196,7 +196,9 @@ async function ensureCanAccessClass(c: any, classId: string, user: any) {
 
   // Giáo viên: kiểm tra được phân công lớp
   if (user.role === 'teacher' && user.id) {
-    const teacherClasses = await getClassTeachers(c.env.DB, parseInt(classId));
+    const parsedClassId = parseInt(classId);
+    if (isNaN(parsedClassId)) return { error: errorResponse('classId không hợp lệ', 400) };
+    const teacherClasses = await getClassTeachers(c.env.DB, parsedClassId);
     const assigned = (teacherClasses.results || []).some(
       (row: any) => String(row.teacher_id) === String(user.id)
     );

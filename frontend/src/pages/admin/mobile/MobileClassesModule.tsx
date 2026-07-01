@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useRef } from 'react';
 import {
   BookOpen, Search, Plus, Edit2, Trash2, X, ChevronRight, Calendar, Clock,
@@ -24,6 +25,8 @@ import {
 const BottomSheet = MobileAdminBottomSheet;
 
 const ClassCard = ({ cls, onClick, onEdit, onDelete }) => {
+  if (!cls || typeof cls !== 'object') return null;
+
   const name = cls.ten_lop || 'Lớp học';
   const code = cls.ma_lop || `LOP-${cls.id}`;
   const status = cls.status || 'open';

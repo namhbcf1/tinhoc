@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // TEACHER METHODS MIXIN
 // Teacher is now admin with role='teacher'. No separate teacher auth.

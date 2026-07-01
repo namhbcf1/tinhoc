@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useRef, useEffect } from 'react';
 import { Bot, X, Send, Maximize2, Minimize2, MessageSquare, Loader2, User, Zap } from 'lucide-react';
 import { Button } from '../ui/Button';

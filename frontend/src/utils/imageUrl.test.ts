@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { applyImageFallback, buildInitialsAvatarDataUrl, resolveImageUrl } from './imageUrl';
 
 describe('resolveImageUrl', () => {

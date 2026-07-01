@@ -10,7 +10,7 @@ import { createNotification } from '../db/notification-queries.js';
  */
 export async function notifyRegistrationSuccess(db: D1Database, studentId: string, className: string): Promise<void> {
   await createNotification(db, {
-    user_id: studentId,
+    user_id: Number(studentId),
     user_type: 'student',
     title: 'Đăng ký lớp thành công',
     message: `Bạn đã đăng ký lớp "${className}" thành công. Vui lòng thanh toán học phí để hoàn tất đăng ký.`,
@@ -24,7 +24,7 @@ export async function notifyRegistrationSuccess(db: D1Database, studentId: strin
  */
 export async function notifyPaymentConfirmed(db: D1Database, studentId: string, amount: number, className: string): Promise<void> {
   await createNotification(db, {
-    user_id: studentId,
+    user_id: Number(studentId),
     user_type: 'student',
     title: 'Thanh toán được xác nhận',
     message: `Thanh toán học phí ${amount.toLocaleString('vi-VN')} VNĐ cho lớp "${className}" đã được xác nhận.`,
@@ -38,7 +38,7 @@ export async function notifyPaymentConfirmed(db: D1Database, studentId: string, 
  */
 export async function notifyCertificateIssued(db: D1Database, studentId: string, certificateNumber: string, className: string): Promise<void> {
   await createNotification(db, {
-    user_id: studentId,
+    user_id: Number(studentId),
     user_type: 'student',
     title: 'Chứng chỉ đã được cấp',
     message: `Chứng chỉ số ${certificateNumber} cho lớp "${className}" đã được cấp. Bạn có thể tải về trong mục Chứng chỉ.`,

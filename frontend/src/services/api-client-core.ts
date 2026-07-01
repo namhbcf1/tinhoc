@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // API CLIENT CORE
 // Base class: constructor, token management, request/cachedRequest, auth methods

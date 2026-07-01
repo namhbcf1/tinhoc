@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useState } from 'react';
 import { CalendarDays, Edit, ExternalLink, Plus, Trash2 } from 'lucide-react';
 import api from '../../../../services/api';

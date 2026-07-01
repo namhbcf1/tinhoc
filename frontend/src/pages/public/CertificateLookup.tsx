@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useRef } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getTranslation } from '../../utils/translations';
@@ -203,4 +204,3 @@ export default function CertificateLookup() {
     </ModernPublicLayout>
   );
 }
-

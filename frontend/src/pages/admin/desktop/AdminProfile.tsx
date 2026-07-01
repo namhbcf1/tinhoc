@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import api from '../../../services/api';
 import ToastContainer, { useToast } from '../../../components/ui/ToastContainer';

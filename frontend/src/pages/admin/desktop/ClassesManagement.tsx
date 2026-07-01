@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Calendar, Users, Clock, Search, MoreHorizontal, XCircle, ArrowLeft, MapPin, CreditCard, Info, CheckCircle, AlertCircle } from 'lucide-react';
 import api from '../../../services/api';

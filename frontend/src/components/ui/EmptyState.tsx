@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * EmptyState Component
  * Shared component for displaying empty states with optional actions

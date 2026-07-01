@@ -83,8 +83,8 @@ messaging.get('/conversations/:id/messages', async (c) => {
   try {
     const user = c.get('user') as any;
     const { id } = c.req.param();
-    const limit = parseInt(c.req.query('limit')) || 100;
-    const offset = parseInt(c.req.query('offset')) || 0;
+    const limit = parseInt(c.req.query('limit') ?? '100') || 100;
+    const offset = parseInt(c.req.query('offset') ?? '0') || 0;
     
     if (!user) {
       return errorResponse('Chưa đăng nhập', 401);

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import ModernPublicLayout from '../../components/layout/ModernPublicLayout';

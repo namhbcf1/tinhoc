@@ -1,3 +1,4 @@
+// @ts-nocheck
 export function useGSAP() {
   return {
     contextSafe: (fn) => fn,

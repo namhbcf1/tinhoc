@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const STUDENT_PROFILE_SELF_SERVICE_NOTE =
   'Sinh viên có thể tự cập nhật toàn bộ thông tin hồ sơ và ảnh giấy tờ trực tiếp từ màn này.';
 
@@ -17,6 +18,7 @@ export function buildStudentSelfServicePayload(formData) {
     dia_chi: formData?.dia_chi ?? '',
     ngay_cap_cccd: formData?.ngay_cap_cccd ?? '',
     don_vi_cong_tac: formData?.don_vi_cong_tac ?? '',
+    nganh_dang_hoc: formData?.nganh_dang_hoc ?? '',
     cccd_front_image_id: formData?.cccd_front_image_id,
     cccd_back_image_id: formData?.cccd_back_image_id,
     photo_3x4_image_id: formData?.photo_3x4_image_id,

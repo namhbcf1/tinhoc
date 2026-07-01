@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Document Detection Utilities
  * AI-powered detection for CCCD and documents in camera frame

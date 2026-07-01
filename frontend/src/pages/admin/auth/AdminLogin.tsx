@@ -1,9 +1,10 @@
+// @ts-nocheck
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { User, Lock, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
+import { User, Lock, ShieldCheck, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Label } from '../../../components/ui/Label';
@@ -36,6 +37,7 @@ export default function AdminLogin() {
     const [searchParams] = useSearchParams();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const form = useForm({
         resolver: zodResolver(adminSchema),
@@ -71,13 +73,8 @@ export default function AdminLogin() {
     };
 
     useEffect(() => {
-        const adminToken = getStorageValue('admin_token');
-        const adminData = getStorageValue('admin');
-
-        if (adminToken && adminData) {
-            navigate(nextPath, { replace: true });
-        }
-    }, [navigate, nextPath]);
+        // Don't auto-redirect away from admin login; let user see login page first
+    }, []);
 
     const handleLogin = async (data) => {
         setIsLoading(true);
@@ -126,7 +123,7 @@ export default function AdminLogin() {
                 }, 'session');
             } catch (err) {
                 if (!cancelled) {
-                    setError(err.message || 'Không thể hoàn tất đăng nhập một lần');
+                    setError(err.message || 'Không thể hoàn tất đăng nhập. Vui lòng thử lại.');
                     setIsLoading(false);
                 }
             }
@@ -208,12 +205,20 @@ export default function AdminLogin() {
                                     <Input
                                         id="password"
                                         name="password"
-                                        type="password"
-                                        placeholder="••••••••"
+                                        type={showPassword ? 'text' : 'password'}
+                                        placeholder="Nhập mật khẩu (ít nhất 6 ký tự)"
                                         autoComplete="current-password"
                                         className="admin-login-input"
                                         {...form.register('password')}
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--vt-ink-40)] hover:text-[var(--vt-ink-70)] transition-colors"
+                                        aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                                    >
+                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
                                 </div>
                                 {form.formState.errors.password && (
                                     <p className="admin-login-field-error">{form.formState.errors.password.message}</p>

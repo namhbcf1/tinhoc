@@ -29,6 +29,11 @@ function resolveJsToTs(): Plugin {
 export default defineWorkersConfig({
   plugins: [resolveJsToTs()],
   test: {
+    // Only run TypeScript test sources. Stale compiled .js test files (and
+    // any future build output) must never be picked up — they shadow the
+    // real .ts sources and cause false failures.
+    include: ['src/**/*.test.ts'],
+    exclude: ['**/*.test.js', '**/node_modules/**'],
     pool: '@cloudflare/vitest-pool-workers',
     poolOptions: {
       workers: {

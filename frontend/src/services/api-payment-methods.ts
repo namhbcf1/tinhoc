@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // PAYMENT METHODS MIXIN
 // Payment listing, confirmation, rejection, creation

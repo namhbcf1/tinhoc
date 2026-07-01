@@ -73,12 +73,12 @@
     /* ========================================
        COLOR PALETTE - Student (Indigo/Blue)
        ======================================== */
-    --mb-student: #10b981;
-    --mb-student-dark: #059669;
-    --mb-student-darker: #047857;
-    --mb-student-light: #d1fae5;
-    --mb-student-bg: #ecfdf5;
-    --mb-student-hover: #34d399;
+    --mb-student: var(--vt-emerald, #1d6f5f);
+    --mb-student-dark: var(--vt-ink, #132238);
+    --mb-student-darker: #0b1728;
+    --mb-student-light: var(--vt-champagne-soft, rgba(200, 169, 106, 0.24));
+    --mb-student-bg: var(--vt-paper, #fffaf1);
+    --mb-student-hover: var(--vt-champagne, #c8a96a);
     
     /* ========================================
        COLOR PALETTE - Admin (Blue)
@@ -102,19 +102,19 @@
     /* ========================================
        NEUTRAL COLORS
        ======================================== */
-    --mb-bg: #f8fafc;
-    --mb-bg-dark: #f1f5f9;
-    --mb-card: #ffffff;
-    --mb-card-hover: #fafafa;
-    --mb-border: #e2e8f0;
-    --mb-border-light: #f1f5f9;
-    --mb-border-dark: #cbd5e1;
-    
+    --mb-bg: var(--vt-ivory, #f7f1e7);
+    --mb-bg-dark: var(--vt-paper-deep, #efe3d1);
+    --mb-card: var(--vt-paper, #fffaf1);
+    --mb-card-hover: #ffffff;
+    --mb-border: var(--vt-line, rgba(19, 34, 56, 0.14));
+    --mb-border-light: rgba(255, 250, 241, 0.72);
+    --mb-border-dark: rgba(19, 34, 56, 0.24);
+
     /* Text colors */
-    --mb-text: #0f172a;
-    --mb-text-secondary: #475569;
-    --mb-text-muted: #64748b;
-    --mb-text-light: #94a3b8;
+    --mb-text: var(--vt-ink, #132238);
+    --mb-text-secondary: var(--vt-ink-soft, #1f3352);
+    --mb-text-muted: var(--vt-muted, #6f6a60);
+    --mb-text-light: rgba(111, 106, 96, 0.72);
     --mb-text-inverse: #ffffff;
     
     /* ========================================
@@ -187,9 +187,9 @@
 
 @media (max-width: 768px) {
     :root {
-        /* Strong mobile compaction without collapsing tap usability */
+        /* Mobile compaction — font kept close to 16px for readability & iOS zoom prevention */
         --mb-space-scale: 0.72;
-        --mb-font-scale: 0.8;
+        --mb-font-scale: 0.92;
         --mb-touch-scale: 1.0; /* Never scale touch targets below 44px - WCAG 2.2 requirement */
         --mb-radius-scale: 0.88;
         --mb-layout-scale: 0.82;
@@ -226,7 +226,7 @@ body {
    ======================================== */
 
 .mobile-layout {
-    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     background: var(--mb-bg);
@@ -560,8 +560,8 @@ body {
 }
 
 .mobile-drawer-close {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -572,6 +572,8 @@ body {
     border-radius: var(--mb-radius-sm);
     flex-shrink: 0;
     transition: var(--mb-transition-fast);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .mobile-drawer-close:hover {
@@ -987,9 +989,11 @@ body {
 }
 
 .mobile-btn-sm {
-    min-height: 36px;
+    min-height: 44px;
     padding: 8px var(--mb-md);
     font-size: var(--mb-font-sm);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .mobile-btn-lg {
@@ -1018,13 +1022,14 @@ body {
     width: 100%;
     min-height: var(--mb-touch);
     padding: 12px var(--mb-md);
-    font-size: var(--mb-font-base);
+    font-size: 16px;
     border: 2px solid var(--mb-border);
     border-radius: var(--mb-radius);
     background: var(--mb-card);
     color: var(--mb-text);
     transition: var(--mb-transition);
     -webkit-appearance: none;
+    touch-action: manipulation;
 }
 
 .mobile-input:focus {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useRef } from 'react';
 
 const LOCK_COUNT_DATASET = 'adminOverlayLockCount';

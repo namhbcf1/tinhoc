@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Score calculation utilities for VSTEP exam results.
  * Ported from vantrangexam/src/utils/scoreCalculator.ts

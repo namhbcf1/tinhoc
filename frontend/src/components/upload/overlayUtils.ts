@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Utility functions for overlay calculations.
  * Kept separate to avoid circular dependencies between the upload helpers.

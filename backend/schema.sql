@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS students (
     email TEXT NOT NULL,
     sdt TEXT NOT NULL,
     dia_chi TEXT NOT NULL,
+    don_vi_cong_tac TEXT,
+    nganh_dang_hoc TEXT,
     cccd_front_image_id TEXT,
     cccd_back_image_id TEXT,
     photo_3x4_image_id TEXT,

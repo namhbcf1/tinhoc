@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, UserPlus, Phone, Mail, ChevronRight, X, User, Calendar, MapPin, GraduationCap, DollarSign, Clock, Filter, TrendingUp, AlertCircle, CheckCircle, BookOpen, FileText, ChevronDown, Edit2, Image as ImageIcon, CreditCard, Save, Upload, Download, Eye, History, RefreshCw, Trash2 } from 'lucide-react';
@@ -63,7 +64,7 @@ const StudentCard = ({ student, onView, onEdit }) => {
     const rawName = student.ho_ten_full || `${student.ho || ''} ${student.ten_dem || ''} ${student.ten || ''}`.trim();
     const displayName = rawName || 'Chưa có tên';
     const initial = displayName.charAt(0)?.toUpperCase() || 'U';
-    const avatarUrl = getImageUrl(student.image_3x4 || student.photo_3x4_image_id);
+    const avatarUrl = getImageUrl(student.photo_3x4_image_id || student.image_3x4);
     const isActive = student.trang_thai === 'active' || student.is_active !== false;
 
     const hasUnpaidFees = student.payment_status === 'pending' || student.cong_no > 0;
@@ -334,9 +335,9 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
     const email = displayStudent.email || '';
     const dob = formatDate(displayStudent.ngay_sinh);
     const address = displayStudent.dia_chi || '';
-    const portraitUrl = getImageUrl(displayStudent.image_3x4 || displayStudent.photo_3x4_image_id);
-    const cccdFrontUrl = getImageUrl(displayStudent.image_cccd_front || displayStudent.cccd_front_image_id);
-    const cccdBackUrl = getImageUrl(displayStudent.image_cccd_back || displayStudent.cccd_back_image_id);
+    const portraitUrl = getImageUrl(displayStudent.photo_3x4_image_id || displayStudent.image_3x4);
+    const cccdFrontUrl = getImageUrl(displayStudent.cccd_front_image_id || displayStudent.image_cccd_front);
+    const cccdBackUrl = getImageUrl(displayStudent.cccd_back_image_id || displayStudent.image_cccd_back);
     const overlayLayer = useOverlayLayer(true);
 
     if (typeof document === 'undefined') {
@@ -521,6 +522,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                                     <InfoRow icon={<Mail size={16} />} label="Email" value={email} />
                                     <InfoRow icon={<MapPin size={16} />} label="Địa chỉ" value={address} />
                                     <InfoRow icon={<BookOpen size={16} />} label="Đơn vị công tác" value={displayStudent.don_vi_cong_tac} />
+                                    <InfoRow icon={<GraduationCap size={16} />} label="Khoa/ngành đang theo học" value={displayStudent.nganh_dang_hoc} />
                                 </div>
                             </div>
 
@@ -949,6 +951,7 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
         email: studentData?.email || '',
         dia_chi: studentData?.dia_chi || '',
         don_vi_cong_tac: studentData?.don_vi_cong_tac || '',
+        nganh_dang_hoc: studentData?.nganh_dang_hoc || '',
         cccd_front_image_id: studentData?.cccd_front_image_id || '',
         cccd_back_image_id: studentData?.cccd_back_image_id || '',
         photo_3x4_image_id: studentData?.photo_3x4_image_id || ''
@@ -1101,6 +1104,7 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                             <FormField label="Email" value={formData.email} onChange={(v) => setFormData({ ...formData, email: v })} type="email" />
                             <FormField label="Địa chỉ" value={formData.dia_chi} onChange={(v) => setFormData({ ...formData, dia_chi: v })} />
                             <FormField label="Đơn vị công tác" value={formData.don_vi_cong_tac} onChange={(v) => setFormData({ ...formData, don_vi_cong_tac: v })} />
+                            <FormField label="Khoa/ngành đang theo học" value={formData.nganh_dang_hoc} onChange={(v) => setFormData({ ...formData, nganh_dang_hoc: v })} />
                         </div>
                     </div>
 

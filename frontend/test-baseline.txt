@@ -1,0 +1,1651 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/ADMIN/Desktop/vantrang/vantrangedu/frontend[39m
+
+[33m[39m[32m┬╖[39m[33m[39m[31mx[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m
+node.exe : 
+At line:1 
+char:1
++ & "C:\Pro
+gram Files\
+nodejs/node
+.exe" "C:\P
+rogram File
+s\nodejs/no
+de_mo ...
++ ~~~~~~~~~
+~~~~~~~~~~~
+~~~~~~~~~~~
+~~~~~~~~~~~
+~~~~~~~~~~~
+~~~~~~~~~~~
+~~~~~
+    + Cate 
+   goryIn  
+  fo       
+           
+: NotS    
+pecifi    
+ed: (:    
+String    
+) [],     
+Remote    
+Except    
+ion
+    + Full 
+   yQuali  
+  fiedEr   
+ rorId     
+: Nati    
+veComm    
+andErr    
+or
+ 
+[31mΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»[39m[1m
+[41m 
+Failed 
+Suites 10 
+[49m[22m[
+31mΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»
+[39m
+
+[41m[1m 
+FAIL 
+[22m[49m 
+e2e/admin-s
+tudents-bir
+th-place.sp
+ec.ts[2m 
+[ e2e/admin
+-students-b
+irth-place.
+spec.ts 
+][22m
+[31m[1mEr
+ror[22m: 
+Playwright 
+Test did 
+not expect 
+test.descri
+be() to be 
+called 
+here.
+Most 
+common 
+reasons 
+include:
+- You are 
+calling tes
+t.describe(
+) in a conf
+iguration 
+file.
+- You are 
+calling tes
+t.describe(
+) in a 
+file that 
+is 
+imported 
+by the conf
+iguration 
+file.
+- You have 
+two 
+different 
+versions 
+of @playwri
+ght/test. 
+This 
+usually 
+happens
+  when one 
+of the depe
+ndencies 
+in your pac
+kage.json 
+depends on 
+@playwright
+/test.[39m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+currentSuit
+e node_modu
+les/playwri
+ght/lib/com
+mon/testTyp
+e.js:[2m75
+:13[22m[3
+9m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+describe no
+de_modules/
+playwright/
+lib/common/
+testType.js
+:[2m115:24
+[22m[39m
+[90m [2mΓ
+¥»[22m Fun
+ction.descr
+ibe node_mo
+dules/playw
+right/lib/t
+ransform/tr
+ansform.js:
+[2m282:12
+[22m[39m
+[36m [2mΓ
+¥»[22m e2e
+/admin-stud
+ents-birth-
+place.spec.
+ts:[2m5:6
+[22m[39m
+    [90m  
+3| [39m[3
+5mimport[3
+9m { seedAd
+minSession 
+} [35mfrom
+[39m [32m
+'./helpers/
+session'[3
+9m[33m;[3
+9m
+    [90m  
+4| [39m
+    [90m  
+5| [39mtes
+t[33m.[39
+m[34mdescr
+ibe[39m([
+32m'admin 
+student 
+birthplace 
+flows'[39m
+[33m,[39m
+ () [33m=>
+[39m {
+    [90m  
+ | [39m   
+  
+[31m^[39m
+    [90m  
+6| [39m  t
+est('admin 
+can add a 
+student 
+with 
+domestic 
+birthplace 
+selection',
+ aΓÇª
+    [90m  
+7| [39m   
+ [35mconst
+[39m stude
+nts[33m:[
+39m [33mAr
+ray[39m[3
+3m<[39m[3
+3mRecord[3
+9m[33m<[3
+9mstring[3
+3m,[39m un
+known[33m>
+>[39m [33
+m=[39m []
+[33m;[39m
+
+[31m[2mΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»[1/11]ΓÄ»
+[22m[39m
+
+[41m[1m 
+FAIL 
+[22m[49m 
+e2e/attenda
+nce-flow.sp
+ec.ts[2m 
+[ e2e/atten
+dance-flow.
+spec.ts 
+][22m
+[31m[1mEr
+ror[22m: 
+Playwright 
+Test did 
+not expect 
+test.descri
+be() to be 
+called 
+here.
+Most 
+common 
+reasons 
+include:
+- You are 
+calling tes
+t.describe(
+) in a conf
+iguration 
+file.
+- You are 
+calling tes
+t.describe(
+) in a 
+file that 
+is 
+imported 
+by the conf
+iguration 
+file.
+- You have 
+two 
+different 
+versions 
+of @playwri
+ght/test. 
+This 
+usually 
+happens
+  when one 
+of the depe
+ndencies 
+in your pac
+kage.json 
+depends on 
+@playwright
+/test.[39m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+currentSuit
+e node_modu
+les/playwri
+ght/lib/com
+mon/testTyp
+e.js:[2m75
+:13[22m[3
+9m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+describe no
+de_modules/
+playwright/
+lib/common/
+testType.js
+:[2m115:24
+[22m[39m
+[90m [2mΓ
+¥»[22m Fun
+ction.descr
+ibe node_mo
+dules/playw
+right/lib/t
+ransform/tr
+ansform.js:
+[2m282:12
+[22m[39m
+[36m [2mΓ
+¥»[22m e2e
+/attendance
+-flow.spec.
+ts:[2m23:6
+[22m[39m
+    [90m 
+21| [39m}
+    [90m 
+22| [39m
+    [90m 
+23| [39mte
+st[33m.[3
+9m[34mdesc
+ribe[39m(
+[32m'attend
+ance role f
+lows'[39m
+[33m,[39m 
+() [33m=>
+[39m {
+    [90m  
+ | [39m   
+  
+[31m^[39m
+    [90m 
+24| [39m  
+test('stude
+nt 
+dashboard 
+shows 
+synced 
+online 
+attendance 
+alongside 
+offΓÇª
+    [90m 
+25| [39m  
+  [35mawai
+t[39m [34
+mdisableOnb
+oardingTour
+[39m(page)
+[33m;[39m
+
+[31m[2mΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»[2/11]ΓÄ»
+[22m[39m
+
+[41m[1m 
+FAIL 
+[22m[49m 
+e2e/auth-vi
+sibility-sm
+oke.spec.ts
+[2m [ e2e/
+auth-visibi
+lity-smoke.
+spec.ts 
+][22m
+[31m[1mEr
+ror[22m: 
+Playwright 
+Test did 
+not expect 
+test.descri
+be() to be 
+called 
+here.
+Most 
+common 
+reasons 
+include:
+- You are 
+calling tes
+t.describe(
+) in a conf
+iguration 
+file.
+- You are 
+calling tes
+t.describe(
+) in a 
+file that 
+is 
+imported 
+by the conf
+iguration 
+file.
+- You have 
+two 
+different 
+versions 
+of @playwri
+ght/test. 
+This 
+usually 
+happens
+  when one 
+of the depe
+ndencies 
+in your pac
+kage.json 
+depends on 
+@playwright
+/test.[39m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+currentSuit
+e node_modu
+les/playwri
+ght/lib/com
+mon/testTyp
+e.js:[2m75
+:13[22m[3
+9m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+describe no
+de_modules/
+playwright/
+lib/common/
+testType.js
+:[2m115:24
+[22m[39m
+[90m [2mΓ
+¥»[22m Fun
+ction.descr
+ibe node_mo
+dules/playw
+right/lib/t
+ransform/tr
+ansform.js:
+[2m282:12
+[22m[39m
+[36m [2mΓ
+¥»[22m e2e
+/auth-visib
+ility-smoke
+.spec.ts:[
+2m40:6[22m
+[39m
+    [90m 
+38| [39m}
+    [90m 
+39| [39m
+    [90m 
+40| [39mte
+st[33m.[3
+9m[34mdesc
+ribe[39m(
+[32m'auth 
+visibility 
+smoke (desk
+top)'[39m
+[33m,[39m 
+() [33m=>
+[39m {
+    [90m  
+ | [39m   
+  
+[31m^[39m
+    [90m 
+41| [39m  
+test('publi
+c header 
+shows login
+/register 
+when 
+guest', 
+async ({ 
+page ΓÇª
+    [90m 
+42| [39m  
+  [35mawai
+t[39m [34
+mdisableOnb
+oardingTour
+[39m(page)
+[33m;[39m
+
+[31m[2mΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»[3/11]ΓÄ»
+[22m[39m
+
+[41m[1m 
+FAIL 
+[22m[49m 
+e2e/exam-sc
+hedules-goo
+gle-maps.sp
+ec.ts[2m 
+[ e2e/exam-
+schedules-g
+oogle-maps.
+spec.ts 
+][22m
+[31m[1mEr
+ror[22m: 
+Playwright 
+Test did 
+not expect 
+test.descri
+be() to be 
+called 
+here.
+Most 
+common 
+reasons 
+include:
+- You are 
+calling tes
+t.describe(
+) in a conf
+iguration 
+file.
+- You are 
+calling tes
+t.describe(
+) in a 
+file that 
+is 
+imported 
+by the conf
+iguration 
+file.
+- You have 
+two 
+different 
+versions 
+of @playwri
+ght/test. 
+This 
+usually 
+happens
+  when one 
+of the depe
+ndencies 
+in your pac
+kage.json 
+depends on 
+@playwright
+/test.[39m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+currentSuit
+e node_modu
+les/playwri
+ght/lib/com
+mon/testTyp
+e.js:[2m75
+:13[22m[3
+9m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+describe no
+de_modules/
+playwright/
+lib/common/
+testType.js
+:[2m115:24
+[22m[39m
+[90m [2mΓ
+¥»[22m Fun
+ction.descr
+ibe node_mo
+dules/playw
+right/lib/t
+ransform/tr
+ansform.js:
+[2m282:12
+[22m[39m
+[36m [2mΓ
+¥»[22m e2e
+/exam-sched
+ules-google
+-maps.spec.
+ts:[2m23:6
+[22m[39m
+    [90m 
+21| [39m}
+    [90m 
+22| [39m
+    [90m 
+23| [39mte
+st[33m.[3
+9m[34mdesc
+ribe[39m(
+[32m'exam 
+schedules 
+google 
+maps flow'
+[39m[33m,
+[39m () [3
+3m=>[39m {
+    [90m  
+ | [39m   
+  
+[31m^[39m
+    [90m 
+24| [39m  
+test('admin
+ can edit 
+exam 
+schedule 
+and save 
+google 
+maps url', 
+async ΓÇª
+    [90m 
+25| [39m  
+  [35mawai
+t[39m [34
+mdisableOnb
+oardingTour
+[39m(page)
+[33m;[39m
+
+[31m[2mΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»[4/11]ΓÄ»
+[22m[39m
+
+[41m[1m 
+FAIL 
+[22m[49m 
+e2e/feedbac
+k-smoke.spe
+c.ts[2m [ 
+e2e/feedbac
+k-smoke.spe
+c.ts ][22m
+[31m[1mEr
+ror[22m: 
+Playwright 
+Test did 
+not expect 
+test.descri
+be() to be 
+called 
+here.
+Most 
+common 
+reasons 
+include:
+- You are 
+calling tes
+t.describe(
+) in a conf
+iguration 
+file.
+- You are 
+calling tes
+t.describe(
+) in a 
+file that 
+is 
+imported 
+by the conf
+iguration 
+file.
+- You have 
+two 
+different 
+versions 
+of @playwri
+ght/test. 
+This 
+usually 
+happens
+  when one 
+of the depe
+ndencies 
+in your pac
+kage.json 
+depends on 
+@playwright
+/test.[39m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+currentSuit
+e node_modu
+les/playwri
+ght/lib/com
+mon/testTyp
+e.js:[2m75
+:13[22m[3
+9m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+describe no
+de_modules/
+playwright/
+lib/common/
+testType.js
+:[2m115:24
+[22m[39m
+[90m [2mΓ
+¥»[22m Fun
+ction.descr
+ibe node_mo
+dules/playw
+right/lib/t
+ransform/tr
+ansform.js:
+[2m282:12
+[22m[39m
+[36m [2mΓ
+¥»[22m e2e
+/feedback-s
+moke.spec.t
+s:[2m17:6
+[22m[39m
+    [90m 
+15| [39m}
+    [90m 
+16| [39m
+    [90m 
+17| [39mte
+st[33m.[3
+9m[34mdesc
+ribe[39m(
+[32m'feedba
+ck smoke'[
+39m[33m,[
+39m () [33
+m=>[39m {
+    [90m  
+ | [39m   
+  
+[31m^[39m
+    [90m 
+18| [39m  
+test('publi
+c feedback 
+page 
+renders 
+approved 
+feedback 
+and 
+teacher 
+resΓÇª
+    [90m 
+19| [39m  
+  [35mawai
+t[39m [34
+mdisableOnb
+oardingTour
+[39m(page)
+[33m;[39m
+
+[31m[2mΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»[5/11]ΓÄ»
+[22m[39m
+
+[41m[1m 
+FAIL 
+[22m[49m 
+e2e/live-cc
+cd-crop.spe
+c.ts[2m [ 
+e2e/live-cc
+cd-crop.spe
+c.ts ][22m
+[31m[1mEr
+ror[22m: 
+Playwright 
+Test did 
+not expect 
+test.descri
+be.configur
+e() to be 
+called 
+here.
+Most 
+common 
+reasons 
+include:
+- You are 
+calling tes
+t.describe.
+configure()
+ in a confi
+guration 
+file.
+- You are 
+calling tes
+t.describe.
+configure()
+ in a file 
+that is 
+imported 
+by the conf
+iguration 
+file.
+- You have 
+two 
+different 
+versions 
+of @playwri
+ght/test. 
+This 
+usually 
+happens
+  when one 
+of the depe
+ndencies 
+in your pac
+kage.json 
+depends on 
+@playwright
+/test.[39m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+currentSuit
+e node_modu
+les/playwri
+ght/lib/com
+mon/testTyp
+e.js:[2m75
+:13[22m[3
+9m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+configure n
+ode_modules
+/playwright
+/lib/common
+/testType.j
+s:[2m171:2
+4[22m[39m
+[90m [2mΓ
+¥»[22m Fun
+ction.confi
+gure node_m
+odules/play
+wright/lib/
+transform/t
+ransform.js
+:[2m282:12
+[22m[39m
+[36m [2mΓ
+¥»[22m e2e
+/live-cccd-
+crop.spec.t
+s:[2m5:15
+[22m[39m
+    [90m  
+3| 
+[39mconst 
+frontCccdPa
+th = proces
+s.env.LIVE_
+FRONT_CCCD_
+PATH || 'C:
+/Users/ADΓÇ
+ª
+    [90m  
+4| [39m
+    [90m  
+5| [39mtes
+t[33m.[39
+mdescribe[
+33m.[39m[
+34mconfigur
+e[39m({ mo
+de[33m:[3
+9m [32m'se
+rial'[39m 
+})[33m;[3
+9m
+    [90m  
+ | [39m   
+           
+[31m^[39m
+    [90m  
+6| [39m
+    [90m  
+7| [39m[3
+4mtest[39m
+([32m'live
+ crop: 
+CCCD 
+preview 
+fills the f
+rame'[39m
+[33m,[39m 
+[35masync
+[39m ({ 
+page }) [3
+3m=>[39m {
+
+[31m[2mΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»[6/11]ΓÄ»
+[22m[39m
+
+[41m[1m 
+FAIL 
+[22m[49m 
+e2e/live-cc
+cd-editor-c
+rop.spec.ts
+[2m [ e2e/
+live-cccd-e
+ditor-crop.
+spec.ts 
+][22m
+[31m[1mEr
+ror[22m: 
+Playwright 
+Test did 
+not expect 
+test() to 
+be called 
+here.
+Most 
+common 
+reasons 
+include:
+- You are 
+calling 
+test() in 
+a configura
+tion file.
+- You are 
+calling 
+test() in 
+a file 
+that is 
+imported 
+by the conf
+iguration 
+file.
+- You have 
+two 
+different 
+versions 
+of @playwri
+ght/test. 
+This 
+usually 
+happens
+  when one 
+of the depe
+ndencies 
+in your pac
+kage.json 
+depends on 
+@playwright
+/test.[39m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+currentSuit
+e node_modu
+les/playwri
+ght/lib/com
+mon/testTyp
+e.js:[2m75
+:13[22m[3
+9m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+createTest 
+node_module
+s/playwrigh
+t/lib/commo
+n/testType.
+js:[2m88:2
+4[22m[39m
+[90m [2mΓ
+¥»[22m nod
+e_modules/p
+laywright/l
+ib/transfor
+m/transform
+.js:[2m282
+:12[22m[3
+9m
+[36m [2mΓ
+¥»[22m e2e
+/live-cccd-
+editor-crop
+.spec.ts:[
+2m124:1[22
+m[39m
+    
+[90m122| 
+[39m}
+    
+[90m123| 
+[39m
+    
+[90m124| 
+[39mtest('l
+ive editor 
+crop: 
+restored 
+CCCD 
+should 
+nearly 
+fill 
+preview', 
+asyΓÇª
+    [90m  
+ | [39m[3
+1m^[39m
+    
+[90m125| 
+[39m  test
+[33m.[39m
+[34msetTim
+eout[39m(
+[34m300_000
+[39m)[33m
+;[39m
+    
+[90m126| 
+[39m
+
+[31m[2mΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»[7/11]ΓÄ»
+[22m[39m
+
+[41m[1m 
+FAIL 
+[22m[49m 
+e2e/live-pr
+oduction-sm
+oke.spec.ts
+[2m [ e2e/
+live-produc
+tion-smoke.
+spec.ts 
+][22m
+[31m[1mEr
+ror[22m: 
+Playwright 
+Test did 
+not expect 
+test.descri
+be.configur
+e() to be 
+called 
+here.
+Most 
+common 
+reasons 
+include:
+- You are 
+calling tes
+t.describe.
+configure()
+ in a confi
+guration 
+file.
+- You are 
+calling tes
+t.describe.
+configure()
+ in a file 
+that is 
+imported 
+by the conf
+iguration 
+file.
+- You have 
+two 
+different 
+versions 
+of @playwri
+ght/test. 
+This 
+usually 
+happens
+  when one 
+of the depe
+ndencies 
+in your pac
+kage.json 
+depends on 
+@playwright
+/test.[39m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+currentSuit
+e node_modu
+les/playwri
+ght/lib/com
+mon/testTyp
+e.js:[2m75
+:13[22m[3
+9m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+configure n
+ode_modules
+/playwright
+/lib/common
+/testType.j
+s:[2m171:2
+4[22m[39m
+[90m [2mΓ
+¥»[22m Fun
+ction.confi
+gure node_m
+odules/play
+wright/lib/
+transform/t
+ransform.js
+:[2m282:12
+[22m[39m
+[36m [2mΓ
+¥»[22m e2e
+/live-produ
+ction-smoke
+.spec.ts:[
+2m52:15[22
+m[39m
+    [90m 
+50| [39m}
+    [90m 
+51| [39m
+    [90m 
+52| [39mte
+st[33m.[3
+9mdescribe
+[33m.[39m
+[34mconfigu
+re[39m({ m
+ode[33m:[
+39m [32m's
+erial'[39m
+ })[33m;[
+39m
+    [90m  
+ | [39m   
+           
+[31m^[39m
+    [90m 
+53| [39m
+    [90m 
+54| [39mte
+st('live 
+production 
+smoke: 
+public 
+routes 
+render', 
+async ({ 
+page }) 
+=ΓÇª
+
+[31m[2mΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»[8/11]ΓÄ»
+[22m[39m
+
+[41m[1m 
+FAIL 
+[22m[49m 
+e2e/registe
+r-birth-pla
+ce.spec.ts
+[2m [ e2e/r
+egister-bir
+th-place.sp
+ec.ts 
+][22m
+[31m[1mEr
+ror[22m: 
+Playwright 
+Test did 
+not expect 
+test() to 
+be called 
+here.
+Most 
+common 
+reasons 
+include:
+- You are 
+calling 
+test() in 
+a configura
+tion file.
+- You are 
+calling 
+test() in 
+a file 
+that is 
+imported 
+by the conf
+iguration 
+file.
+- You have 
+two 
+different 
+versions 
+of @playwri
+ght/test. 
+This 
+usually 
+happens
+  when one 
+of the depe
+ndencies 
+in your pac
+kage.json 
+depends on 
+@playwright
+/test.[39m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+currentSuit
+e node_modu
+les/playwri
+ght/lib/com
+mon/testTyp
+e.js:[2m75
+:13[22m[3
+9m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+createTest 
+node_module
+s/playwrigh
+t/lib/commo
+n/testType.
+js:[2m88:2
+4[22m[39m
+[90m [2mΓ
+¥»[22m nod
+e_modules/p
+laywright/l
+ib/transfor
+m/transform
+.js:[2m282
+:12[22m[3
+9m
+[36m [2mΓ
+¥»[22m e2e
+/register-b
+irth-place.
+spec.ts:[2
+m6:1[22m[
+39m
+    [90m  
+4| [39m[3
+5mimport[3
+9m { fulfil
+lJson[33m,
+[39m insta
+llApiMock 
+} [35mfrom
+[39m [32m
+'./helpers/
+api'[39m[
+33m;[39m
+    [90m  
+5| [39m
+    [90m  
+6| [39mtes
+t('register
+ submits 
+domestic 
+birthplace 
+from the 34
+-province 
+selectΓÇª
+    [90m  
+ | [39m[3
+1m^[39m
+    [90m  
+7| [39m  
+[35mlet[39
+m uploadedC
+ount [33m=
+[39m [34m
+0[39m[33m
+;[39m
+    [90m  
+8| [39m  
+[35mlet[39
+m registrat
+ionPayload
+[33m:[39m 
+[33mRecord
+[39m[33m<
+[39mstring
+[33m,[39m
+ unknown[3
+3m>[39m [
+33m|[39m 
+[35mnull[3
+9m [33m=[
+39m [35mnu
+ll[39m[33
+m;[39m
+
+[31m[2mΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»[9/11]ΓÄ»
+[22m[39m
+
+[41m[1m 
+FAIL 
+[22m[49m 
+e2e/student
+-profile-bi
+rth-place.s
+pec.ts[2m 
+[ e2e/stude
+nt-profile-
+birth-place
+.spec.ts 
+][22m
+[31m[1mEr
+ror[22m: 
+Playwright 
+Test did 
+not expect 
+test() to 
+be called 
+here.
+Most 
+common 
+reasons 
+include:
+- You are 
+calling 
+test() in 
+a configura
+tion file.
+- You are 
+calling 
+test() in 
+a file 
+that is 
+imported 
+by the conf
+iguration 
+file.
+- You have 
+two 
+different 
+versions 
+of @playwri
+ght/test. 
+This 
+usually 
+happens
+  when one 
+of the depe
+ndencies 
+in your pac
+kage.json 
+depends on 
+@playwright
+/test.[39m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+currentSuit
+e node_modu
+les/playwri
+ght/lib/com
+mon/testTyp
+e.js:[2m75
+:13[22m[3
+9m
+[90m [2mΓ
+¥»[22m Tes
+tTypeImpl._
+createTest 
+node_module
+s/playwrigh
+t/lib/commo
+n/testType.
+js:[2m88:2
+4[22m[39m
+[90m [2mΓ
+¥»[22m nod
+e_modules/p
+laywright/l
+ib/transfor
+m/transform
+.js:[2m282
+:12[22m[3
+9m
+[36m [2mΓ
+¥»[22m e2e
+/student-pr
+ofile-birth
+-place.spec
+.ts:[2m5:1
+[22m[39m
+    [90m  
+3| [39m[3
+5mimport[3
+9m { seedSt
+udentSessio
+n } [35mfr
+om[39m [3
+2m'./helper
+s/session'
+[39m[33m;
+[39m
+    [90m  
+4| [39m
+    [90m  
+5| [39mtes
+t('student 
+profile 
+saves 
+birthplace 
+from the 
+shared 
+selector', 
+asynΓÇª
+    [90m  
+ | [39m[3
+1m^[39m
+    [90m  
+6| [39m  
+[35mconst[
+39m 
+student [3
+3m=[39m {
+    [90m  
+7| [39m   
+ id[33m:[
+39m [34m10
+[39m[33m,
+[39m
+
+[31m[2mΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»[1
+0/11]ΓÄ»[2
+2m[39m
+
+
+[31mΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»[39m[
+1m[41m 
+Failed 
+Tests 1 [4
+9m[22m[31
+mΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+[39m
+
+[41m[1m 
+FAIL 
+[22m[49m 
+test/pages/
+student-reg
+istration-o
+cr.test.ts
+[2m > [22m
+applyOCRPre
+fillToRegis
+trationForm
+[2m > [22
+mnormalizes
+ OCR 
+gender and 
+applies it 
+to the regi
+stration 
+form
+[31m[1mAs
+sertionErro
+r[22m: 
+expected 
+"vi.fn()" 
+to be 
+called 
+with 
+arguments: 
+[ 'gioi_tin
+h', 
+'Nß╗»', 
+ΓÇª(1) 
+][90m
+
+Received: 
+
+[1m  1st 
+vi.fn() 
+call:
+
+[22m[2m  
+[[22m
+[2m    "gi
+oi_tinh",[
+22m
+[2m    "Nß
+╗»",[22m
+[2m    
+{[22m
+[2m      "
+shouldDirty
+": 
+true,[22m
+[31m+     
+"shouldTouc
+h": 
+true,[90m
+[31m+     
+"shouldVali
+date": 
+true,[90m
+[2m    
+},[22m
+[2m  
+][22m
+[31m[90m
+
+Number of 
+calls: 
+[1m1[22m
+[31m[39m
+[36m [2mΓ
+¥»[22m tes
+t/pages/stu
+dent-regist
+ration-ocr.
+test.ts:[2
+m34:22[22m
+[39m
+    [90m 
+32| [39m  
+  )[33m;[
+39m
+    [90m 
+33| [39m
+    [90m 
+34| [39m  
+  expect(se
+tValue).toH
+aveBeenCall
+edWith('gio
+i_tinh', 
+'Nß╗»', { 
+shouldDΓÇª
+    [90m  
+ | [39m   
+           
+       
+[31m^[39m
+    [90m 
+35| [39m  
+  [34mexpe
+ct[39m(res
+ult[33m.[
+39mappliedF
+ields)[33m
+.[39m[34m
+toContain[
+39m([32m'g
+ioi_tinh'[
+39m)[33m;
+[39m
+    [90m 
+36| [39m  
+})[33m;[3
+9m
+
+[31m[2mΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»[1
+1/11]ΓÄ»[2
+2m[39m
+
+
+[2m Test Files [22m [1m[31m11 failed[39m[22m[2m | [22m[1m[32m10 passed[39m[22m[90m (21)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m37 passed[39m[22m[90m (38)[39m
+[2m   Start at [22m 02:44:42
+[2m   Duration [22m 19.87s[2m (transform 10.41s, setup 15.81s, import 14.72s, tests 6.48s, environment 102.64s)[22m
+

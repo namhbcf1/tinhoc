@@ -71,7 +71,12 @@ function isSyntheticTestStudentCccd(value: any): boolean {
   return /^(?:00[1-9]|001[0-9])$/.test(normalized);
 }
 
-export function isAcceptedStudentLoginSecret(cccd: any, storedPhone: any, providedSecret: any): boolean {
+export function isAcceptedStudentLoginSecret(
+  cccd: any,
+  storedPhone: any,
+  providedSecret: any,
+  storedEmail?: any,
+): boolean {
   const submitted = normalizeWhitespace(providedSecret);
   if (!submitted) {
     return false;
@@ -82,7 +87,16 @@ export function isAcceptedStudentLoginSecret(cccd: any, storedPhone: any, provid
   }
 
   const normalizePhone = (value: string) => value.replace(/[\s\-\.]/g, '').trim();
-  return normalizePhone(String(storedPhone || '')) === normalizePhone(submitted);
+  const submittedPhone = normalizePhone(submitted);
+  const storedPhoneValue = normalizePhone(String(storedPhone || ''));
+  if (storedPhoneValue && storedPhoneValue === submittedPhone) {
+    return true;
+  }
+
+  const normalizeEmail = (value: string) => normalizeWhitespace(value).toLowerCase();
+  const submittedEmail = normalizeEmail(submitted);
+  const storedEmailValue = normalizeEmail(String(storedEmail || ''));
+  return Boolean(storedEmailValue && storedEmailValue === submittedEmail);
 }
 
 function derivePublicBaseUrl(c: any): string {
@@ -240,7 +254,7 @@ export async function loginStudent(c: any, cccd: string, sdt: string) {
 
   // Use generic error to prevent CCCD enumeration attacks
   if (!student) throw new Error('Thông tin đăng nhập không chính xác');
-  if (!isAcceptedStudentLoginSecret(student.cccd, student.sdt, sdt)) {
+  if (!isAcceptedStudentLoginSecret(student.cccd, student.sdt, sdt, student.email)) {
     throw new Error('Thông tin đăng nhập không chính xác');
   }
   
@@ -270,17 +284,9 @@ export async function loginStudent(c: any, cccd: string, sdt: string) {
 
 export async function registerStudent(c: any, data: any) {
   const normalizedProbeCCCD = sanitizeStudentTextField('cccd', data.cccd);
-  const normalizedProbeEmail = sanitizeStudentTextField('email', data.email);
-  const normalizedProbePhone = sanitizeStudentTextField('sdt', data.sdt);
 
   const existingByCCCD = await StudentRepo.findStudentByCCCD(c.env.DB, normalizedProbeCCCD);
   if (existingByCCCD) throw new Error('Số CCCD/CMT đã được đăng ký. Vui lòng kiểm tra lại!');
-  
-  const existingByContact = await StudentRepo.findStudentByEmailOrPhone(c.env.DB, normalizedProbeEmail, normalizedProbePhone);
-  if (existingByContact.length > 0) {
-    if (existingByContact[0].sdt === normalizedProbePhone) throw new Error('Số điện thoại đã được đăng ký.');
-    if (existingByContact[0].email === normalizedProbeEmail) throw new Error('Email đã được đăng ký.');
-  }
 
   const normalizedInput = {
     cccd: sanitizeStudentTextField('cccd', data.cccd),
@@ -334,11 +340,10 @@ export async function registerStudent(c: any, data: any) {
   };
 }
 
-export async function getStudentsList(c: any, limit: number | null, offset: number, page: number = 1) {
-  // Run count + data queries in parallel to avoid sequential round-trips
+export async function getStudentsList(c: any, limit: number | null, offset: number, page: number = 1, filters: any = {}) {
   const [total, list, stats] = await Promise.all([
-    StudentRepo.countAllStudents(c.env.DB),
-    StudentRepo.getAllStudents(c.env.DB, limit, offset),
+    StudentRepo.countAllStudents(c.env.DB, filters),
+    StudentRepo.getAllStudents(c.env.DB, limit, offset, filters),
     StudentRepo.getStudentSummaryStats(c.env.DB),
   ]);
 
@@ -356,7 +361,48 @@ export async function getStudentsList(c: any, limit: number | null, offset: numb
       limit,
       totalPages: limit && limit > 0 ? Math.ceil(total / limit) : 1,
       stats,
+      filters,
     },
+  };
+}
+
+export async function validateStudentAdmin(c: any, data: any) {
+  const currentId = data.id || data.student_id || data.current_id || null;
+  const errors: Record<string, string> = {};
+
+  const cccd = sanitizeStudentTextField('cccd', data.cccd);
+  if (!cccd) {
+    errors.cccd = 'CCCD/CMND không được để trống';
+  } else if (!/^\d{9,12}$/.test(cccd)) {
+    errors.cccd = 'CCCD/CMND phải gồm 9-12 chữ số';
+  } else {
+    const existingByCCCD = await StudentRepo.findStudentByCCCD(c.env.DB, cccd);
+    if (existingByCCCD && Number(existingByCCCD.id) !== Number(currentId)) {
+      errors.cccd = 'Số CCCD/CMND đã được sử dụng bởi học viên khác';
+    }
+  }
+
+  const email = sanitizeStudentTextField('email', data.email);
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.email = 'Email không hợp lệ';
+  }
+
+  const phone = sanitizeStudentTextField('sdt', data.sdt);
+  if (phone && !/^(0|\+84)\d{9}$/.test(phone)) {
+    errors.sdt = 'Số điện thoại không hợp lệ';
+  }
+
+  if ((email || phone) && Object.keys(errors).length === 0) {
+    const candidates = await StudentRepo.findStudentByEmailOrPhone(c.env.DB, email || '__empty_email__', phone || '__empty_phone__');
+    const duplicateEmail = email && candidates.find((student: any) => student.email === email && Number(student.id) !== Number(currentId));
+    const duplicatePhone = phone && candidates.find((student: any) => student.sdt === phone && Number(student.id) !== Number(currentId));
+    if (duplicateEmail) errors.email = 'Email đã được sử dụng bởi học viên khác';
+    if (duplicatePhone) errors.sdt = 'Số điện thoại đã được sử dụng bởi học viên khác';
+  }
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors,
   };
 }
 

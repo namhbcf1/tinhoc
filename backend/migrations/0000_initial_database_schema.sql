@@ -61,6 +61,8 @@ CREATE TABLE IF NOT EXISTS students (
     email TEXT NOT NULL,
     sdt TEXT NOT NULL,
     dia_chi TEXT NOT NULL,
+    don_vi_cong_tac TEXT,
+    nganh_dang_hoc TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

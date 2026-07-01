@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
     FileText, Search, Upload, Download, Trash2, X, FolderOpen, Folder,

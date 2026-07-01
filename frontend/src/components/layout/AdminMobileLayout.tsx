@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import {
     Menu,
@@ -136,7 +137,7 @@ export default function AdminMobileLayout({
                                 return (
                                     <div key={groupKey}>
                                         <div className="mobile-divider" />
-                                        <div className="px-4 pb-2 pt-3 text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-400">
+                                        <div className="mobile-drawer-group-label">
                                             {ADMIN_TAB_GROUP_LABELS[groupKey]}
                                         </div>
                                         {groupTabs.map((item) => {

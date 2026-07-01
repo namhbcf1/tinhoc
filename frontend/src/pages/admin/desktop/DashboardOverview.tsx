@@ -5,7 +5,6 @@ import {
   Calendar,
   CreditCard,
   Home,
-  Loader,
   Newspaper,
   RefreshCw,
   TrendingUp,
@@ -13,44 +12,44 @@ import {
 } from 'lucide-react';
 import api from '../../../services/api';
 import '../../../styles/admin/AdminModern.css';
+import '../../../styles/admin/AdminDashboard.css';
 import AdminLoadingState from '../../../components/admin/AdminLoadingState';
+import AdminStatCard from '../../../components/admin/AdminStatCard';
+import AdminQuickActions from '../../../components/admin/AdminQuickActions';
+import AdminAlert from '../../../components/admin/AdminAlert';
+import AdminBadge from '../../../components/admin/AdminBadge';
+import AdminDetailRow from '../../../components/admin/AdminDetailRow';
 import { ADMIN_CACHE_KEYS, ADMIN_CACHE_TTL, clearAdminCache, getAdminCache, setAdminCache } from '../shared/admin-cache';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
 import { AdminPageHeader, AdminSummaryPill } from '../shared/AdminPageHeader';
 
-function OverviewStatCard({ icon: Icon, label, value, tone }: {
-  icon: any; label: string; value: any; tone: string;
-}) {
-  return (
-    <div className={`admin-stat-card ${tone}`}>
-      <div className="admin-stat-header">
-        <div className="admin-stat-icon">
-          <Icon size={22} />
-        </div>
-      </div>
-      <div className="admin-stat-value">{value ?? '—'}</div>
-      <div className="admin-stat-label">{label}</div>
-    </div>
-  );
-}
 
-function SnapshotRow({ label, value, tone = 'text-slate-900' }: {
-  label: string; value: any; tone?: string;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-      <span className="text-sm font-semibold text-slate-500">{label}</span>
-      <span className={`text-sm font-bold ${tone}`}>{value}</span>
-    </div>
-  );
-}
+const QUICK_ACTION_ITEMS = [
+  { id: 'students',       icon: Users,         label: 'Học viên' },
+  { id: 'payments',       icon: CreditCard,    label: 'Học phí' },
+  { id: 'exam-schedules', icon: Calendar,      label: 'Lịch thi' },
+  { id: 'posts',          icon: Newspaper,     label: 'Bài viết' },
+  { id: 'homepage',       icon: Home,          label: 'Trang chủ' },
+];
 
-const QUICK_ACTIONS = [
-  { id: 'students',       icon: Users,         label: 'Học viên',  bg: 'bg-blue-50',    color: 'text-blue-600' },
-  { id: 'payments',       icon: CreditCard,    label: 'Học phí',   bg: 'bg-purple-50',  color: 'text-purple-600' },
-  { id: 'exam-schedules', icon: Calendar,       label: 'Lịch thi',  bg: 'bg-amber-50',   color: 'text-amber-600' },
-  { id: 'posts',          icon: Newspaper,      label: 'Bài viết',  bg: 'bg-sky-50',     color: 'text-sky-600' },
-  { id: 'homepage',       icon: Home,           label: 'Trang chủ', bg: 'bg-emerald-50', color: 'text-emerald-600' },
+const MOCK_ALERTS = [
+  {
+    id: 1,
+    type: 'warning' as const,
+    message: 'Có 5 học viên chưa đóng học phí tháng này.',
+    actionLabel: 'Xem',
+  },
+  {
+    id: 2,
+    type: 'info' as const,
+    message: 'Lịch thi mới được cập nhật cho kỳ thi sắp tới.',
+    actionLabel: 'Kiểm tra',
+  },
+  {
+    id: 3,
+    type: 'success' as const,
+    message: 'Tất cả giáo viên đã điểm danh đầy đủ trong tuần.',
+  },
 ];
 
 interface DashboardStats {
@@ -175,53 +174,26 @@ export default function DashboardOverview({ toast, onNavigate }: { toast?: any; 
         )}
       />
 
-      <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', marginBottom: 0 }}>
-        <OverviewStatCard icon={Users} label="Học viên" value={stats?.studentCount} tone="primary" />
-        <OverviewStatCard icon={BookOpen} label="Lớp học" value={stats?.classCount} tone="success" />
-        <OverviewStatCard icon={CreditCard} label="Doanh thu" value={formatCurrency(stats?.revenue)} tone="info" />
-        <OverviewStatCard icon={TrendingUp} label="Xu hướng" value="Ổn định" tone="warning" />
+      <div className="stats-grid">
+        <AdminStatCard icon={<Users size={22} />} label="Học viên" value={stats?.studentCount ?? '—'} tone="primary" />
+        <AdminStatCard icon={<BookOpen size={22} />} label="Lớp học" value={stats?.classCount ?? '—'} tone="success" />
+        <AdminStatCard icon={<CreditCard size={22} />} label="Doanh thu" value={formatCurrency(stats?.revenue)} tone="warning" />
+        <AdminStatCard icon={<TrendingUp size={22} />} label="Xu hướng" value="Ổn định" tone="info" />
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid gap-3 grid-cols-3 md:grid-cols-5">
-        {QUICK_ACTIONS.map((action) => {
-          const Icon = action.icon;
-          return (
-            <button
-              key={action.id}
-              onClick={() => handleNavigate(action.id)}
-              className="flex flex-col items-center gap-2 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-emerald-200 active:scale-95"
-            >
-              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${action.bg}`}>
-                <Icon size={18} className={action.color} />
-              </div>
-              <span className="text-xs font-semibold text-slate-700">{action.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      <AdminQuickActions 
+        actions={QUICK_ACTION_ITEMS.map(item => ({ ...item, onClick: () => handleNavigate(item.id) }))} 
+      />
 
-      <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="admin-card admin-section-stack">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Học viên</p>
-              <p className="mt-2 text-3xl font-black tracking-tight text-slate-900">{stats?.studentCount ?? '—'}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Lớp học</p>
-              <p className="mt-2 text-3xl font-black tracking-tight text-slate-900">{stats?.classCount ?? '—'}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="admin-card admin-section-stack">
-          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wide">Vận hành</h3>
-          <SnapshotRow label="Học viên" value={stats?.studentCount ?? '—'} />
-          <SnapshotRow label="Lớp học" value={stats?.classCount ?? '—'} />
-          <SnapshotRow label="Doanh thu" value={formatCurrency(stats?.revenue)} tone="text-emerald-700" />
-          <SnapshotRow label="Trạng thái" value="Tốt" tone="text-blue-700" />
-        </div>
+      <div className="dashboard-overview">
+        <AdminDetailRow label="Học viên" value={stats?.studentCount ?? '—'} />
+        <AdminDetailRow label="Lớp học" value={stats?.classCount ?? '—'} />
+        <AdminDetailRow label="Doanh thu" value={formatCurrency(stats?.revenue)} />
+        <AdminDetailRow label="Trạng thái" value={<AdminBadge variant="open">Tốt</AdminBadge>} />
+        <AdminAlert alerts={MOCK_ALERTS.map(alert => ({
+          ...alert,
+          onAction: alert.actionLabel ? () => handleNavigate(alert.id === 1 ? 'payments' : 'exam-schedules') : undefined,
+        }))} />
       </div>
     </div>
   );

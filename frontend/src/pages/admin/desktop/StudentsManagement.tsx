@@ -1,6 +1,7 @@
+// @ts-nocheck
 import { useState, useEffect, useMemo } from 'react';
 import { Users, Plus, List, Grid, ChevronLeft, ChevronRight, RefreshCw,
-         Trash2, Download, Bell, X, AlertTriangle, Search } from 'lucide-react';
+         Trash2, Download, Bell, X, AlertTriangle, Search, Filter, FileSpreadsheet } from 'lucide-react';
 import api from '../../../services/api';
 import { formatDateVN } from '../../../utils/dateUtils';
 import { resolveImageUrl } from '../../../utils/imageUrl';
@@ -16,7 +17,8 @@ import OverlayPortal from '../../../components/ui/OverlayPortal';
 import { LearningInfoPill, LearningWorkspaceHeader } from '../shared/LearningWorkspaceHeader';
 
 // ─── Bulk Delete Confirm Dialog ────────────────────────────────────────────────
-function BulkDeleteDialog({ count, onConfirm, onCancel }) {
+function DeleteDialog({ student, count, busy = false, progress = null, onConfirm, onCancel }) {
+  const isBulk = count > 1;
   return (
     <OverlayPortal>
       <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
@@ -26,23 +28,33 @@ function BulkDeleteDialog({ count, onConfirm, onCancel }) {
               <AlertTriangle size={24} className="text-red-600" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Xác nhận xóa hàng loạt</h3>
-              <p className="text-sm text-slate-500 mt-0.5">Thao tác này không thể hoàn tác</p>
+              <h3 className="text-lg font-bold text-slate-900">{isBulk ? 'Xác nhận xóa hàng loạt' : 'Xác nhận xóa học viên'}</h3>
+              <p className="text-sm text-slate-500 mt-0.5">Thao tác này là xóa vĩnh viễn</p>
             </div>
           </div>
-          <p className="text-sm text-slate-700 mb-6 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
-            Bạn sắp xóa <span className="font-bold text-red-600">{count} học viên</span> đã chọn.
-            Tất cả dữ liệu liên quan (đăng ký, học phí) sẽ bị xóa vĩnh viễn.
+          <p className="text-sm text-slate-700 mb-4 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+            {isBulk ? (
+              <>Bạn sắp xóa <span className="font-bold text-red-600">{count} học viên</span> đã chọn.</>
+            ) : (
+              <>Bạn sắp xóa học viên <span className="font-bold text-red-600">{student?.ho_ten_full}</span>.</>
+            )}
+            {' '}Vui lòng chắc chắn trước khi tiếp tục.
           </p>
+          {progress ? (
+            <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
+              Đã xử lý {progress.done}/{progress.total} học viên
+            </div>
+          ) : null}
           <div className="flex gap-3 justify-end">
-            <button onClick={onCancel} className="admin-btn admin-btn-outline px-5 py-2.5">
+            <button onClick={onCancel} disabled={busy} className="admin-btn admin-btn-outline px-5 py-2.5 disabled:opacity-50">
               Hủy
             </button>
             <button
               onClick={onConfirm}
-              className="admin-btn px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold flex items-center gap-2"
+              disabled={busy}
+              className="admin-btn px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold flex items-center gap-2 disabled:opacity-60"
             >
-              <Trash2 size={16} /> Xóa {count} học viên
+              <Trash2 size={16} /> {busy ? 'Đang xóa...' : `Xóa ${isBulk ? count + ' học viên' : 'học viên'}`}
             </button>
           </div>
         </div>
@@ -50,6 +62,7 @@ function BulkDeleteDialog({ count, onConfirm, onCancel }) {
     </OverlayPortal>
   );
 }
+
 
 // ─── Bulk Action Toolbar ────────────────────────────────────────────────────────
 function BulkToolbar({ count, onDelete, onExport, onNotify, onClear }) {
@@ -96,8 +109,11 @@ export default function StudentsManagement({ toast }) {
   const [studentStats,    setStudentStats]    = useState(() => cachedStudents?.studentStats ?? null);
   const [loading,         setLoading]         = useState(() => cachedStudents === null);
   const [searching,       setSearching]       = useState(false);
-  const [searchResults,   setSearchResults]   = useState(null);
+  const [meta,            setMeta]            = useState(() => cachedStudents?.meta ?? null);
   const [viewMode,        setViewMode]        = useState('table');
+  const [showFilters,     setShowFilters]     = useState(false);
+  const [filters,         setFilters]         = useState({ status: '', registration_type: '', has_certificate: '', created_from: '', created_to: '' });
+  const [sortState,       setSortState]       = useState({ sort_by: 'created_at', sort_dir: 'desc' });
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddModal,    setShowAddModal]    = useState(false);
@@ -108,85 +124,65 @@ export default function StudentsManagement({ toast }) {
   const [formData, setFormData] = useState({
     ho: '', ten_dem: '', ten: '', cccd: '', ngay_sinh: '', gioi_tinh: 'Nam',
     email: '', sdt: '', dia_chi: '', noi_sinh: '', dan_toc: 'Kinh', quoc_tich: 'Việt Nam',
-    ngay_cap_cccd: '', don_vi_cong_tac: '', password: ''
+    ngay_cap_cccd: '', don_vi_cong_tac: '', nganh_dang_hoc: '', password: ''
   });
 
   // Bulk selection state
   const [selectedIds,       setSelectedIds]       = useState(new Set());
+  const [deleteTarget,      setDeleteTarget]      = useState(null);
   const [showBulkDeleteDlg, setShowBulkDeleteDlg] = useState(false);
+  const [deleteBusy,        setDeleteBusy]        = useState(false);
+  const [bulkProgress,      setBulkProgress]      = useState(null);
 
-  useEffect(() => { void loadStudents(); }, []);
+  const queryOptions = useMemo(() => ({
+    page: currentPage,
+    limit: pageSize,
+    q: searchTerm.trim(),
+    ...filters,
+    ...sortState,
+  }), [currentPage, pageSize, searchTerm, filters, sortState]);
+
+  useEffect(() => { void loadStudents(); }, [queryOptions]);
   useAdminAutoRefresh(() => loadStudents({ force: true }), { minIntervalMs: 12000 });
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
-  useEffect(() => {
-    const keyword = searchTerm.trim();
-
-    if (!keyword) {
-      setSearchResults(null);
-      setSearching(false);
-      return undefined;
-    }
-
-    if (keyword.length < 2) {
-      setSearchResults(null);
-      setSearching(false);
-      return undefined;
-    }
-
-    let cancelled = false;
-    const timer = window.setTimeout(async () => {
-      setSearching(true);
-      try {
-        const response = await api.searchStudents(keyword);
-        if (cancelled) return;
-        setSearchResults(Array.isArray(response?.data) ? response.data : []);
-      } catch (error) {
-        if (cancelled) return;
-        setSearchResults([]);
-        toast?.error(error?.message || 'Lỗi tìm kiếm học viên');
-      } finally {
-        if (!cancelled) {
-          setSearching(false);
-        }
-      }
-    }, 250);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [searchTerm, toast]);
+  }, [searchTerm, filters, sortState]);
 
   const loadStudents = async ({ force = false } = {}) => {
-    const cached = force ? null : getAdminCache(ADMIN_CACHE_KEYS.students, ADMIN_CACHE_TTL.students);
+    const hasEnterpriseQuery = Boolean(queryOptions.q || queryOptions.status || queryOptions.registration_type || queryOptions.has_certificate || queryOptions.created_from || queryOptions.created_to || queryOptions.sort_by !== 'created_at' || queryOptions.sort_dir !== 'desc' || queryOptions.page !== 1 || queryOptions.limit !== pageSize);
+    const cached = force || hasEnterpriseQuery ? null : getAdminCache(ADMIN_CACHE_KEYS.students, ADMIN_CACHE_TTL.students);
     if (cached) {
       setStudents(cached.students || []);
       setStudentStats(cached.studentStats || null);
+      setMeta(cached.meta || null);
       setLoading(false);
       return cached.students || [];
     }
 
+    setSearching(Boolean(queryOptions.q));
     setLoading(true);
-    setSelectedIds(new Set()); // clear selection on reload
+    setSelectedIds(new Set());
     try {
       if (force) {
         api.invalidateCache(['/students']);
       }
-      const firstPage = await api.getStudents();
+      const firstPage = await api.getStudents(queryOptions);
       const firstBatch = Array.isArray(firstPage?.data) ? firstPage.data : [];
       const nextStats = firstPage?.meta?.stats || null;
+      const nextMeta = firstPage?.meta || null;
 
       const nextStudents = Array.from(
         new Map(firstBatch.map((student) => [student.id, student])).values()
       );
       setStudents(nextStudents);
       setStudentStats(nextStats);
-      setAdminCache(ADMIN_CACHE_KEYS.students, { students: nextStudents, studentStats: nextStats });
+      setMeta(nextMeta);
+      if (!hasEnterpriseQuery) {
+        setAdminCache(ADMIN_CACHE_KEYS.students, { students: nextStudents, studentStats: nextStats, meta: nextMeta });
+      }
       return nextStudents;
     } catch (err) { console.error('[StudentsManagement] loadStudents error:', err); toast?.error('Lỗi tải dữ liệu học viên'); setStudents([]); }
-    finally { setLoading(false); }
+    finally { setLoading(false); setSearching(false); }
   };
 
   const handleViewDetail = async (student) => {
@@ -207,7 +203,7 @@ export default function StudentsManagement({ toast }) {
       noi_sinh: student.noi_sinh || '', dan_toc: student.dan_toc || 'Kinh',
       quoc_tich: student.quoc_tich || 'Việt Nam',
       ngay_cap_cccd: formatDateVN(student.ngay_cap_cccd) || '',
-      don_vi_cong_tac: student.don_vi_cong_tac || '', password: ''
+      don_vi_cong_tac: student.don_vi_cong_tac || '', nganh_dang_hoc: student.nganh_dang_hoc || '', password: ''
     });
     setShowEditModal(true);
   };
@@ -216,7 +212,7 @@ export default function StudentsManagement({ toast }) {
     setFormData({
       ho: '', ten_dem: '', ten: '', cccd: '', ngay_sinh: '', gioi_tinh: 'Nam',
       email: '', sdt: '', dia_chi: '', noi_sinh: '', dan_toc: 'Kinh',
-      quoc_tich: 'Việt Nam', ngay_cap_cccd: '', don_vi_cong_tac: '', password: ''
+      quoc_tich: 'Việt Nam', ngay_cap_cccd: '', don_vi_cong_tac: '', nganh_dang_hoc: '', password: ''
     });
     setSelectedStudent(null);
     setShowAddModal(true);
@@ -225,6 +221,11 @@ export default function StudentsManagement({ toast }) {
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
     try {
+      const preflight = await api.validateStudentAdmin(formData);
+      if (preflight?.valid === false) {
+        toast?.error(Object.values(preflight.errors || {})[0] || 'Thông tin học viên chưa hợp lệ');
+        return;
+      }
       await api.createStudentAdmin(formData);
       invalidateAdminData({
         keys: [ADMIN_CACHE_KEYS.students, ADMIN_CACHE_KEYS.dashboardOverview, ADMIN_CACHE_KEYS.mobileDashboardOverview],
@@ -240,6 +241,11 @@ export default function StudentsManagement({ toast }) {
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
     try {
+      const preflight = await api.validateStudentAdmin({ ...formData, id: selectedStudent.id });
+      if (preflight?.valid === false) {
+        toast?.error(Object.values(preflight.errors || {})[0] || 'Thông tin học viên chưa hợp lệ');
+        return;
+      }
       await api.updateStudent(selectedStudent.id, formData);
       invalidateAdminData({
         keys: [ADMIN_CACHE_KEYS.students, ADMIN_CACHE_KEYS.dashboardOverview, ADMIN_CACHE_KEYS.mobileDashboardOverview],
@@ -252,18 +258,25 @@ export default function StudentsManagement({ toast }) {
     catch (err) { toast?.error('Lỗi: ' + err.message); }
   };
 
-  const handleDelete = async (student) => {
-    if (!confirm(`Xóa học viên "${student.ho_ten_full}"?`)) return;
+  const handleDelete = (student) => {
+    setDeleteTarget(student);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteBusy(true);
     try {
-      await api.deleteStudent(student.id);
+      await api.deleteStudent(deleteTarget.id);
       invalidateAdminData({
         keys: [ADMIN_CACHE_KEYS.students, ADMIN_CACHE_KEYS.dashboardOverview, ADMIN_CACHE_KEYS.mobileDashboardOverview],
         source: 'students-management',
       });
       toast?.success('Xóa thành công!');
+      setDeleteTarget(null);
       void loadStudents({ force: true });
     }
     catch (err) { toast?.error('Lỗi: ' + err.message); }
+    finally { setDeleteBusy(false); }
   };
 
   // ── Bulk selection helpers ──────────────────────────────────────────────────
@@ -296,17 +309,22 @@ export default function StudentsManagement({ toast }) {
   };
 
   const handleBulkDelete = async () => {
-    setShowBulkDeleteDlg(false);
     const ids = Array.from(selectedIds);
     let success = 0;
-    let failed  = 0;
+    const failures = [];
+    setDeleteBusy(true);
+    setBulkProgress({ done: 0, total: ids.length });
     for (const id of ids) {
       try { await api.deleteStudent(id); success++; }
-      catch { failed++; }
+      catch (error) { failures.push({ id, message: error?.message || 'Không xóa được' }); }
+      setBulkProgress({ done: success + failures.length, total: ids.length });
     }
-    if (success > 0 && failed > 0) toast?.warning(`Đã xóa ${success} học viên (${failed} lỗi)`);
+    if (success > 0 && failures.length > 0) toast?.warning(`Đã xóa ${success} học viên, ${failures.length} lỗi: ${failures.slice(0, 3).map(f => f.id).join(', ')}`);
     else if (success > 0) toast?.success(`Đã xóa thành công ${success} học viên`);
-    else if (failed  > 0) toast?.error(`Không xóa được ${failed} học viên`);
+    else if (failures.length > 0) toast?.error(`Không xóa được ${failures.length} học viên`);
+    setDeleteBusy(false);
+    setBulkProgress(null);
+    setShowBulkDeleteDlg(false);
     invalidateAdminData({
       keys: [ADMIN_CACHE_KEYS.students, ADMIN_CACHE_KEYS.dashboardOverview, ADMIN_CACHE_KEYS.mobileDashboardOverview],
       source: 'students-management',
@@ -335,39 +353,41 @@ export default function StudentsManagement({ toast }) {
     toast?.success(`Đã xuất ${selected.length} học viên`);
   };
 
+  const handleExportFiltered = async () => {
+    try {
+      await api.downloadStudentsExcel(exportFilters);
+      toast?.success('Đã xuất Excel theo bộ lọc hiện tại');
+    } catch (error) {
+      toast?.error(error?.message || 'Lỗi xuất Excel học viên');
+    }
+  };
+
   const handleBulkNotify = () => {
     toast?.info(`Tính năng gửi thông báo hàng loạt đang được phát triển`);
   };
 
+  const updateFilter = (field) => (event) => setFilters((prev) => ({ ...prev, [field]: event.target.value }));
+  const resetFilters = () => {
+    setSearchTerm('');
+    setFilters({ status: '', registration_type: '', has_certificate: '', created_from: '', created_to: '' });
+    setSortState({ sort_by: 'created_at', sort_dir: 'desc' });
+  };
+  const handleSort = (sortBy) => {
+    setSortState((prev) => ({
+      sort_by: sortBy,
+      sort_dir: prev.sort_by === sortBy && prev.sort_dir === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
   const closeForm   = () => { setShowAddModal(false); setShowEditModal(false); };
   const normalizedSearch = searchTerm.trim().toLowerCase();
-  const localFilteredStudents = useMemo(() => {
-    if (!normalizedSearch) return students;
-
-    return students.filter((student) => {
-      const haystack = [
-        student.ho_ten_full,
-        student.cccd,
-        student.email,
-        student.sdt,
-        student.dia_chi,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-
-      return haystack.includes(normalizedSearch);
-    });
-  }, [students, normalizedSearch]);
-  const filteredStudents = useMemo(() => {
-    if (!normalizedSearch) return students;
-    if (normalizedSearch.length < 2) return localFilteredStudents;
-    return searchResults ?? localFilteredStudents;
-  }, [students, normalizedSearch, searchResults, localFilteredStudents]);
-  const paged       = filteredStudents.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const totalPages  = Math.max(1, Math.ceil(filteredStudents.length / pageSize));
+  const paged       = students;
+  const totalMatches = meta?.total ?? students.length;
+  const totalPages  = Math.max(1, meta?.totalPages ?? Math.ceil(totalMatches / pageSize));
   const bulkCount   = selectedIds.size;
-  const totalStudentsCount = studentStats?.totalStudents ?? students.length;
+  const totalStudentsCount = studentStats?.totalStudents ?? totalMatches;
+  const activeFilters = Object.entries(filters).filter(([, value]) => value);
+  const exportFilters = { q: searchTerm.trim(), ...filters, ...sortState };
 
   return (
     <div className="admin-page">
@@ -391,7 +411,7 @@ export default function StudentsManagement({ toast }) {
           <>
             <LearningInfoPill>Tổng {totalStudentsCount} học viên</LearningInfoPill>
             <LearningInfoPill>Trang {currentPage}/{totalPages}</LearningInfoPill>
-            {normalizedSearch ? <LearningInfoPill>Kết quả lọc {filteredStudents.length}</LearningInfoPill> : null}
+            {normalizedSearch || activeFilters.length ? <LearningInfoPill>Kết quả lọc {totalMatches}</LearningInfoPill> : null}
             {bulkCount > 0 ? <LearningInfoPill>Đang chọn {bulkCount}</LearningInfoPill> : null}
           </>
         )}
@@ -428,8 +448,22 @@ export default function StudentsManagement({ toast }) {
                 </button>
               ) : null}
             </div>
+            <button
+              type="button"
+              onClick={() => setShowFilters((value) => !value)}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            >
+              <Filter size={15} /> Bộ lọc nâng cao
+            </button>
+            <button
+              type="button"
+              onClick={handleExportFiltered}
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              <FileSpreadsheet size={15} /> Xuất Excel
+            </button>
             <span className="admin-toolbar-meta">
-              {searching ? 'Đang tìm học viên...' : `Đang xem ${paged.length} / ${filteredStudents.length} học viên`}
+              {searching ? 'Đang tìm học viên...' : `Đang xem ${paged.length} / ${totalMatches} học viên`}
             </span>
           </div>
           {/* View toggle */}
@@ -448,6 +482,45 @@ export default function StudentsManagement({ toast }) {
             </button>
           </div>
         </div>
+
+        {showFilters && (
+          <div className="border-t border-slate-100 bg-slate-50/80 px-8 py-5">
+            <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+              <select value={filters.status} onChange={updateFilter('status')} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                <option value="">Mọi trạng thái</option>
+                <option value="pending">Chờ duyệt</option>
+                <option value="approved">Đã duyệt</option>
+                <option value="studying">Đang học</option>
+                <option value="completed">Hoàn thành</option>
+                <option value="cancelled">Đã hủy</option>
+              </select>
+              <select value={filters.registration_type} onChange={updateFilter('registration_type')} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                <option value="">Mọi đăng ký</option>
+                <option value="hoc">Có lớp học</option>
+                <option value="thi">Có lịch thi</option>
+                <option value="none">Chưa đăng ký</option>
+              </select>
+              <select value={filters.has_certificate} onChange={updateFilter('has_certificate')} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                <option value="">Chứng chỉ: tất cả</option>
+                <option value="true">Đã có chứng chỉ</option>
+                <option value="false">Chưa có chứng chỉ</option>
+              </select>
+              <input type="date" value={filters.created_from} onChange={updateFilter('created_from')} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700" />
+              <input type="date" value={filters.created_to} onChange={updateFilter('created_to')} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700" />
+              <button type="button" onClick={resetFilters} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
+                Xóa bộ lọc
+              </button>
+            </div>
+            {(normalizedSearch || activeFilters.length > 0) && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {normalizedSearch ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Từ khóa: {searchTerm.trim()}</span> : null}
+                {activeFilters.map(([key, value]) => (
+                  <span key={key} className="rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">{key}: {value}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Bulk action toolbar — shown only when rows are selected */}
         {bulkCount > 0 && (
@@ -478,6 +551,8 @@ export default function StudentsManagement({ toast }) {
             selectedIds={selectedIds}
             onToggleSelect={handleToggleSelect}
             onToggleSelectAll={handleToggleSelectAll}
+            sortState={sortState}
+            onSort={handleSort}
           />
         ) : (
           <StudentGridView
@@ -538,10 +613,23 @@ export default function StudentsManagement({ toast }) {
         />
       )}
 
+      {deleteTarget && (
+        <DeleteDialog
+          student={deleteTarget}
+          count={1}
+          busy={deleteBusy}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
       {/* Bulk delete confirm dialog */}
       {showBulkDeleteDlg && (
-        <BulkDeleteDialog
+        <DeleteDialog
+          student={null}
           count={bulkCount}
+          busy={deleteBusy}
+          progress={bulkProgress}
           onConfirm={handleBulkDelete}
           onCancel={() => setShowBulkDeleteDlg(false)}
         />

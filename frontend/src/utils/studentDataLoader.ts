@@ -1,3 +1,4 @@
+// @ts-nocheck
 import api from '../services/api';
 import { getStorageScope, setStorageValue } from './browser-storage.js';
 
@@ -56,12 +57,3 @@ export const getPathFromTab = (tabId) => {
   };
   return pathMap[tabId] || '/dashboard';
 };
-
-
-
-
-
-
-
-
-

@@ -42,7 +42,7 @@
 .admin-mobile-page {
     padding: 16px;
     background: var(--mobile-bg);
-    min-height: calc(100vh - 64px);
+    min-height: calc(100dvh - 64px);
     padding-bottom: calc(64px + 16px);
     overflow-x: hidden;
     max-width: 100%;
@@ -490,7 +490,7 @@
 .admin-mobile-page {
     padding: 16px;
     background: var(--mobile-bg);
-    min-height: calc(100vh - 64px);
+    min-height: calc(100dvh - 64px);
     padding-bottom: calc(64px + 16px);
     overflow-x: hidden;
     max-width: 100%;

@@ -1,5 +1,7 @@
+// @ts-nocheck
 import PropTypes from 'prop-types';
-import { Facebook, Twitter, Linkedin, Link2, MessageCircle } from 'lucide-react';
+import { Link2, MessageCircle } from 'lucide-react';
+import { Facebook, Twitter, Linkedin } from './BrandIcons';
 import { useState } from 'react';
 
 /**

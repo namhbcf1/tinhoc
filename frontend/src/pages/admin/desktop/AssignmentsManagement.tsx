@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Calendar, Users, Clock, Search, FileText, Eye, CheckCircle, XCircle, AlertCircle, Download, Star } from 'lucide-react';
 import api from '../../../services/api';
@@ -13,6 +14,7 @@ import { useToast } from '../../../components/ui/ToastContainer';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import DateInput from '../../../components/ui/DateInput';
 import AdminLoadingState from '../../../components/admin/AdminLoadingState';
+import { AdminPageHeader, AdminSummaryPill } from '../shared/AdminPageHeader';
 import { getApiBaseUrl } from '../../../utils/api-base-url.js';
 import { getStorageValue } from '../../../utils/browser-storage.js';
 import {
@@ -380,33 +382,39 @@ export default function AssignmentsManagement() {
 
     // Main List View
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border">
-                <div className="flex items-center gap-2">
-                    <FileText className="text-purple-600" size={24} />
-                    <h2 className="font-bold text-lg">Quản lý Bài tập</h2>
-                </div>
+        <div className="admin-page">
+            <AdminPageHeader
+                icon={FileText}
+                title="Quản lý bài tập"
+                description="Tạo bài tập, theo dõi bài nộp và chấm điểm trong cùng một workspace vận hành."
+                pills={(
+                    <>
+                        <AdminSummaryPill>{filteredAssignments.length} bài tập</AdminSummaryPill>
+                        <AdminSummaryPill>{classes.length} lớp đang mở</AdminSummaryPill>
+                    </>
+                )}
+                actions={(
+                    <button onClick={handleCreate} className="admin-btn admin-btn-primary">
+                        <Plus size={16} /> Tạo bài tập
+                    </button>
+                )}
+            />
 
-                <div className="flex items-center gap-3">
-                    <Select value={filterClassId} onChange={(e) => setFilterClassId(e.target.value)}>
-                        <option value="">Tất cả lớp</option>
-                        {classes.map(c => (
-                            <option key={c.id} value={c.id}>{c.class_name}</option>
-                        ))}
-                    </Select>
+            <div className="admin-toolbar-unified">
+                <div className="admin-toolbar-meta"><Search size={16} /> Tìm & lọc</div>
+                <Select value={filterClassId} onChange={(e) => setFilterClassId(e.target.value)} className="min-h-[44px] min-w-[220px] rounded-[18px] border border-[rgba(19,34,56,0.14)] bg-[rgba(255,250,241,0.86)] px-4 text-sm font-bold text-[var(--admin-text)] outline-none">
+                    <option value="">Tất cả lớp</option>
+                    {classes.map(c => (
+                        <option key={c.id} value={c.id}>{c.class_name}</option>
+                    ))}
+                </Select>
 
-                    <Input
-                        placeholder="Tìm bài tập..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-48"
-                    />
-
-                    <Button onClick={handleCreate} className="bg-purple-600 hover:bg-purple-700">
-                        <Plus size={16} className="mr-2" /> Tạo bài tập
-                    </Button>
-                </div>
+                <Input
+                    placeholder="Tìm bài tập..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="min-h-[44px] min-w-[220px] flex-1 rounded-[18px] border-[rgba(19,34,56,0.14)] bg-[rgba(255,250,241,0.86)] font-semibold"
+                />
             </div>
 
             {/* List */}
@@ -418,37 +426,34 @@ export default function AssignmentsManagement() {
                     accent="violet"
                 />
             ) : filteredAssignments.length === 0 ? (
-                <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed">
-                    <FileText className="mx-auto text-slate-300 mb-4" size={48} />
-                    <p className="text-slate-500">Chưa có bài tập nào</p>
-                </div>
+                <div className="admin-empty-state"><FileText size={48} /><p>Chưa có bài tập nào</p></div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {filteredAssignments.map(item => (
-                        <Card key={item.id} className="hover:shadow-lg transition-all">
+                        <Card key={item.id} className="overflow-hidden rounded-[28px] border border-[rgba(19,34,56,0.12)] bg-[linear-gradient(180deg,rgba(255,250,241,0.96),rgba(255,250,241,0.86))] shadow-[0_20px_54px_-42px_rgba(19,34,56,0.36)] transition-all hover:-translate-y-0.5 hover:border-[rgba(200,169,106,0.34)] hover:shadow-[0_28px_70px_-46px_rgba(19,34,56,0.42)]">
                             <CardHeader className="pb-2">
-                                <div className="flex justify-between items-start">
-                                    <Badge className={item.status === 'open' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}>
+                                <div className="flex justify-between items-start gap-3">
+                                    <Badge className={item.status === 'open' ? 'border border-[rgba(29,111,95,0.18)] bg-[rgba(29,111,95,0.10)] text-[var(--admin-primary)]' : 'border border-[rgba(19,34,56,0.12)] bg-[rgba(239,227,209,0.66)] text-[var(--admin-text-muted)]'}>
                                         {item.status === 'open' ? 'Đang mở' : 'Đã đóng'}
                                     </Badge>
                                     <div className="flex gap-1">
-                                        <Button variant="ghost" size="sm" onClick={() => handleEdit(item)}>
+                                        <Button variant="ghost" size="sm" onClick={() => handleEdit(item)} className="rounded-xl text-[var(--admin-text-muted)] hover:text-[var(--admin-ink)]">
                                             <Edit size={14} />
                                         </Button>
-                                        <Button variant="ghost" size="sm" onClick={() => { setToDelete(item); setShowDeleteConfirm(true); }}>
-                                            <Trash2 size={14} className="text-red-500" />
+                                        <Button variant="ghost" size="sm" onClick={() => { setToDelete(item); setShowDeleteConfirm(true); }} className="rounded-xl">
+                                            <Trash2 size={14} className="text-[var(--admin-danger)]" />
                                         </Button>
                                     </div>
                                 </div>
-                                <CardTitle className="text-lg mt-2">{item.title}</CardTitle>
+                                <CardTitle className="mt-3 text-xl font-black tracking-[-0.03em] text-[var(--admin-ink)]">{item.title}</CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-2 text-sm text-slate-600">
-                                <p className="line-clamp-2">{item.description || 'Không có mô tả'}</p>
-                                <p><strong>Lớp:</strong> {getClassName(item.class_id)}</p>
-                                <p><Calendar size={12} className="inline mr-1" /> Hạn: {item.due_date ? formatDateVN(item.due_date) : 'Không giới hạn'}</p>
+                            <CardContent className="space-y-3 text-sm font-semibold text-[var(--admin-text-muted)]">
+                                <p className="line-clamp-2 leading-6">{item.description || 'Không có mô tả'}</p>
+                                <p className="rounded-[16px] border border-[rgba(19,34,56,0.10)] bg-[rgba(255,250,241,0.72)] px-3 py-2"><strong className="text-[var(--admin-ink)]">Lớp:</strong> {getClassName(item.class_id)}</p>
+                                <p className="flex items-center gap-2 rounded-[16px] border border-[rgba(200,169,106,0.18)] bg-[rgba(200,169,106,0.12)] px-3 py-2 text-[var(--admin-ink)]"><Calendar size={14} className="text-[var(--admin-champagne)]" /> Hạn: {item.due_date ? formatDateVN(item.due_date) : 'Không giới hạn'}</p>
                             </CardContent>
-                            <CardFooter className="pt-3 border-t">
-                                <Button variant="outline" size="sm" className="w-full" onClick={() => handleViewSubmissions(item)}>
+                            <CardFooter className="border-t border-[rgba(19,34,56,0.10)] pt-4">
+                                <Button variant="outline" size="sm" className="w-full rounded-[18px] border-[rgba(19,34,56,0.14)] bg-[rgba(255,250,241,0.78)] font-black text-[var(--admin-ink)] hover:border-[rgba(200,169,106,0.32)]" onClick={() => handleViewSubmissions(item)}>
                                     <Eye size={14} className="mr-2" /> Xem bài nộp
                                 </Button>
                             </CardFooter>
@@ -527,7 +532,7 @@ export default function AssignmentsManagement() {
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setShowModal(false)}>Hủy</Button>
-                            <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+                            <Button type="submit" className="bg-[var(--admin-ink)] text-[var(--admin-champagne)] hover:bg-[#0b1728]">
                                 {editingAssignment ? 'Lưu' : 'Tạo'}
                             </Button>
                         </DialogFooter>

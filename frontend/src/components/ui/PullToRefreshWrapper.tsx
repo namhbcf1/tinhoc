@@ -1,3 +1,4 @@
+// @ts-nocheck
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 
 /**

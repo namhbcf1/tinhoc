@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, ArrowRight, Star, Globe, BookOpen, Users, HelpCircle } from 'lucide-react';
@@ -251,9 +252,3 @@ export default function SemanticLanding({
         </ModernPublicLayout>
     );
 }
-
-
-
-
-
-

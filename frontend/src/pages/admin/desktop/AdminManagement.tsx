@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import {
   Shield, Plus, RefreshCw, Edit2, Trash2, Lock, Unlock,

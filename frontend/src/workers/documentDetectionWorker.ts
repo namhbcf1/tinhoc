@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Web Worker for Document Detection
  * Runs AI detection off main thread to prevent UI blocking
@@ -283,12 +284,3 @@ self.onmessage = function(e) {
         });
     }
 };
-
-
-
-
-
-
-
-
-

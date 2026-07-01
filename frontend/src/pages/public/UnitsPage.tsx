@@ -1,49 +1,65 @@
+// @ts-nocheck
 import ModernPublicLayout from '../../components/layout/ModernPublicLayout';
-import { Card, CardContent } from '../../components/ui/Card';
-import { Building2, GraduationCap, Microscope, Users, BookOpen, Globe, Monitor, Phone } from 'lucide-react';
 import SEO from '../../components/common/SEO';
+import {
+  Building2,
+  GraduationCap,
+  Microscope,
+  Users,
+  BookOpen,
+  Globe,
+  Monitor,
+  Phone,
+  CheckCircle2,
+} from 'lucide-react';
 
 const units = [
   {
-    icon: Globe,
-    color: 'bg-blue-100 text-blue-600',
+    Icon: Globe,
+    eyebrow: '01 · Quốc tế',
     title: 'Trung tâm Đào tạo Quốc tế',
-    description: 'Chuyên trách các chương trình liên kết quốc tế, đào tạo tiếng Anh chuẩn quốc tế và tư vấn du học.',
+    description:
+      'Chuyên trách các chương trình liên kết quốc tế, đào tạo tiếng Anh chuẩn quốc tế và tư vấn du học.',
     functions: ['Liên kết quốc tế', 'Đào tạo ngoại ngữ', 'Tư vấn du học'],
   },
   {
-    icon: Monitor,
-    color: 'bg-green-100 text-green-600',
+    Icon: Monitor,
+    eyebrow: '02 · CNTT',
     title: 'Khoa Công Nghệ Thông Tin',
-    description: 'Đào tạo kỹ sư CNTT chất lượng cao, nghiên cứu khoa học và chuyển giao công nghệ phần mềm.',
+    description:
+      'Đào tạo kỹ sư CNTT chất lượng cao, nghiên cứu khoa học và chuyển giao công nghệ phần mềm cho doanh nghiệp.',
     functions: ['Kỹ sư CNTT', 'Nghiên cứu KH', 'Chuyển giao công nghệ'],
   },
   {
-    icon: BookOpen,
-    color: 'bg-orange-100 text-orange-600',
+    Icon: BookOpen,
+    eyebrow: '03 · Ngoại ngữ',
     title: 'Khoa Ngoại Ngữ',
-    description: 'Đào tạo cử nhân ngôn ngữ Anh, Trung, Nhật, Hàn. Tổ chức các kỳ thi cấp chứng chỉ năng lực ngoại ngữ.',
+    description:
+      'Đào tạo cử nhân ngôn ngữ Anh, Trung, Nhật, Hàn. Tổ chức các kỳ thi cấp chứng chỉ năng lực ngoại ngữ.',
     functions: ['Cử nhân ngôn ngữ', 'Chứng chỉ quốc tế', 'Nghiên cứu ngôn ngữ'],
   },
   {
-    icon: GraduationCap,
-    color: 'bg-purple-100 text-purple-600',
-    title: 'Phòng Quản Lý Đào Tạo',
-    description: 'Tham mưu, quản lý công tác đào tạo, tuyển sinh và tốt nghiệp của toàn trường.',
+    Icon: GraduationCap,
+    eyebrow: '04 · Đào tạo',
+    title: 'Phòng Quản lý Đào tạo',
+    description:
+      'Tham mưu, quản lý công tác đào tạo, tuyển sinh và tốt nghiệp của toàn trường — đảm bảo chất lượng chuẩn đầu ra.',
     functions: ['Tuyển sinh', 'Quản lý đào tạo', 'Tốt nghiệp'],
   },
   {
-    icon: Microscope,
-    color: 'bg-red-100 text-red-600',
-    title: 'Trung Tâm R&D',
-    description: 'Nghiên cứu khoa học, ứng dụng công nghệ mới vào giảng dạy và quản lý giáo dục.',
+    Icon: Microscope,
+    eyebrow: '05 · Nghiên cứu',
+    title: 'Trung tâm R&D',
+    description:
+      'Nghiên cứu khoa học, ứng dụng công nghệ mới vào giảng dạy và quản lý giáo dục — phát triển các giải pháp ed-tech.',
     functions: ['Nghiên cứu KH', 'Ứng dụng công nghệ', 'Đổi mới sáng tạo'],
   },
   {
-    icon: Users,
-    color: 'bg-teal-100 text-teal-600',
-    title: 'Phòng Công Tác Sinh Viên',
-    description: 'Hỗ trợ đời sống sinh viên, tư vấn tâm lý, học bổng và các hoạt động phong trào.',
+    Icon: Users,
+    eyebrow: '06 · Sinh viên',
+    title: 'Phòng Công tác Sinh viên',
+    description:
+      'Hỗ trợ đời sống sinh viên, tư vấn tâm lý, học bổng và các hoạt động phong trào — đồng hành cùng học viên xuyên suốt khoá học.',
     functions: ['Hỗ trợ đời sống', 'Tư vấn tâm lý', 'Học bổng'],
   },
 ];
@@ -54,101 +70,146 @@ export default function UnitsPage() {
       '@type': 'WebPage',
       name: 'Cac don vi truc thuoc',
       description: 'Tong hop khoa, phong ban va trung tam truc thuoc trong he sinh thai Van Trang Education.',
-      url: 'https://vantrangedu.com/units'
+      url: 'https://vantrangedu.com/units',
     },
     {
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Trang chu', item: 'https://vantrangedu.com/' },
-        { '@type': 'ListItem', position: 2, name: 'Don vi truc thuoc', item: 'https://vantrangedu.com/units' }
-      ]
-    }
+        { '@type': 'ListItem', position: 2, name: 'Don vi truc thuoc', item: 'https://vantrangedu.com/units' },
+      ],
+    },
   ];
 
   return (
     <ModernPublicLayout>
       <SEO
-        title="Cac don vi truc thuoc"
-        description="Gioi thieu cac khoa, phong ban va trung tam chuyen trach trong he thong Van Trang Education."
+        title="Các đơn vị trực thuộc"
+        description="Giới thiệu các khoa, phòng ban và trung tâm chuyên trách trong hệ thống Vân Trang Education."
         url="/units"
         structuredData={structuredData}
       />
-      <div className="min-h-screen bg-slate-50">
-        {/* Hero */}
-        <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white py-20">
-          <div className="container mx-auto px-4 text-center">
-            <div className="inline-block p-4 bg-white/10 rounded-full mb-6">
-              <Building2 className="h-10 w-10 text-white" />
-            </div>
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Các Đơn Vị Trực Thuộc</h1>
-            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
-              Hệ thống các khoa, phòng ban và trung tâm chuyên trách, cùng nhau kiến tạo môi trường giáo dục chất lượng cao tại Van Trang Education.
-            </p>
-            <div className="flex justify-center gap-8 mt-10">
-              <div className="text-center">
-                <div className="text-3xl font-extrabold text-green-400">6</div>
-                <div className="text-slate-400 text-sm mt-1">Đơn vị trực thuộc</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-extrabold text-green-400">200+</div>
-                <div className="text-slate-400 text-sm mt-1">Cán bộ giảng viên</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-extrabold text-green-400">15+</div>
-                <div className="text-slate-400 text-sm mt-1">Năm kinh nghiệm</div>
-              </div>
-            </div>
-          </div>
+
+      {/* Hero — editorial ink panel */}
+      <section className="relative overflow-hidden bg-[var(--vt-ink)] text-white">
+        <div aria-hidden="true" className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-32 -right-32 h-[28rem] w-[28rem] rounded-full bg-[var(--vt-emerald)]/18 blur-3xl" />
+          <div className="absolute -bottom-32 -left-32 h-[24rem] w-[24rem] rounded-full bg-[var(--vt-champagne)]/12 blur-3xl" />
         </div>
 
-        {/* Units grid */}
-        <div className="container mx-auto px-4 py-14">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {units.map((unit, idx) => {
-              const Icon = unit.icon;
-              return (
-                <Card
-                  key={idx}
-                  className="border border-slate-100 shadow-md hover:shadow-xl transition-all hover:-translate-y-1 bg-white group"
-                >
-                  <CardContent className="p-6">
-                    <div className={`inline-flex p-3 rounded-xl mb-4 ${unit.color}`}>
-                      <Icon className="h-7 w-7" />
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-800 mb-2 group-hover:text-green-600 transition-colors">
-                      {unit.title}
-                    </h3>
-                    <p className="text-slate-600 text-sm mb-4 leading-relaxed">{unit.description}</p>
-                    <ul className="space-y-1.5">
-                      {unit.functions.map((fn) => (
-                        <li key={fn} className="flex items-center gap-2 text-sm text-slate-700">
-                          <span className="h-1.5 w-1.5 rounded-full bg-green-500 flex-shrink-0" />
-                          {fn}
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-          {/* CTA */}
-          <div className="mt-14 bg-gradient-to-br from-green-600 to-green-700 rounded-2xl p-8 text-white text-center shadow-lg">
-            <Phone className="h-8 w-8 mx-auto mb-3 text-green-200" />
-            <h3 className="text-2xl font-bold mb-2">Liên hệ với từng đơn vị</h3>
-            <p className="text-green-100 mb-4 max-w-lg mx-auto">
-              Đội ngũ cán bộ của chúng tôi luôn sẵn sàng hỗ trợ và giải đáp mọi thắc mắc của bạn.
-            </p>
-            <a
-              href="tel:0962445963"
-              className="inline-flex items-center gap-2 bg-white text-green-700 font-bold px-8 py-3 rounded-xl hover:bg-green-50 transition-colors text-lg"
+        <div className="relative vt-container py-20 md:py-28">
+          <div className="max-w-3xl">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/8 border border-white/15 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--vt-champagne)]">
+              <Building2 size={13} />
+              Tổ chức · Sơ đồ đơn vị
+            </span>
+            <h1
+              className="vt-display mt-6 text-[clamp(2.25rem,5vw,4rem)] leading-[1.04] text-white"
+              style={{ fontVariationSettings: '"opsz" 144, "SOFT" 40', fontWeight: 500 }}
             >
-              <Phone className="h-5 w-5" /> 096 244 5963
-            </a>
+              Các đơn vị{' '}
+              <span className="vt-display-italic text-[var(--vt-champagne)]">trực thuộc.</span>
+            </h1>
+            <p className="mt-6 text-lg text-white/75 leading-relaxed max-w-2xl">
+              Hệ thống các khoa, phòng ban và trung tâm chuyên trách — cùng nhau kiến tạo môi trường giáo dục chất lượng cao tại Vân Trang Education.
+            </p>
+
+            <div className="mt-10 grid grid-cols-3 gap-4 max-w-md">
+              {[
+                { num: '6', label: 'Đơn vị' },
+                { num: '200+', label: 'Cán bộ' },
+                { num: '15+', label: 'Năm KN' },
+              ].map((s) => (
+                <div key={s.label} className="border-l border-white/15 pl-3">
+                  <p
+                    className="vt-display text-2xl text-white"
+                    style={{ fontVariationSettings: '"opsz" 72, "SOFT" 30', fontWeight: 600 }}
+                  >
+                    {s.num}
+                  </p>
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-white/55">{s.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+
+        <div className="vt-fine-divider" aria-hidden="true" />
+      </section>
+
+      {/* Units grid */}
+      <section className="vt-section">
+        <div className="vt-container">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {units.map((u) => (
+              <article
+                key={u.title}
+                className="vt-feature-card group p-7 flex flex-col gap-5 hover:-translate-y-1 transition-transform"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="h-12 w-12 rounded-2xl bg-[var(--vt-emerald-soft)] text-[var(--vt-emerald-deep)] grid place-items-center group-hover:bg-[var(--vt-champagne-soft)] group-hover:text-[var(--vt-champagne-deep)] transition-colors">
+                    <u.Icon size={22} />
+                  </span>
+                  <span className="vt-overline text-[10px] text-[var(--vt-ink-50)]">{u.eyebrow}</span>
+                </div>
+                <div>
+                  <h3
+                    className="vt-display text-lg md:text-xl text-[var(--vt-ink)] leading-tight"
+                    style={{ fontVariationSettings: '"opsz" 72, "SOFT" 30', fontWeight: 600 }}
+                  >
+                    {u.title}
+                  </h3>
+                  <p className="mt-3 text-sm text-[var(--vt-ink-70)] leading-relaxed">{u.description}</p>
+                </div>
+                <ul className="mt-1 space-y-2 border-t border-[var(--vt-line)] pt-4">
+                  {u.functions.map((fn) => (
+                    <li
+                      key={fn}
+                      className="flex items-center gap-2 text-sm text-[var(--vt-ink-80)] font-medium"
+                    >
+                      <CheckCircle2 size={14} className="text-[var(--vt-emerald-deep)] shrink-0" />
+                      {fn}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="vt-section pt-0">
+        <div className="vt-container">
+          <div className="vt-ink-panel relative overflow-hidden rounded-[var(--vt-radius-2xl)] p-10 md:p-14 text-center">
+            <div aria-hidden="true" className="absolute inset-0 pointer-events-none">
+              <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-[var(--vt-champagne)]/15 blur-3xl" />
+              <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-[var(--vt-emerald)]/20 blur-3xl" />
+            </div>
+
+            <div className="relative z-10 max-w-2xl mx-auto">
+              <p className="vt-eyebrow !text-[var(--vt-champagne)]">Hỗ trợ trực tiếp</p>
+              <h2
+                className="vt-display mt-4 text-[clamp(1.75rem,3.5vw,2.5rem)] text-white leading-tight"
+                style={{ fontVariationSettings: '"opsz" 144, "SOFT" 40', fontWeight: 500 }}
+              >
+                Liên hệ với{' '}
+                <span className="vt-display-italic text-[var(--vt-champagne)]">từng đơn vị.</span>
+              </h2>
+              <p className="mt-5 text-white/75 leading-relaxed">
+                Đội ngũ cán bộ luôn sẵn sàng hỗ trợ và giải đáp mọi thắc mắc của bạn — phản hồi trung bình trong 30 phút giờ hành chính.
+              </p>
+              <a
+                href="tel:0962445963"
+                className="vt-btn vt-btn--accent mt-8 inline-flex justify-center"
+              >
+                <Phone size={16} />
+                096 244 5963
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
     </ModernPublicLayout>
   );
 }

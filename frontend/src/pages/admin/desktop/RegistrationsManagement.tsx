@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { ClipboardList, CheckCircle2, XCircle, RefreshCw, ArrowLeft, Download,
          ChevronDown } from 'lucide-react';

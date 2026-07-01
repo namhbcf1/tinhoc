@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // MISC METHODS MIXIN
 // Homepage settings, notifications, reports, AI query

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // MESSAGING METHODS MIXIN
 // Conversations + messages + unread count

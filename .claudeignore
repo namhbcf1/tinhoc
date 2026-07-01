@@ -1,0 +1,51 @@
+# Task completion documents
+.claude/completions/**
+
+# Session files
+.claude/sessions/**
+
+# Archived documentation
+docs/archive/**
+
+# User-facing docs (not needed during dev sessions — devs have CLAUDE.md)
+CHANGELOG.md
+README.md
+CONTRIBUTING.md
+GEMINI.md
+AGENTS.md
+.cursorrules
+.windsurfrules
+.clinerules
+.roomodes
+
+# Git
+.git/**
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/**
+
+# OS
+.DS_Store
+
+
+# Large docs (available on request)
+CODE_REVIEW_REPORT.md
+BACKUP_ZOOM_LINK_VERIFICATION.md
+LAYOUT_AND_FEATURES_AUDIT.md
+admin-mobile-optimization.md
+docs/superpowers/plans/**
+docs/superpowers/specs/**
+docs/code-standards.md
+docs/system-architecture.md
+docs/project-changelog.md
+docs/program-platform-*.md
+docs/frontend-guidelines.md
+docs/development-roadmap.md
+CODEX.md
+QODER.md

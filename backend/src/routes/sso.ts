@@ -105,10 +105,10 @@ sso.post('/direct-login', async (c) => {
     }
 
     if (type === 'student') {
-      const loginSecret = normalizeString(body?.phone);
+      const loginSecret = normalizeString(body?.phone || body?.sdt || body?.identifier);
       const cccd = normalizeString(body?.cccd);
       if (!loginSecret || !cccd) {
-        return errorResponse('Thiếu CCCD hoặc số điện thoại', 400);
+        return errorResponse('Thiếu CCCD hoặc số điện thoại/email', 400);
       }
 
       const student = await c.env.DB.prepare(
@@ -120,7 +120,7 @@ sso.post('/direct-login', async (c) => {
         `
       ).bind(cccd).first<{ id?: number; cccd?: string; ho_ten_full?: string; email?: string; sdt?: string }>();
 
-      if (!student || !isAcceptedStudentLoginSecret(student.cccd, student.sdt, loginSecret)) {
+      if (!student || !isAcceptedStudentLoginSecret(student.cccd, student.sdt, loginSecret, student.email)) {
         return errorResponse('Thông tin đăng nhập không chính xác', 401);
       }
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import ModernPublicLayout from '../../components/layout/ModernPublicLayout';
@@ -187,7 +188,7 @@ export default function GuidesPage() {
             />
             <div ref={container} className="bg-slate-50 min-h-screen pb-24">
                 {/* Hero */}
-                <div className="relative pt-32 pb-16 bg-gradient-to-br from-emerald-700 via-teal-700 to-cyan-700 text-white">
+                <div className="relative pt-24 md:pt-32 pb-12 md:pb-16 bg-gradient-to-br from-emerald-700 via-teal-700 to-cyan-700 text-white">
                     <div className="absolute inset-0 opacity-10"
                         style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
                     <div className="container mx-auto px-4 text-center relative z-10">

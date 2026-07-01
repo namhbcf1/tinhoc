@@ -75,7 +75,8 @@ classes.get('/:id/sessions', createGetEndpoint({
     id: z.string().transform((val) => parseInt(val, 10))
   }),
   handler: async (c, { params }) => {
-    return await listClassSessions(c.env.DB, params.id);
+    const data = await listClassSessions(c.env.DB, params.id);
+    return { success: true as const, data };
   }
 }));
 
@@ -88,7 +89,8 @@ classes.post('/:id/sessions', createPostEndpoint({
   }),
   body: classSessionBodySchema,
   handler: async (c, { params, body }) => {
-    return await createClassSession(c.env.DB, params.id, body);
+    const data = await createClassSession(c.env.DB, params.id, body);
+    return { success: true as const, data };
   }
 }));
 
@@ -102,7 +104,8 @@ classes.put('/:id/sessions/:sessionId', createPutEndpoint({
   }),
   body: classSessionBodySchema,
   handler: async (c, { params, body }) => {
-    return await updateClassSession(c.env.DB, params.id, params.sessionId, body);
+    const data = await updateClassSession(c.env.DB, params.id, params.sessionId, body);
+    return { success: true as const, data };
   }
 }));
 
@@ -115,7 +118,8 @@ classes.delete('/:id/sessions/:sessionId', createDeleteEndpoint({
     sessionId: z.string().transform((val) => parseInt(val, 10))
   }),
   handler: async (c, { params }) => {
-    return await deleteClassSession(c.env.DB, params.id, params.sessionId);
+    const data = await deleteClassSession(c.env.DB, params.id, params.sessionId);
+    return { success: true as const, data };
   }
 }));
 

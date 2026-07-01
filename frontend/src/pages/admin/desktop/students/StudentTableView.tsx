@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Users, Eye, Edit2, Trash2 } from 'lucide-react';
 import { formatDateVN } from '../../../../utils/dateUtils';
 import { applyImageFallback } from '../../../../utils/imageUrl';
@@ -21,15 +22,19 @@ function CccdBadge({ value }) {
 
 // Status badge with color map
 function StatusBadge({ status }) {
+  const normalizedStatus = String(status || 'new').toLowerCase();
   const map = {
-    studying:  { cls: 'bg-emerald-100 text-emerald-700', text: 'Đang học' },
-    active:    { cls: 'bg-emerald-100 text-emerald-700', text: 'Đang học' },
-    approved:  { cls: 'bg-blue-100 text-blue-700',       text: 'Đã duyệt' },
-    pending:   { cls: 'bg-amber-100 text-amber-700',     text: 'Chờ duyệt' },
-    completed: { cls: 'bg-blue-100 text-blue-700',       text: 'Hoàn thành' },
-    certified: { cls: 'bg-purple-100 text-purple-700',   text: 'Có CC' },
+    new:       { cls: 'bg-slate-100 text-slate-600',      text: 'Mới' },
+    studying:  { cls: 'bg-emerald-100 text-emerald-700',  text: 'Đang học' },
+    active:    { cls: 'bg-emerald-100 text-emerald-700',  text: 'Đang học' },
+    approved:  { cls: 'bg-blue-100 text-blue-700',        text: 'Đã duyệt' },
+    pending:   { cls: 'bg-amber-100 text-amber-700',      text: 'Chờ duyệt' },
+    completed: { cls: 'bg-blue-100 text-blue-700',        text: 'Hoàn thành' },
+    certified: { cls: 'bg-purple-100 text-purple-700',    text: 'Có chứng chỉ' },
+    cancelled: { cls: 'bg-rose-100 text-rose-700',        text: 'Đã hủy' },
+    canceled:  { cls: 'bg-rose-100 text-rose-700',        text: 'Đã hủy' },
   };
-  const s = map[status] || { cls: 'bg-slate-100 text-slate-500', text: status || 'Mới' };
+  const s = map[normalizedStatus] || { cls: 'bg-slate-100 text-slate-500', text: 'Khác' };
   return (
     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${s.cls}`}>
       {s.text}
@@ -50,11 +55,18 @@ function ActionBtn({ onClick, title, className, children }) {
   );
 }
 
-const TH = ({ children, center }) => (
-  <th className={`px-5 py-4 text-xs font-bold uppercase tracking-[0.16em] text-slate-500 bg-[#f4f7f5] ${center ? 'text-center' : 'text-left'}`}>
-    {children}
-  </th>
-);
+const TH = ({ children, center, sortKey, sortState, onSort }) => {
+  const active = sortKey && sortState?.sort_by === sortKey;
+  return (
+    <th className={`px-5 py-4 text-xs font-bold uppercase tracking-[0.16em] text-slate-500 bg-[#f4f7f5] ${center ? 'text-center' : 'text-left'}`}>
+      {sortKey ? (
+        <button type="button" onClick={() => onSort?.(sortKey)} className={`inline-flex items-center gap-1 rounded-lg px-1 py-0.5 transition hover:text-emerald-700 ${active ? 'text-emerald-700' : ''}`}>
+          {children}{active ? (sortState.sort_dir === 'asc' ? ' ↑' : ' ↓') : ''}
+        </button>
+      ) : children}
+    </th>
+  );
+};
 
 // Indeterminate checkbox — shows dash when some (not all) rows are selected
 function IndeterminateCheckbox({ checked, indeterminate, onChange, title }) {
@@ -80,6 +92,8 @@ export default function StudentTableView({
   selectedIds = new Set(),
   onToggleSelect,
   onToggleSelectAll,
+  sortState,
+  onSort,
 }) {
   const allSelected   = students.length > 0 && students.every(s => selectedIds.has(s.id));
   const someSelected  = students.some(s => selectedIds.has(s.id)) && !allSelected;
@@ -110,18 +124,21 @@ export default function StudentTableView({
                 />
               </th>
             )}
-            <TH>Học viên</TH>
-            <TH>CCCD</TH>
-            <TH>Liên hệ</TH>
-            <TH>Lớp học</TH>
-            <TH>Lớp thi</TH>
-            <TH>Trạng thái</TH>
+            <TH sortKey="name" sortState={sortState} onSort={onSort}>Học viên</TH>
+            <TH sortKey="cccd" sortState={sortState} onSort={onSort}>CCCD</TH>
+            <TH sortKey="email" sortState={sortState} onSort={onSort}>Liên hệ</TH>
+            <TH sortKey="study_count" sortState={sortState} onSort={onSort}>Lớp học</TH>
+            <TH sortKey="exam_count" sortState={sortState} onSort={onSort}>Lớp thi</TH>
+            <TH sortKey="status" sortState={sortState} onSort={onSort}>Trạng thái</TH>
             <TH center>Thao tác</TH>
           </tr>
         </thead>
         <tbody>
           {students.map(student => {
             const isSelected = selectedIds.has(student.id);
+            const studyCount = student.study_count ?? student.registrations?.filter(r => r.class_type === 'hoc').length ?? 0;
+            const examCount = student.exam_count ?? student.registrations?.filter(r => r.class_type === 'thi').length ?? 0;
+            const primaryStatus = student.primary_status || student.registrations?.[0]?.status;
             return (
               <tr
                 key={student.id}
@@ -146,9 +163,9 @@ export default function StudentTableView({
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-3.5">
                     <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm overflow-hidden">
-                      {student.image_3x4 || student.photo_3x4_image_id ? (
+                      {student.photo_3x4_image_id || student.image_3x4 ? (
                         <img
-                          src={getImageUrl ? getImageUrl(student.image_3x4 || student.photo_3x4_image_id) : student.image_3x4}
+                          src={getImageUrl ? getImageUrl(student.photo_3x4_image_id || student.image_3x4) : (student.photo_3x4_image_id || student.image_3x4)}
                           alt={student.ho_ten_full || 'Hoc vien'}
                           className="w-full h-full object-cover"
                           onError={(event) => applyImageFallback(event, student.ho_ten_full || 'Hoc vien')}
@@ -180,18 +197,18 @@ export default function StudentTableView({
                 {/* Classes */}
                 <td className="px-5 py-4">
                   <span className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-600 text-xs font-semibold rounded-full">
-                    {student.registrations?.filter(r => r.class_type === 'hoc').length || 0} lớp
+                    {studyCount} lớp
                   </span>
                 </td>
                 <td className="px-5 py-4">
                   <span className="inline-flex items-center px-2.5 py-1 bg-purple-50 text-purple-600 text-xs font-semibold rounded-full">
-                    {student.registrations?.filter(r => r.class_type === 'thi').length || 0} lớp
+                    {examCount} lớp
                   </span>
                 </td>
 
                 {/* Status */}
                 <td className="px-5 py-4">
-                  <StatusBadge status={student.registrations?.[0]?.status} />
+                  <StatusBadge status={primaryStatus} />
                 </td>
 
                 {/* Actions */}

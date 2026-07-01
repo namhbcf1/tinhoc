@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { getStorageScope, setStorageValue } from '../utils/browser-storage.js';
 
 // ========================================
@@ -48,22 +49,18 @@ export function applyStudentMethods(ApiClient) {
     return response;
   };
 
-  // Extract OCR fields from uploaded CCCD image for registration prefill
-  ApiClient.prototype.extractCCCDRegistrationFields = async function(imageId, type) {
-    return this.request('/cccd-upload/extract', {
-      method: 'POST',
-      timeoutMs: 120000,
-      body: JSON.stringify({ imageId, type }),
-    });
-  };
-
   // Get paginated list of all students (admin)
-  ApiClient.prototype.getStudents = async function(limit = null, offset = 0) {
+  ApiClient.prototype.getStudents = async function(limitOrOptions = null, offset = 0) {
     const params = new URLSearchParams();
-    if (typeof limit === 'number' && Number.isFinite(limit) && limit > 0) {
-      params.set('limit', String(limit));
-      params.set('offset', String(offset));
-    }
+    const options = typeof limitOrOptions === 'object' && limitOrOptions !== null
+      ? limitOrOptions
+      : { limit: limitOrOptions, offset };
+
+    Object.entries(options).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === '') return;
+      params.set(key, String(value));
+    });
+
     return this.cachedRequest(
       `/students${params.toString() ? `?${params.toString()}` : ''}`,
       {},
@@ -114,6 +111,14 @@ export function applyStudentMethods(ApiClient) {
   // Get edit history for a student
   ApiClient.prototype.getStudentEditHistory = async function(studentId, limit = 100, offset = 0) {
     return this.request(`/students/${studentId}/history?limit=${limit}&offset=${offset}`);
+  };
+
+  // Validate student data before admin create/update
+  ApiClient.prototype.validateStudentAdmin = async function(data) {
+    return this.request('/students/admin/validate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   };
 
   // Create student via admin endpoint

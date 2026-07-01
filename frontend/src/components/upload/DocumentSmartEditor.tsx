@@ -2,40 +2,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  AlertCircle,
   Check,
   Loader2,
-  Maximize2,
-  RotateCcw,
-  RotateCw,
   ScanSearch,
-  Upload,
   X,
-  ZoomIn,
-  ZoomOut,
 } from 'lucide-react';
 import { useIsMobile } from '../../utils/deviceDetection';
 import { detectDocumentAutoFitBox } from './documentAutoFit';
 import { getOverlayBox } from './overlayUtils';
 import {
-  buildManualCropOcrVariants,
   canvasToFile,
   cropTightDocumentCanvas,
-  type DocumentProcessingMeta,
   getDocumentOutputSize,
 } from './document-normalization';
+import DocumentDesktopEditor from './DocumentDesktopEditor';
+import DocumentMobileEditor from './DocumentMobileEditor';
 import './DocumentSmartEditor.css';
 
 type UploadType = 'cccd_front' | 'cccd_back';
-type CCCDAuxiliaryFiles = Partial<Record<
-  'sourceOriginal' | 'normalizedOriginal' | 'ocrRestoreBalanced' | 'ocrRestoreTextPriority',
-  File
->>;
-
 type ConfirmPayload = {
   file: File;
-  processingMeta?: DocumentProcessingMeta | null;
-  auxiliaryFiles?: CCCDAuxiliaryFiles | null;
 };
 
 interface Props {
@@ -52,7 +38,7 @@ async function canvasToNamedFile(canvas: HTMLCanvasElement, filename: string) {
   });
 
   if (!blob) {
-    throw new Error('Khong the tao file OCR tu anh da cat.');
+    throw new Error('Khong the tao file tu anh da cat.');
   }
 
   return new File([blob], filename, {
@@ -107,6 +93,11 @@ const TYPE_LABELS: Record<UploadType, string> = {
   cccd_front: 'CCCD mặt trước',
   cccd_back: 'CCCD mặt sau',
 };
+
+const MIN_MANUAL_SCALE = 0.35;
+const MAX_MANUAL_SCALE = 5;
+const ROTATION_STEP = 1;
+const ROTATION_QUICK_STEP = 15;
 
 const AUTO_STATUS_TEXT: Record<'ready' | 'needs_review' | 'manual' | 'blocked', string> = {
   ready: 'Đã tự căn tốt',
@@ -176,11 +167,11 @@ function buildDocumentBoxFromCorners(
 }
 
 function buildSafeStageMessage(result: NormalizationState) {
-  if (result.status === 'checking') return 'He thong dang nhan dien the, can bo cuc va tao ban phuc hoi an toan OCR. Qua trinh nay co the mat toi 3 phut, vui long khong thoat ra.';
-  if (result.status === 'ready') return 'He thong da can khung va cai thien anh trong gioi han an toan cho OCR.';
+  if (result.status === 'checking') return 'He thong dang nhan dien the va can lai bo cuc anh. Qua trinh nay co the mat toi 3 phut, vui long khong thoat ra.';
+  if (result.status === 'ready') return 'He thong da can khung va cai thien anh de luu ro hon.';
   if (result.status === 'needs_review') return 'He thong da can khung va phuc hoi sang/net an toan. Ban xem nhanh truoc khi luu.';
   if (result.status === 'manual') return 'He thong chua tu can duoc an toan. Ban co the chinh tay roi luu ban da chuan hoa.';
-  return 'Anh van chua du chi tiet de OCR an toan. He thong khong tao lai noi dung CCCD, ban nen chup lai ro hon.';
+  return 'Anh van chua du chi tiet de xu ly tot. Ban nen chup lai ro hon.';
 }
 
 function DocumentPreview({
@@ -358,10 +349,12 @@ export default function DocumentSmartEditor({
     const maxTx = overlayLeft - containerWidth / 2 + effectiveWidth / 2;
     const minTy = overlayBottom - containerHeight / 2 - effectiveHeight / 2;
     const maxTy = overlayTop - containerHeight / 2 + effectiveHeight / 2;
+    const canCoverOverlayX = effectiveWidth >= overlay.overlayWidth;
+    const canCoverOverlayY = effectiveHeight >= overlay.overlayHeight;
 
     return {
-      tx: clamp(nextTx, minTx, maxTx),
-      ty: clamp(nextTy, minTy, maxTy),
+      tx: canCoverOverlayX ? clamp(nextTx, minTx, maxTx) : nextTx,
+      ty: canCoverOverlayY ? clamp(nextTy, minTy, maxTy) : nextTy,
     };
   }, [calculateOverlay, getImageDimensions]);
 
@@ -536,22 +529,29 @@ export default function DocumentSmartEditor({
   }, [drawManualCanvas, manualMode]);
 
   const handleZoom = useCallback((delta: number) => {
-    const container = containerRef.current;
-    if (!container) return;
-    const { width: containerWidth, height: containerHeight } = container.getBoundingClientRect();
-    const overlay = calculateOverlay(containerWidth, containerHeight);
-    const minScale = computeCoverScale(overlay.overlayWidth, overlay.overlayHeight);
-    const nextScale = clamp(scale + delta, minScale, 5);
+    if (!containerRef.current) return;
+    const nextScale = clamp(scale + delta, MIN_MANUAL_SCALE, MAX_MANUAL_SCALE);
     const clamped = clampTranslate(nextScale, translateX, translateY);
     setScale(nextScale);
     setTranslateX(clamped.tx);
     setTranslateY(clamped.ty);
     scaleRef.current = nextScale;
     translateRef.current = { x: clamped.tx, y: clamped.ty };
-  }, [calculateOverlay, clampTranslate, computeCoverScale, scale, translateX, translateY]);
+  }, [clampTranslate, scale, translateX, translateY]);
+
+  const handleZoomSet = useCallback((nextValue: number) => {
+    if (!containerRef.current) return;
+    const nextScale = clamp(nextValue, MIN_MANUAL_SCALE, MAX_MANUAL_SCALE);
+    const clamped = clampTranslate(nextScale, translateX, translateY);
+    setScale(nextScale);
+    setTranslateX(clamped.tx);
+    setTranslateY(clamped.ty);
+    scaleRef.current = nextScale;
+    translateRef.current = { x: clamped.tx, y: clamped.ty };
+  }, [clampTranslate, translateX, translateY]);
 
   const applyRotation = useCallback((nextRotation: number, resetPosition = false) => {
-    const normalized = ((nextRotation % 360) + 360) % 360;
+    const normalized = normalizeRotation(nextRotation);
     setRotation(normalized);
 
     window.setTimeout(() => {
@@ -786,8 +786,7 @@ export default function DocumentSmartEditor({
 
     const { width: containerWidth, height: containerHeight } = container.getBoundingClientRect();
     const overlay = calculateOverlay(containerWidth, containerHeight);
-    const minScale = computeCoverScale(overlay.overlayWidth, overlay.overlayHeight);
-    const finalScale = Math.max(scale, minScale);
+    const finalScale = scale;
     const clamped = clampTranslate(finalScale, translateX, translateY);
     const output = getDocumentOutputSize();
     const canvas = document.createElement('canvas');
@@ -798,22 +797,28 @@ export default function DocumentSmartEditor({
     if (!ctx) return null;
 
     const scaleFactor = output.width / overlay.overlayWidth;
+    const overlayOutputHeight = overlay.overlayHeight * scaleFactor;
+    const verticalPadding = (canvas.height - overlayOutputHeight) / 2;
     const imageWidth = image.naturalWidth || image.width || 1;
     const imageHeight = image.naturalHeight || image.height || 1;
     const drawWidth = imageWidth * finalScale * scaleFactor;
     const drawHeight = imageHeight * finalScale * scaleFactor;
+    const previewImageCenterX = containerWidth / 2 + clamped.tx;
+    const previewImageCenterY = containerHeight / 2 + clamped.ty;
+    const outputImageCenterX = (previewImageCenterX - overlay.overlayX) * scaleFactor;
+    const outputImageCenterY = (previewImageCenterY - overlay.overlayY) * scaleFactor + verticalPadding;
 
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.save();
-    ctx.translate(canvas.width / 2 + clamped.tx * scaleFactor, canvas.height / 2 + clamped.ty * scaleFactor);
+    ctx.translate(outputImageCenterX, outputImageCenterY);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
     ctx.restore();
     return canvas;
-  }, [calculateOverlay, clampTranslate, computeCoverScale, getImageDimensions, rotation, scale, translateX, translateY]);
+  }, [calculateOverlay, clampTranslate, rotation, scale, translateX, translateY]);
 
   const handleManualConfirm = useCallback(async () => {
     setManualError('');
@@ -848,40 +853,7 @@ export default function DocumentSmartEditor({
 
       const tightCanvas = cropTightDocumentCanvas(finalCanvas, type);
       const file = await canvasToFile(tightCanvas, type);
-      const variants = buildManualCropOcrVariants(tightCanvas, type);
-      const auxiliaryFiles: CCCDAuxiliaryFiles = {
-        sourceOriginal: overlayFile,
-      };
-
-      if (variants.artifacts?.normalizedOriginalCanvas) {
-        auxiliaryFiles.normalizedOriginal = await canvasToNamedFile(
-          variants.artifacts.normalizedOriginalCanvas,
-          `cccd-${type}-normalized-original.jpg`,
-        );
-      }
-      if (variants.artifacts?.ocrRestoreBalancedCanvas) {
-        auxiliaryFiles.ocrRestoreBalanced = await canvasToNamedFile(
-          variants.artifacts.ocrRestoreBalancedCanvas,
-          `cccd-${type}-ocr-restore-balanced.jpg`,
-        );
-      }
-      if (variants.artifacts?.ocrRestoreTextPriorityCanvas) {
-        auxiliaryFiles.ocrRestoreTextPriority = await canvasToNamedFile(
-          variants.artifacts.ocrRestoreTextPriorityCanvas,
-          `cccd-${type}-ocr-restore-text-priority.jpg`,
-        );
-      }
-
-      await onConfirm({
-        file,
-        processingMeta: {
-          ...variants.processingMeta,
-          autoRectified: autoWarped || Boolean(variants.processingMeta?.autoRectified),
-          detectionConfidence: Math.max(Number(variants.processingMeta?.detectionConfidence || 0), autoWarpConfidence),
-          cornerCount: autoWarped ? 4 : Number(variants.processingMeta?.cornerCount || 0),
-        },
-        auxiliaryFiles,
-      });
+      await onConfirm({ file });
     } finally {
       setSaving(false);
     }
@@ -893,70 +865,46 @@ export default function DocumentSmartEditor({
 
   const stageMessage = '';
 
-  const manualPanel = (
-    <div className="document-smart-manual-layout">
-      <div
-        ref={containerRef}
-        className="document-smart-canvas-shell"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerLeave={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onWheel={onWheel}
-      >
-        <canvas ref={canvasRef} className="document-smart-canvas" />
-      </div>
-
-      <div className="document-smart-manual-controls">
-        <button type="button" className="document-smart-control-btn" onClick={() => handleZoom(-0.1)}>
-          <ZoomOut size={18} />
-          <span>Thu nhỏ</span>
-        </button>
-        <button type="button" className="document-smart-control-btn" onClick={() => handleZoom(0.1)}>
-          <ZoomIn size={18} />
-          <span>Phóng to</span>
-        </button>
-        <button type="button" className="document-smart-control-btn" onClick={handleRotateCCW}>
-          <RotateCcw size={18} />
-          <span>Xoay trái 90°</span>
-        </button>
-        <button type="button" className="document-smart-control-btn" onClick={handleRotate}>
-          <RotateCw size={18} />
-          <span>Xoay phải 90°</span>
-        </button>
-        <button type="button" className="document-smart-control-btn document-smart-control-btn--fine" onClick={() => handleFineTune(-15)}>
-          <RotateCcw size={16} />
-          <span>−15°</span>
-        </button>
-        <button type="button" className="document-smart-control-btn document-smart-control-btn--fine" onClick={() => handleFineTune(15)}>
-          <RotateCw size={16} />
-          <span>+15°</span>
-        </button>
-        <button type="button" className="document-smart-control-btn" onClick={handleReset}>
-          <Maximize2 size={18} />
-          <span>Canh vừa thẻ</span>
-        </button>
-      </div>
-
-      {manualError ? (
-        <div className="document-smart-inline-error">
-          <AlertCircle size={16} />
-          <span>{manualError}</span>
-        </div>
-      ) : null}
-
-      <div className="document-smart-manual-actions">
-        <button type="button" className="document-smart-ghost-btn" onClick={onCancel}>
-          <Upload size={16} />
-          <span>Ảnh khác</span>
-        </button>
-        <button type="button" className="document-smart-primary-btn" onClick={() => { void handleManualConfirm(); }} disabled={saving}>
-          {saving ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
-          <span>Xác nhận vùng CCCD và OCR</span>
-        </button>
-      </div>
+  const renderCanvasStage = (shellClassName = 'document-smart-canvas-shell') => (
+    <div
+      ref={containerRef}
+      className={shellClassName}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerLeave={onPointerUp}
+      onPointerCancel={onPointerUp}
+      onWheel={onWheel}
+    >
+      <canvas ref={canvasRef} className="document-smart-canvas" />
     </div>
+  );
+
+  const sharedManualViewProps = {
+    scale,
+    rotation,
+    saving,
+    manualError,
+    onSetZoom: handleZoomSet,
+    onZoomDelta: handleZoom,
+    onRotateFine: handleFineTune,
+    onRotateLeft: handleRotateCCW,
+    onRotateRight: handleRotate,
+    onReset: handleReset,
+    onCancel,
+    onConfirm: handleManualConfirm,
+  };
+
+  const manualPanel = isMobile ? (
+    <DocumentMobileEditor
+      {...sharedManualViewProps}
+      canvasStage={renderCanvasStage('document-smart-canvas-shell document-smart-canvas-shell--mobile')}
+    />
+  ) : (
+    <DocumentDesktopEditor
+      {...sharedManualViewProps}
+      canvasStage={renderCanvasStage('document-smart-canvas-shell document-smart-canvas-shell--desktop')}
+    />
   );
 
   return createPortal(
@@ -986,3 +934,5 @@ export default function DocumentSmartEditor({
     document.body,
   );
 }
+
+

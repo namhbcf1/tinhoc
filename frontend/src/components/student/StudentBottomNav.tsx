@@ -10,8 +10,8 @@ export default function StudentBottomNav() {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200/80 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]"
-      style={{ paddingBottom: platform === 'ios' ? 'env(safe-area-inset-bottom)' : '0' }}
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[rgba(255,250,241,0.92)] border-t border-[var(--vt-line)] shadow-[0_-18px_42px_rgba(19,34,56,0.12)] backdrop-blur-xl"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="flex items-stretch h-[66px] px-1">
         {STUDENT_MAIN_MENU.map((item) => {
@@ -26,19 +26,19 @@ export default function StudentBottomNav() {
               aria-label={item.label}
             >
               {isActive && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-full bg-emerald-500" />
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-full bg-[var(--vt-champagne)]" />
               )}
 
               <div className={`flex items-center justify-center w-10 h-7 rounded-xl transition-all duration-200 ${
                 isActive
-                  ? 'bg-emerald-50 text-emerald-600'
-                  : 'text-slate-400'
+                  ? 'bg-[var(--vt-ink)] text-[var(--vt-champagne)] shadow-sm'
+                  : 'text-[var(--vt-muted)]'
               }`}>
                 <Icon size={isActive ? 21 : 20} strokeWidth={isActive ? 2.5 : 2} />
               </div>
 
               <span className={`text-[10px] font-semibold leading-none transition-colors ${
-                isActive ? 'text-emerald-700' : 'text-slate-500'
+                isActive ? 'text-[var(--vt-ink)]' : 'text-[var(--vt-muted)]'
               }`}>
                 {item.label}
               </span>

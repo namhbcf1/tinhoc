@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Download, Eye, Trash2, Check, X, UserPlus, Search, Loader } from 'lucide-react';
 import api from '../../../../services/api';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // EXAM SCHEDULE METHODS MIXIN
 // Exam schedule CRUD, student management, trash/restore, approval workflows

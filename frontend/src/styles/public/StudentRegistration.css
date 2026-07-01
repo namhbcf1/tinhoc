@@ -1,5 +1,5 @@
 .registration-container {
-  min-height: calc(100vh - 200px);
+  min-height: calc(100dvh - 200px);
   display: flex;
   align-items: center;
   justify-content: center;

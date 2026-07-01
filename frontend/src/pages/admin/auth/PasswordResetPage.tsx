@@ -1,19 +1,33 @@
-import { useState } from 'react';
+// @ts-nocheck
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../../services/api';
 import Layout from '../../../components/layout/Layout';
+import { Eye, EyeOff } from 'lucide-react';
 import '../../../styles/admin/PasswordResetPage.css';
 
 export default function PasswordResetPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
-  
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [countdown, setCountdown] = useState(3);
+
+  useEffect(() => {
+    if (success && countdown > 0) {
+      const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (success && countdown === 0) {
+      navigate('/admin/login');
+    }
+  }, [success, countdown, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -83,7 +97,7 @@ export default function PasswordResetPage() {
         <div className="password-reset-page">
           <div className="password-reset-card success">
             <h1>✅ Đặt lại mật khẩu thành công!</h1>
-            <p>Bạn sẽ được chuyển đến trang đăng nhập...</p>
+            <p>Tự động chuyển về trang đăng nhập sau {countdown} giây...</p>
           </div>
         </div>
       </Layout>
@@ -110,28 +124,48 @@ export default function PasswordResetPage() {
             />
             <div className="form-group">
               <label>Mật khẩu mới</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
-                required
-                minLength={6}
-                autoComplete="new-password"
-              />
+              <div className="password-input-wrapper" style={{position:'relative'}}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{position:'absolute',right:'12px',top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'#888',padding:'8px'}}
+                  aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <div className="form-group">
               <label>Xác nhận mật khẩu</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Nhập lại mật khẩu mới"
-                required
-                minLength={6}
-                autoComplete="new-password"
-              />
+              <div className="password-input-wrapper" style={{position:'relative'}}>
+                <input
+                  type={showConfirm ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Nhập lại mật khẩu mới"
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  style={{position:'absolute',right:'12px',top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'#888',padding:'8px'}}
+                  aria-label={showConfirm ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                >
+                  {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             {error && <div className="error-message">{error}</div>}

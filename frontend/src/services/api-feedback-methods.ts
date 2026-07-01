@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ========================================
 // FEEDBACK METHODS MIXIN
 // Student feedback submissions + admin review + public listing

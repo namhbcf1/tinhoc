@@ -26,8 +26,8 @@
 }
 
 .mobile-modal.fullscreen {
-    max-height: 100vh;
-    height: 100vh;
+    max-height: 100dvh;
+    height: 100dvh;
     border-radius: 0;
 }
 

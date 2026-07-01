@@ -27,66 +27,54 @@ export function StudentPageShell({
   children: ReactNode;
 }) {
   return (
-    <div className={cn('w-full', compact ? 'space-y-0' : 'space-y-0')}>
-      {/* Header bar */}
+    <div className="w-full min-w-0">
       <div className={cn(
-        'bg-white border-b border-slate-200/70',
+        'relative overflow-hidden border-b border-[var(--vt-line)] bg-[rgba(255,250,241,0.9)] shadow-[0_20px_55px_rgba(19,34,56,0.06)] backdrop-blur-xl',
         stickyHeader && 'sticky top-0 z-10',
-        compact ? 'px-4 py-3' : 'px-6 py-4'
+        compact ? 'px-4 py-3' : 'px-5 py-4 sm:px-6 lg:px-8'
       )}>
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
+        <div aria-hidden="true" className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[var(--vt-champagne)] to-transparent" />
+        <div aria-hidden="true" className="absolute right-[-6rem] top-[-8rem] h-52 w-52 rounded-full bg-[var(--vt-champagne-soft)] blur-3xl" />
+
+        <div className="relative mx-auto flex w-full max-w-7xl flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-start gap-3 sm:items-center">
             <div className={cn(
-              'flex items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100',
-              compact ? 'w-9 h-9' : 'w-10 h-10'
+              'flex shrink-0 items-center justify-center rounded-2xl border border-[var(--vt-champagne-soft)] bg-[var(--vt-paper)] text-[var(--vt-emerald)] shadow-[var(--vt-shadow-card)]',
+              compact ? 'h-9 w-9' : 'h-11 w-11'
             )}>
               {icon}
             </div>
-            <div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--vt-champagne)]">Không gian học viên</p>
               <h1 className={cn(
-                'font-extrabold tracking-tight text-slate-900',
-                compact ? 'text-base' : 'text-lg'
+                'font-black tracking-[-0.04em] text-[var(--vt-ink)]',
+                compact ? 'text-base' : 'text-xl sm:text-2xl'
               )}>{title}</h1>
               {!compact && (
-                <p className="text-xs text-slate-400 mt-0.5 max-w-lg">{subtitle}</p>
+                <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[var(--vt-muted)] sm:text-[13px]">{subtitle}</p>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Stats pills */}
+          <div className="flex shrink-0 items-center gap-2 overflow-x-auto pb-0.5 lg:justify-end lg:overflow-visible lg:pb-0">
             {stats.map((stat) => (
               <div
                 key={stat.label}
-                className="hidden sm:flex items-center gap-1.5 rounded-xl bg-slate-50 border border-slate-200 px-3 py-1.5"
+                className="flex shrink-0 items-center gap-2 rounded-2xl border border-[var(--vt-line)] bg-white/75 px-3 py-2 shadow-sm"
               >
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{stat.label}</span>
-                <span className="text-sm font-extrabold text-slate-800">{stat.value}</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.15em] text-[var(--vt-muted)]">{stat.label}</span>
+                <span className="text-sm font-black text-[var(--vt-ink)]">{stat.value}</span>
               </div>
             ))}
-            {/* Action */}
-            {action}
+            {action ? <div className="shrink-0">{action}</div> : null}
           </div>
         </div>
-
-        {/* Mobile stats row */}
-        {!!stats.length && (
-          <div className="sm:hidden mt-3 flex gap-2 overflow-x-auto pb-0.5 no-scrollbar">
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className="flex items-center gap-1.5 rounded-lg bg-slate-50 border border-slate-200 px-2.5 py-1.5 shrink-0"
-              >
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{stat.label}</span>
-                <span className="text-sm font-extrabold text-slate-700">{stat.value}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* Content */}
-      <div className={cn(compact ? 'p-4 space-y-4' : 'p-6 space-y-5')}>
+      <div className={cn(
+        'mx-auto w-full max-w-7xl',
+        compact ? 'space-y-4 p-4' : 'space-y-5 px-5 py-5 sm:px-6 lg:px-8 lg:py-6'
+      )}>
         {children}
       </div>
     </div>
@@ -112,17 +100,17 @@ export function StudentFilterBar({
           type="button"
           onClick={() => onChange(filter.id)}
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-all duration-150',
+            'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-black transition-all duration-200',
             activeFilter === filter.id
-              ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm'
-              : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+              ? 'border-[var(--vt-ink)] bg-[var(--vt-ink)] text-white shadow-[var(--vt-shadow-card)]'
+              : 'border-[var(--vt-line)] bg-white/75 text-[var(--vt-muted)] hover:border-[var(--vt-champagne)] hover:text-[var(--vt-ink)]'
           )}
         >
           <span>{filter.label}</span>
           {typeof filter.count === 'number' ? (
             <span className={cn(
               'rounded-md px-1.5 py-0.5 text-[10px] font-extrabold',
-              activeFilter === filter.id ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-500'
+              activeFilter === filter.id ? 'bg-white/20 text-white' : 'bg-[var(--vt-champagne-soft)] text-[var(--vt-emerald)]'
             )}>
               {filter.count}
             </span>
@@ -147,12 +135,12 @@ export function StudentSection({
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <h2 className="text-[15px] font-extrabold tracking-tight text-slate-800">{title}</h2>
+    <section className="space-y-3.5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-[15px] font-black tracking-[-0.02em] text-[var(--vt-ink)] sm:text-base">{title}</h2>
           {description ? (
-            <span className="hidden md:block text-xs text-slate-400 font-medium">— {description}</span>
+            <p className="mt-0.5 max-w-2xl text-xs font-semibold leading-relaxed text-[var(--vt-muted)]">{description}</p>
           ) : null}
         </div>
         {action ? <div className="shrink-0">{action}</div> : null}
@@ -174,9 +162,9 @@ export function StudentEmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-200 bg-white px-6 py-10 text-center">
-      <h3 className="text-sm font-extrabold text-slate-700">{title}</h3>
-      <p className="mx-auto mt-1.5 max-w-sm text-xs text-slate-400 leading-relaxed">{description}</p>
+    <div className="rounded-[1.35rem] border border-dashed border-[var(--vt-champagne-soft)] bg-[rgba(255,250,241,0.78)] px-6 py-10 text-center shadow-sm">
+      <h3 className="text-sm font-black text-[var(--vt-ink)]">{title}</h3>
+      <p className="mx-auto mt-2 max-w-sm text-xs text-[var(--vt-muted)] leading-relaxed">{description}</p>
       {action ? <div className="mt-4">{action}</div> : null}
     </div>
   );
@@ -193,7 +181,7 @@ export function StudentInfoCard({
 }) {
   return (
     <div className={cn(
-      'rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200',
+      'rounded-[1.65rem] border border-[var(--vt-line)] bg-[rgba(255,250,241,0.82)] p-4 shadow-[var(--vt-shadow-card)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--vt-champagne-soft)] hover:bg-white/90 sm:p-5',
       className
     )}>
       {children}
@@ -211,16 +199,16 @@ export function StudentPill({
   tone?: 'slate' | 'emerald' | 'amber' | 'red' | 'blue';
 }) {
   const toneClasses: Record<string, string> = {
-    slate:   'border-slate-200   bg-slate-50   text-slate-600',
+    slate:   'border-[var(--vt-line)] bg-white/70 text-[var(--vt-muted)]',
     emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-    amber:   'border-amber-200   bg-amber-50   text-amber-700',
-    red:     'border-red-200     bg-red-50     text-red-700',
-    blue:    'border-blue-200    bg-blue-50    text-blue-700',
+    amber:   'border-[var(--vt-champagne-soft)] bg-[var(--vt-champagne-soft)] text-[var(--vt-ink)]',
+    red:     'border-red-200 bg-red-50 text-red-700',
+    blue:    'border-[var(--vt-line)] bg-[var(--vt-paper)] text-[var(--vt-emerald)]',
   };
 
   return (
     <span className={cn(
-      'inline-flex items-center rounded-lg border px-2 py-0.5 text-[11px] font-extrabold',
+      'inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-black',
       toneClasses[tone] ?? toneClasses.slate
     )}>
       {children}
@@ -250,12 +238,12 @@ export function StudentModal({
   return (
     <OverlayPortal>
       <div
-        className="fixed inset-0 z-[100000] bg-slate-950/50 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4"
+        className="fixed inset-0 z-[100000] flex items-end justify-center bg-[rgba(11,23,40,0.66)] p-0 backdrop-blur-sm md:items-center md:p-4"
         onClick={onClose}
       >
         <div
           className={cn(
-            'flex w-full flex-col overflow-hidden bg-white shadow-2xl',
+            'flex w-full flex-col overflow-hidden border border-[var(--vt-line)] bg-[var(--vt-paper)] shadow-2xl',
             compact
               /* mobile: bottom sheet cố định 90dvh, desktop: auto */
               ? 'rounded-t-2xl h-[90dvh] md:h-auto md:max-h-[85vh] md:rounded-2xl md:w-[min(680px,calc(100vw-2rem))]'
@@ -265,32 +253,32 @@ export function StudentModal({
         >
         {/* Drag handle — chỉ hiện trên mobile */}
         <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-10 h-1 rounded-full bg-slate-200" />
+          <div className="w-10 h-1 rounded-full bg-[var(--vt-champagne-soft)]" />
         </div>
 
         {/* Modal header */}
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5 shrink-0">
+        <div className="flex items-center justify-between border-b border-[var(--vt-line)] px-5 py-3.5 shrink-0 bg-white/45">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Chi tiết</p>
-            <h3 className="mt-0.5 text-base font-extrabold tracking-tight text-slate-900">{title}</h3>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--vt-champagne)]">Chi tiết</p>
+            <h3 className="mt-0.5 text-base font-black tracking-[-0.03em] text-[var(--vt-ink)]">{title}</h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--vt-line)] bg-white/80 text-[var(--vt-muted)] hover:text-[var(--vt-ink)] transition-colors"
           >
             <X size={16} />
           </button>
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        <div className="flex-1 overflow-y-auto space-y-4 p-4 sm:p-5">
           {children}
         </div>
 
         {/* Footer */}
         {footer ? (
-          <div className="border-t border-slate-100 px-5 py-3.5 shrink-0 bg-slate-50/50">
+          <div className="border-t border-[var(--vt-line)] px-5 py-3.5 shrink-0 bg-white/45">
             {footer}
           </div>
         ) : null}
@@ -306,7 +294,7 @@ export function StudentCardSkeleton({ count = 3 }: { count?: number }) {
   return (
     <div className="space-y-3">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="rounded-xl border border-slate-200 bg-white p-4 animate-pulse">
+        <div key={i} className="rounded-[1.35rem] border border-[var(--vt-line)] bg-[var(--vt-paper)] p-4 animate-pulse">
           <div className="flex items-center gap-3 mb-3">
             <div className="h-5 w-20 rounded-lg bg-slate-100" />
             <div className="h-5 w-16 rounded-lg bg-slate-100" />
@@ -337,7 +325,7 @@ export function StudentRefreshButton({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all duration-150 shadow-sm"
+      className="inline-flex items-center gap-1.5 rounded-full border border-[var(--vt-line)] bg-white/80 px-3.5 py-2 text-xs font-black text-[var(--vt-muted)] shadow-sm transition-all duration-200 hover:border-[var(--vt-champagne)] hover:text-[var(--vt-ink)]"
     >
       <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
       {label}

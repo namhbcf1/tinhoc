@@ -13,7 +13,7 @@
 
 /* Page Container */
 .a4-registration-page {
-    min-height: 100vh;
+    min-height: 100dvh;
     background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
     padding: 40px 20px;
     display: flex;
@@ -285,6 +285,7 @@
     align-items: stretch;
     gap: 8px;
     min-width: 0;
+    min-height: 0;
 }
 
 .upload-label {
@@ -321,6 +322,82 @@
     color: var(--primary-red);
     font-weight: 700;
     margin-left: 1px;
+}
+
+/* Make the uploader fill the card consistently */
+.upload-card > .cccd-uploader {
+    display: flex;
+    flex-direction: column;
+}
+
+.upload-card > .cccd-uploader > .upload-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.upload-card > .cccd-uploader > .upload-container.status-idle > .upload-trigger {
+    flex: 1;
+    display: flex;
+}
+
+.upload-card > .cccd-uploader > .upload-container.status-idle > .upload-trigger > .upload-idle-guide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    min-height: 246px;
+    padding: 18px 16px 16px;
+}
+
+.upload-card > .cccd-uploader > .upload-container.status-idle > .upload-trigger > .upload-idle-guide .upload-idle-actions {
+    margin-top: auto;
+}
+
+.upload-section .upload-idle-guide.cccd-type .upload-template-preview {
+    width: min(176px, 100%);
+    height: auto;
+    aspect-ratio: 1.58;
+}
+
+.upload-section .upload-idle-guide.photo-type .upload-template-preview {
+    width: 88px;
+    height: 118px;
+}
+
+.upload-section .upload-idle-desc {
+    max-width: 180px;
+    min-height: 34px;
+    margin: 0;
+    line-height: 1.35;
+    text-wrap: balance;
+}
+
+.upload-section .upload-idle-checklist,
+.upload-section .upload-mobile-tip {
+    display: none;
+}
+
+.upload-section .upload-idle-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 8px;
+}
+
+.upload-section .upload-idle-guide.photo-type .upload-idle-actions {
+    grid-template-columns: 1fr;
+    max-width: 150px;
+}
+
+.upload-section .upload-idle-action {
+    min-width: 0;
+    justify-content: center;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .upload-area {
@@ -563,12 +640,21 @@
     box-shadow: 0 10px 24px -24px rgba(37, 99, 235, 0.7);
 }
 
+/* OCR messages inside upload section */
+.upload-section .message-box {
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-size: 13px;
+    padding: 12px 16px;
+}
+
 .upload-processing-panel {
     padding: 16px 18px;
     border-radius: 12px;
     border: 1px solid #fdba74;
     background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
     box-shadow: 0 12px 28px -24px rgba(249, 115, 22, 0.45);
+    margin-bottom: 16px;
 }
 
 .upload-processing-header {
@@ -946,110 +1032,8 @@
     }
 }
 
-/* Responsive - Mobile zoom out để nhìn toàn diện */
-@media (max-width: 768px) {
-    .a4-registration-page {
-        padding: 10px;
-        align-items: flex-start;
-        min-height: auto;
-        overflow-x: hidden;
-    }
-
-    .a4-form-wrapper {
-        /* Scale down để fit màn hình mobile */
-        transform: scale(0.55);
-        transform-origin: top center;
-        margin-bottom: -45%;
-        /* Compensate for scaled height */
-        padding: 40px 50px;
-        min-width: 800px;
-    }
-
-    /* Giữ nguyên layout desktop cho mobile */
-    .a4-header {
-        flex-direction: row;
-        gap: 0;
-        text-align: left;
-    }
-
-    .header-left {
-        text-align: left;
-    }
-
-    .header-right {
-        text-align: right;
-    }
-
-    .a4-title h1 {
-        font-size: 26px;
-    }
-
-    .form-row-2 {
-        grid-template-columns: 1fr 1fr;
-        gap: 24px;
-    }
-
-    .form-row-3 {
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 16px;
-    }
-
-    .upload-grid {
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 16px;
-    }
-
-    .a4-footer {
-        flex-direction: row;
-        gap: 0;
-    }
-
-    .footer-right {
-        text-align: right;
-    }
-
-    .signature-section {
-        text-align: right;
-        padding-right: 80px;
-    }
-
-    .submit-container {
-        flex-direction: row;
-    }
-
-    .register-processing-floating {
-        right: 12px;
-        left: 12px;
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
-        width: auto;
-    }
-
-    .register-processing-floating-card {
-        padding: 12px;
-        max-height: min(38vh, 280px);
-    }
-
-    .register-processing-floating-title {
-        font-size: 13px;
-    }
-
-    .register-processing-floating-subtitle,
-    .register-processing-floating-item p {
-        font-size: 11px;
-    }
-
-    .register-processing-floating-item {
-        padding: 9px 10px;
-    }
-}
-
-/* Smaller phones - even more zoom */
+/* Smaller phones — keep the floating processing card visible without scaling */
 @media (max-width: 480px) {
-    .a4-form-wrapper {
-        transform: scale(0.42);
-        margin-bottom: -58%;
-    }
-
     .register-processing-floating {
         right: 10px;
         left: 10px;
@@ -1063,10 +1047,562 @@
     }
 }
 
-/* Very small phones */
-@media (max-width: 380px) {
+/* Mobile register is a real form layout, not a scaled desktop sheet. */
+@media (max-width: 768px) {
+    .a4-registration-page {
+        display: block;
+        min-height: 100dvh;
+        padding: 0;
+        background: #eef3f8;
+        overflow-x: hidden;
+    }
+
     .a4-form-wrapper {
-        transform: scale(0.38);
-        margin-bottom: -62%;
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+        transform: none;
+        margin: 0;
+        padding: 18px 14px 28px;
+        box-shadow: none;
+        border-radius: 0;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .a4-header {
+        align-items: flex-start;
+        gap: 14px;
+        margin-bottom: 22px;
+        padding-bottom: 12px;
+    }
+
+    .org-label,
+    .brand-subtitle {
+        font-size: 9px;
+    }
+
+    .org-name,
+    .brand-name {
+        font-size: 11px;
+        line-height: 1.35;
+    }
+
+    .a4-title {
+        margin-bottom: 22px;
+    }
+
+    .a4-title h1 {
+        font-size: 22px;
+        line-height: 1.2;
+        letter-spacing: 0;
+    }
+
+    .a4-subtitle {
+        font-size: 12px;
+    }
+
+    .section-header-row {
+        padding: 11px 12px;
+        margin-bottom: 16px;
+        border-radius: 8px;
+    }
+
+    .upload-section {
+        margin-top: 22px;
+        padding-top: 18px;
+    }
+
+    .upload-waiting-note {
+        font-size: 12px;
+        padding: 10px 12px;
+        line-height: 1.45;
+    }
+
+    .upload-processing-panel {
+        padding: 12px;
+    }
+
+    .upload-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .upload-card {
+        min-height: 0;
+        gap: 6px;
+    }
+
+    .upload-card > .cccd-uploader > .upload-container.status-idle > .upload-trigger > .upload-idle-guide.cccd-type {
+        display: grid;
+        grid-template-columns: 112px minmax(0, 1fr);
+        align-items: center;
+        gap: 12px;
+        min-height: 0;
+        padding: 12px;
+    }
+
+    .upload-card > .cccd-uploader > .upload-container.status-idle > .upload-trigger > .upload-idle-guide.cccd-type .upload-template-preview {
+        width: 112px;
+        height: 72px;
+        margin: 0;
+    }
+
+    .upload-card > .cccd-uploader > .upload-container.status-idle > .upload-trigger > .upload-idle-guide.cccd-type .upload-idle-info {
+        align-items: stretch;
+    }
+
+    .upload-card > .cccd-uploader > .upload-container.status-idle > .upload-trigger > .upload-idle-guide.cccd-type .upload-idle-desc {
+        text-align: left;
+        margin: 0 0 8px;
+    }
+
+    .upload-card > .cccd-uploader > .upload-container.status-idle > .upload-trigger > .upload-idle-guide.cccd-type .upload-idle-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 0;
+    }
+
+    .upload-card > .cccd-uploader > .upload-container.status-idle > .upload-trigger > .upload-idle-guide.photo-type.photo-mobile {
+        display: grid;
+        grid-template-columns: 84px minmax(0, 1fr);
+        align-items: center;
+        gap: 12px;
+        min-height: 0;
+        padding: 12px;
+    }
+
+    .upload-card > .cccd-uploader > .upload-container.status-idle > .upload-trigger > .upload-idle-guide.photo-type.photo-mobile .upload-template-preview {
+        width: 72px;
+        height: 96px;
+        margin: 0 auto;
+    }
+
+    .upload-card > .cccd-uploader > .upload-container.status-idle > .upload-trigger > .upload-idle-guide.photo-type.photo-mobile .upload-idle-info {
+        align-items: stretch;
+    }
+
+    .upload-card > .cccd-uploader > .upload-container.status-idle > .upload-trigger > .upload-idle-guide.photo-type.photo-mobile .upload-idle-desc {
+        text-align: left;
+        margin: 0 0 8px;
+        font-size: 12px;
+        line-height: 1.35;
+    }
+
+    .upload-card > .cccd-uploader > .upload-container.status-idle > .upload-trigger > .upload-idle-guide.photo-type.photo-mobile .upload-mobile-tip {
+        display: none;
+    }
+
+    .upload-card > .cccd-uploader > .upload-container.status-idle > .upload-trigger > .upload-idle-guide.photo-type.photo-mobile .photo-mobile-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 0;
+    }
+
+    .upload-card > .cccd-uploader > .upload-container.status-idle > .upload-trigger > .upload-idle-guide.photo-type.photo-mobile .upload-idle-action.secondary {
+        grid-column: 1 / -1;
+    }
+
+    .upload-label {
+        justify-content: flex-start;
+        min-height: 0;
+        padding: 0 0 8px;
+        text-align: left;
+        font-size: 13px;
+    }
+
+    .form-row-2,
+    .form-row-3 {
+        grid-template-columns: 1fr;
+        gap: 0;
+        margin-bottom: 0;
+    }
+
+    .form-field {
+        margin-bottom: 16px;
+    }
+
+    .form-field label {
+        font-size: 13px;
+        margin-bottom: 7px;
+    }
+
+    .form-input {
+        min-height: 46px;
+        padding: 11px 12px;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .date-selects {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .date-select {
+        padding: 10px 6px !important;
+    }
+
+    .radio-group,
+    .radio-group-inline {
+        gap: 18px;
+        padding: 8px 0;
+        flex-wrap: wrap;
+    }
+
+    .checkbox-row {
+        gap: 10px;
+    }
+
+    .checkbox-row span,
+    .note-item {
+        font-size: 12px;
+    }
+
+    .commitments-section {
+        padding: 14px;
+    }
+
+    .notes-section {
+        margin-top: 26px;
+        padding-top: 16px;
+    }
+
+    .submit-container {
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+        margin: 22px -14px 0;
+        padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+        background: rgba(255, 255, 255, 0.96);
+        border-top: 1px solid #e2e8f0;
+        box-shadow: 0 -12px 28px -24px rgba(15, 23, 42, 0.45);
+    }
+
+    .btn-primary {
+        width: 100%;
+        justify-content: center;
+        min-height: 48px;
+        border-radius: 10px;
+    }
+
+    .back-link {
+        margin-top: 14px;
+        padding-bottom: 8px;
+    }
+
+    .register-processing-floating {
+        display: none;
+    }
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Editorial Luxury overlay — applied on top of the structural .a4-* layer.
+   Touches color, typography, elevation only. JSX classes unchanged.
+   ═════════════════════════════════════════════════════════════════════ */
+
+.vt-registration-page {
+    background:
+        radial-gradient(circle at 8% -4%, rgba(200, 169, 106, 0.22), transparent 32%),
+        radial-gradient(circle at 96% 8%, rgba(29, 111, 95, 0.12), transparent 38%),
+        linear-gradient(180deg, var(--vt-ivory) 0%, var(--vt-paper-soft) 55%, var(--vt-ivory-deep) 100%);
+    color: var(--vt-ink);
+    padding: clamp(20px, 5vw, 56px) clamp(12px, 4vw, 28px);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.vt-registration-paper {
+    background:
+        linear-gradient(145deg, rgba(255, 250, 241, 0.99), rgba(255, 255, 255, 0.96));
+    border: 1px solid var(--vt-line);
+    border-radius: clamp(20px, 3.5vw, 32px);
+    box-shadow: var(--vt-shadow-deep);
+    padding: clamp(24px, 5vw, 56px) clamp(20px, 5vw, 60px);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Champagne hairline accent at the very top of the paper */
+.vt-registration-paper::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        var(--vt-champagne) 20%,
+        var(--vt-champagne-deep) 50%,
+        var(--vt-champagne) 80%,
+        transparent 100%);
+    opacity: 0.85;
+    pointer-events: none;
+}
+
+.vt-registration-section {
+    border: 1px solid var(--vt-line);
+    border-radius: clamp(16px, 2.5vw, 22px);
+    background:
+        linear-gradient(160deg, rgba(255, 250, 241, 0.82), rgba(255, 255, 255, 0.6));
+    box-shadow: 0 12px 36px -8px rgba(19, 34, 56, 0.06);
+    padding: clamp(18px, 3vw, 26px);
+    margin-bottom: 22px;
+    position: relative;
+}
+
+/* Header band — champagne hairline divider with subtle gradient */
+.vt-registration-page .a4-header {
+    border-bottom: none;
+    padding-bottom: 22px;
+    margin-bottom: 32px;
+    position: relative;
+}
+
+.vt-registration-page .a4-header::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent, var(--vt-line-strong) 20%, var(--vt-champagne) 50%, var(--vt-line-strong) 80%, transparent);
+}
+
+.vt-registration-page .org-label,
+.vt-registration-page .brand-subtitle {
+    color: var(--vt-ink-50);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: 0.18em;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 10px;
+}
+
+.vt-registration-page .org-name,
+.vt-registration-page .brand-name {
+    color: var(--vt-ink);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    font-size: 13px;
+}
+
+.vt-registration-page .brand-name {
+    color: var(--vt-emerald-deep);
+}
+
+/* Editorial title — Fraunces variable serif with optical sizing */
+.vt-registration-page .a4-title {
+    margin-bottom: 36px;
+    padding: 14px 0 4px;
+}
+
+.vt-registration-page .a4-title h1 {
+    font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+    font-variation-settings: '"opsz" 144, "SOFT" 40';
+    font-weight: 600;
+    font-style: normal;
+    font-size: clamp(1.75rem, 4.5vw, 2.6rem);
+    line-height: 1.05;
+    color: var(--vt-ink);
+    letter-spacing: -0.015em;
+    text-transform: none;
+}
+
+.vt-registration-page .a4-subtitle {
+    color: var(--vt-ink-60);
+    font-style: normal;
+    font-size: 13px;
+    margin-top: 10px;
+    letter-spacing: 0.01em;
+}
+
+/* Section header row — emerald icon chip with champagne ring */
+.vt-registration-page .section-header-row {
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--vt-line-soft);
+}
+
+.vt-registration-page .section-header-row h2 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-variation-settings: '"opsz" 72, "SOFT" 30';
+    font-weight: 600;
+    color: var(--vt-ink);
+    font-size: clamp(1rem, 2.4vw, 1.2rem);
+    letter-spacing: -0.01em;
+    text-transform: none;
+}
+
+.vt-registration-page .section-icon {
+    background: linear-gradient(140deg, var(--vt-emerald-soft), var(--vt-champagne-soft));
+    color: var(--vt-emerald-deep);
+    box-shadow: inset 0 0 0 1px var(--vt-champagne-soft);
+    border-radius: 12px;
+    height: 36px;
+    width: 36px;
+    display: grid;
+    place-items: center;
+}
+
+/* Form controls — refined, accessible focus ring */
+.vt-registration-page input,
+.vt-registration-page select,
+.vt-registration-page textarea {
+    border-color: var(--vt-line-strong);
+    background-color: rgba(255, 255, 255, 0.95);
+    color: var(--vt-ink);
+    border-radius: 10px;
+    transition: border-color 200ms var(--vt-easing-luxe),
+        box-shadow 200ms var(--vt-easing-luxe);
+}
+
+.vt-registration-page input::placeholder,
+.vt-registration-page textarea::placeholder {
+    color: var(--vt-ink-40);
+}
+
+.vt-registration-page input:hover,
+.vt-registration-page select:hover,
+.vt-registration-page textarea:hover {
+    border-color: var(--vt-ink-30);
+}
+
+.vt-registration-page input:focus,
+.vt-registration-page select:focus,
+.vt-registration-page textarea:focus {
+    border-color: var(--vt-emerald);
+    box-shadow: 0 0 0 4px var(--vt-emerald-soft);
+    outline: none;
+}
+
+/* Required asterisk — champagne instead of red */
+.vt-registration-page .required {
+    color: var(--vt-champagne-deep);
+}
+
+/* Upload area, commitments, notes panels */
+.vt-registration-page .upload-card,
+.vt-registration-page .commitments-section,
+.vt-registration-page .notes-section,
+.vt-registration-page .upload-processing-panel,
+.vt-registration-page .upload-waiting-note {
+    border-color: var(--vt-line);
+    background: rgba(255, 255, 255, 0.72);
+    border-radius: 16px;
+}
+
+.vt-registration-page .upload-label {
+    color: var(--vt-ink-70);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.vt-registration-page .upload-waiting-note {
+    background: linear-gradient(135deg, var(--vt-champagne-soft), rgba(255, 255, 255, 0.6));
+    color: var(--vt-ink-80);
+    border: 1px solid var(--vt-champagne-soft);
+}
+
+.vt-registration-page .success-box {
+    background: var(--vt-emerald-soft);
+    color: var(--vt-emerald-deep);
+    border: 1px solid rgba(29, 111, 95, 0.25);
+    border-radius: 12px;
+}
+
+.vt-registration-page .error-box {
+    background: rgba(220, 38, 38, 0.08);
+    color: #991b1b;
+    border: 1px solid rgba(220, 38, 38, 0.25);
+    border-radius: 12px;
+}
+
+/* Primary CTA — dark ink pill with emerald hover */
+.vt-registration-page button[type="submit"],
+.vt-registration-page .btn-primary {
+    border-radius: 999px;
+    background: linear-gradient(140deg, var(--vt-ink) 0%, var(--vt-ink-soft) 100%);
+    color: #fff;
+    box-shadow: var(--vt-shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition: transform 220ms var(--vt-easing-luxe),
+        box-shadow 220ms var(--vt-easing-luxe),
+        background 220ms var(--vt-easing-luxe);
+}
+
+.vt-registration-page button[type="submit"]:hover:not(:disabled),
+.vt-registration-page .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(140deg, var(--vt-emerald-deep), var(--vt-emerald));
+    box-shadow: var(--vt-shadow-deep);
+    transform: translateY(-1px);
+}
+
+.vt-registration-page button[type="submit"]:active:not(:disabled),
+.vt-registration-page .btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: var(--vt-shadow-press);
+}
+
+/* Radio + checkbox refinements */
+.vt-registration-page .radio-group label,
+.vt-registration-page .commitments-section label {
+    color: var(--vt-ink-70);
+}
+
+.vt-registration-page input[type="radio"],
+.vt-registration-page input[type="checkbox"] {
+    accent-color: var(--vt-emerald);
+}
+
+/* Mobile tightening — keep editorial feel but compress generously */
+@media (max-width: 768px) {
+    .vt-registration-page {
+        padding: 18px 12px 28px;
+    }
+
+    .vt-registration-paper {
+        border-radius: 20px;
+        box-shadow: 0 18px 40px -12px rgba(19, 34, 56, 0.18);
+        padding: 22px 18px;
+    }
+
+    .vt-registration-section {
+        border-radius: 16px;
+        padding: 16px 14px;
+        margin-bottom: 16px;
+    }
+
+    .vt-registration-page .a4-title {
+        margin-bottom: 24px;
+    }
+
+    .vt-registration-page .a4-title h1 {
+        font-size: clamp(1.5rem, 6vw, 2rem);
+    }
+
+    .vt-registration-page .section-icon {
+        height: 32px;
+        width: 32px;
+        border-radius: 10px;
+    }
+}
+
+/* Print — keep the editorial typographic system but flatten effects */
+@media print {
+    .vt-registration-page {
+        background: white;
+        padding: 0;
+    }
+
+    .vt-registration-paper {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+    }
+
+    .vt-registration-paper::before {
+        display: none;
     }
 }

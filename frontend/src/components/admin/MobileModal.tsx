@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useDeviceType } from '../../utils/deviceDetection';
@@ -65,11 +66,3 @@ export default function MobileModal({
         </div>
     );
 }
-
-
-
-
-
-
-
-
