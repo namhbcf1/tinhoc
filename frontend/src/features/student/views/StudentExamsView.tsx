@@ -66,6 +66,28 @@ function getSafeHttpUrl(value: unknown) {
   }
 }
 
+function getZoomUrl(exam: any): string | null {
+  // Ưu tiên link Zoom đã lưu
+  if (exam.zoomLink) return exam.zoomLink;
+  // Nếu có zoom_meeting_id trong raw, tạo link từ meeting ID + passcode
+  const raw = exam.raw || {};
+  const mid = raw.zoom_meeting_id || raw.zoom_meeting_id_backup;
+  if (mid) {
+    const pwd = raw.zoom_passcode || raw.zoom_passcode_backup;
+    const cleanMid = String(mid).replace(/\s/g, '');
+    return pwd
+      ? `https://zoom.us/j/${cleanMid}?pwd=${encodeURIComponent(String(pwd))}`
+      : `https://zoom.us/j/${cleanMid}`;
+  }
+  return null;
+}
+
+function hasZoomData(exam: any): boolean {
+  if (exam.zoomLink || exam.zoomLinkBackup) return true;
+  const raw = exam.raw || {};
+  return Boolean(raw.zoom_meeting_id || raw.zoom_meeting_id_backup);
+}
+
 function resolveRegisterErrorMessage(err: any) {
   const code    = err?.code || '';
   const message = String(err?.message || '').trim();
@@ -207,9 +229,9 @@ function ExamCard({
 
         {isApproved ? (
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            {exam.zoomLink ? (
+            {hasZoomData(exam) ? (
               <a
-                href={exam.zoomLink}
+                href={getZoomUrl(exam)!}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-700 shadow-sm transition-all hover:bg-blue-100"
