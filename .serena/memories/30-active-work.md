@@ -521,3 +521,4 @@ pm run build; warning còn lại là CSS @import/chunk-size cũ.
 - `RegistrationFormA4.css`: nút "Chọn ảnh" auto-fit trải đầy thẻ; radio NAM/NỮ thành pill căn chiều cao ô nhập (46px, :has(:checked) màu ngọc lam); nhãn thẻ + nút hành động đổi sang bảng màu mực–ngọc lam của vt-overlay (xanh dương cũ lệch tông).
 - Dấu tiếng Việt: "Nhập số CCCD" (2 FormFields), badge "Đang tải/Lỗi/Cân chỉnh/Thử lại/Đã tải xong", alt "Xem trước", SEO "Đăng ký dự thi" (2 View).
 - Deploy Pages `8dd88ec3`; build suffix mới `mtj3tyhq`.
+- (bổ sung) Mobile cùng đợt: media query cũ vẫn grid 2 cột cho nút → đổi auto-fit (CCCDUploader.css + RegistrationFormA4.css), deploy `0e748b5b`, verify 2 file CSS production chứa auto-fit. Commit `9ced51a40`→tiếp theo.
