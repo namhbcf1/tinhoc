@@ -50,11 +50,11 @@ export default function FloatingCTA({ showAfter = 500 }) {
                             📝 Đăng ký học viên
                         </Link>
                         <a
-                            href="tel:0962445963"
+                            href="tel:0962449563"
                             className="bg-white text-emerald-700 px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all font-bold text-sm flex items-center gap-2 whitespace-nowrap"
                         >
                             <Phone size={16} />
-                            096 244 5963
+                            096 244 9563
                         </a>
                     </div>
                 )}

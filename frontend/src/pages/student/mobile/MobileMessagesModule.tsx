@@ -129,7 +129,7 @@ export default function MobileMessagesModule({ studentData }) {
                                 <Bell size={24} className="text-white" strokeWidth={1.5} />
                             </div>
                             <div>
-                                <p className="text-white/60 text-[10px] font-black uppercase tracking-widest">Trung tâm</p>
+                                <p className="text-white/60 text-[10px] font-black uppercase tracking-widest">Vân Trang</p>
                                 <h1 className="text-white font-black text-xl tracking-tight">Thông báo</h1>
                             </div>
                         </div>

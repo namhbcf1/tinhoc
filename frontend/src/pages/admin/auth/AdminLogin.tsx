@@ -248,7 +248,7 @@ export default function AdminLogin() {
 
                 {/* Footer */}
                 <div className="admin-login-footer">
-                    <p>© {new Date().getFullYear()} CÔNG TY TNHH TƯ VẤN GIÁO DỤC SƠN TRANG</p>
+                    <p>© {new Date().getFullYear()} VAN TRANG EDUCATION</p>
                     <Link to="/" className="admin-login-back-link">
                         ← Quay về trang chủ
                     </Link>

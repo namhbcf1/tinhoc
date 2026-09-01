@@ -50,7 +50,7 @@ export default function StudentRegistrationMobileView({
         <div className="a4-header">
           <div className="header-left">
             <p className="org-label">HỆ THỐNG GIÁO DỤC</p>
-            <p className="org-name">CÔNG TY TNHH TƯ VẤN GIÁO DỤC SƠN TRANG</p>
+            <p className="org-name">VAN TRANG EDUCATION</p>
           </div>
           <div className="header-right">
             <p className="brand-name">VAN TRANG EDUCATION</p>

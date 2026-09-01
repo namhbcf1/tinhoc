@@ -20,9 +20,9 @@ const teachers = [
 ];
 
 const historyTimeline = [
-    { year: '2015', title: 'Thành lập trung tâm', desc: 'VanTrangEdu chính thức ra đời tại Hà Nội, bắt đầu với các lớp tiếng Anh giao tiếp nhỏ, quy mô 10–15 học viên.' },
+    { year: '2015', title: 'Thành lập', desc: 'VanTrangEdu chính thức ra đời tại Hà Nội, bắt đầu với các lớp tiếng Anh giao tiếp nhỏ, quy mô 10–15 học viên.' },
     { year: '2017', title: 'Mở rộng chương trình', desc: 'Ra mắt các khoá luyện thi TOEIC, IELTS. Số lượng học viên vượt 500 người.' },
-    { year: '2019', title: 'Chuyên sâu VSTEP', desc: 'Trở thành một trong những trung tâm luyện thi VSTEP uy tín tại Hà Nội. Ký hợp tác với doanh nghiệp về đào tạo tiếng Anh nội bộ.' },
+    { year: '2019', title: 'Chuyên sâu VSTEP', desc: 'Trở thành địa chỉ luyện thi VSTEP uy tín tại Hà Nội. Ký hợp tác với đối tác về đào tạo tiếng Anh nội bộ.' },
     { year: '2022', title: 'Ra mắt E-Learning', desc: 'Triển khai nền tảng học trực tuyến, mở rộng phục vụ học viên toàn quốc. Tổng cộng 2.000+ cựu học viên.' },
     { year: '2025', title: 'Thêm Tin học Văn phòng', desc: 'Bổ sung chương trình Tin học Văn phòng (MOS, IC3) đáp ứng nhu cầu thực tế. Đạt 3.000+ cựu học viên.' },
     { year: '2026', title: 'Tích hợp AI', desc: 'Ứng dụng AI đánh giá trình độ đầu vào và cá nhân hoá lộ trình học tập cho từng học viên.' },
@@ -59,7 +59,7 @@ export default function AboutPage() {
         <ModernPublicLayout>
             <SEO
                 title="Về VanTrangEdu — Lịch sử, Sứ mệnh & Đội ngũ"
-                description="VanTrangEdu — trung tâm ngoại ngữ và tin học văn phòng tại 418 Đê La Thành, Hà Nội. 10+ năm kinh nghiệm, 3.000+ cựu học viên, giảng viên IELTS 8.0+."
+                description="VanTrangEdu — đào tạo ngoại ngữ và tin học văn phòng tại 418 Đê La Thành, Hà Nội. 10+ năm kinh nghiệm, 3.000+ cựu học viên, giảng viên IELTS 8.0+."
                 url="/about"
             />
 
@@ -84,7 +84,7 @@ export default function AboutPage() {
                                 <span className="block">ngôn ngữ.</span>
                             </h1>
                             <p className="a-desc vt-lead mt-7 max-w-2xl">
-                                Van Trang Education là trung tâm đào tạo ngoại ngữ và tin học văn phòng tại Hà Nội, thành lập năm 2015 bởi bà Phạm Thị Vân Trang. Hơn một thập kỷ đồng hành cùng 3.000+ học viên — từ học sinh, sinh viên đến người đi làm và cán bộ nhà nước.
+                                Van Trang Education là đơn vị đào tạo ngoại ngữ và tin học văn phòng tại Hà Nội, thành lập năm 2015 bởi bà Phạm Thị Vân Trang. Hơn một thập kỷ đồng hành cùng 3.000+ học viên — từ học sinh, sinh viên đến người đi làm và cán bộ nhà nước.
                             </p>
 
                             <div className="a-desc mt-9 flex flex-wrap gap-3">
@@ -120,10 +120,10 @@ export default function AboutPage() {
                                     <p className="vt-eyebrow !text-[10px] mt-6 !text-[var(--vt-emerald-deep)]">Tầm nhìn 2030</p>
                                     <h3 className="vt-display mt-3 text-[1.75rem] text-[var(--vt-ink)] leading-tight"
                                         style={{ fontVariationSettings: '"opsz" 72, "SOFT" 30', fontWeight: 600 }}>
-                                        Trung tâm VSTEP & ngoại ngữ uy tín nhất Hà Nội
+                                        Địa chỉ VSTEP & ngoại ngữ uy tín nhất Hà Nội
                                     </h3>
                                     <p className="mt-4 text-[15px] text-[var(--vt-ink-65)] leading-relaxed">
-                                        Nơi mọi học viên đều có thể tiếp cận chương trình chất lượng cao với chi phí hợp lý, phương pháp hiện đại và sự đồng hành chuyên nghiệp.
+                                        Mọi học viên đều có thể tiếp cận chương trình chất lượng cao với chi phí hợp lý, phương pháp hiện đại và sự đồng hành chuyên nghiệp.
                                     </p>
                                 </div>
                             </article>
@@ -221,7 +221,7 @@ export default function AboutPage() {
                         <div className="grid md:grid-cols-3 gap-5 mt-12 max-w-5xl mx-auto">
                             {[
                                 { icon: ShieldCheck, title: 'Giấy phép đào tạo', desc: 'Được cấp phép hoạt động bởi Sở GD&ĐT Hà Nội theo Nghị định 46/2017/NĐ-CP.' },
-                                { icon: Award, title: 'Đăng ký kinh doanh', desc: 'Công ty TNHH Tư Vấn Giáo Dục Sơn Trang · Mã số thuế 0110058563.' },
+                                { icon: Award, title: 'Đăng ký kinh doanh', desc: 'VAN TRANG EDUCATION · Mã số thuế 0110058563.' },
                                 { icon: BookOpen, title: 'Chương trình chuẩn VSTEP', desc: 'Luyện thi VSTEP theo khung năng lực 6 bậc (Thông tư 01/2014/TT-BGDĐT) do Bộ GD&ĐT ban hành.' },
                             ].map(({ icon: Icon, title, desc }) => (
                                 <article key={title} className="vt-paper-card">
@@ -293,7 +293,7 @@ export default function AboutPage() {
 
                                     <div className="mt-6 space-y-4 text-[15px] text-[var(--vt-ink-70)] leading-relaxed">
                                         <p>
-                                            Chuyên gia Sư phạm ngôn ngữ với hơn 10 năm kinh nghiệm, bà Phạm Thị Vân Trang đã xây dựng Van Trang từ một trung tâm nhỏ tại Hà Nội thành cơ sở đào tạo phục vụ 3.000+ cựu học viên trên cả nước.
+                                            Chuyên gia Sư phạm ngôn ngữ với hơn 10 năm kinh nghiệm, bà Phạm Thị Vân Trang đã xây dựng Van Trang từ những ngày đầu tại Hà Nội thành địa chỉ đào tạo phục vụ 3.000+ cựu học viên trên cả nước.
                                         </p>
                                         <blockquote className="border-l-2 border-[var(--vt-champagne)] pl-5 italic vt-display text-[1.1rem] text-[var(--vt-ink)] leading-snug"
                                                     style={{ fontVariationSettings: '"opsz" 24, "SOFT" 50', fontWeight: 500 }}>
@@ -314,7 +314,7 @@ export default function AboutPage() {
 
                                 {[
                                     { icon: MapPin, label: 'Trụ sở chính', value: '418 Đê La Thành, Ô Chợ Dừa, Đống Đa, Hà Nội', href: 'https://maps.google.com/?q=418+De+La+Thanh+Dong+Da+Ha+Noi', external: true },
-                                    { icon: Phone, label: 'Tổng đài CSKH', value: '096 244 5963 · 033 924 4566', href: 'tel:0962445963' },
+                                    { icon: Phone, label: 'Tổng đài CSKH', value: '096 244 9563 · 033 924 4566', href: 'tel:0962449563' },
                                     { icon: Mail, label: 'Hỗ trợ học viên', value: 'info@vantrangedu.edu.vn', href: 'mailto:info@vantrangedu.edu.vn' },
                                     { icon: Facebook, label: 'Fanpage chính thức', value: 'fb.com/Englishvantrang', href: 'https://www.facebook.com/Englishvantrang', external: true },
                                 ].map(({ icon: Icon, label, value, href, external }) => (

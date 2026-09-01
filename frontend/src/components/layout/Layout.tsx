@@ -96,7 +96,7 @@ export default function Layout({ children }) {
       submenu: [
         { label: 'Tổng quan về HUB', path: '/about/overview' },
         { label: 'Tầm nhìn - Sứ mệnh', path: '/about/vision' },
-        { label: 'Bộ máy tổ chức', path: '/about/organization' },
+        { label: 'VANTRANGEDU', path: '/about/organization' },
         { label: 'Cơ sở vật chất', path: '/about/facilities' },
         { label: 'Đội ngũ giảng viên', path: '/about/faculty' },
         { label: 'Lịch sử hình thành', path: '/about/history' },
@@ -323,7 +323,7 @@ export default function Layout({ children }) {
       <footer className="footer">
         <div className="footer-container">
           <div className="footer-section">
-            <h3>CÔNG TY TNHH TƯ VẤN GIÁO DỤC SƠN TRANG</h3>
+            <h3>VAN TRANG EDUCATION</h3>
             <p className="footer-tagline">Phát triển năng lực ngoại ngữ cho người Việt</p>
             <p className="footer-tax">Mã số thuế: 0110058563</p>
             <p className="footer-representative">Người đại diện: Phạm Thị Vân Trang</p>
@@ -335,7 +335,7 @@ export default function Layout({ children }) {
               <li className="contact-item-footer">
                 <strong>Điện thoại:</strong>
                 <div className="phone-numbers">
-                  <a href="tel:0962445963" className="phone-link">📞 096 244 5963</a>
+                  <a href="tel:0962449563" className="phone-link">📞 096 244 9563</a>
                   <a href="tel:0339244566" className="phone-link">📞 0339 244 566</a>
                 </div>
               </li>
@@ -346,14 +346,14 @@ export default function Layout({ children }) {
               <li className="contact-item-footer">
                 <strong>Zalo:</strong>
                 <div className="social-links">
-                  <a href="https://zalo.me/0962445963" target="_blank" rel="noopener noreferrer" className="zalo-link">
+                  <a href="https://zalo.me/0962449563" target="_blank" rel="noopener noreferrer" className="zalo-link">
                     <svg className="social-icon zalo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <circle cx="12" cy="12" r="10" fill="#0068FF"/>
                       <path d="M12 6C8.69 6 6 8.69 6 12C6 15.31 8.69 18 12 18C15.31 18 18 15.31 18 12C18 8.69 15.31 6 12 6ZM12 16.5C9.52 16.5 7.5 14.48 7.5 12C7.5 9.52 9.52 7.5 12 7.5C14.48 7.5 16.5 9.52 16.5 12C16.5 14.48 14.48 16.5 12 16.5Z" fill="white"/>
                       <path d="M10.5 10.5C10.5 10.5 9.5 11.5 9.5 12C9.5 12.5 10.5 13.5 10.5 13.5M13.5 10.5C13.5 10.5 14.5 11.5 14.5 12C14.5 12.5 13.5 13.5 13.5 13.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
                       <path d="M9 15C9 15 10.5 13.5 12 13.5C13.5 13.5 15 15 15 15" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
                     </svg>
-                    <span>096 244 5963</span>
+                    <span>096 244 9563</span>
                   </a>
                   <a href="https://zalo.me/0339244566" target="_blank" rel="noopener noreferrer" className="zalo-link">
                     <svg className="social-icon zalo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -410,7 +410,7 @@ export default function Layout({ children }) {
         </div>
         
         <div className="footer-bottom">
-          <p>Copyright © 2024 CÔNG TY TNHH TƯ VẤN GIÁO DỤC SƠN TRANG. Mã số thuế: 0110058563. All Rights Reserved.</p>
+          <p>Copyright © 2024 VAN TRANG EDUCATION. Mã số thuế: 0110058563. All Rights Reserved.</p>
         </div>
       </footer>
     </div>

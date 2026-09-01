@@ -323,7 +323,7 @@ export default function LifePage() {
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
                 <a
-                  href="https://zalo.me/0962445963"
+                  href="https://zalo.me/0962449563"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="vt-btn vt-btn--accent justify-center"

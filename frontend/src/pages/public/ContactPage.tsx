@@ -23,7 +23,7 @@ import { apiPost } from '../../lib/api';
 const contactSchema = z.object({
     name: z.string().min(2, 'Vui lòng nhập họ tên đầy đủ'),
     email: z.string().email('Email không hợp lệ'),
-    phone: z.string().regex(/^(0[3-9]\d{8}|\+84[3-9]\d{8})$/, 'Số điện thoại không hợp lệ (VD: 0962445963)'),
+    phone: z.string().regex(/^(0[3-9]\d{8}|\+84[3-9]\d{8})$/, 'Số điện thoại không hợp lệ (VD: 0962449563)'),
     subject: z.string().min(5, 'Vui lòng nhập tiêu đề'),
     message: z.string().min(10, 'Nội dung tin nhắn quá ngắn'),
 });
@@ -34,7 +34,7 @@ const primaryChannels = [
         eyebrow: 'Hotline · 24/7',
         title: 'Tư vấn nhanh qua điện thoại',
         lines: [
-            { href: 'tel:0962445963', label: '096 244 5963' },
+            { href: 'tel:0962449563', label: '096 244 9563' },
             { href: 'tel:0339244566', label: '033 924 4566' },
         ],
         helper: 'Phản hồi trong vòng 2 phút giờ hành chính.',
@@ -53,7 +53,7 @@ const primaryChannels = [
         eyebrow: 'Zalo · Chat',
         title: 'Trò chuyện qua Zalo',
         lines: [
-            { href: 'https://zalo.me/0962445963', label: 'zalo.me/0962445963', external: true },
+            { href: 'https://zalo.me/0962449563', label: 'zalo.me/0962449563', external: true },
         ],
         helper: 'Gửi ảnh chụp hồ sơ, lịch học và đặt câu hỏi tức thì.',
     },
@@ -186,11 +186,11 @@ export default function ContactPage() {
                                 tư vấn lộ trình phù hợp nhất. Bạn chọn kênh tiện nhất, chúng tôi đảm bảo phản hồi nhanh.
                             </p>
                             <div className="c-cta mt-9 flex flex-wrap gap-3">
-                                <a href="tel:0962445963" className="vt-btn vt-btn--primary">
+                                <a href="tel:0962449563" className="vt-btn vt-btn--primary">
                                     <Phone size={16} />
-                                    Gọi 096 244 5963
+                                    Gọi 096 244 9563
                                 </a>
-                                <a href="https://zalo.me/0962445963" target="_blank" rel="noopener noreferrer" className="vt-btn vt-btn--ghost">
+                                <a href="https://zalo.me/0962449563" target="_blank" rel="noopener noreferrer" className="vt-btn vt-btn--ghost">
                                     <MessageCircle size={16} />
                                     Nhắn Zalo
                                 </a>

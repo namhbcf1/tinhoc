@@ -158,8 +158,7 @@ export default function CCCDImportModal({ isOpen, onClose, onSubmit, studentData
                     {/* Header */}
                     <div className="a4-header">
                         <div className="header-left">
-                            <p className="org-name">CÔNG TY TNHH TƯ VẤN GIÁO DỤC</p>
-                            <p className="org-name-bold">VÂN TRANG EDUCATION</p>
+                            <p className="org-name">VAN TRANG EDUCATION</p>
                             <div className="header-line"></div>
                         </div>
                         <div className="header-right">
@@ -454,7 +453,7 @@ export default function CCCDImportModal({ isOpen, onClose, onSubmit, studentData
                             </div>
                             <div className="footer-right">
                                 <p>Hà Nội, ngày..........tháng..........năm 2026</p>
-                                <p className="center-name">Trung tâm Khảo thi</p>
+                                <p className="center-name">Vân Trang Education</p>
                             </div>
                         </div>
 

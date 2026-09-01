@@ -104,8 +104,8 @@ export default function ModernFooter() {
                             </p>
 
                             <div className="space-y-2 text-sm text-white/70">
-                                <p className="font-semibold text-white/90 uppercase tracking-[0.14em] text-[11px]">
-                                    Công ty TNHH Tư vấn Giáo dục Sơn Trang
+                                <p className="font-semibold text-white/90 text-[13px]">
+                                    VAN TRANG EDUCATION
                                 </p>
                                 <p><span className="text-white/55">Mã số thuế:</span> <span className="font-medium">0110058563</span></p>
                                 <p><span className="text-white/55">Người đại diện:</span> <span className="font-medium">Phạm Thị Vân Trang</span></p>
@@ -123,7 +123,7 @@ export default function ModernFooter() {
                                     <Facebook size={16} />
                                 </a>
                                 <a
-                                    href="https://zalo.me/0962445963"
+                                    href="https://zalo.me/0962449563"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     aria-label="Chat Zalo"
@@ -203,8 +203,8 @@ export default function ModernFooter() {
                                     <p className="text-[11px] font-bold tracking-[0.16em] uppercase text-white/50 mb-1.5 flex items-center gap-2">
                                         <Phone size={12} /> Hotline
                                     </p>
-                                    <a href="tel:0962445963" className="block hover:text-[var(--vt-champagne)] transition-colors font-semibold">
-                                        096 244 5963
+                                    <a href="tel:0962449563" className="block hover:text-[var(--vt-champagne)] transition-colors font-semibold">
+                                        096 244 9563
                                     </a>
                                     <a href="tel:0339244566" className="block hover:text-[var(--vt-champagne)] transition-colors font-semibold">
                                         0339 244 566
@@ -223,12 +223,12 @@ export default function ModernFooter() {
                                         <MessageCircle size={12} /> Zalo
                                     </p>
                                     <a
-                                        href="https://zalo.me/0962445963"
+                                        href="https://zalo.me/0962449563"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="block hover:text-[var(--vt-champagne)] transition-colors"
                                     >
-                                        zalo.me/0962445963
+                                        zalo.me/0962449563
                                     </a>
                                 </li>
                                 <li>
@@ -246,7 +246,7 @@ export default function ModernFooter() {
                 <div className="border-t border-white/10">
                     <div className="vt-container py-5 md:py-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
                         <p className="text-white/55 text-center md:text-left">
-                            © {year} <span className="text-white/75 font-semibold">Công ty TNHH Tư vấn Giáo dục Sơn Trang</span>. Bảo lưu mọi quyền.
+                            © {year} <span className="text-white/75 font-semibold">VAN TRANG EDUCATION</span>. Bảo lưu mọi quyền.
                         </p>
                         <div className="flex items-center gap-5">
                             <Link to="/privacy" className="text-white/55 hover:text-[var(--vt-champagne)] transition-colors">

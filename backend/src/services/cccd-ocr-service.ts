@@ -541,8 +541,14 @@ function extractFullNameFromFrontText(text: string): string {
         .replace(/^.*?name\s*[:\/.\-]*/iu, ''),
     );
 
-    if (looksLikePersonName(inlineValue)) {
-      return inlineValue;
+    const inlineName = inlineValue
+      .replace(/(?:full\s*name|name|ho\s*va\s*ten|họ\s*và\s*tên)/giu, '')
+      .replace(/^[\s:./\-,]+|[\s:./\-,]+$/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (looksLikePersonName(inlineName)) {
+      return inlineName;
     }
 
     for (let j = i + 1; j < lines.length && j <= i + 3; j += 1) {

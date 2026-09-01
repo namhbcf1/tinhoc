@@ -17,7 +17,7 @@ const units = [
   {
     Icon: Globe,
     eyebrow: '01 · Quốc tế',
-    title: 'Trung tâm Đào tạo Quốc tế',
+    title: 'Đào tạo Quốc tế',
     description:
       'Chuyên trách các chương trình liên kết quốc tế, đào tạo tiếng Anh chuẩn quốc tế và tư vấn du học.',
     functions: ['Liên kết quốc tế', 'Đào tạo ngoại ngữ', 'Tư vấn du học'],
@@ -27,7 +27,7 @@ const units = [
     eyebrow: '02 · CNTT',
     title: 'Khoa Công Nghệ Thông Tin',
     description:
-      'Đào tạo kỹ sư CNTT chất lượng cao, nghiên cứu khoa học và chuyển giao công nghệ phần mềm cho doanh nghiệp.',
+      'Đào tạo kỹ sư CNTT chất lượng cao, nghiên cứu khoa học và chuyển giao công nghệ phần mềm.',
     functions: ['Kỹ sư CNTT', 'Nghiên cứu KH', 'Chuyển giao công nghệ'],
   },
   {
@@ -49,7 +49,7 @@ const units = [
   {
     Icon: Microscope,
     eyebrow: '05 · Nghiên cứu',
-    title: 'Trung tâm R&D',
+    title: 'R&D',
     description:
       'Nghiên cứu khoa học, ứng dụng công nghệ mới vào giảng dạy và quản lý giáo dục — phát triển các giải pháp ed-tech.',
     functions: ['Nghiên cứu KH', 'Ứng dụng công nghệ', 'Đổi mới sáng tạo'],
@@ -85,7 +85,7 @@ export default function UnitsPage() {
     <ModernPublicLayout>
       <SEO
         title="Các đơn vị trực thuộc"
-        description="Giới thiệu các khoa, phòng ban và trung tâm chuyên trách trong hệ thống Vân Trang Education."
+        description="Giới thiệu các khoa, phòng ban và bộ phận chuyên trách trong hệ thống Vân Trang Education."
         url="/units"
         structuredData={structuredData}
       />
@@ -111,7 +111,7 @@ export default function UnitsPage() {
               <span className="vt-display-italic text-[var(--vt-champagne)]">trực thuộc.</span>
             </h1>
             <p className="mt-6 text-lg text-white/75 leading-relaxed max-w-2xl">
-              Hệ thống các khoa, phòng ban và trung tâm chuyên trách — cùng nhau kiến tạo môi trường giáo dục chất lượng cao tại Vân Trang Education.
+              Hệ thống các khoa, phòng ban và bộ phận chuyên trách — cùng nhau kiến tạo môi trường giáo dục chất lượng cao tại Vân Trang Education.
             </p>
 
             <div className="mt-10 grid grid-cols-3 gap-4 max-w-md">
@@ -200,11 +200,11 @@ export default function UnitsPage() {
                 Đội ngũ cán bộ luôn sẵn sàng hỗ trợ và giải đáp mọi thắc mắc của bạn — phản hồi trung bình trong 30 phút giờ hành chính.
               </p>
               <a
-                href="tel:0962445963"
+                href="tel:0962449563"
                 className="vt-btn vt-btn--accent mt-8 inline-flex justify-center"
               >
                 <Phone size={16} />
-                096 244 5963
+                096 244 9563
               </a>
             </div>
           </div>

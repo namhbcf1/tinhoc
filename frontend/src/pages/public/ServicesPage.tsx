@@ -98,7 +98,7 @@ const testimonials = [
     name: 'Học viên khoá VSTEP B2 · 2025',
     course: 'Chứng chỉ VSTEP B2',
     quote:
-      'Hệ thống đăng ký rất tiện lợi — tôi làm mọi thứ trên điện thoại, không phải đến trung tâm. Kết quả thi được thông báo nhanh chóng.',
+      'Hệ thống đăng ký rất tiện lợi — tôi làm mọi thứ trên điện thoại, không phải đến tận nơi. Kết quả thi được thông báo nhanh chóng.',
   },
   {
     initial: 'N',

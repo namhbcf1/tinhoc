@@ -323,7 +323,7 @@ export default function StudentFeedbackView({ compact = false }: { compact?: boo
 
                       {feedback.teacher_response ? (
                         <div className="rounded-2xl border border-[var(--vt-line)] bg-white/65 px-4 py-3 text-sm text-[var(--vt-muted)]">
-                          <div className="font-black text-[var(--vt-emerald)]">Phản hồi từ giáo viên / trung tâm</div>
+                          <div className="font-black text-[var(--vt-emerald)]">Phản hồi từ giáo viên</div>
                           <div className="mt-1 whitespace-pre-line">{feedback.teacher_response}</div>
                         </div>
                       ) : null}

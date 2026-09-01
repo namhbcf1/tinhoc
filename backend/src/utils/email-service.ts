@@ -126,7 +126,7 @@ export async function sendPasswordResetEmail(
           <p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>
         </div>
         <div class="footer">
-          <p>Công ty TNHH Tư vấn Giáo dục Sơn Trang</p>
+          <p>VANTRANGEDU</p>
           <p>Email này được gửi tự động, vui lòng không trả lời.</p>
         </div>
       </div>
@@ -146,12 +146,12 @@ Link này sẽ hết hạn sau 1 giờ.
 
 Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
 
-Công ty TNHH Tư vấn Giáo dục Sơn Trang
+VANTRANGEDU
   `;
 
   return sendEmail({
     to: email,
-    subject: 'Đặt lại mật khẩu - Công ty TNHH Tư vấn Giáo dục Sơn Trang',
+    subject: 'Đặt lại mật khẩu - VANTRANGEDU',
     html,
     text,
   }, env);

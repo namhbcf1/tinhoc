@@ -94,7 +94,7 @@ export default function ModernHeader() {
         { to: '/about', label: t('about'), meta: 'Giới thiệu Vân Trang' },
         { to: '/news', label: t('news'), meta: 'Tin tức & bài viết' },
         { to: '/guides', label: t('guides'), meta: 'Hướng dẫn học viên' },
-        { to: '/contact', label: t('contact'), meta: 'Liên hệ trung tâm' },
+        { to: '/contact', label: t('contact'), meta: 'Liên hệ Vân Trang' },
     ];
 
     const mobileSecondaryLinks = [
@@ -110,11 +110,11 @@ export default function ModernHeader() {
             <div className="hidden sm:block border-b border-[var(--vt-line-soft)] bg-[var(--vt-paper)]/60">
                 <div className="vt-container flex items-center justify-between py-2 text-[13px] text-[var(--vt-muted)]">
                     <div className="flex items-center gap-5">
-                        <a href="tel:0962445963"
+                        <a href="tel:0962449563"
                            className="inline-flex items-center gap-2 hover:text-[var(--vt-emerald)] transition-colors"
                            data-tour="public-hotline">
                             <Phone size={14} className="text-[var(--vt-champagne-deep)]" />
-                            <span className="font-semibold tracking-tight">096 244 5963</span>
+                            <span className="font-semibold tracking-tight">096 244 9563</span>
                             <span className="opacity-60">·</span>
                             <span className="opacity-80">Tư vấn lộ trình trong 24h</span>
                         </a>
@@ -234,8 +234,8 @@ export default function ModernHeader() {
                 {/* Mobile / Tablet actions */}
                 <div className="lg:hidden flex items-center gap-2">
                     <a
-                        href="tel:0962445963"
-                        aria-label="Gọi hotline 096 244 5963"
+                        href="tel:0962449563"
+                        aria-label="Gọi hotline 096 244 9563"
                         className="vt-tap h-11 w-11 rounded-full bg-[var(--vt-emerald-soft)] text-[var(--vt-emerald-deep)] flex items-center justify-center hover:bg-[var(--vt-emerald)] hover:text-white transition-colors"
                     >
                         <Phone size={18} />
@@ -394,17 +394,17 @@ export default function ModernHeader() {
                     <div className="mt-auto p-5 border-t border-[var(--vt-line-soft)] bg-[var(--vt-paper)]">
                         <p className="vt-overline mb-2">Liên hệ nhanh</p>
                         <div className="flex flex-col gap-2 text-sm">
-                            <a href="tel:0962445963"
+                            <a href="tel:0962449563"
                                className="flex items-center gap-3 text-[var(--vt-ink)] hover:text-[var(--vt-emerald)]">
                                 <span className="h-9 w-9 rounded-full bg-[var(--vt-emerald-soft)] text-[var(--vt-emerald-deep)] flex items-center justify-center">
                                     <Phone size={15} />
                                 </span>
                                 <div className="leading-tight">
-                                    <p className="font-bold">096 244 5963</p>
+                                    <p className="font-bold">096 244 9563</p>
                                     <p className="text-xs text-[var(--vt-muted)]">Hotline 8h–21h hằng ngày</p>
                                 </div>
                             </a>
-                            <a href="https://zalo.me/0962445963" target="_blank" rel="noopener noreferrer"
+                            <a href="https://zalo.me/0962449563" target="_blank" rel="noopener noreferrer"
                                className="flex items-center gap-3 text-[var(--vt-ink)] hover:text-[var(--vt-emerald)]">
                                 <span className="h-9 w-9 rounded-full bg-[var(--vt-champagne-soft)] text-[var(--vt-champagne-deep)] flex items-center justify-center">
                                     <MessageCircle size={15} />

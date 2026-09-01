@@ -19,7 +19,7 @@ describe('CCCD OCR parser', () => {
 
     expect(parsed).toMatchObject({
       cccd: '012345678901',
-      fullName: 'NGUYEN VAN A',
+      fullName: 'Nguyen Van A',
       dateOfBirth: '01/02/2000',
       gender: 'Nam',
       placeOfOrigin: 'Ha Noi',
@@ -38,7 +38,7 @@ describe('CCCD OCR parser', () => {
 
     expect(parsed).toMatchObject({
       cccd: '079203001234',
-      fullName: 'TRAN THI B',
+      fullName: 'Tran Thi B',
       dateOfBirth: '05/11/2001',
       gender: 'Nữ',
       placeOfResidence: 'Da Nang',
@@ -56,9 +56,9 @@ describe('CCCD OCR parser', () => {
 
     expect(parsed).toMatchObject({
       cccd: '079203001234',
-      fullName: 'LE VAN C',
+      fullName: 'Le Van C',
       dateOfBirth: '03/09/1999',
-      gender: 'Male',
+      gender: 'Nam',
     });
   });
 });
@@ -104,14 +104,14 @@ describe('extractRegistrationPrefillFromImage', () => {
 
     expect(result.prefill).toMatchObject({
       cccd: '079203001234',
-      fullName: 'NGUYỄN VĂN A',
+      fullName: 'Nguyễn Văn A',
       dateOfBirth: '09/12/2002',
     });
     expect(result.model).toBe('OCR.space');
     expect(result.debug.ocrSpaceAttempts).toHaveLength(1);
     expect(result.debug.ocrSpaceAttempts[0]).toMatchObject({
-      engine: '3',
-      language: 'auto',
+      engine: '2',
+      language: 'vnm',
       status: 'success',
       transport: 'base64',
       parseStatus: 'useful',
@@ -170,8 +170,8 @@ describe('extractRegistrationPrefillFromImage', () => {
     });
     expect(result.debug.ocrSpaceAttempts).toHaveLength(2);
     expect(result.debug.ocrSpaceAttempts[0]).toMatchObject({
-      engine: '3',
-      language: 'auto',
+      engine: '2',
+      language: 'vnm',
       status: 'failed',
       error: 'OCR.space: engine 3 failed',
       transport: 'base64',
@@ -207,7 +207,7 @@ describe('extractRegistrationPrefillFromImage', () => {
     );
 
     await expect(promise).rejects.toThrow('OCR.space timeout');
-    expect(fetchMock).toHaveBeenCalledTimes(6);
+    expect(fetchMock).toHaveBeenCalledTimes(10);
   });
 
   it('uses OCR.space url mode for oversized images instead of rejecting them immediately', async () => {
@@ -245,12 +245,12 @@ describe('extractRegistrationPrefillFromImage', () => {
 
     expect(result.prefill).toMatchObject({
       cccd: '079203001234',
-      fullName: 'NGUYỄN VĂN A',
+      fullName: 'Nguyễn Văn A',
       dateOfBirth: '09/12/2002',
     });
     expect(result.debug.ocrSpaceAttempts[0]).toMatchObject({
-      engine: '3',
-      language: 'auto',
+      engine: '2',
+      language: 'vnm',
       status: 'success',
       transport: 'url',
     });
@@ -279,7 +279,7 @@ describe('extractRegistrationPrefillFromImage', () => {
     await expect(
       extractRegistrationPrefillFromImage(env, 'cccd-uploads/cccd_front/test.jpg', 'cccd_front')
     ).rejects.toThrow('OCR đọc được text nhưng không nhận diện được trường CCCD nào');
-    expect(fetchMock).toHaveBeenCalledTimes(6);
+    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 
   it('parses useful back-side data without requiring cccd or full name', async () => {
@@ -368,7 +368,7 @@ describe('extractRegistrationPrefillFromImage', () => {
 
     expect(result.prefill).toMatchObject({
       cccd: '026204008344',
-      fullName: 'NGỤY CÔNG KẾT',
+      fullName: 'Ngụy Công Kết',
       dateOfBirth: '29/08/2004',
       gender: 'Nam',
       nationality: 'Việt Nam',
@@ -463,7 +463,7 @@ describe('extractRegistrationPrefillFromImage', () => {
 
     expect(result.prefill).toMatchObject({
       cccd: '034303004393',
-      fullName: 'TRAN THI LINH',
+      fullName: 'Tran Thi Linh',
       dateOfBirth: '08/09/2003',
       gender: 'Nữ',
       nationality: 'Viet Nam',
@@ -510,7 +510,7 @@ describe('extractRegistrationPrefillFromImage', () => {
 
     expect(result.prefill).toMatchObject({
       cccd: '034303004393',
-      fullName: 'TRAN THI LINH',
+      fullName: 'Tran Thi Linh',
       dateOfBirth: '08/09/2003',
       gender: 'Nữ',
     });

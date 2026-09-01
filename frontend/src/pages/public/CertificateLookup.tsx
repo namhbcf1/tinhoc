@@ -97,7 +97,7 @@ export default function CertificateLookup() {
               {t('certificateLookup')}
             </h1>
             <p className="text-lg text-slate-600 font-light max-w-xl mx-auto">
-              Tra cứu thông tin văn bằng, chứng chỉ được cấp bởi trung tâm hoàn toàn trực tuyến và chính xác.
+              Tra cứu thông tin văn bằng, chứng chỉ hoàn toàn trực tuyến và chính xác.
             </p>
           </div>
 

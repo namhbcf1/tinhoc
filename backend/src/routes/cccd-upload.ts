@@ -7,6 +7,8 @@ import {
   generateSignedImageURL,
   deleteCloudflareImage,
 } from '../utils/cloudflare-images.js';
+import { extractRegistrationPrefillFromImage } from '../services/cccd-ocr-service.js';
+import type { CCCDExtractionResult } from '../services/cccd-ocr-parser.js';
 
 const VALID_TYPES = ['cccd_front', 'cccd_back', 'photo_3x4'] as const;
 const PIPELINE_VERSION = 'v3-manual-upload';
@@ -130,11 +132,22 @@ app.post('/', async (c) => {
       console.warn('[cccd-upload] failed to create processing log:', logError);
     }
 
+    let ocrPrefill: CCCDExtractionResult | null = null;
+    if (type === 'cccd_front' || type === 'cccd_back') {
+      try {
+        const ocr = await extractRegistrationPrefillFromImage(c.env, uploadResult.imageId, type);
+        ocrPrefill = ocr.prefill;
+      } catch (ocrError) {
+        console.warn('[cccd-upload] OCR failed, continuing without prefill:', ocrError);
+      }
+    }
+
     return c.json({
       success: true,
       imageId: uploadResult.imageId,
       processingLogId,
       previewUrl,
+      ocrPrefill,
       warnings: [],
       status: 'completed',
       processingQueued: false,

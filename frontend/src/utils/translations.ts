@@ -3,7 +3,7 @@ export const translations = {
   vi: {
     // Top bar
     email: 'info@vantrangedu.edu.vn',
-    phone1: '096 244 5963',
+    phone1: '096 244 9563',
     phone2: '0339 244 566',
 
     // Navigation
@@ -32,7 +32,7 @@ export const translations = {
 
     // Hero
     heroTagline: 'VAN TRANG EDUCATION',
-    heroTitle: 'CÔNG TY TNHH TƯ VẤN GIÁO DỤC SƠN TRANG',
+    heroTitle: 'VAN TRANG EDUCATION',
     heroSubtitle: 'Hỗ Trợ Ngoại Ngữ Cấp Tốc - Phát triển năng lực ngoại ngữ cho người Việt - Nơi ươm mầm tài năng, kiến tạo tương lai',
     enroll: 'Tuyển sinh',
     learnMore: 'Tìm hiểu thêm',
@@ -181,7 +181,7 @@ export const translations = {
   en: {
     // Top bar
     email: 'info@vantrangedu.edu.vn',
-    phone1: '096 244 5963',
+    phone1: '096 244 9563',
     phone2: '0339 244 566',
 
     // Navigation

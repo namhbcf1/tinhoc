@@ -55,7 +55,7 @@ export default function TrainingPage() {
         { title: 'Luyện Thi VSTEP', description: 'Luyện thi VSTEP A2, B1, B2, C1 — đề chuẩn Bộ GD&ĐT, cam kết đầu ra theo hợp đồng.', path: '/training/luyen-thi-vstep', icon: Award, duration: '2 – 4 tháng', schedule: 'T2-T4-T6, 19h', fee: 'Liên hệ tư vấn' },
         { title: 'Luyện Thi Chứng Chỉ Quốc Tế', description: 'Luyện thi TOEIC, IELTS, TOEFL, Cambridge với giảng viên IELTS 8.0+ và cam kết đầu ra.', path: '/training/luyen-thi-chung-chi', icon: BookOpen, duration: '3 – 6 tháng', schedule: 'T2-T4-T6, 19h', fee: 'Liên hệ tư vấn' },
         { title: 'Ngoại Ngữ Khác', description: 'Đào tạo Tiếng Nhật, Tiếng Hàn, Tiếng Trung, Tiếng Pháp — từ sơ cấp đến nâng cao.', path: '/training/ngoai-ngu-khac', icon: Languages, duration: '4 – 6 tháng', schedule: 'Linh hoạt', fee: 'Liên hệ tư vấn' },
-        { title: 'Đào Tạo Theo Nhu Cầu', description: 'Chương trình linh hoạt, đáp ứng nhu cầu cụ thể của từng học viên hoặc doanh nghiệp với lộ trình AI cá nhân hóa.', path: '/training/dao-tao-theo-nhu-cau', icon: Sparkles, duration: 'Tùy lộ trình', schedule: 'Theo thỏa thuận', fee: 'Liên hệ tư vấn' },
+        { title: 'Đào Tạo Theo Nhu Cầu', description: 'Chương trình linh hoạt, đáp ứng nhu cầu cụ thể của từng học viên với lộ trình AI cá nhân hóa.', path: '/training/dao-tao-theo-nhu-cau', icon: Sparkles, duration: 'Tùy lộ trình', schedule: 'Theo thỏa thuận', fee: 'Liên hệ tư vấn' },
     ];
 
     const features = [
@@ -85,10 +85,10 @@ export default function TrainingPage() {
 
     const faqs = [
         { q: 'VSTEP là gì?', a: 'VSTEP (Vietnamese Standardized Test of English Proficiency) là bộ đề thi đánh giá năng lực tiếng Anh theo khung tham chiếu châu Âu CEFR, do Bộ GD&ĐT ban hành. Chứng chỉ VSTEP được công nhận rộng rãi trong tuyển dụng, xét tốt nghiệp đại học và thăng tiến nghề nghiệp.' },
-        { q: 'Học bao lâu để đạt VSTEP B2?', a: 'Tuỳ trình độ đầu vào: Nếu đang ở mức B1, cần khoảng 2–3 tháng học tập trung (3 buổi/tuần, mỗi buổi 2 giờ). Nếu bắt đầu từ A2, cần 4–5 tháng. Trung tâm sẽ test đầu vào miễn phí và tư vấn lộ trình phù hợp.' },
-        { q: 'Học phí các khoá là bao nhiêu?', a: 'Học phí phụ thuộc vào khoá học và hình thức học (online/offline). Vui lòng liên hệ hotline 096 244 5963 hoặc nhắn Zalo để nhận báo giá. Trung tâm có chính sách giảm giá cho học viên đăng ký sớm và nhóm từ 2 người.' },
+        { q: 'Học bao lâu để đạt VSTEP B2?', a: 'Tuỳ trình độ đầu vào: Nếu đang ở mức B1, cần khoảng 2–3 tháng học tập trung (3 buổi/tuần, mỗi buổi 2 giờ). Nếu bắt đầu từ A2, cần 4–5 tháng. Vân Trang sẽ test đầu vào miễn phí và tư vấn lộ trình phù hợp.' },
+        { q: 'Học phí các khoá là bao nhiêu?', a: 'Học phí phụ thuộc vào khoá học và hình thức học (online/offline). Vui lòng liên hệ hotline 096 244 9563 hoặc nhắn Zalo để nhận báo giá. Vân Trang có chính sách giảm giá cho học viên đăng ký sớm và nhóm từ 2 người.' },
         { q: 'Khoá Tin học Văn phòng gồm những gì?', a: 'Bao gồm: Microsoft Word (soạn thảo, định dạng, mail merge), Excel (hàm cơ bản đến nâng cao, PivotTable, biểu đồ), PowerPoint (thiết kế slide chuyên nghiệp), và ôn luyện chứng chỉ MOS/IC3. Phù hợp cho học sinh, sinh viên và người đi làm.' },
-        { q: 'Trung tâm có hỗ trợ học bù khi vắng không?', a: 'Có. Học viên vắng mặt có thể học bù tại lớp khác cùng cấp độ hoặc xem lại video bài giảng trên hệ thống E-learning. Hỗ trợ tối đa 30% số buổi học bù trong một khoá.' },
+        { q: 'Có hỗ trợ học bù khi vắng không?', a: 'Có. Học viên vắng mặt có thể học bù tại lớp khác cùng cấp độ hoặc xem lại video bài giảng trên hệ thống E-learning. Hỗ trợ tối đa 30% số buổi học bù trong một khoá.' },
         { q: 'Có thể học thử trước khi đăng ký không?', a: 'Có. VanTrangEdu cho phép học thử 1 buổi miễn phí với bất kỳ khoá học nào. Liên hệ hotline hoặc Zalo để đặt lịch.' },
     ];
 
@@ -174,8 +174,8 @@ export default function TrainingPage() {
                                 <Link to="/register" className="vt-btn vt-btn--accent w-full sm:w-auto">
                                     Đăng ký học viên <ArrowRight size={16} />
                                 </Link>
-                                <a href="tel:0962445963" className="vt-btn vt-btn--ghost w-full sm:w-auto">
-                                    <Phone size={16} /> 096 244 5963
+                                <a href="tel:0962449563" className="vt-btn vt-btn--ghost w-full sm:w-auto">
+                                    <Phone size={16} /> 096 244 9563
                                 </a>
                             </div>
                         </div>
@@ -324,14 +324,14 @@ export default function TrainingPage() {
                                     </dl>
                                     <div className="mt-5 grid grid-cols-2 gap-3">
                                         <Link to="/register" className="vt-btn vt-btn--primary !h-12 !text-[13px] justify-center">Đăng ký</Link>
-                                        <a href="tel:0962445963" className="vt-btn vt-btn--ghost !h-12 !text-[13px] justify-center">Gọi ngay</a>
+                                        <a href="tel:0962449563" className="vt-btn vt-btn--ghost !h-12 !text-[13px] justify-center">Gọi ngay</a>
                                     </div>
                                 </article>
                             ))}
                         </div>
 
                         <p className="text-center text-[12.5px] text-[var(--vt-ink-55)] mt-6">
-                            Lịch khai giảng có thể thay đổi. Liên hệ hotline <strong className="text-[var(--vt-ink)]">096 244 5963</strong> để xác nhận lịch gần nhất.
+                            Lịch khai giảng có thể thay đổi. Liên hệ hotline <strong className="text-[var(--vt-ink)]">096 244 9563</strong> để xác nhận lịch gần nhất.
                         </p>
                     </div>
                 </section>
@@ -473,8 +473,8 @@ export default function TrainingPage() {
 
                         <div className="text-center mt-10">
                             <p className="text-[var(--vt-ink-60)] text-sm mb-4">Còn câu hỏi khác? Liên hệ tư vấn viên của chúng tôi ngay.</p>
-                            <a href="tel:0962445963" className="vt-btn vt-btn--primary">
-                                <Phone size={16} /> Gọi hotline 096 244 5963
+                            <a href="tel:0962449563" className="vt-btn vt-btn--primary">
+                                <Phone size={16} /> Gọi hotline 096 244 9563
                             </a>
                         </div>
                     </div>
@@ -502,8 +502,8 @@ export default function TrainingPage() {
                                     <Link to="/register" className="vt-btn vt-btn--accent justify-center !h-14">
                                         Đăng ký ngay <ArrowRight size={16} />
                                     </Link>
-                                    <a href="tel:0962445963" className="vt-btn vt-btn--ghost justify-center !h-14 !text-white !border-white/20 hover:!bg-white/10">
-                                        <Phone size={16} /> 096 244 5963
+                                    <a href="tel:0962449563" className="vt-btn vt-btn--ghost justify-center !h-14 !text-white !border-white/20 hover:!bg-white/10">
+                                        <Phone size={16} /> 096 244 9563
                                     </a>
                                     <a href="mailto:info@vantrangedu.edu.vn" className="vt-btn vt-btn--ghost justify-center !h-14 !text-white !border-white/20 hover:!bg-white/10">
                                         <Mail size={16} /> info@vantrangedu.edu.vn

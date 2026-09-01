@@ -30,7 +30,7 @@ const sections = [
     eyebrow: '04 · Liên hệ',
     title: 'Yêu cầu chỉnh sửa hoặc xoá dữ liệu',
     content:
-      'Bạn có quyền yêu cầu chỉnh sửa, cập nhật hoặc xoá dữ liệu cá nhân khỏi hệ thống. Vui lòng liên hệ Vân Trang Education qua hotline 096 244 5963 hoặc email info@vantrangedu.edu.vn — chúng tôi sẽ phản hồi trong vòng 48 giờ làm việc.',
+      'Bạn có quyền yêu cầu chỉnh sửa, cập nhật hoặc xoá dữ liệu cá nhân khỏi hệ thống. Vui lòng liên hệ Vân Trang Education qua hotline 096 244 9563 hoặc email info@vantrangedu.edu.vn — chúng tôi sẽ phản hồi trong vòng 48 giờ làm việc.',
   },
 ];
 

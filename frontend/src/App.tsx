@@ -170,10 +170,10 @@ function AppRoutes() {
         <SemanticLanding
           title="Dạy Ngôn Ngữ & Kỹ Năng Mềm"
           keyword="dạy ngôn ngữ"
-          description="Trung tâm dạy ngôn ngữ uy tín tại Hà Nội và Online. Đào tạo tiếng Anh, tiếng Trung với lộ trình cá nhân hóa."
+          description="Vân Trang Education - Dạy ngôn ngữ uy tín tại Hà Nội và Online. Đào tạo tiếng Anh, tiếng Trung với lộ trình cá nhân hóa."
           content="Việc dạy ngôn ngữ tại Van Trang Education không chỉ là truyền đạt từ vựng, mà là xây dựng tư duy ngôn ngữ. Chúng tôi áp dụng công nghệ số vào giảng dạy để tối ưu hóa thời gian học tập."
           faqs={[
-            { question: "Ngoài tiếng Anh, trung tâm có dạy ngôn ngữ khác không?", answer: "Hiện tại chúng tôi tập trung chuyên sâu vào Tiếng Anh và Tiếng Trung." }
+            { question: "Ngoài tiếng Anh, có dạy ngôn ngữ khác không?", answer: "Hiện tại chúng tôi tập trung chuyên sâu vào Tiếng Anh và Tiếng Trung." }
           ]}
         />
       } />
@@ -182,11 +182,11 @@ function AppRoutes() {
       <Route path="/trung-tam-tieng-anh" element={
         <SemanticLanding
           title="Trung Tâm Tiếng Anh Vân Trang"
-          keyword="trung tâm tiếng anh"
-          description="Trung tâm tiếng Anh Vân Trang (Van Trang Edu) - Địa chỉ tin cậy cho hàng ngàn học viên muốn chinh phục ngoại ngữ."
-          content="Tìm kiếm một trung tâm tiếng Anh uy tín là bước đầu tiên để thành công. Vân Trang Edu tự hào với đội ngũ giáo viên chất lượng cao và cơ sở vật chất hiện đại, đáp ứng mọi nhu cầu học tập."
+           keyword="vân trang education"
+          description="Vân Trang Education (Van Trang Edu) - Địa chỉ tin cậy cho hàng ngàn học viên muốn chinh phục ngoại ngữ."
+          content="Tìm kiếm một địa chỉ tiếng Anh uy tín là bước đầu tiên để thành công. Vân Trang Edu tự hào với đội ngũ giáo viên chất lượng cao và phương pháp hiện đại, đáp ứng mọi nhu cầu học tập."
           faqs={[
-            { question: "Trung tâm có cam kết đầu ra không?", answer: "Có. Tất cả các khóa luyện thi chứng chỉ đều có cam kết đầu ra bằng văn bản." }
+            { question: "Có cam kết đầu ra không?", answer: "Có. Tất cả các khóa luyện thi chứng chỉ đều có cam kết đầu ra bằng văn bản." }
           ]}
         />
       } />

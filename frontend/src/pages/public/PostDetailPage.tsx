@@ -376,9 +376,9 @@ export default function PostDetailPage() {
                                 <CardContent className="p-6 text-center">
                                     <h3 className="font-bold text-lg mb-2">Bạn cần tư vấn?</h3>
                                     <p className="text-green-100 text-sm mb-4">Liên hệ ngay để được hỗ trợ miễn phí!</p>
-                                    <a href="tel:0962445963">
+                                    <a href="tel:0962449563">
                                         <Button className="bg-white text-green-700 hover:bg-green-50 w-full font-bold">
-                                            Gọi: 096 244 5963
+                                            Gọi: 096 244 9563
                                         </Button>
                                     </a>
                                 </CardContent>

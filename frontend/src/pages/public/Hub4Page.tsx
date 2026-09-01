@@ -84,7 +84,7 @@ export default function Hub4Page() {
     <ModernPublicLayout>
       <SEO
         title="Hub 4.0"
-        description="Hệ sinh thái AI, thư viện số, virtual lab và learning hub trong trung tâm đổi mới sáng tạo HUB 4.0 của Vân Trang Education."
+        description="Hệ sinh thái AI, thư viện số, virtual lab và learning hub của HUB 4.0 Vân Trang Education."
         url="/hub4"
         structuredData={structuredData}
       />
@@ -106,7 +106,7 @@ export default function Hub4Page() {
               className="vt-display mt-6 text-[clamp(2.25rem,5vw,4rem)] leading-[1.04] text-white"
               style={{ fontVariationSettings: '"opsz" 144, "SOFT" 40', fontWeight: 500 }}
             >
-              Trung tâm{' '}
+              HUB{' '}
               <span className="vt-display-italic text-[var(--vt-champagne)]">đổi mới</span> & chuyển đổi số.
             </h1>
             <p className="mt-6 text-lg text-white/75 leading-relaxed max-w-2xl">

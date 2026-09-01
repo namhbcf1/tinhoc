@@ -27,7 +27,7 @@ const admissionSteps = [
     num: '02',
     title: 'Đăng ký & Xếp lớp',
     detail: '1–2 ngày làm việc',
-    desc: 'Điền phiếu đăng ký, hoàn tất học phí. Trung tâm test đầu vào (miễn phí) và xếp lớp phù hợp trình độ trong 1–2 ngày.',
+    desc: 'Điền phiếu đăng ký, hoàn tất học phí. Test đầu vào (miễn phí) và xếp lớp phù hợp trình độ trong 1–2 ngày.',
     color: 'from-blue-400 to-blue-600 shadow-blue-200'
   },
   {
@@ -117,7 +117,7 @@ export default function AdmissionsPage() {
     <ModernPublicLayout>
       <SEO
         title="Đăng ký tuyển sinh — Quy trình 4 bước"
-        description="Đăng ký khóa học tại VanTrangEdu: Tiếng Anh, VSTEP, TOEIC, IELTS, Tin học Văn phòng. Quy trình 4 bước đơn giản, hỗ trợ trả góp, giảm giá nhóm. Tư vấn miễn phí 096 244 5963."
+        description="Đăng ký khóa học tại VanTrangEdu: Tiếng Anh, VSTEP, TOEIC, IELTS, Tin học Văn phòng. Quy trình 4 bước đơn giản, hỗ trợ trả góp, giảm giá nhóm. Tư vấn miễn phí 096 244 9563."
         url="/admissions"
       />
       <div ref={container} className="relative overflow-hidden">
@@ -170,7 +170,7 @@ export default function AdmissionsPage() {
           </div>
 
           <div className="text-center mt-12">
-            <a href="tel:0962445963">
+            <a href="tel:0962449563">
               <Button className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-10 h-12 rounded-2xl">
                 <Phone size={16} className="mr-2" /> Bắt đầu Bước 1 — Gọi tư vấn miễn phí
               </Button>
@@ -202,7 +202,7 @@ export default function AdmissionsPage() {
                       Còn <strong className={cls.spots <= 6 ? 'text-rose-600' : 'text-emerald-600'}>{cls.spots}</strong> chỗ
                     </span>
                   </div>
-                  <a href="tel:0962445963" className="text-center text-xs font-bold text-emerald-600 hover:text-emerald-500 border border-emerald-200 hover:border-emerald-400 rounded-xl py-2 transition-colors">
+                  <a href="tel:0962449563" className="text-center text-xs font-bold text-emerald-600 hover:text-emerald-500 border border-emerald-200 hover:border-emerald-400 rounded-xl py-2 transition-colors">
                     Đăng ký ngay →
                   </a>
                 </div>
@@ -210,7 +210,7 @@ export default function AdmissionsPage() {
             </div>
 
             <p className="text-center text-xs text-slate-400 mt-5">
-              Lịch khai giảng có thể thay đổi. Gọi <strong>096 244 5963</strong> để xác nhận slot còn trống.
+              Lịch khai giảng có thể thay đổi. Gọi <strong>096 244 9563</strong> để xác nhận slot còn trống.
             </p>
           </div>
         </section>
@@ -313,7 +313,7 @@ export default function AdmissionsPage() {
               <div className="glass-panel !bg-white/5 !border-white/10 hover:!bg-white/10 p-8 rounded-[2rem] transition-colors">
                 <Phone className="mx-auto h-12 w-12 mb-6 text-emerald-400" />
                 <h3 className="font-bold text-xl mb-3 text-white">Hotline Tuyển Sinh</h3>
-                <p className="text-2xl font-bold tracking-wider text-emerald-300">096 244 5963</p>
+                <p className="text-2xl font-bold tracking-wider text-emerald-300">096 244 9563</p>
                 <p className="text-lg font-medium text-slate-400 mt-2">033 924 4566</p>
               </div>
               <div className="glass-panel !bg-white/5 !border-white/10 hover:!bg-white/10 p-8 rounded-[2rem] transition-colors">
@@ -326,7 +326,7 @@ export default function AdmissionsPage() {
                 <MessageCircle className="mx-auto h-12 w-12 mb-6 text-purple-400" />
                 <h3 className="font-bold text-xl mb-4 text-white">Mạng Xã Hội</h3>
                 <div className="flex flex-col gap-3">
-                  <a href="https://zalo.me/0962445963" className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors">
+                  <a href="https://zalo.me/0962449563" className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors">
                     <span>Chat qua Zalo</span> <ArrowRight size={16} />
                   </a>
                   <a href="https://www.facebook.com/Englishvantrang" className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors">
@@ -336,7 +336,7 @@ export default function AdmissionsPage() {
               </div>
             </div>
 
-            <a href="tel:0962445963" className="inline-block">
+            <a href="tel:0962449563" className="inline-block">
               <Button size="lg" className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-12 h-16 text-xl rounded-2xl shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95">
                 Nhận Tư Vấn Cụ Thể
               </Button>

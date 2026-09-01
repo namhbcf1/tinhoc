@@ -257,7 +257,7 @@ export default function UnifiedLogin() {
         </div>
 
         <div className="relative z-10 text-[11px] tracking-[0.14em] uppercase text-white/45">
-          © {new Date().getFullYear()} Công ty TNHH Tư vấn Giáo dục Sơn Trang
+          © {new Date().getFullYear()} VAN TRANG EDUCATION
         </div>
       </aside>
 
@@ -465,13 +465,13 @@ export default function UnifiedLogin() {
                 <div className="bg-[var(--vt-paper-soft)] border border-[var(--vt-line)] rounded-xl p-4 space-y-2">
                   <p className="vt-overline text-[10px] text-[var(--vt-ink-60)]">Zalo · Admin</p>
                   <a
-                    href="https://zalo.me/0962445963"
+                    href="https://zalo.me/0962449563"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="vt-display text-2xl text-[var(--vt-emerald-deep)] hover:text-[var(--vt-ink)] transition-colors block"
                     style={{ fontVariationSettings: '"opsz" 72, "SOFT" 30', fontWeight: 600 }}
                   >
-                    096 244 5963
+                    096 244 9563
                   </a>
                   <p className="text-xs text-[var(--vt-ink-50)]">Hỗ trợ: 7:30 – 17:00 (Thứ 2 – Thứ 7)</p>
                 </div>

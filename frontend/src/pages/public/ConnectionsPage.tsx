@@ -27,10 +27,10 @@ const partnerTypes = [
   },
   {
     Icon: Building,
-    eyebrow: '02 · Doanh nghiệp',
-    title: 'Doanh Nghiệp',
-    desc: 'Kết nối với các doanh nghiệp hàng đầu, tạo cơ hội thực tập và việc làm thực tế ngay từ khi còn ngồi trên ghế nhà trường.',
-    points: ['Thực tập có lương tại doanh nghiệp', 'Mentoring từ chuyên gia ngành', 'Ưu tiên tuyển dụng sau tốt nghiệp'],
+    eyebrow: '02 · VANTRANGEDU',
+    title: 'VANTRANGEDU',
+    desc: 'Kết nối với các đối tác hàng đầu, tạo cơ hội thực tập và việc làm thực tế ngay từ khi còn ngồi trên ghế nhà trường.',
+    points: ['Thực tập có lương tại đối tác', 'Mentoring từ chuyên gia ngành', 'Ưu tiên tuyển dụng sau tốt nghiệp'],
   },
   {
     Icon: Users2,
@@ -42,14 +42,14 @@ const partnerTypes = [
 ];
 
 const partners = [
-  { name: 'British Council', type: 'Tổ chức quốc tế', logo: 'BC' },
-  { name: 'IDP Education', type: 'Tổ chức quốc tế', logo: 'IDP' },
-  { name: 'Microsoft VN', type: 'Công nghệ', logo: 'MS' },
-  { name: 'FPT Software', type: 'Doanh nghiệp', logo: 'FPT' },
-  { name: 'Vingroup', type: 'Tập đoàn', logo: 'VIN' },
-  { name: 'Techcombank', type: 'Ngân hàng', logo: 'TCB' },
-  { name: 'Samsung VN', type: 'Công nghệ', logo: 'SAM' },
-  { name: 'LG Electronics', type: 'Công nghệ', logo: 'LG' },
+  { name: 'British Council', type: 'Đối tác quốc tế', logo: 'BC' },
+  { name: 'IDP Education', type: 'Đối tác quốc tế', logo: 'IDP' },
+  { name: 'Microsoft VN', type: 'Đối tác công nghệ', logo: 'MS' },
+  { name: 'FPT Software', type: 'Đối tác', logo: 'FPT' },
+  { name: 'Vingroup', type: 'Đối tác', logo: 'VIN' },
+  { name: 'Techcombank', type: 'Đối tác', logo: 'TCB' },
+  { name: 'Samsung VN', type: 'Đối tác công nghệ', logo: 'SAM' },
+  { name: 'LG Electronics', type: 'Đối tác công nghệ', logo: 'LG' },
 ];
 
 export default function ConnectionsPage() {
@@ -57,7 +57,7 @@ export default function ConnectionsPage() {
     {
       '@type': 'WebPage',
       name: 'Ket noi va hop tac',
-      description: 'Thong tin doi tac quoc te, doanh nghiep va cong dong cua Van Trang Education.',
+      description: 'Thong tin doi tac quoc te va cong dong cua VANTRANGEDU.',
       url: 'https://vantrangedu.com/connections',
     },
     {
@@ -73,7 +73,7 @@ export default function ConnectionsPage() {
     <ModernPublicLayout>
       <SEO
         title="Kết nối & Hợp tác"
-        description="Mở rộng mạng lưới đối tác quốc tế, doanh nghiệp và cựu học viên để tạo cơ hội học tập và việc làm thực tế."
+        description="Mở rộng mạng lưới đối tác quốc tế và cựu học viên để tạo cơ hội học tập và việc làm thực tế."
         url="/connections"
         structuredData={structuredData}
       />
@@ -99,7 +99,7 @@ export default function ConnectionsPage() {
               <span className="vt-display-italic text-[var(--vt-champagne)]">hợp tác.</span>
             </h1>
             <p className="mt-6 text-lg text-white/75 leading-relaxed max-w-2xl">
-              Một sinh viên Vân Trang không học một mình — phía sau là một mạng lưới đối tác toàn cầu, doanh nghiệp trong nước và cựu sinh viên sẵn sàng mở cửa.
+              Một sinh viên Vân Trang không học một mình — phía sau là một mạng lưới đối tác toàn cầu và cựu sinh viên sẵn sàng mở cửa.
             </p>
 
             <div className="mt-10 grid grid-cols-3 gap-4 max-w-md">

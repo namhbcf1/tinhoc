@@ -227,7 +227,7 @@ export function generateCertificateHTML(certificateData: CertificateData): strin
 
     <div class="certificate-body">
       <p class="certificate-text">
-        Công ty TNHH Tư vấn Giáo dục Sơn Trang xác nhận rằng:
+        VANTRANGEDU xác nhận rằng:
       </p>
 
       <div class="student-name">${studentName}</div>

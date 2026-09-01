@@ -163,9 +163,9 @@ export default function ExitIntentModal() {
 
                         {/* CTA Buttons */}
                         <div className="space-y-3">
-                            <a href="tel:0962445963" className="block">
+                            <a href="tel:0962449563" className="block">
                                 <Button className="w-full min-h-[48px] bg-green-600 hover:bg-green-700 text-white text-base sm:text-lg py-4 sm:py-6 font-bold shadow-lg">
-                                    📞 Gọi ngay: 096 244 5963
+                                    📞 Gọi ngay: 096 244 9563
                                 </Button>
                             </a>
                             <a href="/register" className="block">
