@@ -491,3 +491,10 @@ pm run build; warning còn lại là CSS @import/chunk-size cũ.
 
 ### 2026-08-27 +07 � Mobile density pass (deployed 6d7b3196)
 
+
+### 2026-09-02 +07 — Dọn file chờ quyết + gỡ PII khỏi repo (đã push e baa49ee8)
+- Xóa hoàn toàn tính năng AI 3×4 (commit 9a261d03c phiên trước): pipeline 1435 dòng, queue config, 9 env vars. Chatbot `/ai` giữ nguyên.
+- `git rm` 2 ảnh CCCD (PII) ở root repo — vào history từ 1647fa0db; blob VẪN CÒN trong git history/origin, cần `git filter-repo` + force push để xóa tận gốc (việc của maintainer). Commit 52dc5b559.
+- Xóa `plans/` (46 file tracked — lưu ý: kiểm tra tracked phải chạy `git ls-files` TỪ trong repo, kiểm tra trước đó chạy nhầm ở workspace root nên tưởng untracked). Commit ebaa49ee8.
+- Xóa cứng khỏi đĩa (untracked): `EXCEL/` (2 template + 2 jpg số), `danh sách thi.xlsx`, `VANTRANGEDU1801.xlsx`. Recycle Bin: `plans/`, 4 file tooling optimization của exam repo.
+- Working tree hai repo sạch. CI deploy vẫn tắc ở secret GitHub `CLOUDFLARE_API_TOKEN` hết hạn (user tự sửa + re-run run của head mới).

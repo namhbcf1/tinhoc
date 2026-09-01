@@ -531,3 +531,8 @@ Admin can now see, per exam schedule, the vantrangexam attempt history: how many
 - Sửa defect lộ khi review: 2 link footer trỏ route không tồn tại (revert), import `Upload` trùng trong `MobileClassDetailModule`.
 - Verify: `npx tsc --noEmit` FE 0 lỗi · `npm run build:prod` ✔ · backend không đổi so với lần 197/197 pass.
 - Kết quả: 8 commit nhóm 3 (mobile-admin, excel import, exams backend/UI, auth 90 ngày, branding+OCR, serena). Working tree sạch, chưa push.
+
+### 2026-09-02 — Dọn PII + file chờ quyết
+- `git status --porcelain` hai repo: 0 dòng (sạch tuyệt đối).
+- Ảnh CCCD + plans/ xóa qua git commit (52dc5b559, ebaa49ee8) — đã push origin/main.
+- Kiểm tra ảnh hưởng `EXCEL/MAUPTIT/MAUVEPT.xlsx`: code chỉ tham chiếu path R2 `templates/MAU*.xlsx` (test seed), không đọc file đĩa → xóa local an toàn.
