@@ -40,7 +40,7 @@ function renderStars(rating: number, size = 14) {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; tone: 'blue' | 'emerald' | 'amber' }> = {
-  submitted: { label: 'Đã gửi chờ review', tone: 'blue' },
+  submitted: { label: 'Đã gửi, chờ duyệt', tone: 'blue' },
   approved: { label: 'Đã duyệt', tone: 'emerald' },
   rejected: { label: 'Cần chỉnh sửa', tone: 'amber' },
 };
@@ -120,10 +120,10 @@ export default function StudentFeedbackView({ compact = false }: { compact?: boo
 
       if (editingId) {
         await (api as any).updateStudentFeedback(editingId, payload);
-        setSubmitMessage({ type: 'success', text: 'Đã cập nhật phản hồi và gửi lại để review.' });
+        setSubmitMessage({ type: 'success', text: 'Đã cập nhật phản hồi và gửi lại để duyệt.' });
       } else {
         await (api as any).submitStudentFeedback(payload);
-        setSubmitMessage({ type: 'success', text: 'Đã gửi phản hồi của bạn tới giáo viên để review.' });
+        setSubmitMessage({ type: 'success', text: 'Đã gửi phản hồi của bạn tới giáo viên để duyệt.' });
       }
 
       await refetch();
@@ -138,13 +138,13 @@ export default function StudentFeedbackView({ compact = false }: { compact?: boo
   return (
     <StudentPageShell
       icon={<MessageSquareQuote size={18} />}
-      title="FEEDBACK LỚP HỌC"
-      subtitle="Gửi phản hồi thật về chất lượng lớp học. Giáo viên sẽ review và phản hồi công khai đúng thực tế."
+      title="Phản hồi lớp học"
+      subtitle="Gửi phản hồi thật về chất lượng lớp học. Giáo viên sẽ duyệt và phản hồi công khai đúng thực tế."
       compact={compact}
       stickyHeader={!compact}
       stats={[
         { label: 'Đã duyệt', value: approvedCount },
-        { label: 'Chờ review', value: submittedCount },
+        { label: 'Chờ duyệt', value: submittedCount },
         { label: 'Cần sửa', value: rejectedCount },
       ]}
       action={(
@@ -220,7 +220,7 @@ export default function StudentFeedbackView({ compact = false }: { compact?: boo
                           key={current}
                           type="button"
                           onClick={() => setRating(current)}
-                          className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${
+                          className={`flex h-7 w-7 items-center justify-center rounded-xl transition-colors ${
                             active ? 'bg-[var(--vt-champagne-soft)] text-[var(--vt-champagne)]' : 'text-[var(--vt-line)] hover:bg-[var(--vt-paper)]'
                           }`}
                         >
@@ -331,7 +331,7 @@ export default function StudentFeedbackView({ compact = false }: { compact?: boo
                       <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-[var(--vt-muted)]">
                         <span>Gửi: {formatDate(feedback.created_at)}</span>
                         <span>Cập nhật: {formatDate(feedback.updated_at)}</span>
-                        {feedback.reviewed_at ? <span>Review: {formatDate(feedback.reviewed_at)}</span> : null}
+                        {feedback.reviewed_at ? <span>Duyệt: {formatDate(feedback.reviewed_at)}</span> : null}
                       </div>
                     </StudentInfoCard>
                   );

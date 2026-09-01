@@ -5,7 +5,9 @@ import {
   Calendar,
   CheckCircle2,
   ExternalLink,
+  GraduationCap,
   Loader2,
+  NotebookPen,
   RefreshCw,
   Video,
 } from 'lucide-react';
@@ -20,7 +22,7 @@ import {
 } from '../../../features/student/student-shared';
 import api from '../../../services/api';
 
-const B = Button as any;
+const B = Button;
 
 interface EnrolledClass {
   online_class_id: number;
@@ -82,9 +84,9 @@ function ClassCard({
   return (
     <StudentInfoCard className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
+        <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-extrabold text-slate-900">{cls.class_name}</h3>
+            <h3 className="max-w-full truncate text-base font-extrabold text-slate-900">{cls.class_name}</h3>
             {didJoin ? (
               <StudentPill tone="emerald">
                 <CheckCircle2 size={11} className="mr-1" />
@@ -95,7 +97,12 @@ function ClassCard({
           </div>
 
           <div className="flex flex-wrap gap-3 text-xs text-slate-500">
-            {cls.teacher_name ? <span>👩‍🏫 {cls.teacher_name}</span> : null}
+            {cls.teacher_name ? (
+              <span>
+                <GraduationCap size={11} className="mr-1 inline text-slate-400" />
+                {cls.teacher_name}
+              </span>
+            ) : null}
             {cls.schedule_time ? (
               <span>
                 <Calendar size={11} className="mr-1 inline text-slate-400" />
@@ -116,7 +123,9 @@ function ClassCard({
             disabled={joining}
             onClick={() => onJoinRoom(cls)}
             className={`min-w-[120px] rounded-xl ${
-              didJoin ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-blue-600 hover:bg-blue-500'
+              didJoin
+                ? 'bg-emerald-600 hover:bg-emerald-500'
+                : 'bg-[var(--vt-ink)] hover:bg-[var(--vt-emerald)]'
             } text-white`}
           >
             {joining ? (
@@ -139,11 +148,21 @@ function ClassCard({
           className={`rounded-xl border px-4 py-3 text-sm ${
             didJoin
               ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-              : 'border-blue-200 bg-blue-50 text-blue-800'
+              : 'border-[var(--vt-champagne-soft)] bg-[var(--vt-paper-soft)] text-[var(--vt-ink)]'
           }`}
         >
           <div className="mb-0.5 font-bold">
-            {didJoin ? '✅ Buổi hôm nay: đã ghi nhận vào lớp' : '📓 Buổi học hôm nay'}
+            {didJoin ? (
+              <>
+                <CheckCircle2 size={14} className="mr-1 inline text-emerald-600" />
+                Buổi hôm nay: đã ghi nhận vào lớp
+              </>
+            ) : (
+              <>
+                <NotebookPen size={14} className="mr-1 inline text-[var(--vt-champagne-deep)]" />
+                Buổi học hôm nay
+              </>
+            )}
           </div>
           <div className="text-xs font-semibold opacity-80">
             {fmtDate(cls.today_session_date)}

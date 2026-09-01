@@ -79,8 +79,8 @@ export function formatScheduleSummary(scheduleRule?: string | null, scheduleTime
   if (!days.length) return timeLabel;
 
   const labels = days.map((day) => {
-    const mapping = ['CN', 'Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7'];
-    return mapping[day] || `Th ${day}`;
+    const mapping = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    return mapping[day] || `T${day}`;
   });
   return `${labels.join(', ')} · ${timeLabel}`;
 }

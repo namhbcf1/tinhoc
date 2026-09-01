@@ -545,3 +545,7 @@ Admin can now see, per exam schedule, the vantrangexam attempt history: how many
 ## 2026-09-02: Verify redesign /register
 - `npx tsc --noEmit -p tsconfig.json` pass; `npm run build:prod` sạch.
 - Production: /register 200; `CCCDUploader-mtj3tyhq-CaVY1UdJ.js` chứa `data:image/svg` (1); `StudentRegistration-mtj3tyhq-Bl0y56W2.js` chứa "Nhập số CCCD" (1); cả 2 200 application/javascript.
+
+## [2026-09-02] Verify audit khu học viên
+- `npx tsc --noEmit -p tsconfig.json` → pass; `npm run build:prod` → suffix mtj4f00y, build sạch.
+- Deploy Pages 3566f8fe. Curl production: StudentMyClassesView chunk 200 + `var(--vt-ink)` có, `bg-blue-600` = 0; StudentFeedbackView chunk có "chờ duyệt"; StudentLookup chunk có "Tra cứu học viên". ✓

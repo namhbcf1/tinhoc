@@ -194,7 +194,7 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
             }
         } catch (err) {
             console.error('Error updating profile:', err);
-            error('Lỗi cập nhật: ' + (err.message || 'Unknown error'));
+            error('Lỗi cập nhật: ' + (err.message || 'Vui lòng thử lại'));
         } finally {
             setSaving(false);
         }
@@ -243,7 +243,7 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
             if (err.status === 404 || err.message.includes('not found')) {
                 error('Tính năng đổi mật khẩu chưa được hỗ trợ cho tài khoản học viên');
             } else {
-                error('Lỗi đổi mật khẩu: ' + (err.message || 'Unknown error'));
+                error('Lỗi đổi mật khẩu: ' + (err.message || 'Vui lòng thử lại'));
             }
         } finally {
             setSaving(false);
@@ -288,7 +288,7 @@ export default function MobileProfileModule({ studentData, onUpdate }) {
     };
 
     const handleImageUploadError = (err) => {
-        error('Lỗi upload ảnh: ' + (err.message || 'Unknown error'));
+        error('Lỗi upload ảnh: ' + (err.message || 'Vui lòng thử lại'));
     };
 
     const displayName = studentData ? `${studentData.ho || ''} ${studentData.ten_dem || ''} ${studentData.ten || ''}`.trim() : 'Học viên';

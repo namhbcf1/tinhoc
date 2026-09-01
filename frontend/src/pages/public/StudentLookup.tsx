@@ -20,8 +20,8 @@ export default function StudentLookup() {
   const [error, setError] = useState('');
   const structuredData = {
     '@type': 'WebPage',
-    name: 'Tra cuu hoc vien',
-    description: 'Cong cu tra cuu ho so hoc vien va tai lieu ca nhan.',
+    name: 'Tra cứu học viên',
+    description: 'Công cụ tra cứu hồ sơ học viên và tài liệu cá nhân.',
     url: 'https://vantrangedu.com/student-lookup'
   };
 
@@ -75,8 +75,8 @@ export default function StudentLookup() {
   return (
     <ModernPublicLayout>
       <SEO
-        title="Tra cuu hoc vien"
-        description="Cong cu tra cuu ho so hoc vien va tai lieu ca nhan theo CCCD."
+        title="Tra cứu học viên"
+        description="Công cụ tra cứu hồ sơ học viên và tài liệu cá nhân theo CCCD."
         url="/student-lookup"
         structuredData={structuredData}
         noindex

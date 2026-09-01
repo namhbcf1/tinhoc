@@ -13,7 +13,7 @@ export default function StudentBottomNav() {
       className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[rgba(255,250,241,0.92)] border-t border-[var(--vt-line)] shadow-[0_-18px_42px_rgba(19,34,56,0.12)] backdrop-blur-xl"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="flex items-stretch h-[66px] px-1">
+      <div className="flex items-stretch min-h-[66px] px-1">
         {STUDENT_MAIN_MENU.map((item) => {
           const Icon = item.icon;
           const isActive = item.path ? location.pathname.includes(item.id) : false;

@@ -522,3 +522,15 @@ pm run build; warning còn lại là CSS @import/chunk-size cũ.
 - Dấu tiếng Việt: "Nhập số CCCD" (2 FormFields), badge "Đang tải/Lỗi/Cân chỉnh/Thử lại/Đã tải xong", alt "Xem trước", SEO "Đăng ký dự thi" (2 View).
 - Deploy Pages `8dd88ec3`; build suffix mới `mtj3tyhq`.
 - (bổ sung) Mobile cùng đợt: media query cũ vẫn grid 2 cột cho nút → đổi auto-fit (CCCDUploader.css + RegistrationFormA4.css), deploy `0e748b5b`, verify 2 file CSS production chứa auto-fit. Commit `9ced51a40`→tiếp theo.
+
+## [2026-09-02] Audit khu học viên: sửa lệch bố cục + chính tả (deploy 3566f8fe)
+- StudentMyClassesView.tsx: min-w-0 flex-1 + truncate tên lớp; nút Zoom blue→ink/emerald token; box "Buổi học hôm nay" blue→champagne token; emoji 👩‍🏫✅📓→lucide; bỏ `as any` alias.
+- StudentReviewsView.tsx: toàn bộ indigo→var(--vt-emerald)/paper-soft/champagne.
+- StudentFeedbackView.tsx: "FEEDBACK LỚP HỌC"→"Phản hồi lớp học"; review→duyệt (badge, toast, subtitle, "Duyệt:"); ô sao h-10→h-7 cho đều cao 44px với Select/Input.
+- student-nav.tsx: label nav "Phản hồi"; splash SSO đổi xanh dương #0f4ccf→bảng vt (paper/ink/champagne/emerald).
+- StudentBottomNav.tsx: h-[66px]→min-h-[66px].
+- StudentExamsView.tsx: "Lớp liên quan" thêm min-w-0 flex-1 + break-words.
+- student-utils.ts: nhãn lịch "Th 2..Th 7"→"T2..T7".
+- StudentLookup.tsx: 4 chuỗi SEO mất dấu→có dấu đầy đủ.
+- MobileProfileModule.tsx: "Unknown error"→"Vui lòng thử lại"; '---'→giữ nguyên display (chưa đổi — ghi chú: chỉ '---' placeholder).
+- CHƯA quyết (hỏi user): 7 trang dead-offline (Certificates/Documents/Messaging/RegisterClass desktop + 3 module mobile cũ, palette xanh/tím/cam) + 2 CSS chết StudentDashboardLayout.css (hack scale) & StudentLogin.css — xóa hay migrate.

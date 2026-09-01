@@ -120,7 +120,7 @@ function ReviewDetailModal({ review, onClose }: { review: StudentReviewVM; onClo
           {review.class_name}
         </span>
         {review.period_label && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 rounded-lg px-2.5 py-1">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--vt-emerald)] bg-[var(--vt-emerald-soft)] rounded-lg px-2.5 py-1">
             <Calendar size={12} />
             {review.period_label}
           </span>
@@ -134,10 +134,10 @@ function ReviewDetailModal({ review, onClose }: { review: StudentReviewVM; onClo
       {review.overall_summary && (
         <section>
           <h4 className="flex items-center gap-2 text-sm font-extrabold text-slate-700 uppercase tracking-wide mb-2">
-            <TrendingUp size={14} className="text-indigo-500" />
+            <TrendingUp size={14} className="text-[var(--vt-emerald)]" />
             Nhận xét tổng quan
           </h4>
-          <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-4 text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+          <div className="rounded-xl bg-[var(--vt-paper-soft)] border border-[var(--vt-champagne-soft)] p-4 text-sm text-slate-700 leading-relaxed whitespace-pre-line">
             {review.overall_summary}
           </div>
         </section>
@@ -240,7 +240,7 @@ function ReviewCard({ review, onClick }: { review: StudentReviewVM; onClick: () 
   return (
     <button
       onClick={onClick}
-      className="w-full text-left rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-sm transition-all group"
+      className="w-full text-left rounded-xl border border-slate-200 bg-white hover:border-[var(--vt-champagne)] hover:shadow-sm transition-all group"
     >
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
@@ -248,7 +248,7 @@ function ReviewCard({ review, onClick }: { review: StudentReviewVM; onClick: () 
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <span className="font-extrabold text-slate-900 text-sm truncate">{review.class_name}</span>
               {review.class_code && (
-                <span className="text-[11px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">{review.class_code}</span>
+                <span className="text-[11px] font-bold text-[var(--vt-emerald)] bg-[var(--vt-emerald-soft)] px-2 py-0.5 rounded-full">{review.class_code}</span>
               )}
             </div>
             {review.report_title && (
@@ -258,7 +258,7 @@ function ReviewCard({ review, onClick }: { review: StudentReviewVM; onClick: () 
               <p className="text-xs text-slate-500">{review.period_label}</p>
             )}
           </div>
-          <ChevronRight size={16} className="text-slate-400 group-hover:text-indigo-500 shrink-0 mt-0.5 transition-colors" />
+          <ChevronRight size={16} className="text-slate-400 group-hover:text-[var(--vt-emerald)] shrink-0 mt-0.5 transition-colors" />
         </div>
 
         {/* Skill summary badges */}

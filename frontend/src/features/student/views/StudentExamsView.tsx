@@ -522,9 +522,9 @@ export default function StudentExamsView({
                   <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
                     <BookOpenCheck size={15} className="text-slate-500" />
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Lớp liên quan</p>
-                    <p className="text-sm font-extrabold text-slate-900">{selectedExam.className}</p>
+                    <p className="break-words text-sm font-extrabold text-slate-900">{selectedExam.className}</p>
                   </div>
                 </div>
               </StudentInfoCard>
