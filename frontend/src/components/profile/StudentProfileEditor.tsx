@@ -14,9 +14,9 @@ import BirthPlaceField from '../forms/BirthPlaceField';
 import OverlayPortal from '../ui/OverlayPortal';
 
 const fieldWrapperClassName = 'space-y-2';
-const inputBaseClassName = 'h-11 rounded-2xl border-[var(--vt-line)] bg-white/85 text-[var(--vt-ink)] shadow-sm transition focus-visible:ring-[var(--vt-champagne-soft)]';
+const inputBaseClassName = 'h-12 rounded-2xl border-[var(--vt-line)] bg-white/85 text-[var(--vt-ink)] shadow-sm transition focus-visible:ring-[var(--vt-champagne-soft)]';
 const inputInvalidClassName = 'border-red-300 ring-2 ring-red-100 focus-visible:ring-red-200';
-const selectClassName = 'flex h-11 w-full rounded-2xl border border-[var(--vt-line)] bg-white/85 px-3 py-2 text-sm text-[var(--vt-ink)] shadow-sm ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--vt-champagne-soft)] disabled:cursor-not-allowed disabled:opacity-50';
+const selectClassName = 'flex h-12 w-full rounded-2xl border border-[var(--vt-line)] bg-white/85 px-3 py-2 text-sm text-[var(--vt-ink)] shadow-sm ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--vt-champagne-soft)] disabled:cursor-not-allowed disabled:opacity-50';
 const CCCDUploader = lazy(() => import('../upload/CCCDUploader'));
 
 // ---- Helpers kiểm tra dữ liệu -------------------------------------------------
@@ -71,9 +71,9 @@ const IMAGE_FIELD_LABELS = {
 
 function SectionCard({ icon: Icon, accentClassName, title, description, children }) {
     return (
-        <section className="relative overflow-hidden rounded-[28px] border border-[var(--vt-line)] bg-[rgba(255,250,241,0.82)] p-4 shadow-[var(--vt-shadow-card)] backdrop-blur sm:p-5 lg:p-6">
+        <section className="relative overflow-hidden rounded-[28px] border border-[var(--vt-line)] bg-[rgba(255,250,241,0.82)] p-5 shadow-[var(--vt-shadow-card)] backdrop-blur sm:p-6 lg:p-8">
             <div aria-hidden="true" className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[var(--vt-champagne)] to-transparent opacity-70" />
-            <div className="relative mb-5 flex items-start gap-4">
+            <div className="relative mb-6 flex items-start gap-4">
                 <span className={`mt-1 h-11 w-1.5 shrink-0 rounded-full ${accentClassName}`}></span>
                 <div className="min-w-0">
                     <h3 className="flex items-center gap-2 text-base font-black tracking-[-0.03em] text-[var(--vt-ink)] sm:text-lg">
@@ -114,7 +114,7 @@ function GenderSegmented({ value, onChange, invalid }) {
         <div
             role="radiogroup"
             aria-label="Giới tính"
-            className={`flex h-11 items-center gap-1 rounded-2xl border bg-white/85 p-1 shadow-sm ${invalid ? inputInvalidClassName : 'border-[var(--vt-line)]'}`}
+            className={`flex h-12 items-center gap-1 rounded-2xl border bg-white/85 p-1 shadow-sm ${invalid ? inputInvalidClassName : 'border-[var(--vt-line)]'}`}
         >
             {options.map((option) => {
                 const active = value === option;
@@ -349,7 +349,7 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
     return (
         <OverlayPortal>
             <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-[rgba(11,23,40,0.72)] p-0 backdrop-blur-sm sm:p-5">
-                <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[var(--vt-ivory)] text-[var(--vt-ink)] sm:h-auto sm:max-h-[92vh] sm:max-w-6xl sm:rounded-[34px] sm:border sm:border-[rgba(255,250,241,0.72)] sm:shadow-[0_40px_110px_rgba(11,23,40,0.42)]">
+                <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[var(--vt-ivory)] text-[var(--vt-ink)] sm:h-auto sm:max-h-[94vh] sm:w-[min(1500px,95vw)] sm:rounded-[34px] sm:border sm:border-[rgba(255,250,241,0.72)] sm:shadow-[0_40px_110px_rgba(11,23,40,0.42)]">
                 <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_84%_8%,rgba(200,169,106,0.22),transparent_30%),radial-gradient(circle_at_14%_92%,rgba(29,111,95,0.12),transparent_34%)]" />
                 <div className="relative border-b border-[var(--vt-line)] bg-[rgba(255,250,241,0.9)] px-4 py-4 shadow-[0_18px_50px_rgba(19,34,56,0.08)] backdrop-blur-xl sm:px-6 sm:py-5 lg:px-8">
                     <div className="flex items-center justify-between gap-4">
@@ -386,8 +386,8 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
 
                 <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="flex min-h-0 flex-1 flex-col">
                     <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
-                        <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.95fr)] xl:gap-6">
-                            <div className="order-2 space-y-5 xl:order-1">
+                        <div className="mx-auto grid w-full grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.6fr)_clamp(320px,30%,440px)] lg:gap-7">
+                            <div className="@container order-2 space-y-6 lg:order-1">
                                 {error ? (
                                     <div role="alert" className="flex items-start justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
                                         <span className="flex items-start gap-2">
@@ -411,18 +411,18 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
                                     title="Thông tin cá nhân"
                                     description="Họ tên và ngày sinh cần trùng khớp với giấy tờ tùy thân."
                                 >
-                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
-                                        <FieldGroup label="Họ" required error={errors.ho?.message} className="xl:col-span-4">
+                                    <div className="grid grid-cols-1 gap-5 @min-[560px]:grid-cols-2 @min-[900px]:grid-cols-12">
+                                        <FieldGroup label="Họ" required error={errors.ho?.message} className="@min-[900px]:col-span-4">
                                             <Input {...register('ho', { required: 'Vui lòng nhập họ' })} className={`${inputBaseClassName} ${errors.ho ? inputInvalidClassName : ''}`} />
                                         </FieldGroup>
-                                        <FieldGroup label="Tên đệm" className="xl:col-span-4">
+                                        <FieldGroup label="Tên đệm" className="@min-[900px]:col-span-4">
                                             <Input {...register('ten_dem')} className={inputBaseClassName} />
                                         </FieldGroup>
-                                        <FieldGroup label="Tên" required error={errors.ten?.message} className="xl:col-span-4">
+                                        <FieldGroup label="Tên" required error={errors.ten?.message} className="@min-[900px]:col-span-4">
                                             <Input {...register('ten', { required: 'Vui lòng nhập tên' })} className={`${inputBaseClassName} font-semibold ${errors.ten ? inputInvalidClassName : ''}`} />
                                         </FieldGroup>
 
-                                        <FieldGroup label="Ngày sinh" required error={errors.ngay_sinh?.message} className="xl:col-span-4">
+                                        <FieldGroup label="Ngày sinh" required error={errors.ngay_sinh?.message} className="@min-[900px]:col-span-3">
                                             <Input
                                                 type="text"
                                                 inputMode="numeric"
@@ -434,7 +434,7 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
                                                 className={`${inputBaseClassName} ${errors.ngay_sinh ? inputInvalidClassName : ''}`}
                                             />
                                         </FieldGroup>
-                                        <FieldGroup label="Giới tính" required error={errors.gioi_tinh?.message} className="xl:col-span-4">
+                                        <FieldGroup label="Giới tính" required error={errors.gioi_tinh?.message} className="@min-[900px]:col-span-3">
                                             <input type="hidden" {...register('gioi_tinh', { required: 'Vui lòng chọn giới tính' })} />
                                             <GenderSegmented
                                                 value={values.gioi_tinh || ''}
@@ -442,37 +442,37 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
                                                 onChange={(next) => setValue('gioi_tinh', next, { shouldValidate: true, shouldDirty: true })}
                                             />
                                         </FieldGroup>
-                                        <FieldGroup label="Nơi sinh" className="xl:col-span-4">
+                                        <FieldGroup label="Nơi sinh" className="@min-[900px]:col-span-6">
                                             <input type="hidden" {...register('noi_sinh')} />
                                             <BirthPlaceField
                                                 label=""
                                                 value={watchedBirthPlace || ''}
                                                 onChange={(nextValue) => setValue('noi_sinh', nextValue, { shouldDirty: true })}
-                                                hint="Danh sách 34 tỉnh/thành theo phân khu mới nhất."
+                                                hint=""
                                                 labelClassName="hidden"
                                                 toggleWrapperClassName=""
-                                                radioGroupClassName="flex flex-wrap gap-4 text-sm"
+                                                radioGroupClassName="flex flex-wrap gap-6 text-sm"
                                                 radioOptionClassName="inline-flex items-center gap-2 text-sm text-slate-700"
                                                 inputClassName={inputBaseClassName}
                                                 selectClassName={selectClassName}
-                                                hintClassName="text-xs text-slate-500"
+                                                hintClassName="hidden"
                                             />
                                         </FieldGroup>
 
-                                        <FieldGroup label="Dân tộc" className="xl:col-span-4">
+                                        <FieldGroup label="Dân tộc" className="@min-[900px]:col-span-4">
                                             <Input {...register('dan_toc')} placeholder="Ví dụ: Kinh" className={inputBaseClassName} />
                                         </FieldGroup>
-                                        <FieldGroup label="Quốc tịch" className="xl:col-span-4">
+                                        <FieldGroup label="Quốc tịch" className="@min-[900px]:col-span-4">
                                             <Input {...register('quoc_tich')} placeholder="Ví dụ: Việt Nam" className={inputBaseClassName} />
                                         </FieldGroup>
-                                        <FieldGroup label="Đơn vị công tác" className="xl:col-span-4">
+                                        <FieldGroup label="Đơn vị công tác" className="@min-[900px]:col-span-4">
                                             <Input
                                                 {...register('don_vi_cong_tac')}
                                                 placeholder="Trường học, cơ quan..."
                                                 className={inputBaseClassName}
                                             />
                                         </FieldGroup>
-                                        <FieldGroup label="Khoa/ngành đang theo học" className="xl:col-span-6">
+                                        <FieldGroup label="Khoa/ngành đang theo học" className="@min-[560px]:col-span-2 @min-[900px]:col-span-12">
                                             <Input
                                                 {...register('nganh_dang_hoc')}
                                                 placeholder="Ví dụ: Công nghệ thông tin"
@@ -487,8 +487,8 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
                                     title="Liên hệ và cư trú"
                                     description="Số điện thoại và email là kênh gửi thông báo quan trọng về khóa học và lịch thi."
                                 >
-                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
-                                        <FieldGroup label="Số điện thoại" required error={errors.sdt?.message} className="xl:col-span-4">
+                                    <div className="grid grid-cols-1 gap-5 @min-[560px]:grid-cols-2 @min-[900px]:grid-cols-12">
+                                        <FieldGroup label="Số điện thoại" required error={errors.sdt?.message} className="@min-[900px]:col-span-5">
                                             <Input
                                                 inputMode="tel"
                                                 placeholder="0xxxxxxxxx"
@@ -496,7 +496,7 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
                                                 className={`${inputBaseClassName} font-mono ${errors.sdt ? inputInvalidClassName : ''}`}
                                             />
                                         </FieldGroup>
-                                        <FieldGroup label="Email" error={errors.email?.message} className="xl:col-span-8">
+                                        <FieldGroup label="Email" error={errors.email?.message} className="@min-[900px]:col-span-7">
                                             <Input
                                                 {...register('email', emailRule)}
                                                 type="email"
@@ -504,7 +504,7 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
                                                 className={`${inputBaseClassName} ${errors.email ? inputInvalidClassName : ''}`}
                                             />
                                         </FieldGroup>
-                                        <FieldGroup label="Địa chỉ hiện tại" className="md:col-span-2 xl:col-span-12">
+                                        <FieldGroup label="Địa chỉ hiện tại" className="@min-[560px]:col-span-2 @min-[900px]:col-span-12">
                                             <Input
                                                 {...register('dia_chi')}
                                                 placeholder="Số nhà, đường, phường, tỉnh/thành..."
@@ -519,15 +519,15 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
                                     title="Giấy tờ tùy thân"
                                     description="Số CCCD là định dạng hồ sơ của bạn — nếu CCCD đổi sang số mới, hãy liên hệ văn phòng để được hỗ trợ chính xác nhất."
                                 >
-                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
-                                        <FieldGroup label="Số CCCD/CMND" error={errors.cccd?.message} className="xl:col-span-7">
+                                    <div className="grid grid-cols-1 gap-5 @min-[560px]:grid-cols-2 @min-[900px]:grid-cols-12">
+                                        <FieldGroup label="Số CCCD/CMND" error={errors.cccd?.message} className="@min-[900px]:col-span-6">
                                             <Input
                                                 inputMode="numeric"
                                                 {...register('cccd', cccdRule)}
                                                 className={`${inputBaseClassName} font-mono ${errors.cccd ? inputInvalidClassName : ''}`}
                                             />
                                         </FieldGroup>
-                                        <FieldGroup label="Ngày cấp" error={errors.ngay_cap_cccd?.message} className="xl:col-span-5">
+                                        <FieldGroup label="Ngày cấp" error={errors.ngay_cap_cccd?.message} className="@min-[900px]:col-span-6">
                                             <Input
                                                 type="text"
                                                 inputMode="numeric"
@@ -544,8 +544,8 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
                                 </SectionCard>
                             </div>
 
-                            <aside className="order-1 xl:order-2">
-                                <div className="space-y-5 xl:sticky xl:top-6">
+                            <aside className="order-1 lg:order-2">
+                                <div className="space-y-6 lg:sticky lg:top-6">
                                     <SectionCard
                                         accentClassName="bg-[var(--vt-champagne)]"
                                         title="Ảnh hồ sơ"
@@ -567,7 +567,7 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
                                                 </Suspense>
                                             </div>
 
-                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-2">
+                                            <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-4">
                                                 <div className="rounded-[24px] border border-[var(--vt-line)] bg-white/75 p-3 shadow-sm sm:p-4">
                                                     <Label className="mb-3 block text-center text-[11px] font-black uppercase tracking-[0.18em] text-[var(--vt-muted)]">
                                                         CCCD mặt trước
@@ -613,7 +613,7 @@ export default function StudentProfileEditor({ studentData, isOpen, onClose, onU
                     </div>
 
                     <div className="relative border-t border-[var(--vt-line)] bg-[rgba(255,250,241,0.92)] px-4 py-4 backdrop-blur-xl sm:px-6 lg:px-8">
-                        <div className="mx-auto flex max-w-[1400px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="mx-auto flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-2 text-sm font-semibold leading-6 text-[var(--vt-muted)]">
                                 {changedCount > 0 ? (
                                     <>
