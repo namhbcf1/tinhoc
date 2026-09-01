@@ -25,9 +25,9 @@ const getFileColor = (fileType) => {
     if (!fileType) return { bg: 'bg-slate-500', light: 'bg-slate-50 border-slate-100', text: 'text-slate-600' };
     const t = fileType.toLowerCase();
     if (t.includes('pdf')) return { bg: 'bg-red-500', light: 'bg-red-50 border-red-100', text: 'text-red-600' };
-    if (t.includes('doc')) return { bg: 'bg-blue-500', light: 'bg-blue-50 border-blue-100', text: 'text-blue-600' };
+    if (t.includes('doc')) return { bg: 'bg-[var(--vt-ink)]', light: 'bg-[var(--vt-paper-soft)] border-[var(--vt-line-soft)]', text: 'text-[var(--vt-ink)]' };
     if (t.includes('image') || t.includes('png') || t.includes('jpg')) return { bg: 'bg-emerald-500', light: 'bg-emerald-50 border-emerald-100', text: 'text-emerald-600' };
-    if (t.includes('video') || t.includes('mp4')) return { bg: 'bg-violet-500', light: 'bg-violet-50 border-violet-100', text: 'text-violet-600' };
+    if (t.includes('video') || t.includes('mp4')) return { bg: 'bg-[var(--vt-emerald)]', light: 'bg-[var(--vt-emerald-soft)] border-[var(--vt-emerald-soft)]', text: 'text-[var(--vt-emerald)]' };
     return { bg: 'bg-slate-500', light: 'bg-slate-50 border-slate-100', text: 'text-slate-600' };
 };
 
@@ -121,7 +121,7 @@ export default function MobileDocumentsModule({ studentData }) {
         <PullToRefreshWrapper onRefresh={handleRefresh}>
         <div className="min-h-screen bg-slate-50 pb-28">
             {/* Hero Banner */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 px-5 pt-6 pb-8" style={{ overflow: 'clip' }}>
+            <div className="relative overflow-hidden bg-[linear-gradient(135deg,var(--vt-ink),#0b1728)] px-5 pt-6 pb-8" style={{ overflow: 'clip' }}>
                 <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/10 blur-2xl opacity-60" />
                 <div className="absolute bottom-0 left-5 w-32 h-32 rounded-full bg-white/10 blur-2xl opacity-60" />
                 <div className="relative z-10">
@@ -138,12 +138,12 @@ export default function MobileDocumentsModule({ studentData }) {
                     {/* Stat pills */}
                     <div className="grid grid-cols-3 gap-2 mb-4">
                         {[
-                            { label: 'Tổng tài liệu', value: loading ? '...' : totalDocs },
+                            { label: 'Tài liệu', value: loading ? '...' : totalDocs },
                             { label: 'PDF / DOC', value: loading ? '...' : pdfDocs },
                             { label: 'Video', value: loading ? '...' : videoDocs },
                         ].map(({ label, value }) => (
                             <div key={label} className="bg-white/15 backdrop-blur-sm rounded-2xl px-3 py-2.5 border border-white/20 text-center">
-                                <p className="text-white/70 text-[9px] font-black uppercase tracking-widest mb-1">{label}</p>
+                                <p className="text-white/70 text-[9px] font-black uppercase tracking-normal mb-1">{label}</p>
                                 <p className="text-white font-black text-xl leading-none">{value}</p>
                             </div>
                         ))}
@@ -191,8 +191,8 @@ export default function MobileDocumentsModule({ studentData }) {
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
-                        <div className="w-24 h-24 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center mb-5">
-                            <FileText size={40} className="text-blue-300" />
+                        <div className="w-24 h-24 rounded-full bg-[var(--vt-paper-soft)] border border-[var(--vt-champagne-soft)] flex items-center justify-center mb-5">
+                            <FileText size={40} className="text-[var(--vt-champagne-deep)]" />
                         </div>
                         <h3 className="font-black text-slate-800 text-lg mb-2">
                             {searchTerm ? 'Không tìm thấy tài liệu' : 'Chưa có tài liệu nào'}

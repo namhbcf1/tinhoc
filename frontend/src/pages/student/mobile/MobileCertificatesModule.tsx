@@ -16,10 +16,10 @@ const CertificateCard = ({ certificate, onClick, onDownload, onShare, index }) =
     const issueDate = certificate.issue_date || certificate.ngay_cap || '';
     const level = certificate.level || certificate.cap_do || '';
     const gradients = [
-        'from-amber-500 to-yellow-600',
-        'from-violet-500 to-purple-600',
-        'from-emerald-500 to-teal-600',
-        'from-blue-500 to-indigo-600',
+        'from-[var(--vt-champagne-deep)] to-[var(--vt-champagne)]',
+        'from-[var(--vt-ink)] to-[var(--vt-ink-soft)]',
+        'from-[var(--vt-emerald)] to-[var(--vt-emerald-deep)]',
+        'from-[var(--vt-ink-soft)] to-[var(--vt-champagne-deep)]',
     ];
     const gradient = gradients[index % gradients.length];
 
@@ -47,7 +47,7 @@ const CertificateCard = ({ certificate, onClick, onDownload, onShare, index }) =
             {/* Details */}
             <div className="p-4 flex items-center justify-between">
                 <div>
-                    {level && <span className="text-xs font-black px-2.5 py-1 rounded-xl bg-amber-50 text-amber-700 border border-amber-100">{level}</span>}
+                    {level && <span className="text-xs font-black px-2.5 py-1 rounded-xl bg-[var(--vt-champagne-soft)] text-[var(--vt-champagne-deep)] border border-[var(--vt-champagne-soft)]">{level}</span>}
                     {issueDate && <p className="text-xs text-slate-400 font-semibold mt-1.5">Ngày cấp: {formatDate(issueDate)}</p>}
                 </div>
                 <div className="flex gap-2">
@@ -56,7 +56,7 @@ const CertificateCard = ({ certificate, onClick, onDownload, onShare, index }) =
                             event.stopPropagation();
                             onDownload(certificate);
                         }}
-                        className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center active:scale-90 transition-transform"
+                        className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-2xl bg-[var(--vt-paper-soft)] text-[var(--vt-emerald)] border border-[var(--vt-line-soft)] flex items-center justify-center active:scale-90 transition-transform"
                     >
                         <Download size={16} />
                     </button>
@@ -89,7 +89,7 @@ const CertificateDetailSheet = ({ certificate, onClose, onDownload, onShare }) =
                     className="bg-white w-full max-h-[90vh] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
                     onClick={(e) => e.stopPropagation()}
                 >
-                <div className="relative bg-gradient-to-br from-amber-500 to-yellow-600 px-6 pt-8 pb-6">
+                <div className="relative bg-[linear-gradient(135deg,var(--vt-ink),#0b1728)] px-6 pt-8 pb-6">
                     <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full bg-white/20 backdrop-blur-sm">
                         <X size={20} className="text-white" />
                     </button>
@@ -106,8 +106,8 @@ const CertificateDetailSheet = ({ certificate, onClose, onDownload, onShare }) =
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
                     <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
                         {[
-                            { label: 'Số chứng chỉ', value: certificateNumber || 'N/A' },
-                            { label: 'Ngày cấp', value: issueDate ? formatDate(issueDate) : 'N/A' },
+                            { label: 'Số chứng chỉ', value: certificateNumber || 'Chưa có' },
+                            { label: 'Ngày cấp', value: issueDate ? formatDate(issueDate) : 'Chưa có' },
                             { label: 'Đơn vị cấp', value: issuer },
                         ].map(({ label, value }) => (
                             <div key={label} className="flex justify-between text-sm">
@@ -116,20 +116,20 @@ const CertificateDetailSheet = ({ certificate, onClose, onDownload, onShare }) =
                             </div>
                         ))}
                     </div>
-                    <div className="bg-amber-50 rounded-2xl p-5 border border-amber-100 flex flex-col items-center">
-                        <QrCode size={100} className="text-amber-600 mb-3" />
-                        <p className="text-amber-700 text-sm font-semibold text-center">Quét mã để xác thực chứng chỉ</p>
+                    <div className="bg-[var(--vt-paper-soft)] rounded-2xl p-5 border border-[var(--vt-champagne-soft)] flex flex-col items-center">
+                        <QrCode size={100} className="text-[var(--vt-champagne-deep)] mb-3" />
+                        <p className="text-[var(--vt-ink)] text-sm font-semibold text-center">Quét mã để xác thực chứng chỉ</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <button
                             onClick={() => onDownload(certificate)}
-                            className="flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl font-bold text-sm active:scale-95 transition-transform"
+                            className="flex items-center justify-center gap-2 py-3 bg-[var(--vt-ink)] text-white rounded-2xl font-bold text-sm active:scale-95 transition-transform"
                         >
                             <Download size={16} /> Tải xuống
                         </button>
                         <button
                             onClick={() => onShare(certificate)}
-                            className="flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl font-bold text-sm active:scale-95 transition-transform"
+                            className="flex items-center justify-center gap-2 py-3 bg-[var(--vt-emerald)] text-white rounded-2xl font-bold text-sm active:scale-95 transition-transform"
                         >
                             <Share2 size={16} /> Chia sẻ
                         </button>
@@ -224,8 +224,8 @@ export default function MobileCertificatesModule({ studentData }) {
         <PullToRefreshWrapper onRefresh={handleRefresh}>
         <div className="min-h-screen bg-slate-50 pb-28">
             {/* Hero Banner */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-600 px-5 pt-6 pb-8" style={{ overflow: 'clip' }}>
-                <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/10 blur-2xl opacity-60" />
+            <div className="relative overflow-hidden bg-[linear-gradient(135deg,var(--vt-ink),#0b1728)] px-5 pt-6 pb-8" style={{ overflow: 'clip' }}>
+                <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-[var(--vt-champagne)]/10 blur-2xl opacity-60" />
                 <div className="absolute bottom-0 left-5 w-32 h-32 rounded-full bg-white/10 blur-2xl opacity-60" />
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-5">
@@ -286,12 +286,12 @@ export default function MobileCertificatesModule({ studentData }) {
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
-                        <div className="w-24 h-24 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center mb-5">
-                            <Award size={40} className="text-amber-300" />
+                        <div className="w-24 h-24 rounded-full bg-[var(--vt-paper-soft)] border border-[var(--vt-champagne-soft)] flex items-center justify-center mb-5">
+                            <Award size={40} className="text-[var(--vt-champagne-deep)]" />
                         </div>
                         <h3 className="font-black text-slate-800 text-lg mb-2">Chưa có chứng chỉ nào</h3>
                         <p className="text-slate-500 text-sm leading-relaxed">Hoàn thành khóa học để nhận chứng chỉ của bạn!</p>
-                        <div className="mt-4 flex items-center gap-2 text-amber-600">
+                        <div className="mt-4 flex items-center gap-2 text-[var(--vt-champagne-deep)]">
                             <Star size={14} fill="currentColor" />
                             <span className="text-xs font-bold">Mỗi chứng chỉ là minh chứng cho nỗ lực của bạn</span>
                             <Star size={14} fill="currentColor" />

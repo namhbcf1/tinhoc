@@ -463,33 +463,33 @@ pm run build; warning còn lại là CSS @import/chunk-size cũ.
 - Nguy?n nh?n: b??c export d?ng t?m canvas thay v? t?m overlay th?c t?, trong khi overlay ?ang c? centerYOffset ?m n?n ?nh th?nh ph?m b? th?a m?p d??i.
 - ?? ??i c?ng th?c export sang map tr?c ti?p t? to? ?? preview sang to? ?? output theo overlayX/overlayY v? vertical padding.
 
-### 2026-08-27 +07 � Duplicate-class filter + PTIT seed + cleanup + suite green
+### 2026-08-27 +07 � Duplicate-class filter + PTIT seed + cleanup + suite green
 - Per-category class dedupe (Tieng Anh vs Tin hoc) implemented; exam_category_id authoritative + token fallback.
 - Program-platform: PTIT organizer + TIN_HOC program + MODUL1-6 + MOS seeded (edu).
 - Deleted dead code: app/, 10 backend modules, 3 stale frontend duplicates.
 - Backend tests green: 197 passed / 28 files.
 - Not deployed to live D1 yet; needs user to run migrations/seed + deploy.
 
-### 2026-08-27 +07 � Live bug: SN36 auto-cancelled, bucket logic fixed
+### 2026-08-27 +07 � Live bug: SN36 auto-cancelled, bucket logic fixed
 - Root cause: English exams without text tokens resolved to 'unknown' bucket -> conflicted with everything -> force-register PTIT cancelled SN36.
 - Fixed registration bucket to use exam_categories + default english; redeployed backend; restored student 471 data (PTIT + SN36 both active).
 
-### 2026-08-27 +07 � Exam attempt-history feature (admin)
+### 2026-08-27 +07 � Exam attempt-history feature (admin)
 - Added backend GET /exam-schedules/:id/attempt-history + frontend modal on ExamSchedulesPage.
 - Deployed backend + frontend. Verified live.
 
-### 2026-08-27 +07 � Mobile parity push
+### 2026-08-27 +07 � Mobile parity push
 - Ported attempt-history to mobile; added MobileOnlineClasses/MobileUnifiedClasses/MobileProgramPlatform modules; wired into mobile admin. Deployed 829dd9d5.
 
 
-### 2026-08-27 +07 � Mobile parity final (deployed 96f3c010)
+### 2026-08-27 +07 � Mobile parity final (deployed 96f3c010)
 - ClassDetail mobile module + program-platform field editing mobile.
 
 
-### 2026-08-27 +07 � Mobile attempt-history crash fixed (ChevronDown import), deployed e8eeab9a
+### 2026-08-27 +07 � Mobile attempt-history crash fixed (ChevronDown import), deployed e8eeab9a
 
 
-### 2026-08-27 +07 � Mobile density pass (deployed 6d7b3196)
+### 2026-08-27 +07 � Mobile density pass (deployed 6d7b3196)
 
 
 ### 2026-09-02 +07 — Dọn file chờ quyết + gỡ PII khỏi repo (đã push tới ebaa49ee8)
@@ -534,3 +534,10 @@ pm run build; warning còn lại là CSS @import/chunk-size cũ.
 - StudentLookup.tsx: 4 chuỗi SEO mất dấu→có dấu đầy đủ.
 - MobileProfileModule.tsx: "Unknown error"→"Vui lòng thử lại"; '---'→giữ nguyên display (chưa đổi — ghi chú: chỉ '---' placeholder).
 - CHƯA quyết (hỏi user): 7 trang dead-offline (Certificates/Documents/Messaging/RegisterClass desktop + 3 module mobile cũ, palette xanh/tím/cam) + 2 CSS chết StudentDashboardLayout.css (hack scale) & StudentLogin.css — xóa hay migrate.
+
+## [2026-09-02] Migrate 6 trang dead sang palette vt + gắn lại vào nav (deploy a7fb8116)
+- User chốt: "migrate về hệ màu mới rồi gắn lại vào nav". RegisterClass (stub) KHÔNG gắn; 2 CSS chết giữ nguyên.
+- Migrate màu (ink/emerald/champagne qua var(--vt-*), nền hero `linear-gradient(135deg,var(--vt-ink),#0b1728)`): desktop Certificates/Documents/StudentMessaging + mobile MobileCertificatesModule/MobileDocumentsModule/MobileMessagesModule. Giữ màu ngữ nghĩa loại file (PDF đỏ, ảnh xanh lá) + đỏ=hết hạn/lỗi.
+- Sửa string: "Smart Assistant"→"Trợ lý ảo", "AI Active"→"Đang hoạt động", 'N/A'→'Chưa có'; Documents bỏ hover/shadow trên phần tử không tương tác; Messaging minHeight 520→`min-h-[min(520px,70dvh)]`, w-80→w-64 xl:w-80.
+- Gắn nav: student-nav.tsx thêm id 'certificates'|'documents'|'messages' + flag `primary?: boolean` (false = chỉ sidebar/drawer, không nhét bottom nav) + icon Award/FileText/Bell + titles. StudentDashboard.tsx TAB_MAP + 3 lazy import; StudentDashboardMobile.tsx renderContent + 3 case; App.tsx thêm 3 Route /dashboard/{certificates,documents,messages}; StudentMobileLayout + StudentBottomNav filter `primary !== false`.
+- DashboardSidebar không filter → desktop sidebar hiện đủ 6 mục; bottom nav mobile vẫn 4 mục (Lịch thi/Phản hồi/Học tập/Cá nhân).

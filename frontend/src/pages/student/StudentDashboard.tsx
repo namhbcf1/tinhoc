@@ -17,6 +17,9 @@ const PersonalInfo = lazy(() => import('./desktop/PersonalInfo'));
 const StudentReviewsView = lazy(() => import('./desktop/StudentReviewsView'));
 const StudentFeedbackView = lazy(() => import('./desktop/StudentFeedbackView'));
 const StudentMyClassesView = lazy(() => import('./desktop/StudentMyClassesView'));
+const Certificates = lazy(() => import('./desktop/Certificates'));
+const Documents = lazy(() => import('./desktop/Documents'));
+const StudentMessaging = lazy(() => import('./desktop/StudentMessaging'));
 
 // Mobile dashboard — lazy-loaded only khi cần
 const StudentDashboardMobile = lazy(() => import('./mobile/StudentDashboardMobile'));
@@ -27,6 +30,9 @@ const TAB_MAP: Record<string, React.LazyExoticComponent<any>> = {
   attendance:    AttendancePage,
   reviews:       StudentReviewsView,
   feedback:      StudentFeedbackView,
+  certificates:  Certificates,
+  documents:     Documents,
+  messages:      StudentMessaging,
   profile:       PersonalInfo,
 };
 

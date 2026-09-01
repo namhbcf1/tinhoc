@@ -86,6 +86,9 @@ function AppRoutes() {
       <Route path="/dashboard/attendance" element={<Navigate to="/dashboard/exams" replace />} />
       <Route path="/dashboard/reviews" element={<Navigate to="/dashboard/feedback" replace />} />
       <Route path="/dashboard/feedback" element={<StudentDashboard />} />
+      <Route path="/dashboard/certificates" element={<StudentDashboard />} />
+      <Route path="/dashboard/documents" element={<StudentDashboard />} />
+      <Route path="/dashboard/messages" element={<StudentDashboard />} />
       <Route path="/dashboard/profile" element={<StudentDashboard />} />
       <Route path="/dashboard/online-classes" element={<StudyPlatformRedirect />} />
 

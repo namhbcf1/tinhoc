@@ -1,6 +1,9 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  Award,
+  Bell,
   CalendarCheck,
+  FileText,
   GraduationCap,
   MessageSquareQuote,
 } from 'lucide-react';
@@ -15,24 +18,32 @@ type OpenStudyPlatformOptions = {
 };
 
 export interface StudentNavItem {
-  id: 'exams' | 'attendance' | 'study' | 'reviews' | 'feedback' | 'my-classes';
+  id: 'exams' | 'attendance' | 'study' | 'reviews' | 'feedback' | 'my-classes' | 'certificates' | 'documents' | 'messages';
   label: string;
   icon: LucideIcon;
   path?: string;
   external?: string;
+  /** false = chỉ hiện ở drawer/sidebar, không nhét vào thanh điều hướng dưới */
+  primary?: boolean;
 }
 
 export const STUDENT_MAIN_MENU: StudentNavItem[] = [
-  { id: 'exams',      label: 'Lịch thi',       icon: CalendarCheck,      path: '/dashboard/exams' },
-  { id: 'feedback',   label: 'Phản hồi', icon: MessageSquareQuote, path: '/dashboard/feedback' },
-  { id: 'study',      label: 'Học tập',         icon: GraduationCap,      external: STUDY_PLATFORM_URL },
+  { id: 'exams',        label: 'Lịch thi',   icon: CalendarCheck,      path: '/dashboard/exams' },
+  { id: 'certificates', label: 'Chứng chỉ',  icon: Award,              path: '/dashboard/certificates', primary: false },
+  { id: 'documents',    label: 'Tài liệu',   icon: FileText,           path: '/dashboard/documents', primary: false },
+  { id: 'messages',     label: 'Thông báo',  icon: Bell,               path: '/dashboard/messages', primary: false },
+  { id: 'feedback',     label: 'Phản hồi',   icon: MessageSquareQuote, path: '/dashboard/feedback' },
+  { id: 'study',        label: 'Học tập',    icon: GraduationCap,      external: STUDY_PLATFORM_URL },
 ];
 
 export const STUDENT_PAGE_TITLES: Record<string, string> = {
-  exams:       'Lịch thi',
-  feedback:    'Phản hồi lớp học',
-  study:       'Học tập',
-  profile:     'Hồ sơ cá nhân',
+  exams:        'Lịch thi',
+  certificates: 'Chứng chỉ',
+  documents:    'Tài liệu',
+  messages:     'Thông báo',
+  feedback:     'Phản hồi lớp học',
+  study:        'Học tập',
+  profile:      'Hồ sơ cá nhân',
 };
 
 export async function openStudyPlatform(options: OpenStudyPlatformOptions = {}) {

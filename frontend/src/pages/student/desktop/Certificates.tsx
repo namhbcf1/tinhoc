@@ -12,9 +12,9 @@ const CertBadge = ({ status }) => {
     const map = {
         active:    { label: 'Còn hiệu lực', cls: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
         expired:   { label: 'Hết hạn',      cls: 'bg-red-100 text-red-600 border border-red-200' },
-        completed: { label: 'Hoàn thành',   cls: 'bg-purple-100 text-purple-700 border border-purple-200' },
+        completed: { label: 'Hoàn thành',   cls: 'bg-[var(--vt-champagne-soft)] text-[var(--vt-champagne-deep)] border border-[var(--vt-champagne-soft)]' },
     };
-    const cfg = map[status] || { label: 'Đã cấp', cls: 'bg-blue-100 text-blue-700 border border-blue-200' };
+    const cfg = map[status] || { label: 'Đã cấp', cls: 'bg-[var(--vt-emerald-soft)] text-[var(--vt-emerald)] border border-[var(--vt-emerald-soft)]' };
     return (
         <span className={`text-xs font-semibold px-3 py-1 rounded-full ${cfg.cls}`}>{cfg.label}</span>
     );
@@ -25,14 +25,14 @@ const CertCard = ({ cert, index }) => (
     <div className={`cert-card group relative overflow-hidden rounded-2xl bg-white border border-slate-100
                      shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 p-6`}>
         {/* gradient accent top stripe */}
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500 rounded-t-2xl" />
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[var(--vt-champagne)] via-[var(--vt-champagne-deep)] to-[var(--vt-emerald)] rounded-t-2xl" />
 
         {/* decorative watermark */}
-        <div className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-purple-50 opacity-60 pointer-events-none" />
+        <div className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-[var(--vt-paper-soft)] opacity-60 pointer-events-none" />
 
         <div className="relative z-10">
             <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--vt-ink)] to-[var(--vt-emerald)] flex items-center justify-center shadow-lg">
                     <Award size={24} className="text-white" />
                 </div>
                 <CertBadge status={cert.status} />
@@ -59,9 +59,9 @@ const CertCard = ({ cert, index }) => (
             <button
                 aria-label={`Tải chứng chỉ ${cert.name || cert.certificate_name || 'chứng chỉ'}`}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
-                           bg-gradient-to-r from-violet-500 to-purple-600 text-white text-sm font-semibold
-                           hover:from-violet-600 hover:to-purple-700 shadow hover:shadow-md
-                           transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                           bg-[var(--vt-ink)] text-white text-sm font-semibold
+                           hover:bg-[var(--vt-emerald)] shadow hover:shadow-md
+                           transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--vt-champagne)]"
             >
                 <Download size={15} />
                 Tải chứng chỉ
@@ -88,7 +88,7 @@ const CertSkeleton = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {[0, 1, 2].map(i => (
             <div key={i} className="rounded-2xl bg-white border border-slate-100 shadow-md p-6 animate-pulse">
-                <div className="h-1 bg-purple-200 rounded-t-2xl -mx-6 -mt-6 mb-6" />
+                <div className="h-1 bg-[var(--vt-paper-deep)] rounded-t-2xl -mx-6 -mt-6 mb-6" />
                 <div className="flex items-start justify-between mb-4">
                     <div className="w-12 h-12 rounded-2xl bg-slate-200" />
                     <div className="w-20 h-6 rounded-full bg-slate-200" />
@@ -138,52 +138,52 @@ export default function Certificates({ studentData }) {
         <div className="space-y-7" ref={containerRef}>
 
             {/* ── Header Banner ────────────────────────────────────────── */}
-            <div className="anim-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 p-8 shadow-xl text-white">
+            <div className="anim-fade-up relative overflow-hidden rounded-3xl bg-[linear-gradient(135deg,var(--vt-ink),#0b1728)] p-8 shadow-xl text-white">
                 <div className="absolute -top-8 -right-8 w-48 h-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
                 <div className="absolute bottom-0 left-1/4 w-32 h-32 rounded-full bg-white/10 blur-xl pointer-events-none" />
 
                 <div className="relative z-10 flex items-center justify-between">
                     <div>
                         <div className="flex items-center gap-2 mb-3">
-                            <Star size={14} className="text-yellow-300 fill-yellow-300" />
-                            <span className="text-xs font-semibold text-purple-200 uppercase">Hồ sơ thành tích</span>
+                            <Star size={14} className="text-[var(--vt-champagne)] fill-[var(--vt-champagne)]" />
+                            <span className="text-xs font-semibold text-[var(--vt-champagne)] uppercase">Hồ sơ thành tích</span>
                         </div>
                         <h1 className="text-3xl font-black">Chứng chỉ &amp; Kết quả</h1>
-                        <p className="mt-1.5 text-purple-200 text-sm font-medium">
+                        <p className="mt-1.5 text-white/65 text-sm font-medium">
                             Quản lý và tải về các chứng chỉ điện tử của bạn
                         </p>
                     </div>
-                    <div className="hidden md:flex w-20 h-20 rounded-3xl bg-white/20 backdrop-blur-sm shadow-inner items-center justify-center">
-                        <Award size={40} className="text-white" />
+                    <div className="hidden md:flex w-20 h-20 rounded-3xl bg-white/10 border border-[var(--vt-champagne-soft)] backdrop-blur-sm shadow-inner items-center justify-center">
+                        <Award size={40} className="text-[var(--vt-champagne)]" />
                     </div>
                 </div>
             </div>
 
             {/* ── Summary Stats ─────────────────────────────────────────── */}
-            <div className="anim-fade-up grid grid-cols-3 gap-4">
+            <div className="anim-fade-up grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <MiniStat
                     icon={Trophy}
                     label="Tổng chứng chỉ"
                     value={totalCerts}
-                    gradient="bg-gradient-to-br from-amber-400 to-orange-500"
-                    bgLight="bg-amber-50"
-                    textColor="text-amber-700"
+                    gradient="bg-gradient-to-br from-[var(--vt-champagne)] to-[var(--vt-champagne-deep)]"
+                    bgLight="bg-[var(--vt-paper-soft)]"
+                    textColor="text-[var(--vt-champagne-deep)]"
                 />
                 <MiniStat
                     icon={BookOpen}
                     label="Đang học"
                     value={studyingCount}
-                    gradient="bg-gradient-to-br from-blue-500 to-indigo-600"
-                    bgLight="bg-blue-50"
-                    textColor="text-blue-700"
+                    gradient="bg-gradient-to-br from-[var(--vt-ink)] to-[var(--vt-ink-soft)]"
+                    bgLight="bg-white/70"
+                    textColor="text-[var(--vt-ink)]"
                 />
                 <MiniStat
                     icon={CheckCircle}
                     label="Đã hoàn thành"
                     value={completed}
-                    gradient="bg-gradient-to-br from-emerald-500 to-teal-600"
-                    bgLight="bg-emerald-50"
-                    textColor="text-emerald-700"
+                    gradient="bg-gradient-to-br from-[var(--vt-emerald)] to-[var(--vt-emerald-deep)]"
+                    bgLight="bg-[var(--vt-emerald-soft)]"
+                    textColor="text-[var(--vt-emerald-deep)]"
                 />
             </div>
 
@@ -195,7 +195,7 @@ export default function Certificates({ studentData }) {
             ) : totalCerts > 0 ? (
                 <div className="anim-fade-up">
                     <div className="flex items-center gap-3 mb-5">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--vt-ink)] to-[var(--vt-emerald)] flex items-center justify-center shadow">
                             <GraduationCap size={18} className="text-white" />
                         </div>
                         <div>
@@ -210,14 +210,14 @@ export default function Certificates({ studentData }) {
                     </div>
                 </div>
             ) : (
-                <Card className="anim-fade-up border border-dashed border-purple-200 bg-purple-50/40 rounded-3xl shadow-none">
+                <Card className="anim-fade-up border border-dashed border-[var(--vt-champagne-soft)] bg-[var(--vt-paper-soft)]/40 rounded-3xl shadow-none">
                     <CardContent className="flex flex-col items-center justify-center py-20 text-center px-8">
                         {/* layered icon illustration */}
                         <div className="relative mb-6">
-                            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center shadow-inner">
-                                <Award size={48} className="text-violet-400" />
+                            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[var(--vt-paper-deep)] to-[var(--vt-champagne-soft)] flex items-center justify-center shadow-inner">
+                                <Award size={48} className="text-[var(--vt-champagne-deep)]" />
                             </div>
-                            <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center shadow-md">
+                            <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gradient-to-br from-[var(--vt-emerald)] to-[var(--vt-emerald-deep)] flex items-center justify-center shadow-md">
                                 <Star size={14} className="text-white fill-white" />
                             </div>
                         </div>
@@ -237,12 +237,12 @@ export default function Certificates({ studentData }) {
                             </div>
                             <div className="w-px h-4 bg-slate-200" />
                             <div className="flex items-center gap-1.5">
-                                <Award size={14} className="text-violet-400" />
+                                <Award size={14} className="text-[var(--vt-champagne-deep)]" />
                                 <span>Nhận chứng chỉ</span>
                             </div>
                             <div className="w-px h-4 bg-slate-200" />
                             <div className="flex items-center gap-1.5">
-                                <Download size={14} className="text-blue-400" />
+                                <Download size={14} className="text-[var(--vt-emerald)]" />
                                 <span>Tải về PDF</span>
                             </div>
                         </div>

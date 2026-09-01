@@ -79,7 +79,7 @@ export default function StudentMessaging({ studentData }) {
   // Virtual AI Conversation
   const aiConversation = {
     id: 'ai-assistant',
-    subject: 'Smart Assistant',
+    subject: 'Trợ lý ảo',
     last_message: aiMessages[aiMessages.length - 1]?.content || 'Sẵn sàng hỗ trợ bạn...',
     unread_count: 0,
     updated_at: aiMessages[aiMessages.length - 1]?.created_at || new Date().toISOString(),
@@ -198,7 +198,7 @@ export default function StudentMessaging({ studentData }) {
         console.error('AI Error:', err);
         const aiResp = {
           id: `ai-${Date.now()}`,
-          content: 'Để tôi kiểm tra lại thông tin này nhé. (Lưu ý: Đang chạy ở chế độ offline do lỗi kết nối AI)',
+          content: 'Để tôi kiểm tra lại thông tin này nhé. (Trợ lý đang gặp sự cố kết nối nên có thể trả lời chậm)',
           sender_type: 'admin',
           created_at: new Date().toISOString(),
         };
@@ -239,10 +239,10 @@ export default function StudentMessaging({ studentData }) {
   return (
     <div className="space-y-5" ref={containerRef}>
       {/* ── Hero Banner ── */}
-      <div className="msg-anim bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 rounded-3xl px-6 py-5 flex items-center justify-between shadow-lg shadow-purple-200">
+      <div className="msg-anim bg-[linear-gradient(120deg,var(--vt-ink),#0b1728)] rounded-3xl px-6 py-5 flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-            <MessageSquare size={24} className="text-white" />
+          <div className="w-12 h-12 rounded-2xl bg-white/10 border border-[var(--vt-champagne-soft)] backdrop-blur-sm flex items-center justify-center">
+            <MessageSquare size={24} className="text-[var(--vt-champagne)]" />
           </div>
           <div>
             <h2 className="text-xl font-black text-white tracking-tight">Tin nhắn</h2>
@@ -250,26 +250,26 @@ export default function StudentMessaging({ studentData }) {
           </div>
         </div>
         {unreadCount > 0 && (
-          <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-2 border border-white/30">
-            <Bell size={16} className="text-white" />
+          <div className="flex items-center gap-2 bg-white/10 border border-[var(--vt-champagne-soft)] backdrop-blur-sm rounded-2xl px-4 py-2">
+            <Bell size={16} className="text-[var(--vt-champagne)]" />
             <span className="text-white font-bold text-sm">{unreadCount} chưa đọc</span>
           </div>
         )}
       </div>
 
       {/* ── Main Panel ── */}
-      <div className="msg-anim bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden" style={{ minHeight: '520px' }}>
+      <div className="msg-anim bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden min-h-[min(520px,70dvh)]">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 border-[3px] border-purple-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-10 h-10 border-[3px] border-[var(--vt-champagne-soft)] border-t-[var(--vt-emerald)] rounded-full animate-spin" />
               <p className="text-sm text-slate-400 font-medium">Đang tải tin nhắn...</p>
             </div>
           </div>
         ) : (
-          <div className="flex h-full" style={{ minHeight: '520px' }}>
+          <div className="flex h-full min-h-[min(520px,70dvh)]">
             {/* Left: conversation list */}
-            <div className="w-80 flex-shrink-0 border-r border-slate-100 flex flex-col">
+            <div className="w-64 xl:w-80 flex-shrink-0 border-r border-slate-100 flex flex-col">
               {/* Search + New button */}
               <div className="p-4 border-b border-slate-50 space-y-2">
                 <div className="relative">
@@ -279,13 +279,13 @@ export default function StudentMessaging({ studentData }) {
                     placeholder="Tìm cuộc hội thoại..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 rounded-xl text-sm text-slate-700 placeholder-slate-400 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-300 transition"
+                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 rounded-xl text-sm text-slate-700 placeholder-slate-400 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-[var(--vt-emerald-glow)] transition"
                   />
                 </div>
                 <button
                   onClick={handleCreateConversation}
                   disabled={creating}
-                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-sm font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-[var(--vt-ink)] text-white text-sm font-semibold hover:bg-[var(--vt-emerald)] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus size={16} />
                   {creating ? 'Đang tạo...' : 'Tạo cuộc hội thoại mới'}
@@ -331,17 +331,17 @@ export default function StudentMessaging({ studentData }) {
                       </div>
                       <div>
                         <h3 className="font-extrabold text-base tracking-tight flex items-center gap-2 text-slate-800">
-                          Smart Assistant
+                          Trợ lý ảo
                         </h3>
                         <div className="flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="text-[10px] uppercase font-black tracking-widest text-slate-400">AI Active</span>
+                          <span className="text-[10px] uppercase font-black tracking-widest text-slate-400">Đang hoạt động</span>
                         </div>
                       </div>
                     </div>
                   ) : (
                     <div className="px-6 py-4 border-b border-slate-50 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[var(--vt-ink)] to-[var(--vt-ink-soft)] flex items-center justify-center text-white font-bold text-sm">
                         {(selectedConv.subject || 'HT').split(' ').map(w => w[0]).slice(-2).join('').toUpperCase()}
                       </div>
                       <div>
@@ -399,13 +399,13 @@ export default function StudentMessaging({ studentData }) {
                         onChange={e => setReply(e.target.value)}
                         placeholder="Nhập phản hồi..."
                         rows={2}
-                        className="flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-300 transition"
+                        className="flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--vt-emerald-glow)] transition"
                         onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendReply(); } }}
                       />
                       <button
                         onClick={handleSendReply}
                         disabled={!reply.trim()}
-                        className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-purple-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0"
+                        className="w-11 h-11 rounded-2xl bg-[var(--vt-ink)] flex items-center justify-center text-white shadow-md hover:bg-[var(--vt-emerald)] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <Send size={18} />
                       </button>

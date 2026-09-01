@@ -784,3 +784,8 @@
 
 ## 2026-06-06 18:36:43 +07:00 - CCCD editor minimal controls
 - Quy?t ??nh UX: kh?ng hi?n th? control panel ch?nh ?nh CCCD n?a; ng??i d?ng ch? thao t?c tr?c ti?p b?ng k?o, wheel/pinch/touch v? ch? th?y n?t ?nh kh?c + X?c nh?n ?nh CCCD.
+
+## 2026-09-02 — Cờ `primary` trong STUDENT_MAIN_MENU thay vì hai mảng menu tách biệt
+- nav mới: thêm 3 trang (certificates/documents/messages) vào STUDENT_MAIN_MENU nhưng bottom nav mobile phải giữ gọn 4 mục.
+- Quyết định: thêm `primary?: boolean` vào StudentNavItem; mặc định (undefined) = hiện ở bottom nav; `primary: false` = chỉ sidebar desktop + drawer mobile. StudentBottomNav + StudentMobileLayout filter `item.primary !== false`.
+- Lý do: một nguồn menu duy nhất, tránh lệch label/icon/path giữa 3 chỗrender; sau này muốn đẩy mục nào xuống bottom nav chỉ cần xóa cờ.

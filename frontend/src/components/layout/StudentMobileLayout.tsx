@@ -40,6 +40,7 @@ export default function StudentMobileLayout({
     ...STUDENT_MAIN_MENU,
     { id: 'profile', label: 'Cá nhân', icon: User },
   ];
+  const bottomNavItems = mobileMenuItems.filter((item) => item.primary !== false);
 
   const handleMenuAction = (item: any) => {
     if (item.external) {
@@ -93,7 +94,7 @@ export default function StudentMobileLayout({
       <main className="mobile-content">{children}</main>
 
       <nav className="mobile-bottom-nav student" data-tour="student-mobile-bottom-nav">
-        {mobileMenuItems.map((item) => {
+        {bottomNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = !item.external && activeTab === item.id;
 

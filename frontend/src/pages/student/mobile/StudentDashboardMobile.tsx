@@ -15,6 +15,9 @@ const MobileProfileModule = lazy(() => import('./MobileProfileModule'));
 const StudentReviewsMobileView = lazy(() => import('./StudentReviewsMobileView'));
 const StudentFeedbackMobileView = lazy(() => import('./StudentFeedbackMobileView'));
 const MobileMyOnlineClassesModule = lazy(() => import('./MobileMyOnlineClassesModule'));
+const MobileCertificatesModule = lazy(() => import('./MobileCertificatesModule'));
+const MobileDocumentsModule = lazy(() => import('./MobileDocumentsModule'));
+const MobileMessagesModule = lazy(() => import('./MobileMessagesModule'));
 
 function readStudentData() {
     try {
@@ -154,6 +157,12 @@ export default function StudentDashboardMobile() {
                 return <StudentReviewsMobileView />;
             case 'feedback':
                 return <StudentFeedbackMobileView />;
+            case 'certificates':
+                return <MobileCertificatesModule {...props} />;
+            case 'documents':
+                return <MobileDocumentsModule {...props} />;
+            case 'messages':
+                return <MobileMessagesModule {...props} />;
             case 'profile':
                 return <MobileProfileModule studentData={studentData} onUpdate={handleProfileUpdate} />;
             default:

@@ -424,7 +424,7 @@ Wave 3 covered three distinct findings discovered during a backend security pass
 - **Status**: failing
 - **Summary**: [OCR] OCR.space raw engine=2 lang=vnm transport=base64: {"OCRExitCode":1,"IsErroredOnProcessing":false,"ParsedResults":[{"ParsedText":"CĂN CƯỚC CÔNG DÂN\nSố 079203001234\nHọ và tên: NGUYỄN VĂN A\nNgày sinh: 09/12/2002"}]} stdout | src/test/services/cccd-ocr.test.ts > extractRegistrationPrefillFromImage > falls back from engine 3 auto to engine 2 auto when the first OCR.space attempt fails [OCR] OCR.space raw engine=2 lang=vnm transport=base64: {"OCRExitCode":3,"IsErroredOnProcessing":true,"ErrorMessage":["engine 3 failed"]} 
 
-## Verification Run � 2026-08-27 +07 (Duplicate-class filter, PTIT seed, cleanup, test suite green)
+## Verification Run � 2026-08-27 +07 (Duplicate-class filter, PTIT seed, cleanup, test suite green)
 
 ### Changes
 1. Duplicate-class (Tin hoc / Tieng Anh) per-category blocking: lib/repositories/online-classes.ts (findStudentCategoryEnrollments), lib/services/online-classes.ts (classifyOnlineClass/classifyFromCategoryName/assertNoDuplicateCategoryEnrollment wired into enrollStudent + adminAddStudent). Category resolved via exam_category_id -> exam_categories (authoritative: id1 VSTEP=english, id2 Tin hoc=tin-hoc=informatics, id3 Ngon ngu Anh=ngon-ngu-anh=english) else case/diacritic-insensitive token scan (english wins on tie). test: online-classes-category.test.ts (18).
@@ -438,7 +438,7 @@ Wave 3 covered three distinct findings discovered during a backend security pass
 - Targeted: online-classes-category 18, program-platform-seed 4, online-classes broader 8 files/93.
 - tsc frontend: no new errors; deleted modules unreferenced.
 
-## Verification Run � 2026-08-27 +07 (Live incident: SN36 auto-cancelled; registration bucket fix)
+## Verification Run � 2026-08-27 +07 (Live incident: SN36 auto-cancelled; registration bucket fix)
 
 ### Incident
 Student 471 NGUYEN THI MUI (CCCD 038303014476) could not access class SN36 B1 11,12/09 (exam 111, online_class 62468). Data showed exam_registration 982 + enrollment 629055 set to 'cancelled'.
@@ -458,7 +458,7 @@ UPDATE exam_registrations id 982 -> 'approved'; online_class_enrollments id 6290
 ### Deploy
 vantrangedu-api redeployed (version 28ecefae-8265-4ceb-a7fe-eaaa031822e9).
 
-## Verification Run � 2026-08-27 +07 (New: exam attempt-history for admin exam-schedules page)
+## Verification Run � 2026-08-27 +07 (New: exam attempt-history for admin exam-schedules page)
 
 ### Feature
 Admin can now see, per exam schedule, the vantrangexam attempt history: how many exams each student took, how many times, completed/in-progress, avg/best score, last activity.
@@ -469,17 +469,17 @@ Admin can now see, per exam schedule, the vantrangexam attempt history: how many
 - Tests: backend 197 passed / 28 files (incl. exam-schedules 30).
 
 ### Frontend
-- ExamSchedulesPage.tsx: added "L?ch s? l�m b�i" row-action button (BarChart3) + modal (per-student table + expandable per-exam breakdown). build:prod OK.
+- ExamSchedulesPage.tsx: added "L?ch s? l�m b�i" row-action button (BarChart3) + modal (per-student table + expandable per-exam breakdown). build:prod OK.
 
 ### Live verification
 - GET /exam-schedules/109/attempt-history (admin2): schedule NTU 23/08 cat2 -> 6 PTIT exams; 1 student (DU PHUONG THAO) 6 distinct exams / 47 attempts (45 completed, 2 in_progress).
 - GET /exam-schedules/111/attempt-history: SN36 -> 40 VSTEP exams, 0 attempts yet (correct).
 - Backend deployed (284baa6f), frontend pages https://3ed8fcc3.vantrangedu.pages.dev.
 
-## Verification Run � 2026-08-27 +07 (Mobile parity push)
+## Verification Run � 2026-08-27 +07 (Mobile parity push)
 
 ### vantrangedu frontend (deployed 829dd9d5)
-- MobileExamSchedulesModule: added "L?ch s? l�m b�i" bottom-sheet (per-student stats + expandable per-exam breakdown) via /exam-schedules/:id/attempt-history.
+- MobileExamSchedulesModule: added "L?ch s? l�m b�i" bottom-sheet (per-student stats + expandable per-exam breakdown) via /exam-schedules/:id/attempt-history.
 - New mobile admin modules: MobileOnlineClassesModule (list/create/edit + enroll approve/reject + feedback), MobileUnifiedClassesModule (online/legacy toggle), MobileProgramPlatformModule (browse organizers/programs/levels + basic edit). Wired via adminTabs.tsx + AdminDashboardMobile.tsx.
 - Posts/Homepage already had mobile modules. build:prod OK.
 
@@ -491,18 +491,18 @@ Admin can now see, per exam schedule, the vantrangexam attempt history: how many
 - vantrangedu: full ClassDetailDashboard per-class tabs on mobile; program-platform field-option editing; RegistrationsManagement (dead component); admin utility pages (Backup, ActivityLogs) desktop-only.
 - vantrangexam: teacher/admin mobile screens not fully audited.
 
-## Verification Run � 2026-08-27 +07 (Mobile parity final)
+## Verification Run � 2026-08-27 +07 (Mobile parity final)
 - vantrangedu: MobileClassDetailModule (per-class tabs: thong tin/hoc vien/diem danh/tai lieu/lich hoc) wired into MobileClassesModule; MobileProgramPlatformModule now supports field-definition/field-option create-edit-hide. Final build OK; backend 197/197. Deployed 96f3c010.
 - vantrangexam: teacher/admin mobile fixes (GradingDetail, ExamPreview, Dashboard, Grading tap targets, ManageExams, ExamDetail). Build OK; vitest 396/396. Deployed 5003a1a2.
 - Domains smoke: 200 OK.
 
-## Verification Run � 2026-08-27 +07 (Mobile attempt-history crash fix)
-- Bug: MobileExamSchedulesModule used <ChevronDown> in attempt-history sheet but ChevronDown was NOT imported from lucide-react (only ChevronRight). // @ts-nocheck + esbuild allowed build to pass; at runtime it threw ReferenceError -> global ErrorBoundary "�� x?y ra l?i hi?n th?" whenever a schedule with per-exam breakdowns was expanded.
+## Verification Run � 2026-08-27 +07 (Mobile attempt-history crash fix)
+- Bug: MobileExamSchedulesModule used <ChevronDown> in attempt-history sheet but ChevronDown was NOT imported from lucide-react (only ChevronRight). // @ts-nocheck + esbuild allowed build to pass; at runtime it threw ReferenceError -> global ErrorBoundary "�� x?y ra l?i hi?n th?" whenever a schedule with per-exam breakdowns was expanded.
 - Fix: added ChevronDown to the lucide import.
-- Verified: scanned all new mobile modules for used-but-unimported lucide icons (BookOpen/Users etc. all imported � earlier false positives were due to multiple lucide import lines). No other issues.
+- Verified: scanned all new mobile modules for used-but-unimported lucide icons (BookOpen/Users etc. all imported � earlier false positives were due to multiple lucide import lines). No other issues.
 - Deployed: e8eeab9a.vantrangedu.pages.dev.
 
-## Verification Run � 2026-08-27 +07 (Mobile density pass)
+## Verification Run � 2026-08-27 +07 (Mobile density pass)
 - User: mobile admin too big, little content per screen.
 - Applied density pass across all 19 mobile/*.tsx modules (excl. shared mobileAdminUi): text-2xl/xl/lg -> base/sm, reduced padding/spacing/gaps, kept primary numbers at text-base, kept tap targets >= ~36px.
 - Build: npm run build:prod OK (2219 modules).
@@ -549,3 +549,8 @@ Admin can now see, per exam schedule, the vantrangexam attempt history: how many
 ## [2026-09-02] Verify audit khu học viên
 - `npx tsc --noEmit -p tsconfig.json` → pass; `npm run build:prod` → suffix mtj4f00y, build sạch.
 - Deploy Pages 3566f8fe. Curl production: StudentMyClassesView chunk 200 + `var(--vt-ink)` có, `bg-blue-600` = 0; StudentFeedbackView chunk có "chờ duyệt"; StudentLookup chunk có "Tra cứu học viên". ✓
+
+## [2026-09-02] Verify migrate palette + gắn nav (6 trang)
+- `npm run build:prod` suffix `mtj4qz08` sạch; `npx tsc --noEmit -p tsconfig.json` 0 lỗi.
+- Đủ chunk: Certificates/Documents/StudentMessaging + MobileCertificatesModule/MobileDocumentsModule (MobileMessages gộp chunk khác).
+- Deploy Pages `a7fb8116`. Curl production: `Certificates-mtj4qz08-Dzo0VH_v.js` 200 application/javascript; index chunk chứa cả 3 route mới; Certificates chunk có `var(--vt-ink)` (3); StudentMessaging chunk có "Trợ lý ảo"; MobileCertificatesModule có "Chưa có". ✓

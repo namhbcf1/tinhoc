@@ -41,7 +41,7 @@ const getFileTypeStyle = (fileType) => {
 
 // Skeleton loader for document cards
 const DocumentSkeleton = () => (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 animate-pulse hover:-translate-y-1.5 hover:shadow-xl transition-all duration-300 cursor-default">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 animate-pulse">
         <div className="flex items-start gap-4 mb-4">
             <div className="w-14 h-14 rounded-2xl bg-slate-200 flex-shrink-0" />
             <div className="flex-1">
@@ -78,7 +78,7 @@ const DocumentCard = ({ document, onDownload }) => {
                             </span>
                             {/* Class badge */}
                             {className && (
-                                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 truncate max-w-[120px]">
+                                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--vt-champagne-soft)] text-[var(--vt-champagne-deep)] border border-[var(--vt-champagne-soft)] truncate max-w-[40%]">
                                     {className}
                                 </span>
                             )}
@@ -98,7 +98,7 @@ const DocumentCard = ({ document, onDownload }) => {
                 <div className="mt-auto pt-4 border-t border-slate-100">
                     <Button
                         onClick={() => onDownload(document)}
-                        className="w-full bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:shadow-md hover:shadow-blue-200 transition-all"
+                        className="w-full bg-[var(--vt-ink)] hover:bg-[var(--vt-emerald)] text-white rounded-xl py-2.5 text-sm font-semibold transition-all"
                     >
                         <Download size={15} className="mr-2" />
                         Tải xuống
@@ -168,10 +168,10 @@ export default function Documents({ studentData }) {
     return (
         <div className="space-y-6" ref={containerRef}>
             {/* Hero Banner with integrated search */}
-            <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 rounded-3xl p-7 text-white shadow-xl anim-fade-up relative overflow-hidden">
+            <div className="bg-[linear-gradient(135deg,var(--vt-ink),#0b1728)] rounded-3xl p-7 text-white shadow-xl anim-fade-up relative overflow-hidden">
                 {/* Decorative blobs */}
-                <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-white/10 hover:-translate-y-1.5 hover:shadow-xl transition-all duration-300 cursor-default" />
-                <div className="absolute -bottom-8 left-10 w-28 h-28 rounded-full bg-white/10 hover:-translate-y-1.5 hover:shadow-xl transition-all duration-300 cursor-default" />
+                <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-white/10 pointer-events-none" />
+                <div className="absolute -bottom-8 left-10 w-28 h-28 rounded-full bg-white/10 pointer-events-none" />
 
                 <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-1">
@@ -184,9 +184,9 @@ export default function Documents({ studentData }) {
                     {/* 3 stat pills */}
                     <div className="flex gap-3 mb-6 flex-wrap">
                         {[
-                            { label: 'Tổng tài liệu', value: totalDocs, color: 'bg-white/20 border-white/30' },
-                            { label: 'PDF', value: pdfDocs, color: 'bg-red-400/30 border-red-300/40' },
-                            { label: 'Video', value: videoDocs, color: 'bg-purple-400/30 border-purple-300/40' },
+                            { label: 'Tổng tài liệu', value: totalDocs, color: 'bg-white/15 border-white/25' },
+                            { label: 'PDF', value: pdfDocs, color: 'bg-white/15 border-white/25' },
+                            { label: 'Video', value: videoDocs, color: 'bg-white/15 border-white/25' },
                         ].map(({ label, value, color }) => (
                             <div key={label} className={`backdrop-blur-sm ${color} border rounded-2xl px-5 py-2.5 flex items-center gap-3`}>
                                 <span className="text-2xl font-extrabold text-white leading-none tracking-tight">{value}</span>
@@ -203,12 +203,12 @@ export default function Documents({ studentData }) {
                             placeholder="Tìm tên tài liệu hoặc tên lớp..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-11 pr-11 py-3 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/60 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/40 focus:bg-white/25 transition-all hover:-translate-y-1.5 hover:shadow-xl transition-all duration-300 cursor-default"
+                            className="w-full pl-11 pr-11 py-3 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/25 text-white placeholder-white/60 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--vt-champagne)] focus:bg-white/20 transition-all"
                         />
                         {searchTerm && (
                             <button
                                 onClick={() => setSearchTerm('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors hover:-translate-y-1.5 hover:shadow-xl transition-all duration-300 cursor-default"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
                             >
                                 <X size={14} className="text-white" />
                             </button>
@@ -223,7 +223,7 @@ export default function Documents({ studentData }) {
                     <Search size={14} className="text-slate-400" />
                     <p className="text-sm text-slate-500">
                         Tìm thấy <span className="font-bold text-slate-700">{filteredDocuments.length}</span> tài liệu cho
-                        <span className="font-bold text-indigo-600"> "{searchTerm}"</span>
+                        <span className="font-bold text-[var(--vt-champagne)]"> "{searchTerm}"</span>
                     </p>
                 </div>
             )}
@@ -241,9 +241,9 @@ export default function Documents({ studentData }) {
                 </div>
             ) : (
                 /* Empty state */
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 py-20 text-center hover:-translate-y-1.5 hover:shadow-xl transition-all duration-300 cursor-default">
-                    <div className="w-24 h-24 rounded-full bg-indigo-50 flex items-center justify-center mx-auto mb-5">
-                        <FileSearch size={40} className="text-indigo-300" />
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 py-20 text-center">
+                    <div className="w-24 h-24 rounded-full bg-[var(--vt-paper-soft)] flex items-center justify-center mx-auto mb-5">
+                        <FileSearch size={40} className="text-[var(--vt-champagne-deep)]" />
                     </div>
                     <p className="text-slate-700 font-bold text-xl mb-1 tracking-tight">
                         {searchTerm ? 'Không tìm thấy tài liệu' : 'Chưa có tài liệu nào'}
@@ -256,7 +256,7 @@ export default function Documents({ studentData }) {
                     {searchTerm && (
                         <button
                             onClick={() => setSearchTerm('')}
-                            className="mt-4 text-sm font-semibold text-indigo-600 hover:text-indigo-700 underline underline-offset-2"
+                            className="mt-4 text-sm font-semibold text-[var(--vt-emerald)] hover:text-[var(--vt-emerald-deep)] underline underline-offset-2"
                         >
                             Xóa tìm kiếm
                         </button>

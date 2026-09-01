@@ -51,7 +51,7 @@ const NotificationCard = ({ item, onMarkRead }) => {
                 {!isRead && onMarkRead && (
                     <button
                         onClick={() => onMarkRead(item.id)}
-                        className="mt-2 text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-xl active:bg-blue-100 transition-colors"
+                        className="mt-2 text-[10px] font-black text-[var(--vt-emerald)] bg-[var(--vt-emerald-soft)] px-3 py-1.5 rounded-xl active:bg-[var(--vt-emerald-glow)] transition-colors"
                     >
                         Đánh dấu đã đọc
                     </button>
@@ -120,8 +120,8 @@ export default function MobileMessagesModule({ studentData }) {
         <PullToRefreshWrapper onRefresh={handleRefresh}>
         <div className="min-h-screen bg-slate-50 pb-28">
             {/* Hero Banner */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 px-5 pt-6 pb-8" style={{ overflow: 'clip' }}>
-                <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-blue-500/10 blur-2xl opacity-60" />
+            <div className="relative overflow-hidden bg-[linear-gradient(135deg,var(--vt-ink),#0b1728)] px-5 pt-6 pb-8" style={{ overflow: 'clip' }}>
+                <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-[var(--vt-champagne)]/10 blur-2xl opacity-60" />
                 <div className="relative z-10">
                     <div className="flex items-center justify-between mb-5">
                         <div className="flex items-center gap-3">
@@ -146,7 +146,7 @@ export default function MobileMessagesModule({ studentData }) {
                             <p className="text-white/60 text-[10px] font-black uppercase tracking-widest mb-1">Tổng thông báo</p>
                             <p className="text-white font-black text-2xl leading-none">{notifications.length}</p>
                         </div>
-                        <div className={`rounded-2xl px-4 py-3 border border-white/20 ${unreadCount > 0 ? 'bg-blue-500/20 border-blue-400/30' : 'bg-white/10'}`}>
+                        <div className={`rounded-2xl px-4 py-3 border ${unreadCount > 0 ? 'bg-[var(--vt-champagne)]/20 border-[var(--vt-champagne-soft)]' : 'bg-white/10 border-white/20'}`}>
                             <p className="text-white/60 text-[10px] font-black uppercase tracking-widest mb-1">Chưa đọc</p>
                             <p className="text-white font-black text-2xl leading-none">{unreadCount}</p>
                         </div>
@@ -174,7 +174,7 @@ export default function MobileMessagesModule({ studentData }) {
                     ))}
                 </div>
                 {unreadCount > 0 && activeTab === 'notifications' && (
-                    <button onClick={handleMarkAllRead} className="text-xs font-black text-blue-600 active:text-blue-700">
+                    <button onClick={handleMarkAllRead} className="text-xs font-black text-[var(--vt-emerald)] active:text-[var(--vt-emerald-deep)]">
                         Đọc tất cả
                     </button>
                 )}
@@ -215,8 +215,8 @@ export default function MobileMessagesModule({ studentData }) {
                     </>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
-                        <div className="w-24 h-24 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center mb-5">
-                            <MessageSquare size={40} className="text-blue-300" />
+                        <div className="w-24 h-24 rounded-full bg-[var(--vt-paper-soft)] border border-[var(--vt-champagne-soft)] flex items-center justify-center mb-5">
+                            <MessageSquare size={40} className="text-[var(--vt-champagne-deep)]" />
                         </div>
                         <h3 className="font-black text-slate-800 text-lg mb-2">Tính năng trò chuyện</h3>
                         <p className="text-slate-500 text-sm">Đang được phát triển và sẽ ra mắt sớm</p>

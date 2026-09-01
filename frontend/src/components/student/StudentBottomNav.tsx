@@ -14,7 +14,7 @@ export default function StudentBottomNav() {
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="flex items-stretch min-h-[66px] px-1">
-        {STUDENT_MAIN_MENU.map((item) => {
+        {STUDENT_MAIN_MENU.filter((item) => item.primary !== false).map((item) => {
           const Icon = item.icon;
           const isActive = item.path ? location.pathname.includes(item.id) : false;
 
