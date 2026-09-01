@@ -423,3 +423,111 @@ Wave 3 covered three distinct findings discovered during a backend security pass
 - **Command**: `cd backend && npx vitest run`
 - **Status**: failing
 - **Summary**: [OCR] OCR.space raw engine=2 lang=vnm transport=base64: {"OCRExitCode":1,"IsErroredOnProcessing":false,"ParsedResults":[{"ParsedText":"CĂN CƯỚC CÔNG DÂN\nSố 079203001234\nHọ và tên: NGUYỄN VĂN A\nNgày sinh: 09/12/2002"}]} stdout | src/test/services/cccd-ocr.test.ts > extractRegistrationPrefillFromImage > falls back from engine 3 auto to engine 2 auto when the first OCR.space attempt fails [OCR] OCR.space raw engine=2 lang=vnm transport=base64: {"OCRExitCode":3,"IsErroredOnProcessing":true,"ErrorMessage":["engine 3 failed"]} 
+
+## Verification Run � 2026-08-27 +07 (Duplicate-class filter, PTIT seed, cleanup, test suite green)
+
+### Changes
+1. Duplicate-class (Tin hoc / Tieng Anh) per-category blocking: lib/repositories/online-classes.ts (findStudentCategoryEnrollments), lib/services/online-classes.ts (classifyOnlineClass/classifyFromCategoryName/assertNoDuplicateCategoryEnrollment wired into enrollStudent + adminAddStudent). Category resolved via exam_category_id -> exam_categories (authoritative: id1 VSTEP=english, id2 Tin hoc=tin-hoc=informatics, id3 Ngon ngu Anh=ngon-ngu-anh=english) else case/diacritic-insensitive token scan (english wins on tie). test: online-classes-category.test.ts (18).
+2. Program-platform seed: added PTIT organizer ("Hoc vien PTIT") + TIN_HOC program + levels MODUL1..MODUL6, MOS (source_site='edu', INSERT OR IGNORE). test: program-platform-seed.test.ts (4).
+3. Dead-code cleanup: deleted app/ + 10 unreferenced backend modules (document-queries, exam-repository, seed-exam-tests, cloudflare-ai-ocr.js, google-calendar/utils, file-utils, response-helpers, response, session-manager, workers-ai/cccd-detector).
+4. Test-suite fixes: exam-schedules.test.ts fixture columns (nganh_dang_hoc, visible_on_homepage, payment_status) + moved 7 time-sensitive tests to 2027; cccd-ocr.test.ts stale assertions; export.ts real bugs (nganh_dang_hoc column VEPT/VanTrang-full, preview row); cccd-ocr-service.ts stripped 'Ho va ten' label.
+5. Frontend duplicates removed: PullToRefreshWrapper.jsx, usePullToRefresh.js, StudentReviews.tsx (stale; .tsx/.ts/StudentReviewsView.tsx are the wired ones). tsc: 11 pre-existing errors in public/register/ unchanged.
+
+### Result
+- Backend suite: node node_modules/vitest/vitest.mjs run -> 28 files, 197 tests, 0 failed.
+- Targeted: online-classes-category 18, program-platform-seed 4, online-classes broader 8 files/93.
+- tsc frontend: no new errors; deleted modules unreferenced.
+
+## Verification Run � 2026-08-27 +07 (Live incident: SN36 auto-cancelled; registration bucket fix)
+
+### Incident
+Student 471 NGUYEN THI MUI (CCCD 038303014476) could not access class SN36 B1 11,12/09 (exam 111, online_class 62468). Data showed exam_registration 982 + enrollment 629055 set to 'cancelled'.
+
+### Root cause
+resolveExamRegistrationBucket (backend/src/db/attendance-queries.ts) resolved English exams whose name had no token (e.g. "SN36 B1 11,12/09", seed uuids) to 'unknown'. bucketConflicts(unknown, x) returned true -> when admin force-registered PTIT 06/09 (exam 110, Tin hoc) on 2026-08-26, force mode cancelled the "conflicting" SN36 registration.
+
+### Fix (deployed)
+- resolveExamRegistrationBucket: prefer exam_categories.name/code via LEFT JOIN (id2 Tin hoc -> informatics; anything else -> english). Fallback token scan; default = english (business rule: PTIT = Tin hoc, everything else = Tieng Anh).
+- bucketConflicts: only same bucket conflicts; unknown behaves as english.
+- Enriched 3 queries (getStudentExams, targetExam, existingActives) with exam_categories join.
+- Tests: backend 197 passed / 28 files.
+
+### Data restore
+UPDATE exam_registrations id 982 -> 'approved'; online_class_enrollments id 629055 -> 'active'. Verified: student holds PTIT 06/09 (approved/active) + SN36 B1 (approved/active) -> 1 Tin hoc + 1 Tieng Anh as allowed.
+
+### Deploy
+vantrangedu-api redeployed (version 28ecefae-8265-4ceb-a7fe-eaaa031822e9).
+
+## Verification Run � 2026-08-27 +07 (New: exam attempt-history for admin exam-schedules page)
+
+### Feature
+Admin can now see, per exam schedule, the vantrangexam attempt history: how many exams each student took, how many times, completed/in-progress, avg/best score, last activity.
+
+### Backend
+- New: backend/src/lib/services/exam-attempt-history.ts (getExamAttemptHistory). Link: exam_schedules.exam_category_id === vstep_exams.category_id (shared exam_categories). Students = exam_registrations (pending/approved/registered).
+- New route: GET /api/exam-schedules/:id/attempt-history (requireExamAdmin) in routes/exam-schedules.ts.
+- Tests: backend 197 passed / 28 files (incl. exam-schedules 30).
+
+### Frontend
+- ExamSchedulesPage.tsx: added "L?ch s? l�m b�i" row-action button (BarChart3) + modal (per-student table + expandable per-exam breakdown). build:prod OK.
+
+### Live verification
+- GET /exam-schedules/109/attempt-history (admin2): schedule NTU 23/08 cat2 -> 6 PTIT exams; 1 student (DU PHUONG THAO) 6 distinct exams / 47 attempts (45 completed, 2 in_progress).
+- GET /exam-schedules/111/attempt-history: SN36 -> 40 VSTEP exams, 0 attempts yet (correct).
+- Backend deployed (284baa6f), frontend pages https://3ed8fcc3.vantrangedu.pages.dev.
+
+## Verification Run � 2026-08-27 +07 (Mobile parity push)
+
+### vantrangedu frontend (deployed 829dd9d5)
+- MobileExamSchedulesModule: added "L?ch s? l�m b�i" bottom-sheet (per-student stats + expandable per-exam breakdown) via /exam-schedules/:id/attempt-history.
+- New mobile admin modules: MobileOnlineClassesModule (list/create/edit + enroll approve/reject + feedback), MobileUnifiedClassesModule (online/legacy toggle), MobileProgramPlatformModule (browse organizers/programs/levels + basic edit). Wired via adminTabs.tsx + AdminDashboardMobile.tsx.
+- Posts/Homepage already had mobile modules. build:prod OK.
+
+### vantrangexam (deployed 0b3c2a65)
+- Mobile UX fixes: ExamPlayer (skill bar min-h-11, truncate, part tabs/action buttons min-h-11, fixed dead hidden xs:block counter -> sm), ExamHistory (flex-wrap header, pills, result link hit area), StudentClasses skeleton grid fix, Header breakpoint xs->sm.
+- Build OK; vitest 396 passed.
+
+### Remaining desktop-only (honest)
+- vantrangedu: full ClassDetailDashboard per-class tabs on mobile; program-platform field-option editing; RegistrationsManagement (dead component); admin utility pages (Backup, ActivityLogs) desktop-only.
+- vantrangexam: teacher/admin mobile screens not fully audited.
+
+## Verification Run � 2026-08-27 +07 (Mobile parity final)
+- vantrangedu: MobileClassDetailModule (per-class tabs: thong tin/hoc vien/diem danh/tai lieu/lich hoc) wired into MobileClassesModule; MobileProgramPlatformModule now supports field-definition/field-option create-edit-hide. Final build OK; backend 197/197. Deployed 96f3c010.
+- vantrangexam: teacher/admin mobile fixes (GradingDetail, ExamPreview, Dashboard, Grading tap targets, ManageExams, ExamDetail). Build OK; vitest 396/396. Deployed 5003a1a2.
+- Domains smoke: 200 OK.
+
+## Verification Run � 2026-08-27 +07 (Mobile attempt-history crash fix)
+- Bug: MobileExamSchedulesModule used <ChevronDown> in attempt-history sheet but ChevronDown was NOT imported from lucide-react (only ChevronRight). // @ts-nocheck + esbuild allowed build to pass; at runtime it threw ReferenceError -> global ErrorBoundary "�� x?y ra l?i hi?n th?" whenever a schedule with per-exam breakdowns was expanded.
+- Fix: added ChevronDown to the lucide import.
+- Verified: scanned all new mobile modules for used-but-unimported lucide icons (BookOpen/Users etc. all imported � earlier false positives were due to multiple lucide import lines). No other issues.
+- Deployed: e8eeab9a.vantrangedu.pages.dev.
+
+## Verification Run � 2026-08-27 +07 (Mobile density pass)
+- User: mobile admin too big, little content per screen.
+- Applied density pass across all 19 mobile/*.tsx modules (excl. shared mobileAdminUi): text-2xl/xl/lg -> base/sm, reduced padding/spacing/gaps, kept primary numbers at text-base, kept tap targets >= ~36px.
+- Build: npm run build:prod OK (2219 modules).
+- Deployed: 6d7b3196.vantrangedu.pages.dev.
+
+## Verification Run — 2026-09-02 +07 (dead-code cleanup committed)
+- Backend `npm install`: OK (deps present; npm 11 blocked esbuild/workd postinstall — harmless, tests ran).
+- `tsc --noEmit`: 0 errors after 1-line type-only cast fix in routes/students.ts (`formData.get('file') as File | null` for /import-excel).
+- `vitest run`: 197/197 pass, 28/28 files, exit 0, 31.8s. Old "24 fail" baseline fully fixed by Jun–Jul sessions.
+- Verified deletions (grep 0-refs + build/test): 9 orphan .ts from 251ea3ea1, cloudflare-ai-ocr.js, app/(storefront)/* from 1c73548bf.
+- Commit f4ffec2a7: dead-code removal (13 files, -1802).
+- Commit 8ae118be3: untrack frontend/dist (161 files, CI builds from source per auto-deploy.yml) + gitignore backend/src/**/*.js.
+
+## Cleanup Run — 2026-09-02 +07 (disk junk removed)
+- 3 locked agent worktrees (.claude/worktrees, 2.0G): all branches merged (88b79d47b ancestor of main); per-file compare showed worktree copies strictly older than main tree (May 7 vs Aug 27); identical 21/04 stashes exported to root _archive/stale-worktree-stashes-2026-04/*.patch before removal. Removed via git worktree unlock/remove --force + branch -D; orphan dir (MAX_PATH) deleted via .NET \?\.
+- .venv_ocr 901M deleted permanently (recreatable venv). worker-startup.cpuprofile -> Recycle Bin.
+- KEPT pending user decision: 2 real-CCCD jpgs at repo root (gitignored, PII).
+
+## Cleanup Run — 2026-09-02 +07 (tool-config purge, user-approved)
+- exam: removed 8 stale agent worktrees (110M; all branches merged, all copies older than main), patch-agent diffs -> root _archive/exam-stale-worktrees-2026-09/. Commit 374e039 (untrack .playwright-mcp + the 22 hygiene-pass deletions staged since 06-11). NOTE: exam has NO upstream — history is local-only.
+- edu commit: dropped .cursorrules/.windsurfrules/.gemini/.kiro/.qoder/.opencode.json/.mcp.json (dead Linux-path crg MCP)/skills-lock.json/.playwright-mcp + removed code-review-graph section from CLAUDE.md; recycled .code-review-graph 50M (exam 18M too).
+- KEPT per user: .agents, .codex, .specify, both .serena, root .kiro (workflow doc), .cocoindex_code (used 08-28).
+
+### 2026-09-02 (nhóm 3) — commit toàn bộ work 7–8/2026
+- Trước commit: sửa 10 lỗi TS tồn tại trên HEAD (register hooks thiếu import types, thiếu interface-merge `registerStudent`, prop `photoGenderHint` mất khai báo, `UploadType` callback, so sánh `'processing'` chết) — type-only, commit `cf5b9af3c`.
+- Sửa defect lộ khi review: 2 link footer trỏ route không tồn tại (revert), import `Upload` trùng trong `MobileClassDetailModule`.
+- Verify: `npx tsc --noEmit` FE 0 lỗi · `npm run build:prod` ✔ · backend không đổi so với lần 197/197 pass.
+- Kết quả: 8 commit nhóm 3 (mobile-admin, excel import, exams backend/UI, auth 90 ngày, branding+OCR, serena). Working tree sạch, chưa push.
