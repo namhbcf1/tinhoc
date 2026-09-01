@@ -32,11 +32,11 @@ const TEMPLATE_IMAGES = {
   photo_3x4: 'https://tec.hanu.vn/80c8302f1df48b830e40166e1f58b414/5550119/view-image/photo_3x4.jpg',
 } as const;
 
-const TYPE_LABELS = { cccd_front: 'CCCD mat truoc', cccd_back: 'CCCD mat sau', photo_3x4: 'Anh the 3x4' } as const;
+const TYPE_LABELS = { cccd_front: 'CCCD mặt trước', cccd_back: 'CCCD mặt sau', photo_3x4: 'Ảnh thẻ 3×4' } as const;
 const TYPE_DESCRIPTIONS = {
-  cccd_front: 'Mat co anh va so CCCD 12 so',
-  cccd_back: 'Mat co ma QR va van tay',
-  photo_3x4: 'Anh the 3x4 ro mat, du sang, that tu nhien.',
+  cccd_front: 'Mặt có ảnh và số CCCD 12 số',
+  cccd_back: 'Mặt có mã QR và vân tay',
+  photo_3x4: 'Ảnh thẻ 3×4 rõ mặt, đủ sáng, thật tự nhiên.',
 } as const;
 
 const DEFAULT_UPLOAD_TIMEOUT_MS = 60000;
@@ -190,7 +190,7 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
     try {
       let processed = await convertHeicIfNeeded(file);
       if (!processed.type.startsWith('image/')) {
-        throw new Error('Vui long chon file anh hop le.');
+        throw new Error('Vui lòng chọn file ảnh hợp lệ.');
       }
 
       const formData = new FormData();
@@ -209,7 +209,7 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
       const result = await response.json() as { success?: boolean; error?: string; imageId?: string | null; previewUrl?: string | null; processingLogId?: string | number };
 
       if (!result.success) {
-        throw new Error(result.error || 'Upload that bai.');
+        throw new Error(result.error || 'Tải ảnh lên thất bại.');
       }
 
       const imageId = String(result.imageId || '');
@@ -257,12 +257,12 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
         context: { type },
         severity: 'error',
       });
-      let message = err instanceof Error ? err.message : 'Upload that bai.';
+      let message = err instanceof Error ? err.message : 'Tải ảnh lên thất bại.';
       if (err instanceof Error && err.name === 'AbortError') {
-        message = 'Qua thoi gian tai len. Kiem tra ket noi mang roi thu lai.';
+        message = 'Quá thời gian tải lên. Kiểm tra kết nối mạng rồi thử lại.';
       }
       if (typeof navigator !== 'undefined' && !navigator.onLine) {
-        message = 'Mat ket noi internet. Kiem tra Wi-Fi/4G roi thu lai.';
+        message = 'Mất kết nối internet. Kiểm tra Wi-Fi/4G rồi thử lại.';
       }
       setError(message);
       setStatus('error');
@@ -277,13 +277,13 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
       setError('');
       const processed = await convertHeicIfNeeded(file);
       if (!processed.type.startsWith('image/')) {
-        throw new Error('Vui long chon file anh hop le.');
+        throw new Error('Vui lòng chọn file ảnh hợp lệ.');
       }
       if (!isPhoto) setDocumentEditorFile(processed);
       setSelectedFile(processed);
       setShowImageEditor(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Khong the mo file anh.');
+      setError(err instanceof Error ? err.message : 'Không mở được file ảnh.');
     }
   };
 
@@ -295,7 +295,7 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
     if (isPhoto) return;
     const file = documentEditorFile || selectedFile;
     if (!file) {
-      setError('Chua co anh CCCD de can chinh. Vui long chon hoac chup lai anh.');
+      setError('Chưa có ảnh CCCD để cân chỉnh. Vui lòng chọn hoặc chụp lại ảnh.');
       return;
     }
     setError('');
@@ -337,18 +337,18 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
     <div className="cccd-uploader" onDragEnter={(e) => { e.preventDefault(); dragCounterRef.current += 1; setIsDragOver(true); }} onDragLeave={(e) => { e.preventDefault(); dragCounterRef.current -= 1; if (dragCounterRef.current === 0) setIsDragOver(false); }} onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
       <div className={containerClass}>
         {!preview ? (
-          <div className="upload-trigger" onClick={() => openNativePicker()} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && openNativePicker()} aria-label={`Tai anh ${TYPE_LABELS[type]}`}>
+          <div className="upload-trigger" onClick={() => openNativePicker()} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && openNativePicker()} aria-label={`Tải ảnh ${TYPE_LABELS[type]}`}>
             {status === 'uploading' ? (
               <div className="upload-placeholder upload-placeholder-loading">
                 <Loader2 className="animate-spin icon-large" size={36} />
-                <p className="upload-text">Dang tai anh...</p>
+                <p className="upload-text">Đang tải ảnh...</p>
                 {retryCount > 0 && <p className="upload-hint upload-hint-retry">Dang thu lai ({retryCount}/{MAX_RETRIES})...</p>}
               </div>
             ) : status === 'error' ? (
               <div className="upload-placeholder">
                 <ImageOff className="icon-large icon-error" size={36} />
-                <p className="upload-text upload-text-error">{isPhoto ? 'Anh 3x4 khong upload duoc' : 'Upload that bai'}</p>
-                <p className="upload-hint">Nhan de chon anh khac</p>
+                <p className="upload-text upload-text-error">{isPhoto ? 'Ảnh 3×4 không tải lên được' : 'Tải ảnh thất bại'}</p>
+                <p className="upload-hint">Nhấn để chọn ảnh khác</p>
               </div>
             ) : (
               <div className={`upload-idle-guide ${isPhoto ? 'photo-type' : 'cccd-type'} ${isPhoto && isMobile ? 'photo-mobile' : ''}`}>
@@ -364,21 +364,21 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
                   <p className="upload-idle-desc">{TYPE_DESCRIPTIONS[type]}</p>
                   <div className="upload-idle-actions">
                     <span className="upload-idle-action" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openNativePicker(); }}>
-                      <Upload size={14} />Chon anh
+                      <Upload size={14} />Chọn ảnh
                     </span>
                     {!isPhoto && (
                       <span className="upload-idle-action camera-action" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openNativePicker('user'); }}>
-                        <Camera size={14} />Chup anh
+                        <Camera size={14} />Chụp ảnh
                       </span>
                     )}
                     {isPhoto && isMobile && (
                       <span className="upload-idle-action camera-action" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openNativePicker('user'); }}>
-                        <Camera size={14} />Chup selfie
+                        <Camera size={14} />Chụp selfie
                       </span>
                     )}
                   </div>
                 </div>
-                {isDragOver && <div className="upload-drag-overlay"><Upload size={28} /><span>Tha anh vao day</span></div>}
+                {isDragOver && <div className="upload-drag-overlay"><Upload size={28} /><span>Thả ảnh vào đây</span></div>}
               </div>
             )}
           </div>
@@ -403,7 +403,7 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
                   <Eye size={14} /><span>Xem</span>
                 </button>
                 <button type="button" className="btn-preview-change" onClick={resetUpload}>
-                  <RefreshCw size={14} /><span>Doi anh</span>
+                  <RefreshCw size={14} /><span>Đổi ảnh</span>
                 </button>
               </div>
             )}
@@ -415,8 +415,8 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
             <div className="upload-processing-overlay-card">
               <Loader2 className="animate-spin" size={24} />
               <div className="upload-processing-overlay-copy">
-                <p className="upload-processing-overlay-title">Dang tai anh len he thong</p>
-                <p className="upload-processing-overlay-text">Vui long cho trong giay lat.</p>
+                <p className="upload-processing-overlay-title">Đang tải ảnh lên hệ thống</p>
+                <p className="upload-processing-overlay-text">Vui lòng chờ trong giây lát.</p>
                 <div className="upload-processing-overlay-track" aria-hidden="true">
                   <div className="upload-processing-overlay-fill" style={{ width: `${processingOverlayProgress}%` }} />
                 </div>
@@ -430,7 +430,7 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
       {status === 'uploading' && uploadProgress > 0 && (
         <UploadProgressBar
           progress={uploadProgress}
-          label="Dang tai anh..."
+          label="Đang tải ảnh..."
           completionLabel="Da tai xong."
         />
       )}
@@ -448,7 +448,7 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
               </button>
               {isPhoto && isMobile && (
                 <button type="button" className="btn-guide-upload" onClick={() => openNativePicker('user')}>
-                  <Camera size={12} /> Chup selfie
+                  <Camera size={12} /> Chụp selfie
                 </button>
               )}
             </div>
@@ -458,7 +458,7 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
 
       {showImageEditor && selectedFile && (
         <EditorErrorBoundary onRetry={() => { setShowImageEditor(false); setSelectedFile(null); }}>
-          <Suspense fallback={<div className="upload-loading"><Loader2 className="animate-spin" size={24} /><span>Dang tai trinh chinh anh...</span></div>}>
+          <Suspense fallback={<div className="upload-loading"><Loader2 className="animate-spin" size={24} /><span>Đang tải trình chỉnh ảnh...</span></div>}>
             <ImageEditor
               imageFile={selectedFile}
               type={type}

@@ -504,3 +504,8 @@ pm run build; warning còn lại là CSS @import/chunk-size cũ.
 - Thêm validate react-hook-form: họ/tên/ngày sinh/giới tính/SĐT bắt buộc; DD/MM/YYYY kiểm tra ngày có thật + không tương lai; SĐT 0xxxxxxxxx/+84; email; CCCD 8-12 số. Lỗi hiển thị inline + tự cuộn tới lỗi đầu khi bấm Lưu.
 - Giới tính đổi thành segmented control; header gọn có avatar viết tắt theo tên realtime; đếm "N thay đổi chưa lưu" + khóa nút Lưu khi không có gì; xác nhận trước khi đóng khi còn thay đổi; thông báo "Đã lưu ảnh" transient thay hack setTimeout.
 - Build ✔ tsc 0. Deploy pages 41b53de5, verify Rule 5 (index mới 200 JS, no-store).
+
+### 2026-09-02 +07 — Sửa 27 chuỗi tiếng Việt KHÔNG DẤU trong CCCDUploaderGenerateFirst
+- Toàn bộ hint/nút/thông báo lỗi của khối tải ảnh (mặt trước/sau CCCD, 3×4) viết không dấu — vi phạm chuẩn ngôn ngữ; đã thay bằng tiếng Việt đầy đủ dấu.
+- Lưu ý cho phiên sau: file này là bản thật sau re-export `CCCDUploader.tsx → ./CCCDUploaderGenerateFirst`.
+- Deploy Pages a4beba81. Cùng phiên: exam deploy 93d0b8dc thành công, migration 027 đã áp dụng prod (521 dòng giữ nguyên, CHECK nhận 'manual').
