@@ -26,16 +26,6 @@ export interface Env {
   // OCR.space API key (set via: wrangler secret put OCR_SPACE_API_KEY).
   // Falls back to a legacy embedded key if unset so OCR never hard-fails.
   OCR_SPACE_API_KEY?: string;
-  PHOTO_3X4_AI_ENABLED?: string;
-  PHOTO_3X4_GENERATIVE_ENABLED?: string;
-  PHOTO_3X4_PIPELINE_VERSION?: string;
-  PHOTO_3X4_PIPELINE_PROVIDER?: string;
-  PHOTO_3X4_ALWAYS_GENERATE_FINAL?: string;
-  PHOTO_3X4_ZONE_HOST?: string;
-  PHOTO_3X4_MODEL_PRIMARY?: string;
-  PHOTO_3X4_VARIANT_COUNT?: string;
-  PHOTO_3X4_STYLE_REFERENCE_URL?: string;
-  PHOTO_3X4_QUEUE?: Queue;
 
   // Google Calendar / Meet
   GOOGLE_ADMIN_EMAIL: string;

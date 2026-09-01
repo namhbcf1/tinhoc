@@ -45,7 +45,6 @@ import adminTeaching from './routes/admin-teaching.js';
 import ai from './routes/ai.js';
 import errors from './routes/errors.js';
 // import migrate from './routes/migrate.js';
-import { handlePhoto3x4Queue } from './services/photo-3x4-pipeline.js';
 import { errorResponse } from './utils/helpers.js';
 import { moderateRateLimiter, strictRateLimiter } from './utils/rate-limiter.js';
 import { authMiddleware, requireAdmin, requireAuth } from './middleware/auth-middleware.js';
@@ -452,9 +451,6 @@ app.notFound((c) => {
 
 const worker: ExportedHandler<Env> = {
   fetch: app.fetch,
-  queue(batch, env) {
-    return handlePhoto3x4Queue(batch as MessageBatch<any>, env);
-  },
 };
 
 export default worker;

@@ -24,15 +24,6 @@ bucket_name = "class-videos"
 [vars]
 ENVIRONMENT = "production"
 READ_ONLY_MODE = "false"
-PHOTO_3X4_AI_ENABLED = "true"
-PHOTO_3X4_GENERATIVE_ENABLED = "false"
-PHOTO_3X4_PIPELINE_VERSION = "v2-generate-first"
-PHOTO_3X4_PIPELINE_PROVIDER = "queue-r2-transform-ai"
-PHOTO_3X4_ALWAYS_GENERATE_FINAL = "false"
-PHOTO_3X4_ZONE_HOST = "vantrangedu.com"
-PHOTO_3X4_MODEL_PRIMARY = "@cf/black-forest-labs/flux-2-dev"
-PHOTO_3X4_VARIANT_COUNT = "3"
-PHOTO_3X4_STYLE_REFERENCE_URL = "https://vantrangedu.com/photo-guides/photo-3x4-valid.jpg"
 
 # MUST BE SET VIA: wrangler secret put JWT_SECRET
 # JWT_SECRET = ""
@@ -85,13 +76,6 @@ GOOGLE_ADMIN_EMAIL = "vantrang@vantrangedu.com"
 [ai]
 binding = "AI"
 
-[[queues.producers]]
-binding = "PHOTO_3X4_QUEUE"
-queue = "photo-3x4-pipeline"
-
-[[queues.consumers]]
-queue = "photo-3x4-pipeline"
-
 # ========================================
 # LOCAL DEVELOPMENT ENVIRONMENT
 # ========================================
@@ -116,15 +100,6 @@ bucket_name = "class-videos-dev"
 [env.development.vars]
 ENVIRONMENT = "development"
 READ_ONLY_MODE = "false"
-PHOTO_3X4_AI_ENABLED = "true"
-PHOTO_3X4_GENERATIVE_ENABLED = "false"
-PHOTO_3X4_PIPELINE_VERSION = "v2-generate-first"
-PHOTO_3X4_PIPELINE_PROVIDER = "queue-r2-transform-ai"
-PHOTO_3X4_ALWAYS_GENERATE_FINAL = "false"
-PHOTO_3X4_ZONE_HOST = "vantrangedu.com"
-PHOTO_3X4_MODEL_PRIMARY = "@cf/black-forest-labs/flux-2-dev"
-PHOTO_3X4_VARIANT_COUNT = "3"
-PHOTO_3X4_STYLE_REFERENCE_URL = "https://vantrangedu.com/photo-guides/photo-3x4-valid.jpg"
 CLOUDFLARE_ACCOUNT_ID = "5b62d10947844251d23e0eac532531dd"
 GOOGLE_ADMIN_EMAIL = "vantrang@vantrangedu.com"
 # Secrets below must still be set locally via: wrangler secret put <KEY> --env development
@@ -136,10 +111,3 @@ GOOGLE_PRIVATE_KEY = ""
 
 [env.development.ai]
 binding = "AI"
-
-[[env.development.queues.producers]]
-binding = "PHOTO_3X4_QUEUE"
-queue = "photo-3x4-pipeline-dev"
-
-[[env.development.queues.consumers]]
-queue = "photo-3x4-pipeline-dev"
