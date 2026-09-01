@@ -498,3 +498,9 @@ pm run build; warning còn lại là CSS @import/chunk-size cũ.
 - Xóa `plans/` (46 file tracked — lưu ý: kiểm tra tracked phải chạy `git ls-files` TỪ trong repo, kiểm tra trước đó chạy nhầm ở workspace root nên tưởng untracked). Commit ebaa49ee8.
 - Xóa cứng khỏi đĩa (untracked): `EXCEL/` (2 template + 2 jpg số), `danh sách thi.xlsx`, `VANTRANGEDU1801.xlsx`. Recycle Bin: `plans/`, 4 file tooling optimization của exam repo.
 - Working tree hai repo sạch. CI deploy vẫn tắc ở secret GitHub `CLOUDFLARE_API_TOKEN` hết hạn (user tự sửa + re-run run của head mới).
+
+### 2026-09-02 +07 — Làm đẹp + làm "thông minh" modal StudentProfileEditor
+- Bỏ toàn bộ text mô tả meta cho dev ("nhịp 2-3 cột", "Gợi ý bố cục"...) thay bằng copy cho người dùng thật.
+- Thêm validate react-hook-form: họ/tên/ngày sinh/giới tính/SĐT bắt buộc; DD/MM/YYYY kiểm tra ngày có thật + không tương lai; SĐT 0xxxxxxxxx/+84; email; CCCD 8-12 số. Lỗi hiển thị inline + tự cuộn tới lỗi đầu khi bấm Lưu.
+- Giới tính đổi thành segmented control; header gọn có avatar viết tắt theo tên realtime; đếm "N thay đổi chưa lưu" + khóa nút Lưu khi không có gì; xác nhận trước khi đóng khi còn thay đổi; thông báo "Đã lưu ảnh" transient thay hack setTimeout.
+- Build ✔ tsc 0. Deploy pages 41b53de5, verify Rule 5 (index mới 200 JS, no-store).
