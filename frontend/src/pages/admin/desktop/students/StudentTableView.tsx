@@ -20,7 +20,6 @@ function CccdBadge({ value }) {
   );
 }
 
-// Status badge with color map
 function StatusBadge({ status }) {
   const normalizedStatus = String(status || 'new').toLowerCase();
   const map = {
@@ -30,13 +29,13 @@ function StatusBadge({ status }) {
     approved:  { cls: 'bg-blue-100 text-blue-700',        text: 'Đã duyệt' },
     pending:   { cls: 'bg-amber-100 text-amber-700',      text: 'Chờ duyệt' },
     completed: { cls: 'bg-blue-100 text-blue-700',        text: 'Hoàn thành' },
-    certified: { cls: 'bg-purple-100 text-purple-700',    text: 'Có chứng chỉ' },
+    certified: { cls: 'bg-purple-100 text-purple-700',    text: 'Có CC' },
     cancelled: { cls: 'bg-rose-100 text-rose-700',        text: 'Đã hủy' },
     canceled:  { cls: 'bg-rose-100 text-rose-700',        text: 'Đã hủy' },
   };
   const s = map[normalizedStatus] || { cls: 'bg-slate-100 text-slate-500', text: 'Khác' };
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${s.cls}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${s.cls}`}>
       {s.text}
     </span>
   );
@@ -58,9 +57,9 @@ function ActionBtn({ onClick, title, className, children }) {
 const TH = ({ children, center, sortKey, sortState, onSort }) => {
   const active = sortKey && sortState?.sort_by === sortKey;
   return (
-    <th className={`px-5 py-4 text-xs font-bold uppercase tracking-[0.16em] text-slate-500 bg-[#f4f7f5] ${center ? 'text-center' : 'text-left'}`}>
+    <th className={`px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-50 ${center ? 'text-center' : 'text-left'}`}>
       {sortKey ? (
-        <button type="button" onClick={() => onSort?.(sortKey)} className={`inline-flex items-center gap-1 rounded-lg px-1 py-0.5 transition hover:text-emerald-700 ${active ? 'text-emerald-700' : ''}`}>
+        <button type="button" onClick={() => onSort?.(sortKey)} className={`inline-flex items-center gap-0.5 rounded px-1 py-0.5 transition hover:text-emerald-700 ${active ? 'text-emerald-700' : ''}`}>
           {children}{active ? (sortState.sort_dir === 'asc' ? ' ↑' : ' ↓') : ''}
         </button>
       ) : children}
@@ -142,87 +141,51 @@ export default function StudentTableView({
             return (
               <tr
                 key={student.id}
-                className={`border-b border-slate-100 transition-all duration-150 group
-                  ${isSelected
-                    ? 'bg-emerald-50/75'
-                    : 'hover:bg-slate-50/85'}`}
+                className={`border-b border-slate-100 group
+                  ${isSelected ? 'bg-emerald-50/75' : 'hover:bg-slate-50/85'}`}
               >
-                {/* Row checkbox */}
                 {bulkEnabled && (
-                  <td className="px-4 py-4">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => onToggleSelect(student.id)}
-                      className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                    />
+                  <td className="px-3 py-2.5">
+                    <input type="checkbox" checked={isSelected} onChange={() => onToggleSelect(student.id)}
+                      className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" />
                   </td>
                 )}
-
-                {/* Avatar + Name */}
-                <td className="px-5 py-4">
-                  <div className="flex items-center gap-3.5">
-                    <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm overflow-hidden">
+                <td className="px-3 py-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 overflow-hidden">
                       {student.photo_3x4_image_id || student.image_3x4 ? (
-                        <img
-                          src={getImageUrl ? getImageUrl(student.photo_3x4_image_id || student.image_3x4) : (student.photo_3x4_image_id || student.image_3x4)}
-                          alt={student.ho_ten_full || 'Hoc vien'}
-                          className="w-full h-full object-cover"
-                          onError={(event) => applyImageFallback(event, student.ho_ten_full || 'Hoc vien')}
-                        />
-                      ) : (
-                        student.ho_ten_full?.charAt(0) || 'H'
-                      )}
+                        <img src={getImageUrl ? getImageUrl(student.photo_3x4_image_id || student.image_3x4) : (student.photo_3x4_image_id || student.image_3x4)}
+                          alt={student.ho_ten_full || 'Hoc vien'} className="w-full h-full object-cover"
+                          onError={(event) => applyImageFallback(event, student.ho_ten_full || 'Hoc vien')} />
+                      ) : (student.ho_ten_full?.charAt(0) || 'H')}
                     </div>
                     <div className="min-w-0">
                       <div className="truncate font-semibold text-slate-900 text-sm">{student.ho_ten_full}</div>
-                      <div className="mt-0.5 text-xs text-slate-400">
-                        {resolveGender(student.gioi_tinh)} &bull; {formatDateVN(student.ngay_sinh)}
-                      </div>
+                      <div className="text-[11px] text-slate-400">{resolveGender(student.gioi_tinh)} &bull; {formatDateVN(student.ngay_sinh)}</div>
                     </div>
                   </div>
                 </td>
-
-                {/* CCCD */}
-                <td className="px-5 py-4">
-                  <CccdBadge value={student.cccd} />
+                <td className="px-3 py-2.5">
+                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2 py-1 text-[11px] font-mono font-semibold text-slate-600">{student.cccd}</span>
                 </td>
-
-                {/* Contact */}
-                <td className="px-5 py-4">
-                  <div className="max-w-[260px] truncate text-sm text-slate-700">{student.email}</div>
-                  <div className="mt-0.5 text-xs text-slate-400">{student.sdt}</div>
+                <td className="px-3 py-2.5">
+                  <div className="max-w-[200px] truncate text-sm text-slate-700">{student.email}</div>
+                  <div className="text-[11px] text-slate-400">{student.sdt}</div>
                 </td>
-
-                {/* Classes */}
-                <td className="px-5 py-4">
-                  <span className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-600 text-xs font-semibold rounded-full">
-                    {studyCount} lớp
-                  </span>
+                <td className="px-3 py-2.5">
+                  <span className="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-600 text-[11px] font-semibold rounded-full">{studyCount} lớp</span>
                 </td>
-                <td className="px-5 py-4">
-                  <span className="inline-flex items-center px-2.5 py-1 bg-purple-50 text-purple-600 text-xs font-semibold rounded-full">
-                    {examCount} lớp
-                  </span>
+                <td className="px-3 py-2.5">
+                  <span className="inline-flex items-center px-2 py-0.5 bg-purple-50 text-purple-600 text-[11px] font-semibold rounded-full">{examCount} lớp</span>
                 </td>
-
-                {/* Status */}
-                <td className="px-5 py-4">
+                <td className="px-3 py-2.5">
                   <StatusBadge status={primaryStatus} />
                 </td>
-
-                {/* Actions */}
-                <td className="px-5 py-4">
-                  <div className="flex items-center justify-center gap-1">
-                    <ActionBtn onClick={() => onViewDetail(student)} title="Xem chi tiết" className="text-slate-400 hover:text-slate-700 hover:bg-slate-100">
-                      <Eye size={17} />
-                    </ActionBtn>
-                    <ActionBtn onClick={() => onEdit(student)} title="Chỉnh sửa" className="text-blue-400 hover:text-blue-600 hover:bg-blue-50">
-                      <Edit2 size={17} />
-                    </ActionBtn>
-                    <ActionBtn onClick={() => onDelete(student)} title="Xóa" className="text-red-400 hover:text-red-600 hover:bg-red-50">
-                      <Trash2 size={17} />
-                    </ActionBtn>
+                <td className="px-3 py-2.5">
+                  <div className="flex items-center justify-center gap-0.5">
+                    <ActionBtn onClick={() => onViewDetail(student)} title="Xem chi tiết" className="text-slate-400 hover:text-slate-700 hover:bg-slate-100"><Eye size={15} /></ActionBtn>
+                    <ActionBtn onClick={() => onEdit(student)} title="Chỉnh sửa" className="text-blue-400 hover:text-blue-600 hover:bg-blue-50"><Edit2 size={15} /></ActionBtn>
+                    <ActionBtn onClick={() => onDelete(student)} title="Xóa" className="text-red-400 hover:text-red-600 hover:bg-red-50"><Trash2 size={15} /></ActionBtn>
                   </div>
                 </td>
               </tr>

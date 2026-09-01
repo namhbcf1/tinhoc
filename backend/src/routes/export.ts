@@ -687,7 +687,7 @@ function writeVeptExamListTemplate(
     ensureWorksheetCell(worksheet, `I${row}`, student.sdt || '');
     ensureWorksheetCell(worksheet, `J${row}`, normalizeEmail(student.email || ''));
     ensureWorksheetCell(worksheet, `K${row}`, cleanStudentWorkplace(student.don_vi_cong_tac));
-    ensureWorksheetCell(worksheet, `L${row}`, '');
+    ensureWorksheetCell(worksheet, `L${row}`, toUpperVi(student.nganh_dang_hoc || ''));
     ensureWorksheetCell(worksheet, `M${row}`, toUpperVi(examInfo.exam_level || ''));
     ensureWorksheetCell(worksheet, `N${row}`, formatDateVN(examInfo.exam_date));
     ensureWorksheetCell(worksheet, `T${row}`, toUpperVi(examInfo.location || ''));
@@ -778,6 +778,7 @@ function getVanTrangFullColumns() {
     { header: 'Nơi sinh', width: 20, value: (s: any) => cleanStudentPlace(s.noi_sinh) },
     { header: 'Địa chỉ', width: 34, value: (s: any) => cleanStudentAddress(s.dia_chi) },
     { header: 'Đơn vị công tác', width: 24, value: (s: any) => cleanStudentWorkplace(s.don_vi_cong_tac) },
+    { header: 'Khoa/ngành đang theo học', width: 24, value: (s: any) => toUpperVi(s.nganh_dang_hoc || '') },
   ];
 }
 
@@ -1056,7 +1057,7 @@ function buildVeptExamListPreview(examInfo: any, students: any[]) {
         student.sdt || '',
         normalizeEmail(student.email || ''),
         cleanStudentWorkplace(student.don_vi_cong_tac),
-        '',
+        toUpperVi(student.nganh_dang_hoc || ''),
         toUpperVi(examInfo.exam_level || ''),
         formatDateVN(examInfo.exam_date),
         '',

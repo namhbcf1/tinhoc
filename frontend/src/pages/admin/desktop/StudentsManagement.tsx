@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, useMemo } from 'react';
 import { Users, Plus, List, Grid, ChevronLeft, ChevronRight, RefreshCw,
-         Trash2, Download, Bell, X, AlertTriangle, Search, Filter, FileSpreadsheet } from 'lucide-react';
+         Trash2, Download, Bell, X, AlertTriangle, Search, Filter, FileSpreadsheet, Upload } from 'lucide-react';
 import api from '../../../services/api';
 import { formatDateVN } from '../../../utils/dateUtils';
 import { resolveImageUrl } from '../../../utils/imageUrl';
@@ -11,6 +11,7 @@ import StudentTableView   from './students/StudentTableView';
 import StudentGridView    from './students/StudentGridView';
 import StudentDetailModal from './students/StudentDetailModal';
 import StudentFormModal   from './students/StudentFormModal';
+import StudentImportModal from './students/StudentImportModal';
 import { ADMIN_CACHE_KEYS, ADMIN_CACHE_TTL, getAdminCache, invalidateAdminData, setAdminCache } from '../shared/admin-cache';
 import { useAdminAutoRefresh } from '../shared/useAdminAutoRefresh';
 import OverlayPortal from '../../../components/ui/OverlayPortal';
@@ -133,6 +134,7 @@ export default function StudentsManagement({ toast }) {
   const [showBulkDeleteDlg, setShowBulkDeleteDlg] = useState(false);
   const [deleteBusy,        setDeleteBusy]        = useState(false);
   const [bulkProgress,      setBulkProgress]      = useState(null);
+  const [showImportModal,   setShowImportModal]   = useState(false);
 
   const queryOptions = useMemo(() => ({
     page: currentPage,
@@ -395,98 +397,83 @@ export default function StudentsManagement({ toast }) {
         icon={Users}
         tone="emerald"
         title="Học viên"
-        description="Rà soát hồ sơ, liên hệ, đăng ký lớp học và lịch sử học tập của học viên trong một workspace gọn, dễ quét và ưu tiên thao tác quản trị thường xuyên."
+        description=""
         actions={(
           <>
-            <button onClick={() => loadStudents({ force: true })} className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 px-4 text-slate-600 shadow-sm transition hover:bg-slate-50">
-              <RefreshCw size={18} />
+            <button onClick={() => loadStudents({ force: true })} className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white/90 px-3 text-slate-600 shadow-sm transition hover:bg-slate-50">
+              <RefreshCw size={15} />
             </button>
-            <button onClick={handleAdd} className="inline-flex h-11 items-center gap-2 rounded-2xl bg-emerald-600 px-5 text-sm font-semibold text-white shadow-[0_18px_36px_-22px_rgba(16,185,129,0.55)] transition hover:bg-emerald-700">
-              <Plus size={18} />
-              Thêm học viên
+            <button onClick={handleAdd} className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">
+              <Plus size={16} />
+              Thêm
             </button>
           </>
         )}
         pills={(
           <>
-            <LearningInfoPill>Tổng {totalStudentsCount} học viên</LearningInfoPill>
+            <LearningInfoPill>{totalStudentsCount} học viên</LearningInfoPill>
             <LearningInfoPill>Trang {currentPage}/{totalPages}</LearningInfoPill>
-            {normalizedSearch || activeFilters.length ? <LearningInfoPill>Kết quả lọc {totalMatches}</LearningInfoPill> : null}
-            {bulkCount > 0 ? <LearningInfoPill>Đang chọn {bulkCount}</LearningInfoPill> : null}
           </>
         )}
         stats={[
-          { label: 'Tổng học viên', value: totalStudentsCount, hint: 'Toàn bộ hồ sơ hiện có trong hệ thống.' },
-          { label: 'Đang học', value: studentStats?.activeStudents ?? students.filter((s) => s.registrations?.some((r) => ['studying', 'active', 'approved'].includes(r.status))).length, hint: 'Học viên đang có lớp hoặc trạng thái hoạt động.' },
-          { label: 'Chờ duyệt', value: studentStats?.pendingStudents ?? students.filter((s) => s.registrations?.some((r) => r.status === 'pending')).length, hint: 'Học viên còn hồ sơ đăng ký chưa được xử lý.' },
-          { label: 'Có chứng chỉ', value: studentStats?.certifiedStudents ?? students.filter((s) => s.registrations?.some((r) => r.status === 'certified')).length, hint: 'Học viên đã hoàn thành và có chứng chỉ liên quan.' },
+          { label: 'Tổng', value: totalStudentsCount, hint: '' },
+          { label: 'Đang học', value: studentStats?.activeStudents ?? 0, hint: '' },
+          { label: 'Chờ duyệt', value: studentStats?.pendingStudents ?? 0, hint: '' },
+          { label: 'Có chứng chỉ', value: studentStats?.certifiedStudents ?? 0, hint: '' },
         ]}
       />
 
       {/* Main card */}
-      <div className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_24px_64px_-44px_rgba(15,23,42,0.28)]">
+      <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-sm">
 
         {/* Toolbar */}
-        <div className="admin-toolbar-unified">
-          <div className="flex flex-1 flex-wrap items-center gap-3">
-            <div className="admin-search-shell min-w-[300px] max-w-[520px]">
-              <Search size={18} className="text-slate-400" />
-              <input
-                type="text"
-                value={searchTerm}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-white p-3">
+          <div className="flex flex-1 flex-wrap items-center gap-2">
+            <div className="relative min-w-[200px] max-w-[360px]">
+              <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input type="text" value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Tìm theo tên, CCCD, email, số điện thoại..."
-                className="admin-search-input"
+                placeholder="Tìm tên, CCCD, email..."
+                className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 pl-7 pr-7 text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-200"
               />
               {searchTerm ? (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm('')}
-                  className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-                >
-                  <X size={14} />
-                </button>
+                <button type="button" onClick={() => setSearchTerm('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X size={13} /></button>
               ) : null}
             </div>
-            <button
-              type="button"
-              onClick={() => setShowFilters((value) => !value)}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
-            >
-              <Filter size={15} /> Bộ lọc nâng cao
+            <button type="button" onClick={() => setShowFilters((v) => !v)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+              <Filter size={13} /> Lọc
             </button>
-            <button
-              type="button"
-              onClick={handleExportFiltered}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-            >
-              <FileSpreadsheet size={15} /> Xuất Excel
+            <button type="button" onClick={handleExportFiltered}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
+              <FileSpreadsheet size={13} /> Excel
             </button>
-            <span className="admin-toolbar-meta">
-              {searching ? 'Đang tìm học viên...' : `Đang xem ${paged.length} / ${totalMatches} học viên`}
+            <button type="button" onClick={() => setShowImportModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">
+              <Upload size={13} /> Import Excel
+            </button>
+            <span className="text-xs text-slate-400">
+              {searching ? 'Đang tìm...' : `${paged.length}/${totalMatches}`}
             </span>
           </div>
           {/* View toggle */}
-          <div className="admin-view-toggle">
-            <button
-              onClick={() => setViewMode('table')}
-              className={viewMode === 'table' ? 'active' : ''}
-            >
-              <List size={18} />
+          <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+            <button onClick={() => setViewMode('table')}
+              className={`rounded-md px-2 py-1 text-xs font-semibold transition ${viewMode === 'table' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+              <List size={14} />
             </button>
-            <button
-              onClick={() => setViewMode('grid')}
-              className={viewMode === 'grid' ? 'active' : ''}
-            >
-              <Grid size={18} />
+            <button onClick={() => setViewMode('grid')}
+              className={`rounded-md px-2 py-1 text-xs font-semibold transition ${viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+              <Grid size={14} />
             </button>
           </div>
         </div>
 
         {showFilters && (
-          <div className="border-t border-slate-100 bg-slate-50/80 px-8 py-5">
-            <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-              <select value={filters.status} onChange={updateFilter('status')} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+          <div className="border-t border-slate-100 bg-slate-50/60 px-4 py-3">
+            <div className="flex flex-wrap gap-2">
+              <select value={filters.status} onChange={updateFilter('status')} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700">
                 <option value="">Mọi trạng thái</option>
                 <option value="pending">Chờ duyệt</option>
                 <option value="approved">Đã duyệt</option>
@@ -494,28 +481,26 @@ export default function StudentsManagement({ toast }) {
                 <option value="completed">Hoàn thành</option>
                 <option value="cancelled">Đã hủy</option>
               </select>
-              <select value={filters.registration_type} onChange={updateFilter('registration_type')} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+              <select value={filters.registration_type} onChange={updateFilter('registration_type')} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700">
                 <option value="">Mọi đăng ký</option>
-                <option value="hoc">Có lớp học</option>
+                <option value="hoc">Có lớp</option>
                 <option value="thi">Có lịch thi</option>
-                <option value="none">Chưa đăng ký</option>
+                <option value="none">Chưa ĐK</option>
               </select>
-              <select value={filters.has_certificate} onChange={updateFilter('has_certificate')} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
-                <option value="">Chứng chỉ: tất cả</option>
-                <option value="true">Đã có chứng chỉ</option>
-                <option value="false">Chưa có chứng chỉ</option>
+              <select value={filters.has_certificate} onChange={updateFilter('has_certificate')} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700">
+                <option value="">Chứng chỉ</option>
+                <option value="true">Đã có</option>
+                <option value="false">Chưa có</option>
               </select>
-              <input type="date" value={filters.created_from} onChange={updateFilter('created_from')} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700" />
-              <input type="date" value={filters.created_to} onChange={updateFilter('created_to')} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700" />
-              <button type="button" onClick={resetFilters} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
-                Xóa bộ lọc
-              </button>
+              <input type="date" value={filters.created_from} onChange={updateFilter('created_from')} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700" />
+              <input type="date" value={filters.created_to} onChange={updateFilter('created_to')} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700" />
+              <button type="button" onClick={resetFilters} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100">Xóa</button>
             </div>
             {(normalizedSearch || activeFilters.length > 0) && (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {normalizedSearch ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Từ khóa: {searchTerm.trim()}</span> : null}
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {normalizedSearch ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Từ khóa: {searchTerm.trim()}</span> : null}
                 {activeFilters.map(([key, value]) => (
-                  <span key={key} className="rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">{key}: {value}</span>
+                  <span key={key} className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{key}: {value}</span>
                 ))}
               </div>
             )}
@@ -564,25 +549,15 @@ export default function StudentsManagement({ toast }) {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-8 py-5 border-t border-slate-200 bg-white">
-            <span className="text-sm text-slate-500 font-medium">
-              Trang {currentPage} / {totalPages}
+          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-white">
+            <span className="text-xs text-slate-400">
+              Trang {currentPage}/{totalPages}
             </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="admin-btn admin-btn-outline px-3 py-2 disabled:opacity-40"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="admin-btn admin-btn-outline px-3 py-2 disabled:opacity-40"
-              >
-                <ChevronRight size={16} />
-              </button>
+            <div className="flex gap-1">
+              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-30"><ChevronLeft size={14} /></button>
+              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-30"><ChevronRight size={14} /></button>
             </div>
           </div>
         )}
@@ -632,6 +607,21 @@ export default function StudentsManagement({ toast }) {
           progress={bulkProgress}
           onConfirm={handleBulkDelete}
           onCancel={() => setShowBulkDeleteDlg(false)}
+        />
+      )}
+
+      {/* Import Excel modal */}
+      {showImportModal && (
+        <StudentImportModal
+          onClose={() => setShowImportModal(false)}
+          onImported={() => {
+            setShowImportModal(false);
+            invalidateAdminData({
+              keys: [ADMIN_CACHE_KEYS.students, ADMIN_CACHE_KEYS.dashboardOverview, ADMIN_CACHE_KEYS.mobileDashboardOverview],
+              source: 'students-import',
+            });
+            void loadStudents({ force: true });
+          }}
         />
       )}
     </div>

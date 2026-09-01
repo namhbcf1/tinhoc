@@ -134,6 +134,110 @@ students.post('/admin/validate', requireAdmin, createPostEndpoint({
   }) as any
 }));
 
+// Protected: import students from Excel — admin only
+students.post('/import-excel', requireAdmin, async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File | null;
+    if (!file || !(file instanceof File)) {
+      return errorResponse('Thiếu file Excel', 400);
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      return errorResponse('File quá lớn. Kích thước tối đa là 5MB', 400);
+    }
+
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!ext || !['xlsx', 'xls'].includes(ext)) {
+      return errorResponse('Chỉ hỗ trợ file .xlsx hoặc .xls', 400);
+    }
+
+    const { parseAndValidateStudents } = await import('../utils/excel-student-import.js');
+    const { normalizeText, formatDate } = await import('../utils/helpers.js');
+    const { normalizeStudentGender } = await import('../services/student-service.js');
+    const StudentRepo = await import('../repositories/student-repository.js');
+
+    const buffer = await file.arrayBuffer();
+    const result = parseAndValidateStudents(buffer);
+
+    if (result.preview.length === 0) {
+      return c.json({ success: true, data: result });
+    }
+
+    // Check existing CCCDs in DB
+    const cccds = result.preview.map(s => s.cccd);
+    const existingMap = new Map<string, boolean>();
+    for (const cccd of cccds) {
+      const existing = await StudentRepo.findStudentByCCCD(c.env.DB, cccd);
+      if (existing) existingMap.set(cccd, true);
+    }
+
+    const finalStudents = [];
+    for (const student of result.preview) {
+      if (existingMap.has(student.cccd)) {
+        result.skipped++;
+        result.errors.push({
+          row: 0,
+          field: 'cccd',
+          message: `CCCD ${student.cccd} đã tồn tại trong hệ thống — bỏ qua`,
+        });
+        continue;
+      }
+      finalStudents.push(student);
+    }
+
+    // Create students
+    let created = 0;
+    for (const student of finalStudents) {
+      try {
+        const ho = student.ho.toLocaleUpperCase('vi-VN').trim();
+        const tenDem = (student.ten_dem || '').toLocaleUpperCase('vi-VN').trim();
+        const ten = student.ten.toLocaleUpperCase('vi-VN').trim();
+        const ho_ten_full = [ho, tenDem, ten].filter(Boolean).join(' ');
+        const ho_ten_normalized = normalizeText(ho_ten_full);
+
+        let gioi_tinh = 'Nam';
+        if (student.gioi_tinh) {
+          try { gioi_tinh = normalizeStudentGender(student.gioi_tinh); } catch {}
+        }
+
+        await StudentRepo.createStudent(c.env.DB, {
+          cccd: student.cccd,
+          ho,
+          ten_dem: tenDem,
+          ten,
+          ho_ten_full,
+          ho_ten_normalized,
+          ngay_sinh: student.ngay_sinh || null,
+          noi_sinh: student.noi_sinh || '',
+          gioi_tinh,
+          dan_toc: student.dan_toc || 'KINH',
+          quoc_tich: student.quoc_tich || 'VIỆT NAM',
+          email: student.email || null,
+          sdt: student.sdt || null,
+          dia_chi: student.dia_chi || null,
+          ngay_cap_cccd: student.ngay_cap_cccd || null,
+          don_vi_cong_tac: student.don_vi_cong_tac || null,
+        });
+        created++;
+      } catch (err: any) {
+        result.errors.push({
+          row: 0,
+          field: 'general',
+          message: `CCCD ${student.cccd}: ${err.message}`,
+        });
+      }
+    }
+
+    result.created = created;
+    result.valid_rows = finalStudents.length;
+
+    return c.json({ success: true, data: result });
+  } catch (err: any) {
+    return errorResponse(err.message, 500);
+  }
+});
+
 // Protected: edit history — admin or teacher only
 students.get('/:id/history', requireAdminOrTeacher, createGetEndpoint({
   params: z.object({ id: z.string().transform(Number) }),

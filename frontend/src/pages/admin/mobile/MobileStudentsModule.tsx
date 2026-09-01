@@ -66,113 +66,46 @@ const StudentCard = ({ student, onView, onEdit }) => {
     const initial = displayName.charAt(0)?.toUpperCase() || 'U';
     const avatarUrl = getImageUrl(student.photo_3x4_image_id || student.image_3x4);
     const isActive = student.trang_thai === 'active' || student.is_active !== false;
-
     const hasUnpaidFees = student.payment_status === 'pending' || student.cong_no > 0;
     const enrolledClasses = student.enrolled_classes_count || student.so_lop_dang_hoc || 0;
 
     return (
-        <div
-            className="mb-3 rounded-[26px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 shadow-[0_20px_44px_-30px_rgba(15,23,42,0.34)] transition-all duration-200 active:scale-[0.98]"
-            onClick={() => onView(student)}
-        >
-            <div className="flex items-start gap-4">
-                <div className="relative">
-                    <div className={`h-16 w-16 rounded-[22px] flex items-center justify-center text-lg font-bold shadow-[0_18px_34px_-22px_rgba(37,99,235,0.55)] overflow-hidden ${isActive ? 'bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 text-white' : 'bg-slate-100 text-slate-500'
-                        }`}>
-                        {avatarUrl ? (
-                            <img
-                                src={avatarUrl}
-                                alt={displayName}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                    e.target.style.display = 'none';
-                                    const fallback = e.target.nextElementSibling;
-                                    if (fallback) fallback.style.display = 'flex';
-                                }}
-                            />
-                        ) : null}
-                        <span style={{ display: avatarUrl ? 'none' : 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>{initial}</span>
+        <div className="mb-2.5 rounded-[20px] border border-slate-200 bg-white p-2.5 shadow-sm active:scale-[0.98] transition" onClick={() => onView(student)}>
+            <div className="flex items-center gap-2">
+                <div className="relative shrink-0">
+                    <div className={`h-12 w-12 rounded-[16px] flex items-center justify-center text-sm font-bold overflow-hidden ${isActive ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                        {avatarUrl ? <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} /> : null}
+                        <span style={{ display: avatarUrl ? 'none' : 'flex' }}>{initial}</span>
                     </div>
-                    {isActive && (
-                        <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-emerald-500 ring-2 ring-white shadow-sm flex items-center justify-center">
-                            <CheckCircle size={10} className="text-white" />
-                        </span>
-                    )}
+                    {isActive && <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 ring-1 ring-white" />}
                 </div>
-
                 <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start mb-1">
-                        <h3 className="pr-2 text-[17px] font-black tracking-[-0.03em] text-slate-900 truncate">{displayName}</h3>
-                        <ChevronRight size={18} className="text-slate-300 flex-shrink-0" />
+                    <div className="flex items-center justify-between gap-1">
+                        <h3 className="text-[14px] font-bold text-slate-900 truncate">{displayName}</h3>
+                        <ChevronRight size={14} className="text-slate-300 shrink-0" />
                     </div>
-
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                        <span className="text-xs text-slate-500 font-medium bg-slate-50 px-2 py-0.5 rounded-md">
-                            {student.student_code || student.ma_hoc_vien || 'Mới'}
-                        </span>
-                        {enrolledClasses > 0 && (
-                            <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded-md flex items-center gap-1">
-                                <BookOpen size={10} />
-                                {enrolledClasses} lớp
-                            </span>
-                        )}
-                        {hasUnpaidFees && (
-                            <span className="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded-md flex items-center gap-1">
-                                <AlertCircle size={10} />
-                                Công nợ
-                            </span>
-                        )}
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[11px] text-slate-400">{student.student_code || student.ma_hoc_vien || ''}</span>
+                        {enrolledClasses > 0 && <span className="text-[11px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{enrolledClasses} lớp</span>}
+                        {hasUnpaidFees && <span className="text-[11px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Công nợ</span>}
                     </div>
-
-                    <div className="mt-2 flex items-center gap-3 text-xs text-slate-400">
-                        {student.sdt && (
-                            <span className="flex items-center gap-1">
-                                <Phone size={10} />
-                                {student.sdt}
-                            </span>
-                        )}
-                        {student.cccd && (
-                            <span className="flex items-center gap-1">
-                                <FileText size={10} />
-                                {student.cccd.slice(-4)}
-                            </span>
-                        )}
+                    <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400">
+                        {student.sdt && <span>{student.sdt}</span>}
+                        {student.cccd && <span>CCCD: ...{student.cccd.slice(-4)}</span>}
                     </div>
                 </div>
             </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-2">
-                <div className="rounded-2xl border border-slate-100 bg-white px-3 py-2.5 shadow-sm">
-                    <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Trạng thái</div>
-                    <div className={`mt-1 text-sm font-semibold ${isActive ? 'text-emerald-600' : 'text-slate-500'}`}>{isActive ? 'Đang học' : 'Ngưng học'}</div>
+            <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-slate-100">
+                <div className="flex items-center gap-2 text-xs">
+                    <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-slate-300'}`} />
+                    <span className="text-slate-500">{isActive ? 'Đang học' : 'Ngưng học'}</span>
                 </div>
-                <div className="rounded-2xl border border-slate-100 bg-white px-3 py-2.5 shadow-sm">
-                    <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Lớp đang học</div>
-                    <div className="mt-1 text-sm font-semibold text-slate-700">{enrolledClasses || 0} lớp</div>
+                <div className="flex gap-1.5">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); onView(student); }}
+                        className="rounded-xl border border-blue-100 bg-blue-50 px-2.5 py-1.5 text-[11px] font-semibold text-blue-700">Chi tiết</button>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(student); }}
+                        className="rounded-xl border border-emerald-100 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-700">Sửa</button>
                 </div>
-            </div>
-
-            <div className="mt-4 flex gap-2">
-                <button
-                    type="button"
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        onView(student);
-                    }}
-                    className="flex-1 rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2.5 text-sm font-semibold text-blue-700 active:scale-[0.98] transition-transform"
-                >
-                    Xem chi tiết
-                </button>
-                <button
-                    type="button"
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        onEdit(student);
-                    }}
-                    className="rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2.5 text-sm font-semibold text-emerald-700 active:scale-[0.98] transition-transform"
-                >
-                    Sửa
-                </button>
             </div>
         </div>
     );
@@ -351,7 +284,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="relative bg-gradient-to-r from-blue-600 to-blue-700 px-4 pt-2 pb-2">
+                <div className="relative bg-gradient-to-r from-blue-600 to-blue-700 px-3 pt-2 pb-2">
                     <div className="mb-2 flex items-center justify-end gap-1.5">
                         <button
                             onClick={() => refreshDetail()}
@@ -403,7 +336,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                             )}
                         </div>
                         <div className="min-w-0 flex-1">
-                            <h2 className="line-clamp-2 text-xl font-bold leading-tight text-white">{displayName}</h2>
+                            <h2 className="line-clamp-2 text-sm font-bold leading-tight text-white">{displayName}</h2>
                             <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-white/30 bg-white/20 px-2 py-0.5 text-[10px] font-medium text-white">
                                 {displayStudent.student_code || displayStudent.cccd || 'Học viên mới'}
                             </span>
@@ -461,7 +394,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                 </div>
 
                 {/* Tabs */}
-                <div className="sticky top-0 z-10 flex border-b border-slate-200 bg-white px-4">
+                <div className="sticky top-0 z-10 flex border-b border-slate-200 bg-white px-3">
                     <button
                         onClick={() => setActiveTab('info')}
                         className={`flex-1 pb-2 pt-2 font-medium text-[12px] transition-colors border-b-2 ${activeTab === 'info' ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent'}`}
@@ -491,11 +424,11 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                 {/* Tab Content */}
                 <div className="flex-1 overflow-y-auto px-5">
                     {activeTab === 'info' && (
-                        <div className="space-y-4 py-6">
+                        <div className="space-y-2 py-6">
                             {/* Thông tin cá nhân */}
                             <div>
                                 <h3 className="text-xs font-bold text-emerald-600 uppercase tracking-wide mb-3">Thông tin cá nhân</h3>
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                     <InfoRow icon={<User size={16} />} label="Họ và tên" value={`${displayStudent.ho || ''} ${displayStudent.ten_dem || ''} ${displayStudent.ten || ''}`.trim()} />
                                     <InfoRow icon={<Calendar size={16} />} label="Ngày sinh" value={dob} />
                                     <InfoRow icon={<User size={16} />} label="Giới tính" value={normalizeGenderValue(displayStudent.gioi_tinh)} />
@@ -508,7 +441,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                             {/* Giấy tờ */}
                             <div>
                                 <h3 className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-3">Giấy tờ tùy thân</h3>
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                     <InfoRow icon={<CreditCard size={16} />} label="Số CCCD/CMND" value={displayStudent.cccd} />
                                     <InfoRow icon={<Calendar size={16} />} label="Ngày cấp CCCD" value={formatDate(displayStudent.ngay_cap_cccd)} />
                                 </div>
@@ -517,7 +450,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                             {/* Liên hệ */}
                             <div>
                                 <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-3">Liên hệ</h3>
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                     <InfoRow icon={<Phone size={16} />} label="Số điện thoại" value={phone} />
                                     <InfoRow icon={<Mail size={16} />} label="Email" value={email} />
                                     <InfoRow icon={<MapPin size={16} />} label="Địa chỉ" value={address} />
@@ -529,14 +462,14 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                             {/* Thông tin hệ thống */}
                             <div>
                                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Thông tin hệ thống</h3>
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                     <InfoRow icon={<Clock size={16} />} label="Ngày tạo hồ sơ" value={formatDateTime(displayStudent.created_at)} />
                                     <InfoRow icon={<Clock size={16} />} label="Cập nhật lần cuối" value={formatDateTime(displayStudent.updated_at)} />
                                 </div>
                             </div>
 
                             <div>
-                                <div className="mb-3 flex items-center justify-between gap-3">
+                                <div className="mb-3 flex items-center justify-between gap-2">
                                     <div>
                                         <h3 className="text-xs font-bold text-violet-600 uppercase tracking-wide">Lịch sử chỉnh sửa</h3>
                                     </div>
@@ -546,9 +479,9 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                                 </div>
 
                                 {historyLoading ? (
-                                    <div className="space-y-3">
+                                    <div className="space-y-2">
                                         {Array.from({ length: 2 }).map((_, index) => (
-                                            <div key={index} className="animate-pulse rounded-2xl border border-slate-200 bg-white p-3">
+                                            <div key={index} className="animate-pulse rounded-2xl border border-slate-200 bg-white p-2.5">
                                                 <div className="h-3 w-24 rounded bg-slate-200" />
                                                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                                                     <div className="h-16 rounded-xl bg-slate-100" />
@@ -558,7 +491,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                                         ))}
                                     </div>
                                 ) : editHistory.length > 0 ? (
-                                    <div className="space-y-3">
+                                    <div className="space-y-2">
                                         {editHistory.map((item, index) => (
                                             <HistoryEntryCard
                                                 key={`${item.changed_at || 'history'}-${item.field_name || 'field'}-${index}`}
@@ -567,7 +500,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center">
+                                    <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-3 py-6 text-center">
                                         <History size={28} className="mx-auto text-slate-300" />
                                         <p className="mt-3 text-sm font-semibold text-slate-700">Chưa có lịch sử sửa đổi</p>
                                         <p className="mt-1 text-xs text-slate-500">Khi hồ sơ được chỉnh sửa, chi tiết sẽ hiển thị tại đây.</p>
@@ -623,7 +556,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                             </div>
 
                             {/* CCCD Images */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-2">
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
                                         <p className="text-xs font-bold text-slate-600 text-center flex-1">CCCD MẶT TRƯỚC</p>
@@ -716,7 +649,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent"></div>
                                 </div>
                             ) : enrollments.length > 0 ? (
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                     {enrollments.map((enrollment, idx) => {
                                         const classType = enrollment.class_type || 'hoc';
                                         const isThi = classType === 'thi';
@@ -756,8 +689,8 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                                         const canApprove = status === 'pending';
 
                                         return (
-                                            <div key={idx} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                                                <div className="flex items-start justify-between gap-3">
+                                            <div key={idx} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                                                <div className="flex items-start justify-between gap-2">
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <h4 className="truncate text-base font-bold text-slate-900">{className}</h4>
@@ -837,9 +770,9 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent"></div>
                                 </div>
                             ) : payments.length > 0 ? (
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                     {payments.map((payment, idx) => (
-                                        <div key={idx} className="p-3 bg-slate-50 rounded-xl flex justify-between items-center">
+                                        <div key={idx} className="p-2.5 bg-slate-50 rounded-xl flex justify-between items-center">
                                             <div>
                                                 <p className="font-bold text-slate-800">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(payment.amount || payment.so_tien || 0)}</p>
                                                 <p className="text-xs text-slate-500">{payment.description || payment.ghi_chu || 'Học phí'}</p>
@@ -864,10 +797,10 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
 
             {/* Full Image View Modal */}
             {fullImageView && (
-                <div className="fixed inset-0 z-[10030] bg-black flex items-center justify-center p-4" onClick={() => setFullImageView(null)}>
+                <div className="fixed inset-0 z-[10030] bg-black flex items-center justify-center p-3" onClick={() => setFullImageView(null)}>
                     <button
                         onClick={(e) => { e.stopPropagation(); setFullImageView(null); }}
-                        className="absolute top-4 right-4 p-3 rounded-full bg-white/20 backdrop-blur-sm"
+                        className="absolute top-4 right-4 p-2.5 rounded-full bg-white/20 backdrop-blur-sm"
                     >
                         <X size={24} className="text-white" />
                     </button>
@@ -886,7 +819,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
 const InfoRow = ({ icon, label, value }) => {
     if (!value) return null;
     return (
-        <div className="flex items-start gap-3 bg-slate-50 p-3 rounded-lg">
+        <div className="flex items-start gap-2 bg-slate-50 p-2.5 rounded-lg">
             <div className="p-2 bg-white rounded-lg text-slate-400 flex-shrink-0">
                 {icon}
             </div>
@@ -899,8 +832,8 @@ const InfoRow = ({ icon, label, value }) => {
 };
 
 const HistoryEntryCard = ({ item }) => (
-    <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-        <div className="flex items-start justify-between gap-3">
+    <div className="rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm">
+        <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
                     {item.field_name || 'Trường dữ liệu'}
@@ -1037,9 +970,9 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-5 py-4 flex justify-between items-center">
+                <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-5 py-2.5 flex justify-between items-center">
                     <div>
-                        <h2 className="text-lg font-bold text-white">{isEditMode ? 'Chỉnh sửa hồ sơ' : 'Tạo học viên mới'}</h2>
+                        <h2 className="text-sm font-bold text-white">{isEditMode ? 'Chỉnh sửa hồ sơ' : 'Tạo học viên mới'}</h2>
                     </div>
                     <button onClick={onClose} className="p-2 rounded-full bg-white/20 backdrop-blur-sm">
                         <X size={20} className="text-white" />
@@ -1051,7 +984,7 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                     {/* Thông tin cá nhân */}
                     <div>
                         <h3 className="text-xs font-bold text-emerald-600 uppercase tracking-wide mb-3">Thông tin cá nhân</h3>
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             <FormField label="Họ" value={formData.ho} onChange={(v) => setFormData({ ...formData, ho: v })} />
                             <FormField label="Tên đệm" value={formData.ten_dem} onChange={(v) => setFormData({ ...formData, ten_dem: v })} />
                             <FormField label="Tên" value={formData.ten} onChange={(v) => setFormData({ ...formData, ten: v })} required />
@@ -1076,7 +1009,7 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                                 wrapperClassName="space-y-1"
                                 labelClassName="block text-sm font-medium text-slate-700"
                                 toggleWrapperClassName=""
-                                radioGroupClassName="flex flex-wrap gap-4"
+                                radioGroupClassName="flex flex-wrap gap-2"
                                 radioOptionClassName="inline-flex items-center gap-2 text-sm text-slate-700"
                                 inputClassName="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                 selectClassName="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -1090,7 +1023,7 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                     {/* Giấy tờ */}
                     <div>
                         <h3 className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-3">Giấy tờ tùy thân</h3>
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             <FormField label="Số CCCD/CMND" value={formData.cccd} onChange={(v) => setFormData({ ...formData, cccd: v })} required disabled={isEditMode} />
                             <FormField label="Ngày cấp CCCD (dd/mm/yyyy)" value={formData.ngay_cap_cccd} onChange={(v) => setFormData({ ...formData, ngay_cap_cccd: v })} />
                         </div>
@@ -1099,7 +1032,7 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                     {/* Liên hệ */}
                     <div>
                         <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-3">Liên hệ</h3>
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             <FormField label="Số điện thoại" value={formData.sdt} onChange={(v) => setFormData({ ...formData, sdt: v })} type="tel" />
                             <FormField label="Email" value={formData.email} onChange={(v) => setFormData({ ...formData, email: v })} type="email" />
                             <FormField label="Địa chỉ" value={formData.dia_chi} onChange={(v) => setFormData({ ...formData, dia_chi: v })} />
@@ -1111,8 +1044,8 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                     {/* Ảnh hồ sơ */}
                     <div>
                         <h3 className="text-xs font-bold text-purple-600 uppercase tracking-wide mb-3">Ảnh hồ sơ</h3>
-                        <div className="space-y-4">
-                            <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                        <div className="space-y-2">
+                            <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-700">
                                 Admin có thể đổi ảnh CCCD/3x4 trực tiếp trên mobile. Ảnh mới sẽ được lưu khi bấm nút lưu ở cuối form.
                             </div>
 
@@ -1130,7 +1063,7 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                             </div>
 
                             {/* CCCD Images */}
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-2">
                                 <div>
                                     <p className="text-xs font-medium text-slate-600 mb-2 text-center">CCCD MẶT TRƯỚC</p>
                                     <Suspense fallback={uploaderFallback}>
@@ -1159,11 +1092,11 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                 </form>
 
                 {/* Footer */}
-                <div className="border-t border-slate-200 px-5 py-4 flex gap-3">
+                <div className="border-t border-slate-200 px-5 py-2.5 flex gap-2">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-medium active:scale-95 transition-transform"
+                        className="flex-1 px-3 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-medium active:scale-95 transition-transform"
                     >
                         Hủy
                     </button>
@@ -1171,7 +1104,7 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                         type="submit"
                         onClick={handleSubmit}
                         disabled={saving}
-                        className="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-medium active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="flex-1 px-3 py-2.5 bg-emerald-600 text-white rounded-xl font-medium active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {saving ? (
                             <>
@@ -1219,7 +1152,7 @@ export default function MobileStudentsModule() {
     const [creatingStudent, setCreatingStudent] = useState(false);
     const [filterStatus, setFilterStatus] = useState('all');
     const [showFilters, setShowFilters] = useState(false);
-    const [sortBy, setSortBy] = useState('name');
+    const [sortBy, setSortBy] = useState('recent');
 
     useEffect(() => {
         void fetchStudents();
@@ -1411,7 +1344,7 @@ export default function MobileStudentsModule() {
                         />
                     )}
                     filters={(
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             <div className="flex gap-2">
                                 <button
                                     type="button"
@@ -1430,7 +1363,7 @@ export default function MobileStudentsModule() {
                             </div>
 
                             {showFilters ? (
-                                <div className="rounded-[24px] bg-slate-50 p-3 space-y-3">
+                                <div className="rounded-[24px] bg-slate-50 p-2.5 space-y-2">
                                     <div>
                                         <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600">Trạng thái</label>
                                         <div className="flex flex-wrap gap-2">
@@ -1470,7 +1403,7 @@ export default function MobileStudentsModule() {
                     footer={<span>Hiển thị {processedStudents.length} / {students.length} học viên</span>}
                 />
 
-                <div className="px-4 pt-3" style={{ paddingBottom: mobileAdminContentPadding(24) }}>
+                <div className="px-3 pt-3" style={{ paddingBottom: mobileAdminContentPadding(24) }}>
                     {loading ? (
                         <AdminLoadingState
                             title="Đang tải danh sách học viên"
@@ -1479,7 +1412,7 @@ export default function MobileStudentsModule() {
                             accent="blue"
                         />
                     ) : processedStudents.length > 0 ? (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             {processedStudents.map((s) => (
                                 <StudentCard
                                     key={s.id || s.cccd}
@@ -1494,7 +1427,7 @@ export default function MobileStudentsModule() {
                             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[24px] bg-slate-100 text-slate-400">
                                 <User size={30} />
                             </div>
-                            <h3 className="mt-5 text-xl font-black text-slate-900">Không tìm thấy học viên</h3>
+                            <h3 className="mt-5 text-sm font-black text-slate-900">Không tìm thấy học viên</h3>
                             <p className="mx-auto mt-2 max-w-[280px] text-sm text-slate-500">
                                 Thử đổi bộ lọc hoặc tạo mới.
                             </p>
@@ -1503,7 +1436,7 @@ export default function MobileStudentsModule() {
                                     <button
                                         type="button"
                                         onClick={() => setSearchTerm('')}
-                                        className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                                        className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
                                     >
                                         Xóa từ khóa
                                     </button>
@@ -1511,7 +1444,7 @@ export default function MobileStudentsModule() {
                                 <button
                                     type="button"
                                     onClick={handleCreateStudent}
-                                    className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-black text-white"
+                                    className="rounded-2xl bg-slate-900 px-3 py-2 text-sm font-black text-white"
                                 >
                                     Tạo học viên
                                 </button>
