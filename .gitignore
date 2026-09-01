@@ -18,6 +18,9 @@ frontend/dist/
 # Compiled .js artifacts in the TS-only backend source tree
 backend/src/**/*.js
 
+# Playwright MCP page snapshots (transient E2E artifacts)
+.playwright-mcp/
+
 # Environment files
 .env
 .env.local
