@@ -23,6 +23,8 @@ import {
   rejectExamRegistration,
   isUpcomingExamRegistrationWindow,
   getZoomCheckinsForExam,
+  resolveExamRegistrationBucket,
+  bucketConflicts,
 } from '../db/attendance-queries.js';
 import {
   getExamTestById,
@@ -44,6 +46,7 @@ import {
   syncSingleExamRegistrationToOnlineClass,
 } from '../lib/services/exam-schedule-class-sync.js';
 import { resolveProgramContext } from '../lib/program-platform/repository.js';
+import { getExamAttemptHistory } from '../lib/services/exam-attempt-history.js';
 import { extractTextWithGoogleVision } from '../services/google-vision-ocr.js';
 import {
   buildSessionDuplicateKey,
@@ -923,6 +926,7 @@ async function normalizeExamSchedulePayload(db: D1Database, rawInput: any) {
     class_seed_end_date: normalizedClassSeedEndDate,
     class_seed_teacher_name: resolvedClassSeedTeacherName,
     class_seed_max_students: shouldPersistLinkedClass ? classSeedMaxStudents : null,
+    visible_on_homepage: parseOptionalBoolean(rawInput?.visible_on_homepage) === true ? 1 : 0,
   };
 }
 
@@ -1137,10 +1141,14 @@ examSchedules.get('/conflicts', async (c) => {
         er.created_at AS registration_created_at,
         es.exam_name,
         es.exam_date,
-        es.duration_minutes
+        es.duration_minutes,
+        es.exam_category_id,
+        ec.name AS exam_category_name,
+        ec.code AS exam_category_code
       FROM exam_registrations er
       JOIN students s ON s.id = er.student_id
       LEFT JOIN exam_schedules es ON es.id = er.exam_id
+      LEFT JOIN exam_categories ec ON ec.id = es.exam_category_id
       WHERE er.status IN ('pending','approved','registered')
         AND es.deleted_at IS NULL
         AND NOT (
@@ -1165,6 +1173,18 @@ examSchedules.get('/conflicts', async (c) => {
       );
 
       if (conflictingRegistrations.length <= 1) {
+        continue;
+      }
+
+      // Chỉ tính là trùng khi có 2+ đăng ký CÙNG LOẠI (cùng bucket Tiếng Anh / Tin học).
+      // Học viên giữ 1 Tiếng Anh + 1 Tin học cùng lúc là hợp lệ, không coi là trùng.
+      const hasSameBucketConflict = conflictingRegistrations.some((reg, index) =>
+        conflictingRegistrations
+          .slice(index + 1)
+          .some((other) => bucketConflicts(resolveExamRegistrationBucket(reg), resolveExamRegistrationBucket(other)))
+      );
+
+      if (!hasSameBucketConflict) {
         continue;
       }
 
@@ -1584,6 +1604,32 @@ examSchedules.get('/:id/students', async (c) => {
     return jsonResponse({ success: true, data: sanitizeExamRegistrationFeeStatus(user, enrichedStudents) });
   } catch (error: any) {
     return errorResponse('Lỗi lấy danh sách thí sinh: ' + error.message, 500);
+  }
+});
+
+// ========================================
+// GET /exam-schedules/:id/attempt-history
+// Lịch sử làm đề thi (vantrangexam): học viên của kỳ thi đã làm bao nhiêu bài,
+// bao nhiêu lần, điểm trung bình / cao nhất, thời điểm gần nhất.
+// ========================================
+examSchedules.get('/:id/attempt-history', async (c) => {
+  try {
+    const user = c.get('user') as any;
+    const denied = requireExamAdmin(user, 'Không có quyền truy cập');
+    if (denied) return denied;
+
+    const { id } = c.req.param();
+    const scheduleId = parseInt(id);
+    if (isNaN(scheduleId)) return errorResponse('ID không hợp lệ', 400);
+
+    const history = await getExamAttemptHistory(c.env.DB, scheduleId);
+    if (!history) {
+      return errorResponse('Không tìm thấy kỳ thi', 404);
+    }
+
+    return jsonResponse({ success: true, data: history });
+  } catch (error: any) {
+    return errorResponse('Lỗi lấy lịch sử làm bài: ' + error.message, 500);
   }
 });
 

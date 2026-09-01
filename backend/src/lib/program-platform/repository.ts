@@ -434,6 +434,11 @@ const PROGRAM_PLATFORM_SEED = {
       code: 'HVKHQS',
       name: 'HVKHQS',
     },
+    {
+      uuid: '10000000-0000-4000-8000-000000000003',
+      code: 'PTIT',
+      name: 'Học viện PTIT',
+    },
   ],
   programs: [
     { uuid: '20000000-0000-4000-8000-000000000001', organizerCode: 'EDUGLOBAL', code: 'VSTEP', name: 'VSTEP', deliveryMode: 'internal_training' as const, trainingEnabled: 1, linkedClassEnabled: 1, visibleOnEduPublic: 1, visibleOnEduAdmin: 1, visibleOnExamTeacher: 1, visibleOnExamStudent: 1, redirectUrl: null, assessmentMode: 'official_exam' as const, certificateEnabled: 1, scheduleModel: 'session_based' as const },
@@ -442,6 +447,7 @@ const PROGRAM_PLATFORM_SEED = {
     { uuid: '20000000-0000-4000-8000-000000000004', organizerCode: 'HVKHQS', code: 'VSTEP', name: 'VSTEP', deliveryMode: 'internal_training' as const, trainingEnabled: 1, linkedClassEnabled: 1, visibleOnEduPublic: 1, visibleOnEduAdmin: 1, visibleOnExamTeacher: 1, visibleOnExamStudent: 1, redirectUrl: null, assessmentMode: 'official_exam' as const, certificateEnabled: 1, scheduleModel: 'session_based' as const },
     { uuid: '20000000-0000-4000-8000-000000000005', organizerCode: 'HVKHQS', code: 'VEPT', name: 'VEPT', deliveryMode: 'external_redirect' as const, trainingEnabled: 0, linkedClassEnabled: 0, visibleOnEduPublic: 1, visibleOnEduAdmin: 1, visibleOnExamTeacher: 0, visibleOnExamStudent: 0, redirectUrl: '/vept', assessmentMode: 'official_exam' as const, certificateEnabled: 1, scheduleModel: 'session_based' as const },
     { uuid: '20000000-0000-4000-8000-000000000006', organizerCode: 'HVKHQS', code: 'TIN_HOC', name: 'Tin học', deliveryMode: 'internal_training' as const, trainingEnabled: 1, linkedClassEnabled: 1, visibleOnEduPublic: 1, visibleOnEduAdmin: 1, visibleOnExamTeacher: 1, visibleOnExamStudent: 1, redirectUrl: null, assessmentMode: 'mixed' as const, certificateEnabled: 1, scheduleModel: 'session_based' as const },
+    { uuid: '20000000-0000-4000-8000-000000000007', organizerCode: 'PTIT', code: 'TIN_HOC', name: 'Tin học', deliveryMode: 'internal_training' as const, trainingEnabled: 1, linkedClassEnabled: 1, visibleOnEduPublic: 1, visibleOnEduAdmin: 1, visibleOnExamTeacher: 1, visibleOnExamStudent: 1, redirectUrl: null, assessmentMode: 'mixed' as const, certificateEnabled: 1, scheduleModel: 'session_based' as const },
   ],
   levels: [
     { uuid: '30000000-0000-4000-8000-000000000001', organizerCode: 'EDUGLOBAL', programCode: 'VSTEP', code: 'A2', name: 'A2', sortOrder: 1 },
@@ -460,6 +466,13 @@ const PROGRAM_PLATFORM_SEED = {
     { uuid: '30000000-0000-4000-8000-000000000014', organizerCode: 'HVKHQS', programCode: 'VEPT', code: 'B1', name: 'B1', sortOrder: 2 },
     { uuid: '30000000-0000-4000-8000-000000000015', organizerCode: 'HVKHQS', programCode: 'VEPT', code: 'B2', name: 'B2', sortOrder: 3 },
     { uuid: '30000000-0000-4000-8000-000000000016', organizerCode: 'HVKHQS', programCode: 'VEPT', code: 'C1', name: 'C1', sortOrder: 4 },
+    { uuid: '30000000-0000-4000-8000-000000000017', organizerCode: 'PTIT', programCode: 'TIN_HOC', code: 'MODUL1', name: 'PTIT Modul 1', sortOrder: 1 },
+    { uuid: '30000000-0000-4000-8000-000000000018', organizerCode: 'PTIT', programCode: 'TIN_HOC', code: 'MODUL2', name: 'PTIT Modul 2', sortOrder: 2 },
+    { uuid: '30000000-0000-4000-8000-000000000019', organizerCode: 'PTIT', programCode: 'TIN_HOC', code: 'MODUL3', name: 'PTIT Modul 3', sortOrder: 3 },
+    { uuid: '30000000-0000-4000-8000-000000000020', organizerCode: 'PTIT', programCode: 'TIN_HOC', code: 'MODUL4', name: 'PTIT Modul 4', sortOrder: 4 },
+    { uuid: '30000000-0000-4000-8000-000000000021', organizerCode: 'PTIT', programCode: 'TIN_HOC', code: 'MODUL5', name: 'PTIT Modul 5', sortOrder: 5 },
+    { uuid: '30000000-0000-4000-8000-000000000022', organizerCode: 'PTIT', programCode: 'TIN_HOC', code: 'MODUL6', name: 'PTIT Modul 6', sortOrder: 6 },
+    { uuid: '30000000-0000-4000-8000-000000000023', organizerCode: 'PTIT', programCode: 'TIN_HOC', code: 'MOS', name: 'PTIT MOS', sortOrder: 7 },
   ],
 };
 
@@ -522,10 +535,16 @@ export async function ensureSeedProgramPlatform(db: D1Database) {
   }
 
   for (const program of PROGRAM_PLATFORM_SEED.programs) {
-    const organizer = PROGRAM_PLATFORM_SEED.organizers.find((item) => item.code === program.organizerCode);
-    if (!organizer) {
+    const seedOrganizer = PROGRAM_PLATFORM_SEED.organizers.find((item) => item.code === program.organizerCode);
+    if (!seedOrganizer) {
       continue;
     }
+
+    const existingOrganizer = await db
+      .prepare(`SELECT uuid FROM program_organizers WHERE code = ? AND source_site IN ('edu', 'system') LIMIT 1`)
+      .bind(program.organizerCode)
+      .first<{ uuid: string }>();
+    const organizerUuid = existingOrganizer?.uuid || seedOrganizer.uuid;
 
     const legacyCategoryId = await resolveLegacyExamCategoryId(db, program.code, program.name);
     const legacyTypeId = await resolveLegacyExamTypeId(db, program.code, program.name);
@@ -558,7 +577,7 @@ export async function ensureSeedProgramPlatform(db: D1Database) {
       )
       .bind(
         program.uuid,
-        organizer.uuid,
+        organizerUuid,
         program.name,
         program.code,
         program.deliveryMode,

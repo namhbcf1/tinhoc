@@ -250,6 +250,23 @@ export async function getPendingCountsByClass(db: D1Database): Promise<Record<st
 }
 
 /**
+ * Find all of a student's active/pending enrollments joined with the
+ * category-bearing fields of the linked online class. Used for cross-class
+ * duplicate (per-category) checks.
+ */
+export async function findStudentCategoryEnrollments(db: D1Database, studentId: number | string): Promise<any[]> {
+  const result = await db.prepare(`
+    SELECT e.online_class_id AS class_id, e.status,
+           oc.exam_category_id, oc.class_name, oc.program_uuid, oc.organizer_uuid
+    FROM online_class_enrollments e
+    JOIN online_classes oc ON oc.id = e.online_class_id
+    WHERE e.student_id = ?
+      AND e.status IN ('active', 'pending')
+  `).bind(studentId).all();
+  return result.results || [];
+}
+
+/**
  * Find a student's enrollment for a specific class.
  */
 export async function findEnrollment(db: D1Database, classId: number | string, studentId: number | string): Promise<any> {

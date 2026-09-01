@@ -513,6 +513,7 @@ export async function updateExamSchedule(db: D1Database, examId: number, data: R
     class_seed_teacher_name,
     class_seed_max_students,
     google_map_url,
+    visible_on_homepage,
   } = data;
   const updates: string[] = [];
   const values: unknown[] = [];
@@ -540,6 +541,10 @@ export async function updateExamSchedule(db: D1Database, examId: number, data: R
   if (google_map_url !== undefined) {
     updates.push('google_map_url = ?');
     values.push(google_map_url);
+  }
+  if (visible_on_homepage !== undefined) {
+    updates.push('visible_on_homepage = ?');
+    values.push(visible_on_homepage ? 1 : 0);
   }
   if (notes !== undefined) {
     updates.push('notes = ?');
@@ -771,7 +776,27 @@ function containsAnyToken(text: string, tokens: string[]) {
   return tokens.some((token) => textContainsToken(text, token));
 }
 
-function resolveExamRegistrationBucket(exam: Record<string, any>): ExamRegistrationBucket {
+export function resolveExamRegistrationBucket(exam: Record<string, any>): ExamRegistrationBucket {
+  // Authoritative signal: exam_category mapped via exam_categories (name/code).
+  // Business rule: PTIT = Tin học; everything else = Tiếng Anh.
+  const categoryName = normalizeBucketText(exam?.exam_category_name);
+  const categoryCode = normalizeBucketText(exam?.exam_category_code);
+
+  if (
+    categoryName === 'tin hoc'
+    || categoryName === 'tin học'
+    || categoryCode === 'tin-hoc'
+    || categoryCode === 'tinhoc'
+  ) {
+    return 'informatics';
+  }
+
+  if (categoryName || categoryCode) {
+    // Any known category that is not Tin học (VSTEP / Ngôn ngữ Anh / ...) -> English.
+    return 'english';
+  }
+
+  // Fallback: text-token scan on exam metadata.
   const combined = [
     exam?.exam_type,
     exam?.program_uuid,
@@ -782,27 +807,19 @@ function resolveExamRegistrationBucket(exam: Record<string, any>): ExamRegistrat
     .filter(Boolean)
     .join(' ');
 
-  if (!combined) {
-    return 'unknown';
-  }
-
-  if (containsAnyToken(combined, ENGLISH_BUCKET_TOKENS)) {
-    return 'english';
-  }
-
-  if (containsAnyToken(combined, INFORMATICS_BUCKET_TOKENS)) {
+  if (combined && containsAnyToken(combined, INFORMATICS_BUCKET_TOKENS)) {
     return 'informatics';
   }
 
-  return 'unknown';
+  // Everything that is not Tin học is Tiếng Anh.
+  return 'english';
 }
 
-function bucketConflicts(left: ExamRegistrationBucket, right: ExamRegistrationBucket) {
-  if (left === 'unknown' || right === 'unknown') {
-    // Unknown bucket keeps conservative behavior: conflict with everything.
-    return true;
-  }
-  return left === right;
+export function bucketConflicts(left: ExamRegistrationBucket, right: ExamRegistrationBucket) {
+  // Unknown behaves like English per the business rule; only the same bucket conflicts.
+  const l = left === 'unknown' ? 'english' : left;
+  const r = right === 'unknown' ? 'english' : right;
+  return l === r;
 }
 
 function getBucketMessageLabel(bucket: ExamRegistrationBucket) {
@@ -815,9 +832,12 @@ function getBucketMessageLabel(bucket: ExamRegistrationBucket) {
 export async function getStudentExams(db: D1Database, studentId: number) {
   const result = await db.prepare(`
     SELECT e.*,
+           ec.name as exam_category_name,
+           ec.code as exam_category_code,
            c.ten_lop as class_name,
            er.status as registration_status
     FROM exam_schedules e
+    LEFT JOIN exam_categories ec ON ec.id = e.exam_category_id
     LEFT JOIN classes c ON e.class_id = c.id
     LEFT JOIN exam_registrations er ON e.id = er.exam_id AND er.student_id = ?
     WHERE e.deleted_at IS NULL
@@ -970,8 +990,11 @@ export async function registerStudentForExam(
 
   const targetExam = await db.prepare(`
     SELECT es.id, es.exam_name, es.exam_date, es.duration_minutes,
-           es.exam_type, es.exam_category_id, es.exam_type_id, es.program_uuid, es.organizer_uuid
+           es.exam_type, es.exam_category_id, es.exam_type_id, es.program_uuid, es.organizer_uuid,
+           ec.name as exam_category_name,
+           ec.code as exam_category_code
     FROM exam_schedules es
+    LEFT JOIN exam_categories ec ON ec.id = es.exam_category_id
     WHERE es.id = ?
       AND es.deleted_at IS NULL
     LIMIT 1
@@ -989,9 +1012,12 @@ export async function registerStudentForExam(
   const existingActives = await db.prepare(`
     SELECT er.id, er.exam_id, er.status, er.created_at,
            es.exam_name, es.exam_date, es.duration_minutes,
-           es.exam_type, es.exam_category_id, es.exam_type_id, es.program_uuid, es.organizer_uuid
+           es.exam_type, es.exam_category_id, es.exam_type_id, es.program_uuid, es.organizer_uuid,
+           ec.name as exam_category_name,
+           ec.code as exam_category_code
     FROM exam_registrations er
     JOIN exam_schedules es ON es.id = er.exam_id
+    LEFT JOIN exam_categories ec ON ec.id = es.exam_category_id
     WHERE er.student_id = ?
       AND er.status IN ('pending','approved','registered')
       AND er.exam_id != ?

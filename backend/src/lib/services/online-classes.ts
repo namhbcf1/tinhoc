@@ -12,6 +12,7 @@ import {
   findClassBySourceExamSchedule,
   countActiveEnrollments, getPendingCountsByClass,
   findEnrollment, findEnrollmentById,
+  findStudentCategoryEnrollments,
   createEnrollment, reEnroll,
   activateEnrollmentDirect, reactivateEnrollment,
   approveEnrollment, rejectEnrollment, cancelEnrollment,
@@ -30,6 +31,160 @@ import type { Env } from '../../types/env.js';
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 const SCHEDULE_TIME_RE = /^\d{2}:\d{2}-\d{2}:\d{2}$/;
+
+// ─── Class category (Lọc trùng lớp: Tin học vs Tiếng Anh) ────────────────────
+//
+// A student may hold at most ONE active/pending enrollment per category. The two
+// main categories are Tiếng Anh (english) and Tin học (informatics). The category
+// of an online class is derived from (in priority order):
+//   1. exam_category_id -> exam_categories.name/code (AUTHORITATIVE). When the
+//      resolved category name/code clearly matches a known bucket it wins, even
+//      if class_name / program_uuid / organizer_uuid text suggests otherwise.
+//   2. Fallback text tokens across class_name / program_uuid / organizer_uuid
+//      (case-insensitive, diacritic-insensitive).
+//
+// Fallback priority when BOTH families appear in the text: ENGLISH wins. e.g.
+// "Tiếng Anh tin học ứng dụng" is an English class (English is the subject,
+// "tin học ứng dụng" is the domain descriptor). This is a documented, explicit
+// choice, not an accident of token ordering.
+//
+// Production `exam_categories` mapping (shared D1, seeded by vantrangexam):
+//   1 = VSTEP            (code VSTEP)         -> english
+//   2 = Tin học          (code tin-hoc)       -> informatics
+//   3 = Ngôn ngữ Anh     (code ngon-ngu-anh)  -> english
+
+export type ClassCategory = 'english' | 'informatics' | 'unknown';
+
+const CLASS_CATEGORY_ENGLISH_TOKENS = [
+  'vstep', 'vept', 'english', 'ngoai ngu', 'ngoai_ngu', 'ngon ngu anh',
+  'toeic', 'toefl', 'ielts', 'tieng anh',
+];
+
+const CLASS_CATEGORY_INFORMATICS_TOKENS = [
+  'tin hoc', 'tinhoc', 'ptit', 'ic3', 'mos', 'cntt', 'computer',
+];
+
+function normalizeCategoryText(value: unknown): string {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function categoryTextHasToken(text: string, token: string): boolean {
+  const nt = normalizeCategoryText(token);
+  if (!nt) return false;
+  return (` ${text} `).includes(` ${nt} `);
+}
+
+function classifyCategoryFromText(text: string): ClassCategory {
+  const n = normalizeCategoryText(text);
+  if (CLASS_CATEGORY_ENGLISH_TOKENS.some((t) => categoryTextHasToken(n, t))) return 'english';
+  if (CLASS_CATEGORY_INFORMATICS_TOKENS.some((t) => categoryTextHasToken(n, t))) return 'informatics';
+  return 'unknown';
+}
+
+function classifyFromCategoryName(categoryName: string | null | undefined): ClassCategory {
+  if (!categoryName) return 'unknown';
+  return classifyCategoryFromText(categoryName);
+}
+
+/**
+ * Classify an online class into a category bucket.
+ *
+ * Priority rules:
+ *   1. `exam_category_id` joined to `exam_categories` (passed via `categoryName`
+ *      = resolved name+code) is AUTHORITATIVE. A resolved known bucket always
+ *      wins over conflicting class_name / program_uuid / organizer_uuid text.
+ *   2. If `exam_category_id` is absent OR resolves to an unknown bucket, fall
+ *      back to the case/diacritic-insensitive text scan of class_name /
+ *      program_uuid / organizer_uuid.
+ *   3. Nothing matches -> 'unknown' (callers skip dedupe for 'unknown').
+ *
+ * @param cls          class row (needs class_name, exam_category_id, program_uuid, organizer_uuid)
+ * @param categoryName optional resolved exam_categories name+code for exam_category_id
+ */
+export function classifyOnlineClass(cls: any, categoryName?: string | null): ClassCategory {
+  if (cls?.exam_category_id != null) {
+    const byCategory = classifyFromCategoryName(categoryName);
+    if (byCategory !== 'unknown') return byCategory;
+  }
+  const source = [
+    cls?.class_name,
+    cls?.program_uuid,
+    cls?.organizer_uuid,
+  ].filter(Boolean).join(' ');
+  return classifyCategoryFromText(source);
+}
+
+async function loadCategoryNames(db: D1Database, ids: (number | string | null | undefined)[]): Promise<Map<number, string>> {
+  const map = new Map<number, string>();
+  const distinct = Array.from(
+    new Set(ids.filter((v): v is number | string => v != null).map((v) => Number(v)))
+  ).filter((v) => Number.isFinite(v));
+  if (distinct.length === 0) return map;
+  for (const id of distinct) {
+    try {
+      const row = await db.prepare(
+        `SELECT name, code FROM exam_categories WHERE id = ?`
+      ).bind(id).first<any>();
+      if (row) map.set(Number(id), `${row.name ?? ''} ${row.code ?? ''}`);
+    } catch {
+      /* exam_categories table may be unavailable in some contexts */
+    }
+  }
+  return map;
+}
+
+async function classifyClassWithCategoryName(db: D1Database, cls: any): Promise<ClassCategory> {
+  let categoryName: string | null = null;
+  if (cls?.exam_category_id != null) {
+    const map = await loadCategoryNames(db, [cls.exam_category_id]);
+    categoryName = map.get(Number(cls.exam_category_id)) ?? null;
+  }
+  return classifyOnlineClass(cls, categoryName);
+}
+
+/**
+ * Enforce "at most one active/pending enrollment per category" for a student.
+ * Throws if the target class's category already has another enrollment.
+ * Classes that resolve to 'unknown' are skipped (preserves prior behavior).
+ */
+async function assertNoDuplicateCategoryEnrollment(
+  db: D1Database,
+  studentId: number | string,
+  targetClass: any
+): Promise<void> {
+  const targetCat = await classifyClassWithCategoryName(db, targetClass);
+  if (targetCat === 'unknown') return;
+
+  const existing = await findStudentCategoryEnrollments(db, studentId);
+  if (existing.length === 0) return;
+
+  const ids = [targetClass.exam_category_id, ...existing.map((e) => e.exam_category_id)]
+    .filter((v) => v != null);
+  const catNameMap = await loadCategoryNames(db, ids);
+
+  const label = targetCat === 'english' ? 'Tiếng Anh' : 'Tin học';
+
+  for (const e of existing) {
+    if (Number(e.class_id) === Number(targetClass.id)) continue; // same-class handled elsewhere
+    const eCat = classifyOnlineClass(
+      e,
+      e.exam_category_id != null ? (catNameMap.get(Number(e.exam_category_id)) ?? null) : null
+    );
+    if (eCat === targetCat) {
+      throw Object.assign(
+        new Error(
+          `Bạn đã đăng ký một lớp ${label} khác. Mỗi học viên chỉ được đăng ký tối đa 1 lớp mỗi loại (${label}).`
+        ),
+        { statusCode: 400 }
+      );
+    }
+  }
+}
 
 /**
  * Returns true if current time in `timezone` is within [start - earlyBuf, end + lateBuf].
@@ -469,6 +624,8 @@ export async function enrollStudent(db: D1Database, classId: number | string, st
     if (existing.status === 'pending') throw Object.assign(new Error('Bạn đã đăng ký và đang chờ duyệt'), { statusCode: 400 });
     await reEnroll(db, existing.id);
   } else {
+    // Per-category dedupe: at most one active/pending class per category.
+    await assertNoDuplicateCategoryEnrollment(db, studentId, cls);
     await createEnrollment(db, classId, studentId);
   }
 
@@ -497,6 +654,8 @@ export async function adminAddStudent(db: D1Database, classId: number | string, 
     }
     await reactivateEnrollment(db, existing.id);
   } else {
+    // Per-category dedupe: at most one active class per category.
+    await assertNoDuplicateCategoryEnrollment(db, studentId, cls);
     await activateEnrollmentDirect(db, classId, studentId);
   }
 

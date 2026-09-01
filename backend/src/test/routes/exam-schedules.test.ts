@@ -228,6 +228,7 @@ async function setupDatabase() {
       class_seed_end_date TEXT,
       class_seed_teacher_name TEXT,
       class_seed_max_students INTEGER,
+      visible_on_homepage INTEGER NOT NULL DEFAULT 0,
       deleted_at TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -240,6 +241,7 @@ async function setupDatabase() {
       exam_id INTEGER NOT NULL,
       student_id INTEGER NOT NULL,
       status TEXT NOT NULL,
+      payment_status TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       created_by INTEGER,
       approved_at TEXT,
@@ -356,6 +358,7 @@ async function setupDatabase() {
       noi_sinh TEXT,
       ngay_cap_cccd TEXT,
       don_vi_cong_tac TEXT,
+      nganh_dang_hoc TEXT,
       image_3x4 TEXT,
       photo_3x4_image_id INTEGER,
       image_cccd_front TEXT,
@@ -1486,14 +1489,14 @@ describe('exam schedules routes', () => {
         id, exam_name, exam_date, duration_minutes, exam_category_id, exam_type_id, organizer_uuid, program_uuid
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(1001, 'Thi lớp A', '2026-04-01 09:00:00', 120, 1, 1, 'org-ptit', 'program-tinhoc').run();
+    `).bind(1001, 'Thi lớp A', '2027-04-01 09:00:00', 120, 1, 1, 'org-ptit', 'program-tinhoc').run();
 
     await env.DB.prepare(`
       INSERT INTO exam_schedules (
         id, exam_name, exam_date, duration_minutes, exam_category_id, exam_type_id, organizer_uuid, program_uuid
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(1002, 'Thi lớp B', '2026-04-05 15:00:00', 90, 1, 1, 'org-ptit', 'program-tinhoc').run();
+    `).bind(1002, 'Thi lớp B', '2027-04-05 15:00:00', 90, 1, 1, 'org-ptit', 'program-tinhoc').run();
 
     await env.DB.prepare(`
       INSERT INTO exam_registrations (exam_id, student_id, status)
@@ -1526,14 +1529,14 @@ describe('exam schedules routes', () => {
         id, exam_name, exam_date, duration_minutes, exam_category_id, exam_type_id, organizer_uuid, program_uuid
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(1021, 'Thi Tin hoc A', '2026-04-01 09:00:00', 120, 1, 1, 'org-ptit', 'program-tinhoc').run();
+    `).bind(1021, 'Thi Tin hoc A', '2027-04-01 09:00:00', 120, 1, 1, 'org-ptit', 'program-tinhoc').run();
 
     await env.DB.prepare(`
       INSERT INTO exam_schedules (
         id, exam_name, exam_date, duration_minutes, exam_category_id, exam_type_id, organizer_uuid, program_uuid
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(1022, 'Thi VEPT B1', '2026-04-05 15:00:00', 90, 2, 2, 'org-eduglobal', 'program-vept').run();
+    `).bind(1022, 'Thi VEPT B1', '2027-04-05 15:00:00', 90, 2, 2, 'org-eduglobal', 'program-vept').run();
 
     await env.DB.prepare(`
       INSERT INTO exam_registrations (exam_id, student_id, status)
@@ -1571,14 +1574,14 @@ describe('exam schedules routes', () => {
         id, exam_name, exam_date, duration_minutes, exam_category_id, exam_type_id, organizer_uuid, program_uuid
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(1031, 'Thi VEPT', '2026-04-02 09:00:00', 120, 2, 2, 'org-eduglobal', 'program-vept').run();
+    `).bind(1031, 'Thi VEPT', '2027-04-02 09:00:00', 120, 2, 2, 'org-eduglobal', 'program-vept').run();
 
     await env.DB.prepare(`
       INSERT INTO exam_schedules (
         id, exam_name, exam_date, duration_minutes, exam_category_id, exam_type_id, organizer_uuid, program_uuid
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(1032, 'Thi VSTEP', '2026-04-06 09:00:00', 120, 3, 3, 'org-eduglobal', 'program-vept').run();
+    `).bind(1032, 'Thi VSTEP', '2027-04-06 09:00:00', 120, 3, 3, 'org-eduglobal', 'program-vept').run();
 
     await env.DB.prepare(`
       INSERT INTO exam_registrations (exam_id, student_id, status)
@@ -1616,7 +1619,7 @@ describe('exam schedules routes', () => {
         id, exam_name, exam_date, duration_minutes, exam_category_id, exam_type_id, organizer_uuid, program_uuid
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(1012, 'Thi mới', '2026-04-10 09:00:00', 90, 1, 1, 'org-ptit', 'program-tinhoc').run();
+    `).bind(1012, 'Thi mới', '2027-04-10 09:00:00', 90, 1, 1, 'org-ptit', 'program-tinhoc').run();
 
     await env.DB.prepare(`
       INSERT INTO exam_registrations (exam_id, student_id, status)
@@ -1645,14 +1648,14 @@ describe('exam schedules routes', () => {
         id, exam_name, exam_date, duration_minutes, exam_category_id, exam_type_id, organizer_uuid, program_uuid
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(1101, 'Thi đã đăng ký', '2026-04-03 09:00:00', 120, 1, 1, 'org-ptit', 'program-tinhoc').run();
+    `).bind(1101, 'Thi đã đăng ký', '2027-04-03 09:00:00', 120, 1, 1, 'org-ptit', 'program-tinhoc').run();
 
     await env.DB.prepare(`
       INSERT INTO exam_schedules (
         id, exam_name, exam_date, duration_minutes, exam_category_id, exam_type_id, organizer_uuid, program_uuid
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(1102, 'Thi còn lại trong đợt', '2026-04-07 14:00:00', 60, 1, 1, 'org-ptit', 'program-tinhoc').run();
+    `).bind(1102, 'Thi còn lại trong đợt', '2027-04-07 14:00:00', 60, 1, 1, 'org-ptit', 'program-tinhoc').run();
 
     await env.DB.prepare(`
       INSERT INTO exam_registrations (exam_id, student_id, status)
@@ -1728,14 +1731,14 @@ describe('exam schedules routes', () => {
         id, exam_name, exam_date, duration_minutes, exam_category_id, exam_type_id, organizer_uuid, program_uuid
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(1201, 'Thi Tin hoc đang giữ', '2026-04-03 09:00:00', 120, 1, 1, 'org-ptit', 'program-tinhoc').run();
+    `).bind(1201, 'Thi Tin hoc đang giữ', '2027-04-03 09:00:00', 120, 1, 1, 'org-ptit', 'program-tinhoc').run();
 
     await env.DB.prepare(`
       INSERT INTO exam_schedules (
         id, exam_name, exam_date, duration_minutes, exam_category_id, exam_type_id, organizer_uuid, program_uuid
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(1202, 'Thi Tin hoc muốn thêm', '2026-04-07 14:00:00', 60, 1, 1, 'org-ptit', 'program-tinhoc').run();
+    `).bind(1202, 'Thi Tin hoc muốn thêm', '2027-04-07 14:00:00', 60, 1, 1, 'org-ptit', 'program-tinhoc').run();
 
     await env.DB.prepare(`
       INSERT INTO exam_registrations (exam_id, student_id, status)
@@ -1770,14 +1773,14 @@ describe('exam schedules routes', () => {
         id, exam_name, exam_date, duration_minutes, exam_category_id, exam_type_id, organizer_uuid, program_uuid
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(1211, 'Thi Tin hoc cũ', '2026-04-03 09:00:00', 120, 1, 1, 'org-ptit', 'program-tinhoc').run();
+    `).bind(1211, 'Thi Tin hoc cũ', '2027-04-03 09:00:00', 120, 1, 1, 'org-ptit', 'program-tinhoc').run();
 
     await env.DB.prepare(`
       INSERT INTO exam_schedules (
         id, exam_name, exam_date, duration_minutes, exam_category_id, exam_type_id, organizer_uuid, program_uuid
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(1212, 'Thi Tin hoc mới', '2026-04-07 14:00:00', 60, 1, 1, 'org-ptit', 'program-tinhoc').run();
+    `).bind(1212, 'Thi Tin hoc mới', '2027-04-07 14:00:00', 60, 1, 1, 'org-ptit', 'program-tinhoc').run();
 
     await env.DB.prepare(`
       INSERT INTO exam_registrations (exam_id, student_id, status)

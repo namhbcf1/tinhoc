@@ -295,6 +295,38 @@ app.route('/messaging', messaging);
 app.use('/attendance/*', authMiddleware);
 app.route('/attendance', attendance);
 
+// Public: upcoming exam schedules (no auth)
+app.get('/exam-schedules/public-upcoming', async (c) => {
+  try {
+    const exams = await c.env.DB.prepare(`
+      SELECT
+        e.exam_name,
+        datetime(e.exam_date, '+7 hours') as exam_date,
+        e.duration_minutes,
+        e.location,
+        org.name as organizer_name,
+        org.code as organizer_code,
+        p.name as program_name,
+        p.code as program_code,
+        lvl.name as level_name,
+        lvl.code as level_code
+      FROM exam_schedules e
+      LEFT JOIN program_organizers org ON org.uuid = e.organizer_uuid
+      LEFT JOIN programs p ON p.uuid = e.program_uuid
+      LEFT JOIN program_levels lvl ON lvl.uuid = e.level_uuid
+      WHERE e.deleted_at IS NULL
+        AND e.visible_on_homepage = 1
+        AND e.exam_date >= datetime('now')
+      ORDER BY e.exam_date ASC
+      LIMIT 6
+    `).all();
+    return c.json({ success: true, data: exams.results || [] });
+  } catch (error: any) {
+    console.error('[public-exam-schedules] error:', error);
+    return c.json({ success: false, error: error.message || 'Lỗi lấy lịch thi' }, 500);
+  }
+});
+
 // Exam schedules (admin only) - apply auth to all routes including root
 app.use('/exam-schedules*', authMiddleware);
 app.route('/exam-schedules', examSchedules);
