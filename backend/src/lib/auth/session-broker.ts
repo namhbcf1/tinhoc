@@ -234,8 +234,9 @@ export async function issueSessionToken(
   }
 
   const isStudent = principal.userType === 'student';
+  // Student tokens expire in 90 days (7,776,000 seconds)
   const expiresAtSeconds = isStudent
-    ? null  // Student tokens never expire
+    ? Math.floor(Date.now() / 1000) + 90 * 24 * 60 * 60
     : Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60;
   const token = await generateJWT(buildJwtPayload(session, audience, expiresAtSeconds), env.JWT_SECRET);
   await touchSession(db, session.sid);

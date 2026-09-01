@@ -37,6 +37,16 @@ export const authMiddleware: MiddlewareHandler<AuthContext> = async (c, next: Ne
     return errorResponse('Token đã hết hạn', 401) as Response;
   }
 
+  // Enforce 90-day max session lifetime for student tokens (JWT exp might be far future)
+  if (payload.sid && payload.role === 'student') {
+    const issuedAt = Math.floor(payload.iat as number);
+    const nowSec = Math.floor(Date.now() / 1000);
+    const ninetyDays = 90 * 24 * 60 * 60;
+    if (nowSec - issuedAt > ninetyDays) {
+      return errorResponse('Session quá cũ, vui lòng đăng nhập lại', 401) as Response;
+    }
+  }
+
   if (payload.sid) {
     const session = await getActiveSessionBySid(c.env.DB, payload.sid);
     if (!session) {
