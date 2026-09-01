@@ -536,3 +536,8 @@ Admin can now see, per exam schedule, the vantrangexam attempt history: how many
 - `git status --porcelain` hai repo: 0 dòng (sạch tuyệt đối).
 - Ảnh CCCD + plans/ xóa qua git commit (52dc5b559, ebaa49ee8) — đã push origin/main.
 - Kiểm tra ảnh hưởng `EXCEL/MAUPTIT/MAUVEPT.xlsx`: code chỉ tham chiếu path R2 `templates/MAU*.xlsx` (test seed), không đọc file đĩa → xóa local an toàn.
+
+## 2026-09-02: Verify thay đổi bỏ chụp ảnh ở /register
+- `npx tsc --noEmit -p tsconfig.json` → pass (không output).
+- `npm run build:prod` → build sạch 6.89s, không lỗi.
+- Production sau deploy `0f6a8f83`: https://vantrangedu.com/register → 200; 2 chunk hash mới → 200 application/javascript.

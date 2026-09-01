@@ -509,3 +509,9 @@ pm run build; warning còn lại là CSS @import/chunk-size cũ.
 - Toàn bộ hint/nút/thông báo lỗi của khối tải ảnh (mặt trước/sau CCCD, 3×4) viết không dấu — vi phạm chuẩn ngôn ngữ; đã thay bằng tiếng Việt đầy đủ dấu.
 - Lưu ý cho phiên sau: file này là bản thật sau re-export `CCCDUploader.tsx → ./CCCDUploaderGenerateFirst`.
 - Deploy Pages a4beba81. Cùng phiên: exam deploy 93d0b8dc thành công, migration 027 đã áp dụng prod (521 dòng giữ nguyên, CHECK nhận 'manual').
+
+## 2026-09-02 (chiều): Trang /register bỏ nút chụp ảnh
+- Commit `f7c745d3c` (đã push origin/main): thêm prop `allowCamera` (mặc định `true`) vào `CCCDUploaderGenerateFirst.tsx`, gate 3 điểm UI: nút "Chụp ảnh" (CCCD), "Chụp selfie" (3×4 mobile), và nút selfie trong hàng lỗi.
+- Hai UploadSection register (desktop + mobile) truyền `allowCamera={false}` cho cả 3 ô (cccd_front, cccd_back, photo_3x4). StudentProfileEditor KHÔNG đổi — vẫn giữ chụp ảnh.
+- Không còn đường mở camera nào khác ở register: input `capture` chỉ bật qua `openNativePicker('user')` (chỉ nút camera gọi); modal `CameraWithOverlay` là code chết (showCamera không bao giờ bật).
+- Deploy Pages `0f6a8f83`; verify: /register 200, chunk mới `CCCDUploader-mtj3iky2-DZ7cWcFw.js` + `StudentRegistration-mtj3iky2-Ayc1cvl4.js` đều 200 application/javascript trên vantrangedu.com.
