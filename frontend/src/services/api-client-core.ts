@@ -195,3 +195,9 @@ export class ApiClient {
     });
   }
 }
+
+// Các method domain được gắn lúc runtime bởi services/api.ts từ các file mixin
+// (@ts-nocheck). Khai báo những method mà code đã type gọi tới.
+export interface ApiClient {
+  registerStudent(data: unknown): Promise<any>;
+}

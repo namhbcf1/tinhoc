@@ -3,6 +3,7 @@ import type { UploadStatusSnapshot } from '../../../../components/upload/CCCDUpl
 import {
   createIdleUploadSnapshot,
   type UploadSuccessResult,
+  type StudentRegistrationUploadHookResult,
   UPLOAD_TYPE_LABELS,
 } from './student-registration-types';
 
@@ -49,7 +50,7 @@ export function useStudentRegistrationUpload(): StudentRegistrationUploadHookRes
 
   const processingItems = (['cccd_front', 'cccd_back', 'photo_3x4'] as const).flatMap((type) => {
     const runtime = uploadRuntime[type];
-    if (runtime.status !== 'uploading' && runtime.status !== 'processing') return [];
+    if (runtime.status !== 'uploading') return [];
 
     const fallbackDescription = runtime.status === 'uploading'
       ? `Đang tải ${UPLOAD_TYPE_LABELS[type].toLowerCase()} lên hệ thống.`

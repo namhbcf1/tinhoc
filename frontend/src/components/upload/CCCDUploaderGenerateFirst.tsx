@@ -55,10 +55,12 @@ export interface UploadStatusSnapshot {
 
 interface Props {
   type: UploadType;
-  onUploadSuccess?: (data: { imageId: string; processingLogId?: string; type: string; imageUrl?: string }) => void;
+  onUploadSuccess?: (data: { imageId: string; processingLogId?: string; type: UploadType; imageUrl?: string }) => void;
   onUploadError?: (err: Error) => void;
   onStatusChange?: (state: UploadStatusSnapshot) => void;
   existingImageUrl?: string | null;
+  /** Thông tin giới tính để gợi ý ảnh 3×4 — hiện chưa dùng trong implementation này, giữ cho các call-site (register/profile). */
+  photoGenderHint?: string;
 }
 
 // Error boundary cho lazy-loaded editor components

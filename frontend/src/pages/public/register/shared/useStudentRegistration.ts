@@ -7,6 +7,8 @@ import analytics from '../../../../utils/analytics';
 import {
   registrationSchema,
   type RegistrationFormData,
+  type RegistrationFieldA11y,
+  type StudentRegistrationHookResult,
 } from './student-registration-types';
 import { REGISTER_ERROR_COPY, REGISTER_SUCCESS_COPY } from './student-registration-copy';
 import { useStudentRegistrationUpload } from './useStudentRegistrationUpload';
@@ -42,7 +44,7 @@ export function useStudentRegistration(): StudentRegistrationHookResult {
 
   const fieldErrorId = (field: keyof RegistrationFormData) => `${String(field)}-error`;
   const fieldHintId = (field: keyof RegistrationFormData) => `${String(field)}-hint`;
-  const getFieldA11y = (field: keyof RegistrationFormData) => ({
+  const getFieldA11y = (field: keyof RegistrationFormData): RegistrationFieldA11y => ({
     'aria-invalid': errors[field] ? 'true' : 'false',
     'aria-describedby': errors[field] ? fieldErrorId(field) : undefined,
   });
