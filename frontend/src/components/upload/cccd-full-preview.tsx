@@ -23,7 +23,7 @@ export default function FullPreview({ type, preview, label, onClose, onRetake }:
                         <X size={22} />
                     </button>
                 </div>
-                <img src={preview} alt="Full Preview" className="full-preview-img" />
+                <img src={preview} alt={`Xem trước toàn bộ ${label}`} className="full-preview-img" />
                 <div className="full-preview-checklist">
                     <p className="checklist-title">Kiểm tra trước khi nộp:</p>
                     {type !== 'photo_3x4' ? (

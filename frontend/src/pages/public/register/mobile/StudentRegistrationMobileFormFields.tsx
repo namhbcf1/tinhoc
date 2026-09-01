@@ -121,7 +121,7 @@ export default function StudentRegistrationMobileFormFields({
       maxLength={12}
       pattern="[0-9]*"
       className={`form-input ${errors.cccd ? 'error' : ''}`}
-      placeholder="Nhp s CCCD"
+      placeholder="Nhập số CCCD"
     />
     {errors.cccd && <p id={fieldErrorId('cccd')} className="error-text">{errors.cccd.message}</p>}
         </div>

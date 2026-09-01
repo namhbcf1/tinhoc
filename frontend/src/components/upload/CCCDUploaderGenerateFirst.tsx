@@ -26,10 +26,15 @@ const ImageEditor = lazyWithChunkReload(() => import('./ImageEditor'));
 const DocumentSmartEditor = lazyWithChunkReload(() => import('./DocumentSmartEditor'));
 const CameraWithOverlay = lazyWithChunkReload(() => import('./CameraWithOverlay'));
 
+const svgTemplate = (svg: string) => `data:image/svg+xml,${encodeURIComponent(svg)}`;
+
+// Ảnh mẫu dựng sẵn bằng SVG nội tuyến — thay cho URL ngoài (tec.hanu.vn) đã chết,
+// từng gây vỡ hình trên trang đăng ký. Mỗi loại có hình gợi ý riêng:
+// thẻ CCCD mặt trước (avatar + dòng thông tin), mặt sau (QR + vân tay), ảnh 3×4 (chân dung).
 const TEMPLATE_IMAGES = {
-  cccd_front: 'https://tec.hanu.vn/80c8302f1df48b830e40166e1f58b414/5550119/view-image/cccd_front.jpg',
-  cccd_back: 'https://tec.hanu.vn/80c8302f1df48b830e40166e1f58b414/5550119/view-image/cccd_back.jpg',
-  photo_3x4: 'https://tec.hanu.vn/80c8302f1df48b830e40166e1f58b414/5550119/view-image/photo_3x4.jpg',
+  cccd_front: svgTemplate('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 316 200"><rect width="316" height="200" rx="14" fill="#f6f7f9"/><rect x="10" y="10" width="296" height="180" rx="12" fill="#ffffff" stroke="#d8dee9" stroke-width="2"/><rect x="30" y="28" width="118" height="11" rx="5.5" fill="#c8a96a" opacity="0.55"/><rect x="30" y="52" width="86" height="7" rx="3.5" fill="#e5eaf1"/><rect x="30" y="70" width="128" height="7" rx="3.5" fill="#e5eaf1"/><rect x="30" y="88" width="104" height="7" rx="3.5" fill="#e5eaf1"/><rect x="30" y="106" width="118" height="7" rx="3.5" fill="#e5eaf1"/><rect x="30" y="150" width="150" height="10" rx="5" fill="#c3ccd9"/><circle cx="242" cy="86" r="38" fill="#eef1f6" stroke="#d8dee9" stroke-width="2"/><clipPath id="a"><circle cx="242" cy="86" r="37"/></clipPath><g clip-path="url(#a)"><circle cx="242" cy="76" r="13" fill="#b7c1cf"/><ellipse cx="242" cy="126" rx="24" ry="18" fill="#b7c1cf"/></g></svg>'),
+  cccd_back: svgTemplate('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 316 200"><rect width="316" height="200" rx="14" fill="#f6f7f9"/><rect x="10" y="10" width="296" height="180" rx="12" fill="#ffffff" stroke="#d8dee9" stroke-width="2"/><rect x="30" y="30" width="64" height="64" rx="6" fill="none" stroke="#9aa6b6" stroke-width="5"/><rect x="42" y="42" width="14" height="14" fill="#9aa6b6"/><rect x="70" y="42" width="12" height="12" fill="#c3ccd9"/><rect x="42" y="70" width="12" height="12" fill="#c3ccd9"/><rect x="64" y="64" width="18" height="18" fill="#9aa6b6"/><circle cx="244" cy="92" r="34" fill="none" stroke="#c8a96a" stroke-width="3" opacity="0.65"/><circle cx="244" cy="92" r="21" fill="none" stroke="#c8a96a" stroke-width="3" opacity="0.5"/><circle cx="244" cy="92" r="9" fill="none" stroke="#c8a96a" stroke-width="3" opacity="0.4"/><rect x="120" y="150" width="166" height="10" rx="5" fill="#e5eaf1"/><rect x="30" y="118" width="110" height="7" rx="3.5" fill="#e5eaf1"/><rect x="30" y="134" width="92" height="7" rx="3.5" fill="#e5eaf1"/></svg>'),
+  photo_3x4: svgTemplate('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 200"><clipPath id="f"><rect x="6" y="6" width="138" height="188" rx="8"/></clipPath><g clip-path="url(#f)"><rect x="6" y="6" width="138" height="188" fill="#f6f8fb"/><circle cx="75" cy="76" r="27" fill="#b7c1cf"/><ellipse cx="75" cy="146" rx="42" ry="34" fill="#b7c1cf"/></g><rect x="6" y="6" width="138" height="188" rx="8" fill="none" stroke="#d8dee9" stroke-width="2"/></svg>'),
 } as const;
 
 const TYPE_LABELS = { cccd_front: 'CCCD mặt trước', cccd_back: 'CCCD mặt sau', photo_3x4: 'Ảnh thẻ 3×4' } as const;
@@ -247,7 +252,7 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
       if (attempt < MAX_RETRIES && !(err instanceof Error && err.name === 'AbortError')) {
         const next = attempt + 1;
         setRetryCount(next);
-        setError(`Loi mang, dang thu lai lan ${next}/${MAX_RETRIES}...`);
+        setError(`Lỗi mạng, đang thử lại lần ${next}/${MAX_RETRIES}...`);
         setTimeout(() => { void sendFile(file, next); }, 2000);
         return;
       }
@@ -297,7 +302,7 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
     if (isPhoto) return;
     const file = documentEditorFile || selectedFile;
     if (!file) {
-      setError('Chưa có ảnh CCCD để cân chỉnh. Vui lòng chọn hoặc chụp lại ảnh.');
+      setError('Chưa có ảnh CCCD để cân chỉnh. Vui lòng chọn ảnh khác.');
       return;
     }
     setError('');
@@ -344,7 +349,7 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
               <div className="upload-placeholder upload-placeholder-loading">
                 <Loader2 className="animate-spin icon-large" size={36} />
                 <p className="upload-text">Đang tải ảnh...</p>
-                {retryCount > 0 && <p className="upload-hint upload-hint-retry">Dang thu lai ({retryCount}/{MAX_RETRIES})...</p>}
+                {retryCount > 0 && <p className="upload-hint upload-hint-retry">Đang thử lại ({retryCount}/{MAX_RETRIES})...</p>}
               </div>
             ) : status === 'error' ? (
               <div className="upload-placeholder">
@@ -387,18 +392,18 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
         ) : (
           <div className={`preview-container ${isPhoto ? 'photo-type' : 'cccd-type'}`}>
             <div className="preview-frame">
-              <img src={preview} alt={`Preview ${TYPE_LABELS[type]}`} />
+              <img src={preview} alt={`Xem trước ${TYPE_LABELS[type]}`} />
               <div className="preview-overlay">
                 {status === 'success' && <div className="status-badge success"><CheckCircle size={16} /><span>OK</span></div>}
-                {status === 'uploading' && <div className="status-badge uploading"><Loader2 className="animate-spin" size={16} /><span>Tai...</span></div>}
-                {status === 'error' && <div className="status-badge error"><XCircle size={16} /><span>Loi</span></div>}
+                {status === 'uploading' && <div className="status-badge uploading"><Loader2 className="animate-spin" size={16} /><span>Đang tải...</span></div>}
+                {status === 'error' && <div className="status-badge error"><XCircle size={16} /><span>Lỗi</span></div>}
               </div>
             </div>
             {(status === 'success') && (
               <div className="preview-bottom-actions">
                 {!isPhoto && documentEditorFile && (
                   <button type="button" className="btn-preview-adjust" onClick={openDocumentEditor}>
-                    <Eye size={14} /><span>Can chinh</span>
+                    <Eye size={14} /><span>Cân chỉnh</span>
                   </button>
                 )}
                 <button type="button" className="btn-preview-view" onClick={() => setShowFullPreview(true)}>
@@ -433,20 +438,20 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
         <UploadProgressBar
           progress={uploadProgress}
           label="Đang tải ảnh..."
-          completionLabel="Da tai xong."
+          completionLabel="Đã tải xong."
         />
       )}
 
       <input ref={fileInputRef} type="file" accept="image/*,.heic,.heif" capture={fileCaptureMode || undefined} onChange={chooseFile} style={{ display: 'none' }} />
 
       {error && (
-        <div className={`error-message ${error.includes('mang') || error.includes('thu lai') ? 'warning' : ''}`} role="alert">
+        <div className={`error-message ${error.includes('Lỗi mạng') || error.includes('đang thử lại') ? 'warning' : ''}`} role="alert">
           <AlertCircle size={14} />
           <div className="error-message-body">
             <span>{error}</span>
             <div className="error-action-row">
               <button type="button" className="btn-retry-upload" onClick={resetUpload}>
-                <RefreshCw size={12} /> Thu lai
+                <RefreshCw size={12} /> Thử lại
               </button>
               {isPhoto && isMobile && allowCamera && (
                 <button type="button" className="btn-guide-upload" onClick={() => openNativePicker('user')}>
@@ -487,7 +492,7 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
 
       {showCamera && !isPhoto && !showImageEditor && (
         <EditorErrorBoundary onRetry={() => { setShowCamera?.(false); }}>
-          <Suspense fallback={<div className="upload-loading"><Loader2 className="animate-spin" size={24} /><span>Dang mo camera...</span></div>}>
+          <Suspense fallback={<div className="upload-loading"><Loader2 className="animate-spin" size={24} /><span>Đang mở camera...</span></div>}>
             <CameraWithOverlay
               type={type}
               templateImage={TEMPLATE_IMAGES[type]}

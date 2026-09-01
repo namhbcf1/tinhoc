@@ -34,13 +34,13 @@ export default function StudentRegistrationMobileView({
   return (
     <div className="a4-registration-page vt-registration-page vt-registration-page-mobile">
       <SEO
-        title="Dang ky du thi"
-        description="Form dang ky du thi truc tuyen cua Van Trang Education cho hoc vien va thi sinh."
+        title="Đăng ký dự thi"
+        description="Form đăng ký dự thi trực tuyến của Van Trang Education cho học viên và thí sinh."
         url="/register"
         structuredData={{
           '@type': 'WebPage',
-          name: 'Dang ky du thi',
-          description: 'Phieu dang ky du thi truc tuyen cua Van Trang Education.',
+          name: 'Đăng ký dự thi',
+          description: 'Phiếu đăng ký dự thi trực tuyến của Van Trang Education.',
           url: 'https://vantrangedu.com/register'
         }}
       />
