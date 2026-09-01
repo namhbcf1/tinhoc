@@ -541,3 +541,7 @@ Admin can now see, per exam schedule, the vantrangexam attempt history: how many
 - `npx tsc --noEmit -p tsconfig.json` → pass (không output).
 - `npm run build:prod` → build sạch 6.89s, không lỗi.
 - Production sau deploy `0f6a8f83`: https://vantrangedu.com/register → 200; 2 chunk hash mới → 200 application/javascript.
+
+## 2026-09-02: Verify redesign /register
+- `npx tsc --noEmit -p tsconfig.json` pass; `npm run build:prod` sạch.
+- Production: /register 200; `CCCDUploader-mtj3tyhq-CaVY1UdJ.js` chứa `data:image/svg` (1); `StudentRegistration-mtj3tyhq-Bl0y56W2.js` chứa "Nhập số CCCD" (1); cả 2 200 application/javascript.

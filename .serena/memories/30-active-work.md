@@ -515,3 +515,9 @@ pm run build; warning còn lại là CSS @import/chunk-size cũ.
 - Hai UploadSection register (desktop + mobile) truyền `allowCamera={false}` cho cả 3 ô (cccd_front, cccd_back, photo_3x4). StudentProfileEditor KHÔNG đổi — vẫn giữ chụp ảnh.
 - Không còn đường mở camera nào khác ở register: input `capture` chỉ bật qua `openNativePicker('user')` (chỉ nút camera gọi); modal `CameraWithOverlay` là code chết (showCamera không bao giờ bật).
 - Deploy Pages `0f6a8f83`; verify: /register 200, chunk mới `CCCDUploader-mtj3iky2-DZ7cWcFw.js` + `StudentRegistration-mtj3iky2-Ayc1cvl4.js` đều 200 application/javascript trên vantrangedu.com.
+
+## 2026-09-02 (chiều 2): Redesign cân đối trang /register
+- Commit `0e9dda37b` (đã push): ảnh mẫu upload chuyển từ hotlink tec.hanu.vn (chết → ô vỡ hình) sang SVG nội tuyến theo 3 loại (CCCD trước/sau/3×4) trong `CCCDUploaderGenerateFirst.tsx`.
+- `RegistrationFormA4.css`: nút "Chọn ảnh" auto-fit trải đầy thẻ; radio NAM/NỮ thành pill căn chiều cao ô nhập (46px, :has(:checked) màu ngọc lam); nhãn thẻ + nút hành động đổi sang bảng màu mực–ngọc lam của vt-overlay (xanh dương cũ lệch tông).
+- Dấu tiếng Việt: "Nhập số CCCD" (2 FormFields), badge "Đang tải/Lỗi/Cân chỉnh/Thử lại/Đã tải xong", alt "Xem trước", SEO "Đăng ký dự thi" (2 View).
+- Deploy Pages `8dd88ec3`; build suffix mới `mtj3tyhq`.
