@@ -74,7 +74,7 @@ export function parseScheduleDays(scheduleRule?: string | null) {
 }
 
 export function formatScheduleSummary(scheduleRule?: string | null, scheduleTime?: string | null) {
-  const timeLabel = scheduleTime || 'Theo lịch trung tâm';
+  const timeLabel = scheduleTime || 'Theo lịch';
   const days = parseScheduleDays(scheduleRule);
   if (!days.length) return timeLabel;
 

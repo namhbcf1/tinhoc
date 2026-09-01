@@ -121,7 +121,7 @@ export default function HomepageManagement({ toast }) {
                 <span>Banner Hero</span>
               </label>
               <div style={{ fontSize: '12px', color: '#999', marginLeft: '32px' }}>
-                Banner chính với tiêu đề và mô tả công ty
+                Banner chính với tiêu đề và mô tả
               </div>
             </div>
 
@@ -163,7 +163,7 @@ export default function HomepageManagement({ toast }) {
                 <span>Tại sao chọn chúng tôi</span>
               </label>
               <div style={{ fontSize: '12px', color: '#999', marginLeft: '32px' }}>
-                Điểm mạnh và lý do nên chọn công ty
+                Điểm mạnh và lý do nên chọn
               </div>
             </div>
 
@@ -268,7 +268,7 @@ export default function HomepageManagement({ toast }) {
         <div className="homepage-settings-section">
           <h2>Thông tin liên hệ</h2>
           <p style={{ color: '#666', fontSize: '14px', marginBottom: '15px' }}>
-            Thông tin công ty hiển thị ở footer
+            Thông tin liên hệ hiển thị ở footer
           </p>
 
           <div className="homepage-form-group">
@@ -295,7 +295,7 @@ export default function HomepageManagement({ toast }) {
             <label>Địa chỉ</label>
             <textarea
               rows="2"
-              placeholder="Nhập địa chỉ công ty..."
+              placeholder="Nhập địa chỉ..."
               value={settings.contactAddress || ''}
               onChange={(e) => handleChange('contactAddress', e.target.value)}
             ></textarea>

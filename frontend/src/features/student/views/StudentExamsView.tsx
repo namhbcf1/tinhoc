@@ -175,7 +175,7 @@ function ExamCard({
         <div className="rounded-2xl border border-[var(--vt-line)] bg-white/65 px-3 py-3 shadow-sm">
           <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[var(--vt-muted)]">Địa điểm</p>
           <p className="mt-1 truncate text-[13px] font-black leading-tight text-[var(--vt-ink)]">{exam.location}</p>
-          <p className="mt-1 truncate text-[11px] font-semibold text-[var(--vt-muted)]">{exam.examType || 'Thi tại trung tâm'}</p>
+          <p className="mt-1 truncate text-[11px] font-semibold text-[var(--vt-muted)]">{exam.examType || 'Thi trực tiếp'}</p>
           {mapUrl ? (
             <a
               href={mapUrl}

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -15,6 +15,9 @@ import {
   GraduationCap,
   Users,
   Quote,
+  Calendar,
+  Clock,
+  MapPin,
 } from 'lucide-react';
 import ModernPublicLayout from '../../components/layout/ModernPublicLayout';
 import { Button } from '../../components/ui/Button';
@@ -25,7 +28,7 @@ import FloatingCTA from '../../components/ui/FloatingCTA';
 import ExitIntentModal from '../../components/ui/ExitIntentModal';
 import ScrollToTopButton from '../../components/ui/ScrollToTopButton';
 import { YEARS_EXPERIENCE, TOTAL_STUDENTS, TEACHER_COUNT, TOTAL_COURSES } from '../../constants/site-stats';
-import QuickConsultForm from '../../components/forms/QuickConsultForm';
+import { buildApiUrl } from '../../utils/api-base-url.js';
 
 const marqueeItems = [
   'VSTEP B1 · B2 · C1',
@@ -282,42 +285,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ═══════════════ QUICK CONSULT ═══════════════ */}
-        <section className="vt-section--tight pt-10 sm:pt-12">
-          <div className="vt-container">
-            <div className="vt-paper-card p-6 lg:p-10 grid lg:grid-cols-[1.05fr_0.95fr] gap-8 lg:gap-10 items-center">
-              <div>
-                <div className="vt-eyebrow mb-4" style={{ color: 'var(--vt-champagne-deep)' }}>
-                  Tư vấn miễn phí · phản hồi trong 24h
-                </div>
-                <h2 className="vt-display text-3xl sm:text-4xl mb-4"
-                    style={{ fontVariationSettings: '"opsz" 96, "SOFT" 30', fontWeight: 500 }}>
-                  Chọn đúng <span className="vt-display-italic text-[var(--vt-emerald)]">lộ trình</span> ngay từ đầu.
-                </h2>
-                <p className="vt-lead mb-5">
-                  Để lại số điện thoại — chuyên viên VanTrangEdu sẽ gọi lại tư vấn lộ trình học phù hợp <strong className="text-[var(--vt-ink)]">hoàn toàn miễn phí</strong>, không áp lực.
-                </p>
-                <ul className="space-y-2.5">
-                  {[
-                    'Phân tích trình độ & mục tiêu cụ thể',
-                    'Tư vấn khóa VSTEP, Tiếng Anh, Tin học',
-                    'Báo giá & lịch học chi tiết ngay',
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm sm:text-base text-[var(--vt-ink)]">
-                      <span className="mt-0.5 w-5 h-5 flex-shrink-0 rounded-full bg-[var(--vt-emerald-soft)] flex items-center justify-center">
-                        <CheckCircle2 size={13} className="text-[var(--vt-emerald)]" />
-                      </span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <QuickConsultForm />
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* ═══════════════ EXAM SCHEDULES ═══════════════ */}
+        <ExamSchedulesSection />
 
         {/* ═══════════════ STATS ═══════════════ */}
         <section className="stats-section vt-section--tight relative z-10">
@@ -425,10 +394,10 @@ export default function HomePage() {
                 <div className="relative z-10">
                   <h3 className="vt-display text-xl mb-1.5 text-[var(--vt-ink)]"
                       style={{ fontVariationSettings: '"opsz" 36', fontWeight: 600 }}>
-                    Doanh Nghiệp
+                    VANTRANGEDU
                   </h3>
                   <p className="text-[var(--vt-muted)] text-sm leading-relaxed">
-                    Thiết kế lộ trình đào tạo riêng biệt cho tổ chức, công ty.
+                    Thiết kế lộ trình đào tạo riêng biệt cho VANTRANGEDU.
                   </p>
                 </div>
                 <ArrowUpRight aria-hidden="true" className="absolute top-7 right-7 text-[var(--vt-line-strong)] group-hover:text-[var(--vt-emerald)] transition-colors" />
@@ -514,5 +483,80 @@ export default function HomePage() {
       <ExitIntentModal />
       <ScrollToTopButton />
     </ModernPublicLayout>
+  );
+}
+
+function parseDateTime(dateStr) {
+  const parts = (dateStr || '').match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})/);
+  if (!parts) return { date: dateStr || '', time: '' };
+  return {
+    date: `${parts[3]}/${parts[2]}/${parts[1]}`,
+    time: `${parts[4]}:${parts[5]}`,
+  };
+}
+
+function ExamSchedulesSection() {
+  const [exams, setExams] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(buildApiUrl('/exam-schedules/public-upcoming'))
+      .then(res => res.json())
+      .then(data => { if (!cancelled) setExams(data.data || []); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  return (
+    <section className="vt-section--tight pt-10 sm:pt-12">
+      <div className="vt-container">
+        <div className="vt-eyebrow mb-4 text-center" style={{ color: 'var(--vt-champagne-deep)' }}>
+          Lịch thi sắp tới
+        </div>
+        <h2 className="vt-display text-3xl sm:text-4xl mb-6 text-center"
+            style={{ fontVariationSettings: '"opsz" 96, "SOFT" 30', fontWeight: 500 }}>
+          Kỳ thi <span className="vt-display-italic text-[var(--vt-emerald)]">mới nhất</span>
+        </h2>
+
+        {loading ? (
+          <p className="text-center text-[var(--vt-muted)]">Đang tải...</p>
+        ) : exams.length === 0 ? (
+          <p className="text-center text-[var(--vt-muted)]">Chưa có lịch thi nào.</p>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {exams.map((exam, i) => {
+              const { date, time } = parseDateTime(exam.exam_date);
+              return (
+                <div key={i} className="vt-paper-card p-5 rounded-[var(--vt-radius-lg)] flex flex-col gap-3 hover:shadow-lg transition-shadow">
+                  <h3 className="font-semibold text-[var(--vt-ink)] text-base leading-snug">{exam.exam_name}</h3>
+                  <div className="flex items-center gap-2 text-xs text-[var(--vt-muted)]">
+                    <Calendar size={13} /><span>{date}</span>
+                    <Clock size={13} className="ml-2" /><span>Giờ bắt đầu: {time || '--:--'}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {exam.organizer_name && <span className="vt-badge text-[10px] px-2 py-0.5 rounded-full bg-[var(--vt-champagne-soft)] text-[var(--vt-champagne-deep)]">{exam.organizer_name}</span>}
+                    {exam.level_name && <span className="vt-badge text-[10px] px-2 py-0.5 rounded-full bg-[var(--vt-emerald-soft)] text-[var(--vt-emerald)]">{exam.level_name}</span>}
+                  </div>
+                  {exam.program_name && <p className="text-xs text-[var(--vt-muted)] mt-auto pt-1 border-t border-[var(--vt-line-light)]">{exam.program_name}</p>}
+                  {exam.location && (
+                    <div className="flex items-center gap-1.5 text-xs text-[var(--vt-muted)]">
+                      <MapPin size={12} /><span>{exam.location}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="text-center mt-8">
+          <Link to="/register" className="vt-btn vt-btn--primary h-11 px-7 inline-flex items-center gap-2">
+            Đăng ký dự thi <ArrowRight size={16} />
+          </Link>
+        </div>
+      </div>
+    </section>
   );
 }
