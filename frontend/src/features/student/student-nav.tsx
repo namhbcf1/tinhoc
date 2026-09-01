@@ -1,12 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import {
-  Award,
-  Bell,
-  CalendarCheck,
-  FileText,
-  GraduationCap,
-  MessageSquareQuote,
-} from 'lucide-react';
+import { CalendarCheck, GraduationCap } from 'lucide-react';
 import { buildApiUrl } from '../../utils/api-base-url';
 import { getStorageValue } from '../../utils/browser-storage';
 
@@ -28,12 +21,8 @@ export interface StudentNavItem {
 }
 
 export const STUDENT_MAIN_MENU: StudentNavItem[] = [
-  { id: 'exams',        label: 'Lịch thi',   icon: CalendarCheck,      path: '/dashboard/exams' },
-  { id: 'certificates', label: 'Chứng chỉ',  icon: Award,              path: '/dashboard/certificates', primary: false },
-  { id: 'documents',    label: 'Tài liệu',   icon: FileText,           path: '/dashboard/documents', primary: false },
-  { id: 'messages',     label: 'Thông báo',  icon: Bell,               path: '/dashboard/messages', primary: false },
-  { id: 'feedback',     label: 'Phản hồi',   icon: MessageSquareQuote, path: '/dashboard/feedback' },
-  { id: 'study',        label: 'Học tập',    icon: GraduationCap,      external: STUDY_PLATFORM_URL },
+  { id: 'exams', label: 'Lịch thi', icon: CalendarCheck, path: '/dashboard/exams' },
+  { id: 'study', label: 'Học tập',  icon: GraduationCap, external: STUDY_PLATFORM_URL },
 ];
 
 export const STUDENT_PAGE_TITLES: Record<string, string> = {
