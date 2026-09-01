@@ -11,8 +11,12 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Build outputs (frontend dist managed separately)
-# frontend/dist/ - keep this for deployment
+# Build outputs — CI builds frontend from source (auto-deploy.yml: npm run build:prod),
+# so dist/ does not need to be tracked.
+frontend/dist/
+
+# Compiled .js artifacts in the TS-only backend source tree
+backend/src/**/*.js
 
 # Environment files
 .env

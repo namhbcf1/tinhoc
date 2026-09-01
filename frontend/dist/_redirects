@@ -1,9 +1,0 @@
-# Compatibility fallback for stale HTML caches that may request assets relatively
-# (e.g. /admin/assets/*.js). Serve the hashed assets instead of SPA HTML.
-# Catch any depth before /assets/ (e.g. /a/b/c/assets/file.js)
-/*/assets/* /assets/:splat 200
-/:route/assets/* /assets/:splat 200
-/:route/:sub/assets/* /assets/:splat 200
-
-# SPA fallback
-/* /index.html 200
