@@ -61,6 +61,8 @@ interface Props {
   existingImageUrl?: string | null;
   /** Thông tin giới tính để gợi ý ảnh 3×4 — hiện chưa dùng trong implementation này, giữ cho các call-site (register/profile). */
   photoGenderHint?: string;
+  /** Bật/tắt các nút "Chụp ảnh"/"Chụp selfie" (mở camera). Trang register truyền false — chỉ chọn ảnh từ máy. */
+  allowCamera?: boolean;
 }
 
 // Error boundary cho lazy-loaded editor components
@@ -104,7 +106,7 @@ class EditorErrorBoundary extends Component<{ children: ReactNode; onRetry: () =
   }
 }
 
-export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUploadError, onStatusChange, existingImageUrl = null }: Props) {
+export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUploadError, onStatusChange, existingImageUrl = null, allowCamera = true }: Props) {
   const isPhoto = type === 'photo_3x4';
   const isMobile = useIsMobile();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -366,12 +368,12 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
                     <span className="upload-idle-action" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openNativePicker(); }}>
                       <Upload size={14} />Chọn ảnh
                     </span>
-                    {!isPhoto && (
+                    {!isPhoto && allowCamera && (
                       <span className="upload-idle-action camera-action" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openNativePicker('user'); }}>
                         <Camera size={14} />Chụp ảnh
                       </span>
                     )}
-                    {isPhoto && isMobile && (
+                    {isPhoto && isMobile && allowCamera && (
                       <span className="upload-idle-action camera-action" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openNativePicker('user'); }}>
                         <Camera size={14} />Chụp selfie
                       </span>
@@ -446,7 +448,7 @@ export default function CCCDUploaderGenerateFirst({ type, onUploadSuccess, onUpl
               <button type="button" className="btn-retry-upload" onClick={resetUpload}>
                 <RefreshCw size={12} /> Thu lai
               </button>
-              {isPhoto && isMobile && (
+              {isPhoto && isMobile && allowCamera && (
                 <button type="button" className="btn-guide-upload" onClick={() => openNativePicker('user')}>
                   <Camera size={12} /> Chụp selfie
                 </button>

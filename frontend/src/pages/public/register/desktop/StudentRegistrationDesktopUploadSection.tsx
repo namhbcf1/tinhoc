@@ -47,19 +47,19 @@ export default function StudentRegistrationDesktopUploadSection({
       <div className="upload-grid">
         <div className="upload-card">
           <p className="upload-label">Ảnh mặt TRƯỚC thẻ CCCD <span className="required">*</span></p>
-          <CCCDUploader key={`cccd-front-${uploaderKeys.cccd_front}`} type="cccd_front" onStatusChange={handleUploaderStatusChange} onUploadSuccess={handleUploadSuccess} onUploadError={handleUploadError} />
+          <CCCDUploader key={`cccd-front-${uploaderKeys.cccd_front}`} type="cccd_front" allowCamera={false} onStatusChange={handleUploaderStatusChange} onUploadSuccess={handleUploadSuccess} onUploadError={handleUploadError} />
           {imageErrors.cccd_front && <p className="upload-error-text">{imageErrors.cccd_front}</p>}
         </div>
 
         <div className="upload-card">
           <p className="upload-label">Ảnh mặt SAU thẻ CCCD <span className="required">*</span></p>
-          <CCCDUploader key={`cccd-back-${uploaderKeys.cccd_back}`} type="cccd_back" onStatusChange={handleUploaderStatusChange} onUploadSuccess={handleUploadSuccess} onUploadError={handleUploadError} />
+          <CCCDUploader key={`cccd-back-${uploaderKeys.cccd_back}`} type="cccd_back" allowCamera={false} onStatusChange={handleUploaderStatusChange} onUploadSuccess={handleUploadSuccess} onUploadError={handleUploadError} />
           {imageErrors.cccd_back && <p className="upload-error-text">{imageErrors.cccd_back}</p>}
         </div>
 
         <div className="upload-card">
           <p className="upload-label">Ảnh thẻ 3×4 <span className="required">*</span></p>
-          <CCCDUploader key={`photo-${uploaderKeys.photo_3x4}`} type="photo_3x4" photoGenderHint={watch('gioi_tinh')} onStatusChange={handleUploaderStatusChange} onUploadSuccess={handleUploadSuccess} onUploadError={handleUploadError} />
+          <CCCDUploader key={`photo-${uploaderKeys.photo_3x4}`} type="photo_3x4" allowCamera={false} photoGenderHint={watch('gioi_tinh')} onStatusChange={handleUploaderStatusChange} onUploadSuccess={handleUploadSuccess} onUploadError={handleUploadError} />
           {imageErrors.photo_3x4 && <p className="upload-error-text">{imageErrors.photo_3x4}</p>}
         </div>
       </div>
