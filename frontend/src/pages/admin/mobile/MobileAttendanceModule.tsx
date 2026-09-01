@@ -200,18 +200,18 @@ export default function MobileAttendanceModule() {
 
   return (
     <PullToRefreshWrapper onRefresh={handleRefresh}>
-    <div className="space-y-4 pb-24" ref={containerRef}>
+    <div className="space-y-2 pb-24" ref={containerRef}>
 
       {/* Header card */}
       <div className="att-anim">
         <Card className="border-0 overflow-hidden shadow-md">
           <div className="bg-gradient-to-br from-teal-600 to-emerald-600 p-6 text-white">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
                 <ClipboardCheck size={24} />
               </div>
               <div>
-                <h2 className="text-xl font-bold">Điểm danh</h2>
+                <h2 className="text-sm font-bold">Điểm danh</h2>
                 <p className="text-teal-100 text-sm mt-0.5">{todayStr}</p>
               </div>
             </div>
@@ -224,9 +224,9 @@ export default function MobileAttendanceModule() {
         <p className="text-xs font-semibold text-slate-500 px-1 mb-2">Lớp đang giảng dạy</p>
         <button
           onClick={() => setShowClassPicker(true)}
-          className="w-full bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center justify-between active:scale-[0.98] transition-all"
+          className="w-full bg-white rounded-2xl p-3 shadow-sm border border-slate-100 flex items-center justify-between active:scale-[0.98] transition-all"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600">
               <BookOpen size={20} />
             </div>
@@ -255,7 +255,7 @@ export default function MobileAttendanceModule() {
               onClick={(e) => e.stopPropagation()}
             >
             <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5" />
-            <h3 className="text-lg font-bold text-slate-800 mb-4">Chọn lớp học</h3>
+            <h3 className="text-sm font-bold text-slate-800 mb-2.5">Chọn lớp học</h3>
             {loadingClasses ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-2 border-teal-600 border-t-transparent" />
@@ -272,7 +272,7 @@ export default function MobileAttendanceModule() {
                       setShowClassPicker(false);
                       setSearchTerm('');
                     }}
-                    className={`w-full p-4 rounded-xl flex items-center gap-3 text-left transition-all
+                    className={`w-full p-3 rounded-xl flex items-center gap-2 text-left transition-all
                       ${selectedClass?.class_id === cls.class_id
                         ? 'bg-teal-50 border border-teal-200'
                         : 'bg-slate-50 hover:bg-slate-100 border border-transparent'
@@ -332,7 +332,7 @@ export default function MobileAttendanceModule() {
 
           {/* ===== TAB: ĐIỂM DANH HÔM NAY ===== */}
           {activeTab === 'mark' && (
-            <div className="space-y-4 att-anim">
+            <div className="space-y-2 att-anim">
               {/* Stats + select-all row */}
               <div className="flex items-center justify-between px-1">
                 <p className="text-sm text-slate-500">
@@ -367,7 +367,7 @@ export default function MobileAttendanceModule() {
               </div>
 
               {loadingStudents ? (
-                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <div className="flex flex-col items-center justify-center py-12 gap-2">
                   <div className="animate-spin rounded-full h-8 w-8 border-2 border-teal-600 border-t-transparent" />
                   <p className="text-sm text-slate-400">Đang tải danh sách...</p>
                 </div>
@@ -388,13 +388,13 @@ export default function MobileAttendanceModule() {
                       <button
                         key={sid}
                         onClick={() => togglePresent(sid)}
-                        className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all active:scale-[0.98]
+                        className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all active:scale-[0.98]
                           ${isPresent
                             ? 'bg-emerald-50 border-emerald-200 shadow-sm'
                             : 'bg-white border-slate-100 shadow-sm'
                           }`}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                           {/* Avatar chữ cái đầu */}
                           <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0
                             ${isPresent
@@ -459,10 +459,10 @@ export default function MobileAttendanceModule() {
 
           {/* ===== TAB: LỊCH SỬ ===== */}
           {activeTab === 'history' && (
-            <div className="space-y-4 att-anim">
+            <div className="space-y-2 att-anim">
               {saveSuccess && (
                 <Card className="border-0 bg-emerald-50 shadow-sm">
-                  <CardContent className="p-4 flex items-center gap-3">
+                  <CardContent className="p-3 flex items-center gap-2">
                     <CheckCircle size={20} className="text-emerald-600 flex-shrink-0" />
                     <p className="text-sm font-semibold text-emerald-700">
                       Điểm danh đã được lưu thành công!
@@ -479,22 +479,22 @@ export default function MobileAttendanceModule() {
                 const presentLast = lastRecords.filter(r => r.status === 'present').length;
                 const absentLast = lastRecords.filter(r => r.status !== 'present').length;
                 return (
-                  <div className="grid grid-cols-2 gap-3">
-                    <Card className="border-0 shadow-sm p-4 flex items-center gap-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Card className="border-0 shadow-sm p-3 flex items-center gap-2">
                       <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
                         <CheckCircle size={20} />
                       </div>
                       <div>
-                        <p className="text-xl font-bold text-slate-800 leading-none">{presentLast}</p>
+                        <p className="text-base font-bold text-slate-800 leading-none">{presentLast}</p>
                         <p className="text-xs text-slate-400 mt-1">Có mặt (buổi cuối)</p>
                       </div>
                     </Card>
-                    <Card className="border-0 shadow-sm p-4 flex items-center gap-3">
+                    <Card className="border-0 shadow-sm p-3 flex items-center gap-2">
                       <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
                         <XCircle size={20} />
                       </div>
                       <div>
-                        <p className="text-xl font-bold text-slate-800 leading-none">{absentLast}</p>
+                        <p className="text-base font-bold text-slate-800 leading-none">{absentLast}</p>
                         <p className="text-xs text-slate-400 mt-1">Vắng (buổi cuối)</p>
                       </div>
                     </Card>
@@ -514,7 +514,7 @@ export default function MobileAttendanceModule() {
                     <p className="text-xs text-slate-400 mt-1">Điểm danh buổi học đầu tiên ngay!</p>
                     <button
                       onClick={() => setActiveTab('mark')}
-                      className="mt-4 text-sm font-semibold text-teal-600 flex items-center gap-1 mx-auto"
+                      className="mt-2.5 text-sm font-semibold text-teal-600 flex items-center gap-1 mx-auto"
                     >
                       <ArrowLeft size={16} /> Bắt đầu điểm danh
                     </button>
@@ -524,9 +524,9 @@ export default function MobileAttendanceModule() {
                 <div className="space-y-2">
                   {history.map((record, idx) => (
                     <Card key={record.id || idx} className="border-0 shadow-sm">
-                      <CardContent className="p-4">
+                      <CardContent className="p-3">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
                             <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center font-bold text-slate-500 text-sm">
                               {(record.student_name || record.ho_ten || 'N').charAt(0)}
                             </div>
@@ -564,7 +564,7 @@ export default function MobileAttendanceModule() {
         <div className="att-anim">
           <Card className="border-0 shadow-sm">
             <CardContent className="py-16 text-center">
-              <ClipboardCheck size={44} className="text-slate-300 mx-auto mb-4" />
+              <ClipboardCheck size={44} className="text-slate-300 mx-auto mb-2.5" />
               <p className="font-semibold text-slate-500 text-base">Chọn lớp để bắt đầu</p>
               <p className="text-slate-400 text-sm mt-2 mb-5">
                 Vui lòng chọn lớp học phía trên để xem và thực hiện điểm danh

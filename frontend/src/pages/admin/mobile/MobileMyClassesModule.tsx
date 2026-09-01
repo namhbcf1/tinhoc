@@ -86,7 +86,7 @@ export default function MobileMyClassesModule() {
             <div style={{ paddingBottom: 'calc(var(--mb-bottom-nav-height, 70px) + 16px)' }}>
                 {/* Header summary */}
                 <div
-                    className="mx-4 mt-3 mb-4 rounded-2xl p-4"
+                    className="mx-4 mt-3 mb-2.5 rounded-2xl p-3"
                     style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' }}
                 >
                     <div className="flex items-center justify-between">
@@ -105,9 +105,9 @@ export default function MobileMyClassesModule() {
                     </div>
                 </div>
 
-                <div className="px-4 space-y-3">
+                <div className="px-3 space-y-2">
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center py-12 gap-3">
+                        <div className="flex flex-col items-center justify-center py-12 gap-2">
                             <div className="w-8 h-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
                             <p className="text-xs font-medium text-slate-500">Đang tải lớp học...</p>
                         </div>
@@ -127,9 +127,9 @@ export default function MobileMyClassesModule() {
                                 {/* Color accent top bar */}
                                 <div className="h-1" style={{ background: 'linear-gradient(90deg, #f97316, #ea580c)' }} />
 
-                                <div className="p-4 flex items-start gap-3">
+                                <div className="p-3 flex items-start gap-2">
                                     <div
-                                        className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 font-black text-lg text-white"
+                                        className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 font-black text-sm text-white"
                                         style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)' }}
                                     >
                                         {(cls.ten_lop || cls.class_name || 'L').charAt(0)}

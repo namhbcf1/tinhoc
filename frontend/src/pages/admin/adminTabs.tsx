@@ -145,7 +145,7 @@ export const ADMIN_TABS: AdminTabDefinition[] = [
     icon: Database,
     group: 'learning',
     desktop: true,
-    mobile: false,
+    mobile: true,
   },
   {
     id: 'students',

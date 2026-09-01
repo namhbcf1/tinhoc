@@ -46,8 +46,8 @@ const BottomSheet = ({ isOpen, onClose, title, children, height = 'auto' }) => {
                     className={`absolute inset-0 bg-white shadow-2xl transition-transform duration-300 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
                     style={{ height: height === 'auto' ? '100dvh' : height, maxHeight: '100dvh' }}
                 >
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                        <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+                    <div className="flex items-center justify-between px-5 py-2.5 border-b border-slate-100">
+                        <h3 className="text-sm font-bold text-slate-900">{title}</h3>
                         <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                             <X size={20} className="text-slate-500" />
                         </button>
@@ -83,8 +83,8 @@ const DocumentCard = ({ doc, onShare, onDownload, onDelete }) => {
     };
 
     return (
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-            <div className="flex items-start gap-3">
+        <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+            <div className="flex items-start gap-2">
                 {/* File Icon */}
                 <div
                     className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
@@ -194,7 +194,7 @@ const UploadSheet = ({ isOpen, onClose, onSuccess }) => {
 
     return (
         <BottomSheet isOpen={isOpen} onClose={onClose} title="Upload tài liệu" height="95vh">
-            <div className="p-4 space-y-5 pb-8">
+            <div className="p-3 space-y-5 pb-8">
                 {/* File Picker */}
                 <div>
                     <label className="text-sm font-medium text-slate-600 mb-2 block">Chọn file *</label>
@@ -209,7 +209,7 @@ const UploadSheet = ({ isOpen, onClose, onSuccess }) => {
                             onChange={(e) => setFormData({ ...formData, file: e.target.files[0] })}
                         />
                         {formData.file ? (
-                            <div className="flex items-center justify-center gap-3">
+                            <div className="flex items-center justify-center gap-2">
                                 <div
                                     className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold"
                                     style={{ backgroundColor: getFileColor(formData.file.name) }}
@@ -244,7 +244,7 @@ const UploadSheet = ({ isOpen, onClose, onSuccess }) => {
                         type="text"
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Nhập tên tài liệu"
                     />
                 </div>
@@ -255,7 +255,7 @@ const UploadSheet = ({ isOpen, onClose, onSuccess }) => {
                     <textarea
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[60px]"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[60px]"
                         placeholder="Mô tả ngắn (tùy chọn)"
                     />
                 </div>
@@ -267,7 +267,7 @@ const UploadSheet = ({ isOpen, onClose, onSuccess }) => {
                         <select
                             value={formData.folder_id || ''}
                             onChange={(e) => setFormData({ ...formData, folder_id: e.target.value ? parseInt(e.target.value) : null })}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="">-- Không chọn --</option>
                             {folders.map(f => (
@@ -289,7 +289,7 @@ const UploadSheet = ({ isOpen, onClose, onSuccess }) => {
                                     key={opt.id}
                                     type="button"
                                     onClick={() => setFormData({ ...formData, access_type: opt.id, class_ids: [], online_class_ids: [], exam_ids: [], cccd: '' })}
-                                    className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${selected
+                                    className={`flex items-center gap-2 p-2.5 rounded-xl border-2 transition-all ${selected
                                         ? 'border-blue-500 bg-blue-50 text-blue-700'
                                         : 'border-slate-200 text-slate-600'
                                         }`}
@@ -304,12 +304,12 @@ const UploadSheet = ({ isOpen, onClose, onSuccess }) => {
 
                 {/* Class Selection */}
                 {formData.access_type === 'class' && (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-600 block">Chọn lớp/lịch thi</label>
 
                         {/* Offline Classes */}
                         {offlineClasses.length > 0 && (
-                            <div className="bg-slate-50 p-3 rounded-xl">
+                            <div className="bg-slate-50 p-2.5 rounded-xl">
                                 <p className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1">
                                     <BookOpen size={12} /> Lớp học offline ({offlineClasses.length})
                                 </p>
@@ -331,7 +331,7 @@ const UploadSheet = ({ isOpen, onClose, onSuccess }) => {
 
                         {/* Online Classes */}
                         {onlineClasses.length > 0 && (
-                            <div className="bg-slate-50 p-3 rounded-xl">
+                            <div className="bg-slate-50 p-2.5 rounded-xl">
                                 <p className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1">
                                     <Monitor size={12} /> Lớp học online ({onlineClasses.length})
                                 </p>
@@ -353,7 +353,7 @@ const UploadSheet = ({ isOpen, onClose, onSuccess }) => {
 
                         {/* Exam Schedules */}
                         {examSchedules.length > 0 && (
-                            <div className="bg-slate-50 p-3 rounded-xl">
+                            <div className="bg-slate-50 p-2.5 rounded-xl">
                                 <p className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1">
                                     <GraduationCap size={12} /> Lịch thi ({examSchedules.length})
                                 </p>
@@ -383,7 +383,7 @@ const UploadSheet = ({ isOpen, onClose, onSuccess }) => {
                             type="text"
                             value={formData.cccd}
                             onChange={(e) => setFormData({ ...formData, cccd: e.target.value })}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Nhập số CCCD"
                         />
                     </div>
@@ -394,7 +394,7 @@ const UploadSheet = ({ isOpen, onClose, onSuccess }) => {
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-all disabled:opacity-50"
+                        className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-all disabled:opacity-50"
                     >
                         {loading ? 'Đang upload...' : 'Upload tài liệu'}
                     </button>
@@ -445,9 +445,9 @@ const ShareSheet = ({ isOpen, onClose, doc, onSuccess }) => {
 
     return (
         <BottomSheet isOpen={isOpen} onClose={onClose} title="Chia sẻ tài liệu" height="auto">
-            <div className="p-4 pb-8">
+            <div className="p-3 pb-8">
                 {/* Doc Info */}
-                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl mb-4">
+                <div className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl mb-2.5">
                     <div
                         className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold"
                         style={{ backgroundColor: getFileColor(doc.file_name) }}
@@ -461,13 +461,13 @@ const ShareSheet = ({ isOpen, onClose, doc, onSuccess }) => {
                 </div>
 
                 {/* Class Selection */}
-                <div className="space-y-2 max-h-60 overflow-y-auto mb-4">
+                <div className="space-y-2 max-h-60 overflow-y-auto mb-2.5">
                     {offlineClasses.map(cls => {
                         const checked = shareTargets.some(t => t.type === 'offline_class' && t.id === cls.id);
                         return (
                             <label
                                 key={cls.id}
-                                className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${checked ? 'border-blue-500 bg-blue-50' : 'border-slate-100'}`}
+                                className={`flex items-center gap-2 p-2.5 rounded-xl border-2 transition-all ${checked ? 'border-blue-500 bg-blue-50' : 'border-slate-100'}`}
                             >
                                 <input
                                     type="checkbox"
@@ -484,7 +484,7 @@ const ShareSheet = ({ isOpen, onClose, doc, onSuccess }) => {
                         return (
                             <label
                                 key={`online-${cls.id}`}
-                                className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${checked ? 'border-blue-500 bg-blue-50' : 'border-slate-100'}`}
+                                className={`flex items-center gap-2 p-2.5 rounded-xl border-2 transition-all ${checked ? 'border-blue-500 bg-blue-50' : 'border-slate-100'}`}
                             >
                                 <input
                                     type="checkbox"
@@ -499,17 +499,17 @@ const ShareSheet = ({ isOpen, onClose, doc, onSuccess }) => {
                 </div>
 
                 {/* Submit */}
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl"
+                        className="flex-1 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl"
                     >
                         Hủy
                     </button>
                     <button
                         onClick={handleShare}
                         disabled={loading || shareTargets.length === 0}
-                        className="flex-1 py-3 bg-blue-600 text-white font-semibold rounded-xl disabled:opacity-50"
+                        className="flex-1 py-2 bg-blue-600 text-white font-semibold rounded-xl disabled:opacity-50"
                     >
                         {loading ? 'Đang chia sẻ...' : `Chia sẻ (${shareTargets.length})`}
                     </button>
@@ -543,26 +543,26 @@ const ConfirmDeleteSheet = ({ isOpen, onClose, doc, onConfirm }) => {
 
     return (
         <BottomSheet isOpen={isOpen} onClose={onClose} title="Xác nhận xóa" height="auto">
-            <div className="p-4 pb-8">
+            <div className="p-3 pb-8">
                 <div className="text-center mb-6">
-                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2.5">
                         <Trash2 size={32} className="text-red-600" />
                     </div>
                     <p className="text-slate-700">Bạn có chắc chắn muốn xóa</p>
-                    <p className="font-bold text-slate-900 text-lg">"{doc.title}"?</p>
+                    <p className="font-bold text-slate-900 text-sm">"{doc.title}"?</p>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl"
+                        className="flex-1 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl"
                     >
                         Hủy
                     </button>
                     <button
                         onClick={handleConfirm}
                         disabled={loading}
-                        className="flex-1 py-3 bg-red-600 text-white font-semibold rounded-xl disabled:opacity-50"
+                        className="flex-1 py-2 bg-red-600 text-white font-semibold rounded-xl disabled:opacity-50"
                     >
                         {loading ? 'Đang xóa...' : 'Xóa'}
                     </button>
@@ -596,30 +596,30 @@ const CreateFolderSheet = ({ isOpen, onClose, onSuccess }) => {
 
     return (
         <BottomSheet isOpen={isOpen} onClose={onClose} title="Tạo Folder mới" height="auto">
-            <div className="p-4 pb-8">
-                <div className="mb-4">
+            <div className="p-3 pb-8">
+                <div className="mb-2.5">
                     <label className="text-sm font-medium text-slate-600 mb-1.5 block">Tên folder</label>
                     <input
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Nhập tên folder"
                         autoFocus
                     />
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl"
+                        className="flex-1 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl"
                     >
                         Hủy
                     </button>
                     <button
                         onClick={handleCreate}
                         disabled={loading || !name.trim()}
-                        className="flex-1 py-3 bg-blue-600 text-white font-semibold rounded-xl disabled:opacity-50"
+                        className="flex-1 py-2 bg-blue-600 text-white font-semibold rounded-xl disabled:opacity-50"
                     >
                         {loading ? 'Đang tạo...' : 'Tạo folder'}
                     </button>
@@ -664,7 +664,7 @@ export default function MobileDocumentsModule() {
         <PullToRefreshWrapper onRefresh={handleRefresh}>
         <div className="min-h-screen bg-slate-50">
             {/* Header */}
-            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 pt-3.5 pb-3 safe-area-inset-top">
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-3 pt-3.5 pb-3 safe-area-inset-top">
                 <div className="mb-2.5 flex items-center justify-between">
                     <h2 className="text-base font-bold text-white">Quản lý Tài liệu</h2>
                     <div className="flex gap-2">
@@ -727,27 +727,27 @@ export default function MobileDocumentsModule() {
             </div>
 
             {/* Stats */}
-            <div className="px-4 -mt-2">
+            <div className="px-3 -mt-2">
                 <div className="rounded-2xl border border-slate-100 bg-white p-2.5 shadow-sm">
                     <div className="grid grid-cols-5 gap-1 text-center">
                         <div>
-                            <p className="text-lg font-bold text-slate-900">{stats.all}</p>
+                            <p className="text-base font-bold text-slate-900">{stats.all}</p>
                             <p className="text-[10px] text-slate-500">Tổng</p>
                         </div>
                         <div>
-                            <p className="text-lg font-bold text-green-600">{stats.public}</p>
+                            <p className="text-base font-bold text-green-600">{stats.public}</p>
                             <p className="text-[10px] text-slate-500">Công khai</p>
                         </div>
                         <div>
-                            <p className="text-lg font-bold text-blue-600">{stats.class}</p>
+                            <p className="text-base font-bold text-blue-600">{stats.class}</p>
                             <p className="text-[10px] text-slate-500">Lớp</p>
                         </div>
                         <div>
-                            <p className="text-lg font-bold text-orange-600">{stats.student}</p>
+                            <p className="text-base font-bold text-orange-600">{stats.student}</p>
                             <p className="text-[10px] text-slate-500">Cá nhân</p>
                         </div>
                         <div>
-                            <p className="text-lg font-bold text-red-600">{stats.admin}</p>
+                            <p className="text-base font-bold text-red-600">{stats.admin}</p>
                             <p className="text-[10px] text-slate-500">Admin</p>
                         </div>
                     </div>
@@ -755,7 +755,7 @@ export default function MobileDocumentsModule() {
             </div>
 
             {/* List */}
-            <div className="p-4 pb-24">
+            <div className="p-3 pb-24">
                 {loading ? (
                     <AdminLoadingState
                         title="Đang tải kho tài liệu"
@@ -764,7 +764,7 @@ export default function MobileDocumentsModule() {
                         accent="emerald"
                     />
                 ) : filteredDocuments.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                         {filteredDocuments.map((doc) => (
                             <DocumentCard
                                 key={doc.id}
@@ -777,11 +777,11 @@ export default function MobileDocumentsModule() {
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 opacity-60">
-                        <FolderOpen size={64} className="text-slate-300 mb-4" />
+                        <FolderOpen size={64} className="text-slate-300 mb-2.5" />
                         <p className="text-slate-500 font-medium">Không có tài liệu</p>
                         <button
                             onClick={() => setShowUpload(true)}
-                            className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-xl"
+                            className="mt-2.5 px-3 py-2 bg-emerald-600 text-white rounded-xl"
                         >
                             Upload tài liệu đầu tiên
                         </button>

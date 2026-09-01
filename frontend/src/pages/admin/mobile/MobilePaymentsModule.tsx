@@ -39,10 +39,10 @@ const PaymentCard = ({ payment, onView, onConfirm, onReject }) => {
     const { label, color, icon: Icon } = getStatusConfig(payment.status);
 
     return (
-        <div className="rounded-[26px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf2_100%)] p-4 shadow-[0_20px_44px_-30px_rgba(15,23,42,0.34)]">
+        <div className="rounded-[26px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf2_100%)] p-3 shadow-[0_20px_44px_-30px_rgba(15,23,42,0.34)]">
             <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
-                    <h4 className="truncate text-[17px] font-black tracking-[-0.03em] text-slate-900">{payment.ho_ten_full || payment.student_name || payment.ho_ten || 'Học viên'}</h4>
+                    <h4 className="truncate text-sm font-black tracking-[-0.03em] text-slate-900">{payment.ho_ten_full || payment.student_name || payment.ho_ten || 'Học viên'}</h4>
                     <p className="text-xs text-slate-500">{payment.ten_lop || payment.class_name || 'Lớp học'}</p>
                     {(payment.cccd) && (
                         <p className="text-[10px] text-slate-400 font-mono">{payment.cccd}</p>
@@ -54,7 +54,7 @@ const PaymentCard = ({ payment, onView, onConfirm, onReject }) => {
             </div>
 
             <div className="mb-3 flex items-center justify-between">
-                <span className="text-[26px] font-black tracking-[-0.03em] text-amber-600">{formatCurrency(payment.amount)}</span>
+                <span className="text-base font-black tracking-[-0.03em] text-amber-600">{formatCurrency(payment.amount)}</span>
                 <span className="text-xs text-slate-400 flex items-center gap-1">
                     <Calendar size={12} /> {formatDateVN(payment.payment_date || payment.created_at, true)}
                 </span>
@@ -96,18 +96,18 @@ const PaymentDetailSheet = ({ isOpen, onClose, payment, onConfirm, onReject }) =
 
     return (
         <BottomSheet isOpen={isOpen} onClose={onClose} title="Chi tiết thanh toán" height="auto">
-            <div className="p-4 pb-8">
+            <div className="p-3 pb-8">
                 <div className="text-center mb-6">
                     <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
                         <CreditCard size={32} className="text-blue-600" />
                     </div>
-                    <p className="text-3xl font-bold text-blue-600">{formatCurrency(payment.amount)}</p>
+                    <p className="text-base font-bold text-blue-600">{formatCurrency(payment.amount)}</p>
                     <span className={`inline-block text-xs font-medium px-3 py-1 rounded-full mt-2 ${color}`}>
                         {label}
                     </span>
                 </div>
 
-                <div className="bg-slate-50 p-4 rounded-xl space-y-3 mb-4">
+                <div className="bg-slate-50 p-3 rounded-xl space-y-2 mb-2.5">
                     <div className="flex justify-between">
                         <span className="text-slate-500">Học viên</span>
                         <span className="font-medium text-slate-800">{payment.ho_ten_full || payment.student_name || payment.ho_ten}</span>
@@ -135,16 +135,16 @@ const PaymentDetailSheet = ({ isOpen, onClose, payment, onConfirm, onReject }) =
                 </div>
 
                 {payment.status === 'pending' && (
-                    <div className="flex gap-3">
+                    <div className="flex gap-2">
                         <button
                             onClick={() => { onConfirm(payment.id); onClose(); }}
-                            className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl text-sm active:bg-green-700 flex items-center justify-center gap-2"
+                            className="flex-1 py-2 bg-green-600 text-white font-bold rounded-xl text-sm active:bg-green-700 flex items-center justify-center gap-2"
                         >
                             <Check size={16} /> Xác nhận
                         </button>
                         <button
                             onClick={() => { onReject(payment.id); onClose(); }}
-                            className="flex-1 py-3 bg-red-100 text-red-600 font-bold rounded-xl text-sm active:bg-red-200 flex items-center justify-center gap-2"
+                            className="flex-1 py-2 bg-red-100 text-red-600 font-bold rounded-xl text-sm active:bg-red-200 flex items-center justify-center gap-2"
                         >
                             <X size={16} /> Từ chối
                         </button>
@@ -264,7 +264,7 @@ export default function MobilePaymentsModule() {
                                 <select
                                     value={filterClass}
                                     onChange={(e) => setFilterClass(e.target.value)}
-                                    className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 pr-8 text-sm text-slate-900 appearance-none focus:outline-none focus:ring-2 focus:ring-amber-200"
+                                    className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 pr-8 text-sm text-slate-900 appearance-none focus:outline-none focus:ring-2 focus:ring-amber-200"
                                 >
                                     <option value="">Tất cả lớp</option>
                                     {classes.map((cls) => (
@@ -290,7 +290,7 @@ export default function MobilePaymentsModule() {
             />
 
             {/* List */}
-            <div className="p-4 pt-3" style={{ paddingBottom: mobileAdminContentPadding(20) }}>
+            <div className="p-3 pt-3" style={{ paddingBottom: mobileAdminContentPadding(20) }}>
                 {hasActiveFilters && (
                     <p className="text-xs text-slate-500 mb-3">
                         Hiển thị {filteredPayments.length} / {payments.length} khoản
@@ -304,7 +304,7 @@ export default function MobilePaymentsModule() {
                         accent="amber"
                     />
                 ) : filteredPayments.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                         {filteredPayments.map((payment) => (
                             <PaymentCard
                                 key={payment.id}
@@ -317,7 +317,7 @@ export default function MobilePaymentsModule() {
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 opacity-60">
-                        <CreditCard size={64} className="text-slate-300 mb-4" />
+                        <CreditCard size={64} className="text-slate-300 mb-2.5" />
                         <p className="text-slate-500 font-medium">Không có thanh toán nào</p>
                         {hasActiveFilters && (
                             <button

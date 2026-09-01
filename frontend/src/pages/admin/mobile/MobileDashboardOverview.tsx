@@ -24,7 +24,7 @@ const formatCurrency = (val) => {
 
 // ── Stat Card ────────────────────────────────────────────────────────────────
 const StatCard = ({ icon: Icon, label, value, iconBg, iconColor }) => (
-    <div className="bg-white rounded-xl p-3 flex items-center gap-2.5 border border-slate-100 shadow-sm">
+    <div className="bg-white rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-100 shadow-sm">
         <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
             style={{ background: iconBg }}>
             <Icon size={18} style={{ color: iconColor }} />
@@ -40,7 +40,7 @@ const StatCard = ({ icon: Icon, label, value, iconBg, iconColor }) => (
 const QuickAction = ({ icon: Icon, label, onClick, iconBg, iconColor }) => (
     <button
         onClick={onClick}
-        className="flex flex-col items-center gap-2 rounded-[20px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-3 shadow-[0_18px_36px_-28px_rgba(15,23,42,0.3)] active:scale-95 transition-all"
+        className="flex flex-col items-center gap-2 rounded-[20px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-2.5 shadow-[0_18px_36px_-28px_rgba(15,23,42,0.3)] active:scale-95 transition-all"
     >
         <div className="flex h-10 w-10 items-center justify-center rounded-[16px] shadow-sm"
             style={{ background: iconBg }}>
@@ -54,7 +54,7 @@ const QuickAction = ({ icon: Icon, label, onClick, iconBg, iconColor }) => (
 const StudentRow = ({ student, onClick }) => (
     <button
         onClick={onClick}
-        className="w-full flex items-center gap-3 px-4 py-3 bg-white border-b border-slate-50 active:bg-slate-50 transition-all last:border-b-0 text-left"
+        className="w-full flex items-center gap-2 px-3 py-2 bg-white border-b border-slate-50 active:bg-slate-50 transition-all last:border-b-0 text-left"
     >
         <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs text-white flex-shrink-0"
             style={{ background: BLUE }}>
@@ -145,10 +145,10 @@ export default function MobileDashboardOverview({ onNavigate }) {
                     footer={<span>{new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}</span>}
                 />
 
-                <div className="px-4 grid grid-cols-2 gap-2 mb-3">
+                <div className="px-3 grid grid-cols-2 gap-2 mb-3">
                     {loading ? (
                         Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="bg-white rounded-xl p-3 h-14 animate-pulse border border-slate-100" />
+                            <div key={i} className="bg-white rounded-xl p-2.5 h-14 animate-pulse border border-slate-100" />
                         ))
                     ) : (
                         <>
@@ -161,7 +161,7 @@ export default function MobileDashboardOverview({ onNavigate }) {
                 </div>
 
                 {/* ── Quick Actions ── */}
-                <div className="px-4 mb-4">
+                <div className="px-3 mb-2.5">
                     <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.12em] mb-2 ml-1">
                         Truy cập nhanh
                     </h3>
@@ -176,7 +176,7 @@ export default function MobileDashboardOverview({ onNavigate }) {
                 </div>
 
                 {/* ── Recent Students ── */}
-                <div className="px-4">
+                <div className="px-3">
                     <div className="flex items-center justify-between mb-2">
                         <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.12em] ml-1">
                             Mới đăng ký
@@ -192,7 +192,7 @@ export default function MobileDashboardOverview({ onNavigate }) {
                     <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
                         {loading ? (
                             Array.from({ length: 3 }).map((_, i) => (
-                                <div key={i} className="h-14 px-4 flex items-center gap-3 border-b border-slate-50">
+                                <div key={i} className="h-14 px-3 flex items-center gap-2 border-b border-slate-50">
                                     <div className="w-9 h-9 rounded-xl bg-slate-100 animate-pulse" />
                                     <div className="flex-1 space-y-1.5">
                                         <div className="h-3 bg-slate-100 rounded animate-pulse w-3/4" />

@@ -111,7 +111,7 @@ export default function MobileMyScheduleModule() {
         <PullToRefreshWrapper onRefresh={loadSchedule}>
             <div style={{ paddingBottom: 'calc(var(--mb-bottom-nav-height, 70px) + 16px)' }}>
                 {/* Week navigator */}
-                <div className="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex items-center justify-between">
+                <div className="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-slate-100 px-3 py-2 flex items-center justify-between">
                     <button
                         onClick={() => changeWeek(-1)}
                         className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center active:scale-95 transition-all"
@@ -137,9 +137,9 @@ export default function MobileMyScheduleModule() {
                     </button>
                 </div>
 
-                <div className="px-4 pt-4">
+                <div className="px-3 pt-4">
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center py-14 gap-3">
+                        <div className="flex flex-col items-center justify-center py-14 gap-2">
                             <div className="w-8 h-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
                             <p className="text-xs text-slate-500 font-medium">Đang tải lịch học...</p>
                         </div>
@@ -164,7 +164,7 @@ export default function MobileMyScheduleModule() {
                                 return (
                                     <div key={i}>
                                         {/* Day header */}
-                                        <div className="flex items-center gap-3 mb-2">
+                                        <div className="flex items-center gap-2 mb-2">
                                             <div
                                                 className="w-10 h-10 rounded-xl flex flex-col items-center justify-center shadow-sm"
                                                 style={{
@@ -195,7 +195,7 @@ export default function MobileMyScheduleModule() {
                                                         className="w-full h-1"
                                                         style={{ background: isToday ? 'linear-gradient(90deg, #f97316, #ea580c)' : '#e2e8f0' }}
                                                     />
-                                                    <div className="flex items-center gap-3 p-3.5">
+                                                    <div className="flex items-center gap-2 p-3">
                                                         <div
                                                             className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                                                             style={{ background: isToday ? '#fff7ed' : '#f8fafc' }}
@@ -206,7 +206,7 @@ export default function MobileMyScheduleModule() {
                                                             <p className="text-sm font-bold text-slate-800 truncate">
                                                                 {s.class_name || s.ten_lop || 'Lớp học'}
                                                             </p>
-                                                            <div className="flex items-center gap-3 mt-0.5">
+                                                            <div className="flex items-center gap-2 mt-0.5">
                                                                 <span className="text-xs text-slate-500 flex items-center gap-1">
                                                                     <Clock size={11} style={{ color: '#f97316' }} />
                                                                     {s.start_time || s.gio_bat_dau} - {s.end_time || s.gio_ket_thuc}
@@ -249,10 +249,10 @@ export default function MobileMyScheduleModule() {
                             </div>
 
                             <div className="px-5 pb-8 pt-2">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-3">
+                                <div className="flex items-center justify-between mb-2.5">
+                                    <div className="flex items-center gap-2">
                                         <div
-                                            className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-xl text-white"
+                                            className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-sm text-white"
                                             style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)' }}
                                         >
                                             {(selectedSchedule.class_name || 'L').charAt(0)}
@@ -277,8 +277,8 @@ export default function MobileMyScheduleModule() {
                                     </button>
                                 </div>
 
-                                <div className="bg-slate-50 rounded-2xl p-4 space-y-3 mb-4">
-                                    <div className="flex items-center gap-3">
+                                <div className="bg-slate-50 rounded-2xl p-3 space-y-2 mb-2.5">
+                                    <div className="flex items-center gap-2">
                                         <div className="w-8 h-8 rounded-xl bg-white shadow-sm flex items-center justify-center">
                                             <Clock size={15} style={{ color: '#f97316' }} />
                                         </div>
@@ -290,7 +290,7 @@ export default function MobileMyScheduleModule() {
                                         </div>
                                     </div>
                                     {selectedSchedule.location && (
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-2">
                                             <div className="w-8 h-8 rounded-xl bg-white shadow-sm flex items-center justify-center">
                                                 <MapPin size={15} style={{ color: '#f97316' }} />
                                             </div>
@@ -307,7 +307,7 @@ export default function MobileMyScheduleModule() {
                                     <button
                                         onClick={() => handleJoinClass(selectedSchedule)}
                                         disabled={joiningClass}
-                                        className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all active:scale-[0.98] mb-3"
+                                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl text-sm font-bold transition-all active:scale-[0.98] mb-3"
                                         style={{
                                             background: joinedToday[selectedSchedule.id]
                                                 ? 'linear-gradient(135deg, #10b981, #059669)'

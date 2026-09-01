@@ -5,6 +5,7 @@ import {
     Calendar,
     Check,
     CheckCircle2,
+    ChevronDown,
     ChevronRight,
     ClipboardCheck,
     Clock,
@@ -156,6 +157,18 @@ const formatDurationLabel = (value) => {
     }
 
     return 'Chưa khai báo thời lượng';
+};
+
+const formatAttemptScore = (value) => {
+    if (value === null || value === undefined || value === '') return '—';
+    const num = Number(value);
+    if (Number.isNaN(num)) return '—';
+    return Number.isInteger(num) ? String(num) : num.toFixed(1);
+};
+
+const formatAttemptTime = (value) => {
+    if (!value) return '—';
+    return formatDateVN(value, true) || '—';
 };
 
 const IMPORT_ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -388,7 +401,7 @@ const MobileExcelPreviewVept = ({ preview }) => (
         <table className="min-w-full border-collapse text-[11px] text-slate-700">
             <tbody>
                 <tr>
-                    <th colSpan={20} className="border border-slate-300 px-3 py-3 text-center text-sm font-black uppercase tracking-[0.08em] text-slate-900">
+                    <th colSpan={20} className="border border-slate-300 px-3 py-2 text-center text-sm font-black uppercase tracking-[0.08em] text-slate-900">
                         {preview.sheetTitle}
                     </th>
                 </tr>
@@ -427,7 +440,7 @@ const MobileExcelPreviewVept = ({ preview }) => (
                     </tr>
                 )) : (
                     <tr>
-                        <td colSpan={20} className="border border-slate-200 px-4 py-8 text-center text-slate-500">Không có dữ liệu để preview.</td>
+                        <td colSpan={20} className="border border-slate-200 px-3 py-8 text-center text-slate-500">Không có dữ liệu để preview.</td>
                     </tr>
                 )}
             </tbody>
@@ -489,7 +502,7 @@ const MobileExcelPreviewExamList = ({ preview }) => (
                     </tr>
                 )) : (
                     <tr>
-                        <td colSpan={13} className="border border-slate-200 px-4 py-8 text-center text-slate-500">Không có dữ liệu để preview.</td>
+                        <td colSpan={13} className="border border-slate-200 px-3 py-8 text-center text-slate-500">Không có dữ liệu để preview.</td>
                     </tr>
                 )}
             </tbody>
@@ -506,7 +519,7 @@ const MobileExcelPreviewFullInfo = ({ preview }) => {
             <table className="min-w-full border-collapse text-[11px] text-slate-700">
                 <tbody>
                     <tr>
-                        <th colSpan={Math.max(totalColumns, 1)} className="border border-slate-300 bg-emerald-50 px-3 py-3 text-center text-sm font-black uppercase tracking-[0.08em] text-slate-900">
+                        <th colSpan={Math.max(totalColumns, 1)} className="border border-slate-300 bg-emerald-50 px-3 py-2 text-center text-sm font-black uppercase tracking-[0.08em] text-slate-900">
                             {preview?.sheetTitle || 'DANH SÁCH THÍ SINH'}
                         </th>
                     </tr>
@@ -537,7 +550,7 @@ const MobileExcelPreviewFullInfo = ({ preview }) => {
                         </tr>
                     )) : (
                         <tr>
-                            <td colSpan={Math.max(totalColumns, 1)} className="border border-slate-200 px-4 py-8 text-center text-slate-500">
+                            <td colSpan={Math.max(totalColumns, 1)} className="border border-slate-200 px-3 py-8 text-center text-slate-500">
                                 Không có dữ liệu để preview.
                             </td>
                         </tr>
@@ -665,7 +678,7 @@ const StudentRow = ({ student, pending, conflict, processing, paymentProcessing,
         pending ? 'unknown' : normalizeApprovedExamPaymentStatus(student.payment_status)
     );
     return (
-    <div className={`rounded-[24px] border bg-white p-3 shadow-sm ${pending ? 'border-amber-200/80' : 'border-slate-200/80'}`}>
+    <div className={`rounded-[24px] border bg-white p-2.5 shadow-sm ${pending ? 'border-amber-200/80' : 'border-slate-200/80'}`}>
         <div className="flex items-start gap-2.5">
             <button
                 type="button"
@@ -836,9 +849,9 @@ const OverlaySheet = ({ open, onClose, title, description, tone = 'slate', child
                     onClick={(event) => event.stopPropagation()}
                 >
                 <div className={`bg-gradient-to-r px-5 pb-4 pt-5 ${toneMap[tone] || toneMap.slate}`}>
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-2">
                         <div>
-                            <h3 className="text-lg font-black">{title}</h3>
+                            <h3 className="text-sm font-black">{title}</h3>
                             {description ? <p className="mt-1 text-sm text-white/80">{description}</p> : null}
                         </div>
                         <button
@@ -854,7 +867,7 @@ const OverlaySheet = ({ open, onClose, title, description, tone = 'slate', child
                 <div className="flex-1 overflow-y-auto bg-slate-50">{children}</div>
 
                 {footer ? (
-                    <div className="border-t border-slate-200 bg-white px-4 py-4" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
+                    <div className="border-t border-slate-200 bg-white px-3 py-2.5" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
                         {footer}
                     </div>
                 ) : null}
@@ -1240,13 +1253,13 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                     className="flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden bg-slate-50 shadow-2xl"
                     onClick={(event) => event.stopPropagation()}
                 >
-                <div className="bg-[linear-gradient(135deg,#0f172a_0%,#1d4ed8_55%,#3b82f6_100%)] px-4 pb-3 pt-4 text-white">
-                    <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="bg-[linear-gradient(135deg,#0f172a_0%,#1d4ed8_55%,#3b82f6_100%)] px-3 pb-3 pt-4 text-white">
+                    <div className="mb-3 flex items-start justify-between gap-2">
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.12em] text-blue-100">
                                 {exam ? 'Chỉnh sửa kỳ thi' : 'Tạo kỳ thi mới'}
                             </p>
-                            <h3 className="mt-1.5 text-xl font-black tracking-tight">
+                            <h3 className="mt-1.5 text-sm font-black tracking-tight">
                                 {exam ? 'Cập nhật lịch thi' : 'Tạo kỳ thi mới'}
                             </h3>
                         </div>
@@ -1259,8 +1272,8 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                         </button>
                     </div>
 
-                        <div className="rounded-xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm">
-                        <h4 className="text-lg font-black leading-tight">
+                        <div className="rounded-xl border border-white/15 bg-white/10 p-2.5 backdrop-blur-sm">
+                        <h4 className="text-sm font-black leading-tight">
                             {formData.exam_name || '...'}
                         </h4>
                         <p className="mt-2 text-sm text-blue-50/90">{summaryDateText}</p>
@@ -1293,15 +1306,15 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-4 pb-6 pt-4">
-                    <form id="mobile-exam-form" onSubmit={handleSubmit} className="space-y-4">
-                        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                            <div className="mb-4">
+                <div className="flex-1 overflow-y-auto px-3 pb-6 pt-4">
+                    <form id="mobile-exam-form" onSubmit={handleSubmit} className="space-y-2">
+                        <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                            <div className="mb-2.5">
                                 <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Khung chính</p>
-                                <h4 className="mt-1 text-lg font-black text-slate-900">Thông tin kỳ thi</h4>
+                                <h4 className="mt-1 text-sm font-black text-slate-900">Thông tin kỳ thi</h4>
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-2">
                                 <div>
                                     <label className="mb-1.5 block text-sm font-semibold text-slate-700">Tên kỳ thi</label>
                                     <input
@@ -1310,17 +1323,17 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                         value={formData.exam_name}
                                         onChange={(event) => updateField('exam_name', event.target.value)}
                                         placeholder="Ví dụ: Thi cuối kỳ lớp B1"
-                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                                     />
                                 </div>
 
                                 {programPlatformError ? (
-                                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
                                         {programPlatformError}
                                     </div>
                                 ) : null}
 
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-2">
                                     <div>
                                         <label className="mb-1.5 block text-sm font-semibold text-slate-700">Đơn vị tổ chức</label>
                                         <select
@@ -1328,7 +1341,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                             value={formData.organizer_uuid}
                                             onChange={(event) => updateField('organizer_uuid', event.target.value)}
                                             disabled={programPlatformLoading}
-                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                                         >
                                             <option value="">{programPlatformLoading ? 'Đang tải đơn vị' : 'Chọn đơn vị'}</option>
                                             {organizerOptions.map((item) => (
@@ -1344,7 +1357,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                             value={formData.program_uuid}
                                             onChange={(event) => updateField('program_uuid', event.target.value)}
                                             disabled={programPlatformLoading || !formData.organizer_uuid}
-                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                                         >
                                             <option value="">{programPlatformLoading ? 'Đang tải chương trình' : 'Chọn chương trình'}</option>
                                             {filteredProgramOptions.map((item) => (
@@ -1354,14 +1367,14 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-2">
                                     <div>
                                         <label className="mb-1.5 block text-sm font-semibold text-slate-700">Trình độ</label>
                                         <select
                                             value={formData.level_uuid}
                                             onChange={(event) => updateField('level_uuid', event.target.value)}
                                             disabled={programPlatformLoading || !formData.program_uuid || filteredLevelOptions.length === 0}
-                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                                         >
                                             <option value="">
                                                 {programPlatformLoading
@@ -1382,7 +1395,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                             required
                                             value={formData.exam_date}
                                             onChange={(event) => updateField('exam_date', event.target.value)}
-                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                                         />
                                     </div>
                                 </div>
@@ -1393,7 +1406,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                         value={formData.template_id}
                                         onChange={(event) => updateField('template_id', event.target.value)}
                                         disabled={programPlatformLoading}
-                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                                     >
                                         <option value="">{programPlatformLoading ? 'Đang tải mẫu' : 'Không dùng mẫu riêng'}</option>
                                         {templateOptions.map((item) => (
@@ -1402,7 +1415,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                     </select>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-2">
                                     <div>
                                         <label className="mb-1.5 block text-sm font-semibold text-slate-700">Giờ thi</label>
                                         <input
@@ -1410,12 +1423,12 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                             required
                                             value={formData.exam_time}
                                             onChange={(event) => updateField('exam_time', event.target.value)}
-                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-2">
                                     <div>
                                         <label className="mb-1.5 block text-sm font-semibold text-slate-700">Thời lượng</label>
                                         <input
@@ -1425,7 +1438,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                             value={formData.duration_minutes}
                                             onChange={(event) => updateField('duration_minutes', event.target.value)}
                                             placeholder="Có thể bỏ trống"
-                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                                         />
                                     </div>
                                     <div>
@@ -1435,7 +1448,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                             value={formData.location}
                                             onChange={(event) => updateField('location', event.target.value)}
                                             placeholder="Ví dụ: Eduglobal, Trực tuyến qua Zoom"
-                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                                         />
                                     </div>
                                 </div>
@@ -1447,7 +1460,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                         value={formData.google_map_url}
                                         onChange={(event) => updateField('google_map_url', event.target.value)}
                                         placeholder="https://maps.app.goo.gl/... hoặc google.com/maps..."
-                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                                     />
                                     <p className="mt-1.5 text-xs text-slate-500">Học viên sẽ có nút mở bản đồ trực tiếp.</p>
                                 </div>
@@ -1459,24 +1472,24 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                         onChange={(event) => updateField('notes', event.target.value)}
                                         rows={3}
                                         placeholder="Ghi chú cho admin, giám thị hoặc lớp ôn tập liên quan. Giữ nguyên xuống dòng khi hiển thị."
-                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                                     />
                                 </div>
                             </div>
                         </section>
 
                         {usesExternalExamLink ? (
-                            <section className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 shadow-sm">
+                            <section className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 shadow-sm">
                                 VEPT/Versant dùng link riêng, không tạo lớp đào tạo nội bộ. VSTEP và Tin học mới cần linked class để ôn tập.
                             </section>
                         ) : null}
 
                         {/* ===== ZOOM MEETING SECTION ===== */}
-                        <section className="rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white p-4 shadow-sm">
-                            <div className="mb-4 flex items-start justify-between gap-3">
+                        <section className="rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white p-3 shadow-sm">
+                            <div className="mb-2.5 flex items-start justify-between gap-2">
                                 <div>
                                     <p className="text-[10px] font-black uppercase tracking-[0.12em] text-sky-500">Trực tuyến</p>
-                                    <h4 className="mt-1 text-lg font-black text-slate-900">Zoom Meeting</h4>
+                                    <h4 className="mt-1 text-sm font-black text-slate-900">Zoom Meeting</h4>
                                 </div>
                                 <label className="flex items-center gap-2 rounded-full border border-sky-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.1em] text-sky-700 cursor-pointer">
                                     <input
@@ -1489,7 +1502,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                             </div>
 
                             {formData.enable_zoom_meeting ? (
-                                <div className="space-y-4">
+                                <div className="space-y-2">
                                     {/* Link chính */}
                                     <div>
                                         <label className="mb-1.5 block text-sm font-semibold text-slate-700">Link tham gia</label>
@@ -1498,12 +1511,12 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                             value={formData.zoom_link}
                                             onChange={(event) => updateField('zoom_link', event.target.value)}
                                             placeholder="https://zoom.us/j/..."
-                                            className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                                            className="w-full rounded-2xl border border-sky-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
                                         />
                                     </div>
 
                                     {/* Meeting ID + Passcode chính */}
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-2 gap-2">
                                         <div>
                                             <label className="mb-1.5 block text-sm font-semibold text-slate-700">Meeting ID</label>
                                             <input
@@ -1511,7 +1524,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                                 value={formData.zoom_meeting_id}
                                                 onChange={(event) => updateField('zoom_meeting_id', event.target.value)}
                                                 placeholder="123 456 7890"
-                                                className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                                                className="w-full rounded-2xl border border-sky-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
                                             />
                                         </div>
                                         <div>
@@ -1521,7 +1534,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                                 value={formData.zoom_passcode}
                                                 onChange={(event) => updateField('zoom_passcode', event.target.value)}
                                                 placeholder="Mật khẩu"
-                                                className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                                                className="w-full rounded-2xl border border-sky-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
                                             />
                                         </div>
                                     </div>
@@ -1541,12 +1554,12 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                             value={formData.zoom_link_backup}
                                             onChange={(event) => updateField('zoom_link_backup', event.target.value)}
                                             placeholder="https://zoom.us/j/... (backup)"
-                                            className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                                            className="w-full rounded-2xl border border-sky-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
                                         />
                                     </div>
 
                                     {/* Meeting ID + Passcode dự phòng */}
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-2 gap-2">
                                         <div>
                                             <label className="mb-1.5 block text-sm font-semibold text-slate-700">Meeting ID dự phòng</label>
                                             <input
@@ -1554,7 +1567,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                                 value={formData.zoom_meeting_id_backup}
                                                 onChange={(event) => updateField('zoom_meeting_id_backup', event.target.value)}
                                                 placeholder="123 456 7890"
-                                                className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                                                className="w-full rounded-2xl border border-sky-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
                                             />
                                         </div>
                                         <div>
@@ -1564,7 +1577,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                                 value={formData.zoom_passcode_backup}
                                                 onChange={(event) => updateField('zoom_passcode_backup', event.target.value)}
                                                 placeholder="Mật khẩu"
-                                                className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                                                className="w-full rounded-2xl border border-sky-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
                                             />
                                         </div>
                                     </div>
@@ -1575,11 +1588,11 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                         </section>
                         {/* ===== END ZOOM MEETING SECTION ===== */}
 
-                        <section className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
-                            <div className="mb-4 flex items-start justify-between gap-3">
+                        <section className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-3 shadow-sm">
+                            <div className="mb-2.5 flex items-start justify-between gap-2">
                                 <div>
                                     <p className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-500">Tự động hóa</p>
-                                    <h4 className="mt-1 text-lg font-black text-slate-900">Lớp ôn tập linked</h4>
+                                    <h4 className="mt-1 text-sm font-black text-slate-900">Lớp ôn tập linked</h4>
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
                                     <label className="flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.1em] text-emerald-700">
@@ -1601,7 +1614,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                             </div>
 
                             {linkedClassEnabled ? (
-                            <div className="space-y-4">
+                            <div className="space-y-2">
                                 <div>
                                     <label className="mb-1.5 block text-sm font-semibold text-slate-700">Tên lớp ôn tập *</label>
                                     <input
@@ -1610,7 +1623,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                         value={formData.class_seed_name}
                                         onChange={(event) => updateField('class_seed_name', event.target.value)}
                                         placeholder="Ví dụ: Lớp ôn thi B1"
-                                        className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                        className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                                     />
                                 </div>
 
@@ -1638,7 +1651,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-2">
                                     <div>
                                         <label className="mb-1.5 block text-sm font-semibold text-slate-700">Quy tắc lịch *</label>
                                         <input
@@ -1647,7 +1660,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                             value={formData.class_seed_schedule_rule}
                                             onChange={(event) => updateField('class_seed_schedule_rule', event.target.value.toUpperCase())}
                                             placeholder="WEEKLY:1,3,5"
-                                            className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                            className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                                         />
                                     </div>
                                     <div>
@@ -1658,7 +1671,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                             value={formData.class_seed_schedule_time}
                                             onChange={(event) => updateField('class_seed_schedule_time', event.target.value)}
                                             placeholder="19:00-21:00"
-                                            className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                            className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                                         />
                                     </div>
                                 </div>
@@ -1671,7 +1684,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                             required={linkedClassEnabled}
                                             value={formData.class_seed_start_date}
                                             onChange={(event) => updateField('class_seed_start_date', event.target.value)}
-                                            className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                            className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                                         />
                                     </div>
                                 </div>
@@ -1683,19 +1696,19 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                         onChange={(event) => updateField('class_seed_description', event.target.value)}
                                         rows={3}
                                         placeholder="Mục tiêu lớp, nội dung ôn tập hoặc nhắc nhở cho giáo viên"
-                                        className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                        className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                                     />
                                 </div>
 
                                 {showAdvanced ? (
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-2 gap-2">
                                         <div>
                                             <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ngày kết thúc</label>
                                             <input
                                                 type="date"
                                                 value={formData.class_seed_end_date}
                                                 onChange={(event) => updateField('class_seed_end_date', event.target.value)}
-                                                className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                                className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                                             />
                                         </div>
                                         <div>
@@ -1705,7 +1718,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                                 min="1"
                                                 value={formData.class_seed_max_students}
                                                 onChange={(event) => updateField('class_seed_max_students', event.target.value)}
-                                                className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                                className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                                             />
                                         </div>
                                         <div className="col-span-2">
@@ -1713,7 +1726,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                             <select
                                                 value={formData.class_seed_timezone}
                                                 onChange={(event) => updateField('class_seed_timezone', event.target.value)}
-                                                className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                                className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                                             >
                                                 {TIMEZONE_OPTIONS.map((item) => (
                                                     <option key={item} value={item}>{item}</option>
@@ -1724,7 +1737,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                 ) : null}
                             </div>
                             ) : (
-                            <div className="rounded-2xl border border-dashed border-emerald-200 bg-white/70 p-4 text-sm text-emerald-800">
+                            <div className="rounded-2xl border border-dashed border-emerald-200 bg-white/70 p-3 text-sm text-emerald-800">
                                 Linked class đang tắt. Lịch thi sẽ được lưu độc lập, không tạo lớp online cho teacher workspace.
                             </div>
                             )}
@@ -1733,14 +1746,14 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                 </div>
 
                 <div
-                    className="border-t border-slate-200 bg-white px-4 pb-4 pt-4"
+                    className="border-t border-slate-200 bg-white px-3 pb-4 pt-4"
                     style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
                 >
                     <button
                         type="submit"
                         form="mobile-exam-form"
                         disabled={loading || programPlatformLoading}
-                        className="w-full rounded-2xl bg-slate-900 px-4 py-4 text-base font-black text-white shadow-[0_16px_30px_rgba(15,23,42,0.16)] transition-transform active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="w-full rounded-2xl bg-slate-900 px-3 py-2.5 text-base font-black text-white shadow-[0_16px_30px_rgba(15,23,42,0.16)] transition-transform active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         {loading ? 'Đang lưu lịch thi...' : programPlatformLoading ? 'Đang tải danh mục...' : exam ? 'Lưu thay đổi' : 'Tạo lịch thi'}
                     </button>
@@ -1760,55 +1773,27 @@ const ExamCard = ({ exam, onOpen }) => {
     const status = getExamStatusMeta(dateObj);
 
     return (
-        <button
-            type="button"
-            onClick={() => onOpen(exam)}
-            className={`relative w-full overflow-hidden rounded-[24px] border bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-3.5 text-left shadow-[0_20px_46px_-30px_rgba(15,23,42,0.34)] transition-transform active:scale-[0.98] ${status.cardClass}`}
-        >
-            <div className="flex items-start gap-3.5">
-                <div className="flex w-[58px] shrink-0 flex-col items-center rounded-[18px] border border-blue-200/80 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_26%),linear-gradient(135deg,#1d4ed8_0%,#2563eb_55%,#3b82f6_100%)] py-2.5 text-white shadow-[0_18px_34px_-20px_rgba(37,99,235,0.6)]">
-                    <p className="text-[8px] font-bold uppercase tracking-wider text-white/60">
-                        {dateObj.toLocaleDateString('vi-VN', { weekday: 'short' })}
-                    </p>
-                    <p className="text-[24px] font-black leading-none tracking-[-0.04em]">{String(dateObj.getDate()).padStart(2, '0')}</p>
-                    <p className="text-[9px] font-semibold text-white/60">T{dateObj.getMonth() + 1}/{dateObj.getFullYear()}</p>
+        <button type="button" onClick={() => onOpen(exam)}
+            className={`relative w-full overflow-hidden rounded-[18px] border bg-white p-2.5 text-left shadow-sm transition active:scale-[0.98] ${status.cardClass}`}>
+            <div className="flex items-center gap-2">
+                <div className="flex w-[48px] shrink-0 flex-col items-center rounded-[14px] bg-gradient-to-b from-blue-600 to-blue-500 py-2 text-white shadow-sm">
+                    <p className="text-[7px] font-bold uppercase text-white/60">{dateObj.toLocaleDateString('vi-VN', { weekday: 'short' })}</p>
+                    <p className="text-[18px] font-bold leading-none">{String(dateObj.getDate()).padStart(2, '0')}</p>
+                    <p className="text-[8px] text-white/60">T{dateObj.getMonth() + 1}</p>
                 </div>
-
                 <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-1">
-                        <span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-wide shadow-sm ${status.badgeClass}`}>
-                            {status.label}
-                        </span>
-                        {pendingCount > 0 && (
-                            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[9px] font-semibold text-amber-700 shadow-sm">
-                                {pendingCount} chờ duyệt
-                            </span>
-                        )}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wide ${status.badgeClass}`}>{status.label}</span>
+                        {pendingCount > 0 && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-semibold text-amber-700">{pendingCount} chờ</span>}
                     </div>
-
-                    <h3 className="mt-2 line-clamp-2 text-[16px] font-black leading-snug tracking-[-0.03em] text-slate-900">
-                        {title}
-                    </h3>
-
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#64748b]">
-                        <span className="flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1 shadow-sm">
-                            <Clock size={12} className="text-blue-500" />
-                            {formatDateVN(exam.exam_date)} {formatTimeUtil(exam.exam_date)}
-                        </span>
-                        <span className="flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1 shadow-sm">
-                            <MapPin size={12} className="text-blue-500" />
-                            <span className="max-w-[120px] truncate">{location}</span>
-                        </span>
+                    <h3 className="mt-1 line-clamp-2 text-[14px] font-bold leading-tight text-slate-900">{title}</h3>
+                    <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500">
+                        <span className="flex items-center gap-1"><Clock size={11} />{formatDateVN(exam.exam_date)} {formatTimeUtil(exam.exam_date)}</span>
+                        {location && <span className="flex items-center gap-1 truncate max-w-[100px]"><MapPin size={11} />{location}</span>}
                     </div>
-
-                    <div className="mt-3 flex items-center justify-between rounded-[18px] border border-slate-100 bg-white px-3 py-2 shadow-sm">
-                        <span className="flex items-center gap-1.5 text-[11px] font-semibold text-[#5d6d84]">
-                            <Users size={13} className="text-blue-500" />
-                            {studentCount} thí sinh
-                        </span>
-                        <span className="flex items-center gap-0.5 text-[10px] font-bold text-slate-400">
-                            Chi tiết <ChevronRight size={12} />
-                        </span>
+                    <div className="mt-2 flex items-center justify-between rounded-[14px] border border-slate-100 bg-slate-50/60 px-2.5 py-1.5">
+                        <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-600"><Users size={12} />{studentCount} thí sinh</span>
+                        <span className="flex items-center gap-0.5 text-[10px] font-semibold text-slate-400">Mở <ChevronRight size={11} /></span>
                     </div>
                 </div>
             </div>
@@ -1848,6 +1833,11 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
     const [showExcelPreviewSheet, setShowExcelPreviewSheet] = useState(false);
     const [excelPreviewLoading, setExcelPreviewLoading] = useState(false);
     const [excelPreviewData, setExcelPreviewData] = useState(null);
+    const [showAttemptHistorySheet, setShowAttemptHistorySheet] = useState(false);
+    const [attemptHistoryLoading, setAttemptHistoryLoading] = useState(false);
+    const [attemptHistoryError, setAttemptHistoryError] = useState('');
+    const [attemptHistoryData, setAttemptHistoryData] = useState(null);
+    const [expandedAttemptStudents, setExpandedAttemptStudents] = useState(() => new Set());
 
     // Điểm danh học tập
     const [learningAttendance, setLearningAttendance] = useState(null);
@@ -2225,6 +2215,40 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
         }
     };
 
+    const handleViewAttemptHistory = async () => {
+        if (!exam?.id) return;
+
+        setShowAttemptHistorySheet(true);
+        setAttemptHistoryLoading(true);
+        setAttemptHistoryError('');
+        setAttemptHistoryData(null);
+        setExpandedAttemptStudents(new Set());
+
+        try {
+            const res = await api.request(`/exam-schedules/${exam.id}/attempt-history`);
+            if (res?.success) {
+                setAttemptHistoryData(res.data || null);
+            } else {
+                setAttemptHistoryError(res?.message || 'Không thể tải lịch sử làm bài');
+            }
+        } catch (error) {
+            console.error('Failed to load attempt history', error);
+            setAttemptHistoryError(getErrorMessage(error, 'Không thể tải lịch sử làm bài'));
+        } finally {
+            setAttemptHistoryLoading(false);
+        }
+    };
+
+    const toggleAttemptStudent = (studentId) => {
+        setExpandedAttemptStudents((prev) => {
+            const next = new Set(prev);
+            const key = String(studentId);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
+    };
+
     const displayList = activeTab === 'approved' ? approvedList : pendingList;
 
     // ── Điểm danh học tập handlers ──
@@ -2455,8 +2479,8 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                         className="flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden bg-slate-50 shadow-2xl sm:h-[min(94dvh,940px)] sm:max-h-[94dvh] sm:max-w-[1080px] sm:rounded-[32px]"
                         onClick={(event) => event.stopPropagation()}
                     >
-                    <div className="bg-[linear-gradient(135deg,#0f172a_0%,#1d4ed8_60%,#2563eb_100%)] px-4 pb-2.5 pt-2.5 text-white sm:px-6 sm:pb-4 sm:pt-4">
-                        <div className="flex items-start justify-between gap-3">
+                    <div className="bg-[linear-gradient(135deg,#0f172a_0%,#1d4ed8_60%,#2563eb_100%)] px-3 pb-2.5 pt-2.5 text-white sm:px-6 sm:pb-4 sm:pt-4">
+                        <div className="flex items-start justify-between gap-2">
                             <div>
                                 <p className="text-[9px] font-black uppercase tracking-[0.1em] text-blue-100">Chi tiết lịch thi</p>
                                 <h2 className="mt-1 line-clamp-2 text-[14px] font-black leading-snug sm:text-[1.25rem]">{getExamTitle(exam)}</h2>
@@ -2519,13 +2543,14 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
 
                         <div className="mt-2.5 flex flex-wrap gap-1.5">
                             <SheetActionButton icon={UserPlus} label="Thêm HV" onClick={openAddStudentsSheet} />
+                            <SheetActionButton icon={History} label="Lịch sử làm bài" onClick={handleViewAttemptHistory} />
                             <SheetActionButton icon={Info} label="Kiểm tra trùng" onClick={handleOpenConflicts} />
                             <SheetActionButton icon={Pencil} label="Sửa" onClick={onEdit} />
                             <SheetActionButton icon={Trash2} label="Xóa" tone="danger" onClick={onDelete} />
                         </div>
                     </div>
 
-                    <div className="border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
+                    <div className="border-b border-slate-200 bg-white px-3 py-2 sm:px-6">
                         <div className="flex gap-2 overflow-x-auto pb-1">
                             <FilterChip
                                 active={activeTab === 'approved'}
@@ -2598,7 +2623,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                 <button
                                     type="button"
                                     onClick={handleApproveAll}
-                                    className="flex-1 rounded-xl bg-amber-500 px-4 py-2 text-[11px] font-black uppercase tracking-[0.08em] text-white shadow-sm transition-transform active:scale-[0.985]"
+                                    className="flex-1 rounded-xl bg-amber-500 px-3 py-2 text-[11px] font-black uppercase tracking-[0.08em] text-white shadow-sm transition-transform active:scale-[0.985]"
                                 >
                                     Duyệt tất cả
                                 </button>
@@ -2608,7 +2633,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                     type="button"
                                     onClick={handleOpenExcelPreview}
                                     disabled={excelPreviewLoading}
-                                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.08em] text-slate-700 shadow-sm transition-transform active:scale-[0.985] disabled:opacity-60"
+                                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-[0.08em] text-slate-700 shadow-sm transition-transform active:scale-[0.985] disabled:opacity-60"
                                 >
                                     <Info size={15} />
                                     <span>{excelPreviewLoading ? 'Đang tải preview...' : 'Preview Excel'}</span>
@@ -2617,7 +2642,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                             <button
                                 type="button"
                                 onClick={handleExportExcel}
-                                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-[11px] font-black uppercase tracking-[0.08em] text-white shadow-sm transition-transform active:scale-[0.985]"
+                                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-[11px] font-black uppercase tracking-[0.08em] text-white shadow-sm transition-transform active:scale-[0.985]"
                             >
                                 <Download size={15} />
                                 <span>Xuất Excel</span>
@@ -2627,28 +2652,28 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                         )}
                     </div>
 
-                    <div className="flex-1 overflow-y-auto px-4 py-3">
+                    <div className="flex-1 overflow-y-auto px-3 py-2">
                         {activeTab === 'attendance' ? (
                             /* ── TAB ĐIỂM DANH HỌC TẬP ── */
                             learningAttendanceLoading ? (
-                                <div className="flex flex-col items-center justify-center gap-4 py-16">
+                                <div className="flex flex-col items-center justify-center gap-2 py-16">
                                     <div className="h-11 w-11 animate-spin rounded-full border-[3px] border-emerald-600 border-t-transparent" />
                                     <p className="text-sm font-medium text-slate-500">Đang tải điểm danh...</p>
                                 </div>
                             ) : !learningAttendance ? (
-                                <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                                <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
                                     <ClipboardCheck size={48} className="text-slate-300" />
                                     <p className="font-semibold text-slate-700">Chưa tải dữ liệu</p>
                                     <button
                                         type="button"
                                         onClick={loadLearningAttendance}
-                                        className="rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white"
+                                        className="rounded-2xl bg-emerald-600 px-3 py-2.5 text-sm font-semibold text-white"
                                     >
                                         Tải điểm danh học tập
                                     </button>
                                 </div>
                             ) : learningAttendance.sessions?.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                                <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
                                     <ClipboardCheck size={48} className="text-slate-300" />
                                     <p className="text-sm font-medium text-slate-600">
                                         {learningAttendance.online_class_id
@@ -2660,14 +2685,14 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                             <button
                                                 type="button"
                                                 onClick={() => setShowCreateSessionModal(true)}
-                                                className="flex items-center gap-1.5 rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white"
+                                                className="flex items-center gap-1.5 rounded-2xl bg-emerald-600 px-3 py-2.5 text-sm font-semibold text-white"
                                             >
                                                 <Plus size={16} /> Tạo buổi học đầu tiên
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={openImportScheduleModal}
-                                                className="flex items-center gap-1.5 rounded-2xl border border-emerald-200 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-700"
+                                                className="flex items-center gap-1.5 rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-sm font-semibold text-emerald-700"
                                             >
                                                 <Upload size={16} /> Import ảnh
                                             </button>
@@ -2675,9 +2700,9 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                     ) : null}
                                 </div>
                             ) : (
-                                <div className="space-y-4 pb-4">
+                                <div className="space-y-2 pb-4">
                                     {/* Header lớp + actions */}
-                                    <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                                    <div className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2">
                                         <ClipboardCheck size={18} className="flex-shrink-0 text-emerald-600" />
                                         <div className="min-w-0 flex-1">
                                             <p className="truncate text-sm font-semibold text-emerald-800">
@@ -2717,15 +2742,15 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                         <table className="min-w-full border-collapse text-xs">
                                             <thead>
                                                 <tr className="border-b border-slate-100 bg-slate-50">
-                                                    <th className="sticky left-0 z-10 bg-slate-50 px-3 py-3 text-left font-bold text-slate-700 min-w-[140px]">
+                                                    <th className="sticky left-0 z-10 bg-slate-50 px-3 py-2 text-left font-bold text-slate-700 min-w-[140px]">
                                                         Học viên
                                                     </th>
-                                                    <th className="px-2 py-3 text-center font-bold text-slate-700 min-w-[55px]">
+                                                    <th className="px-2 py-2 text-center font-bold text-slate-700 min-w-[55px]">
                                                         <div>Tổng</div>
                                                         <div className="text-[10px] font-normal text-slate-400">có mặt</div>
                                                     </th>
                                                     {learningAttendance.sessions.map((sess, idx) => (
-                                                        <th key={sess.id} className="px-2 py-3 text-center font-semibold text-slate-700 min-w-[72px]">
+                                                        <th key={sess.id} className="px-2 py-2 text-center font-semibold text-slate-700 min-w-[72px]">
                                                             <div className="text-[10px] text-slate-400">Buổi {idx + 1}</div>
                                                             <div className="font-medium">
                                                                 {sess.session_date
@@ -2809,12 +2834,12 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                 </div>
                             )
                         ) : loading ? (
-                            <div className="flex flex-col items-center justify-center gap-4 py-16">
+                            <div className="flex flex-col items-center justify-center gap-2 py-16">
                                 <div className="h-11 w-11 animate-spin rounded-full border-[3px] border-blue-600 border-t-transparent" />
                                 <p className="text-sm font-medium text-slate-500">Đang tải danh sách thí sinh...</p>
                             </div>
                         ) : filteredStudents.length ? (
-                            <div className="space-y-3 pb-4">
+                            <div className="space-y-2 pb-4">
                                 {filteredStudents.map((student) => {
                                     const studentId = Number(student.student_id || student.id);
                                     const hasConflict = conflictStudentIds.has(studentId);
@@ -2838,13 +2863,13 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                 })}
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                            <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
                                 {activeTab === 'pending' ? (
                                     <AlertCircle size={56} className="text-amber-300" />
                                 ) : (
                                     <CheckCircle2 size={56} className="text-emerald-300" />
                                 )}
-                                <div className="text-lg font-black text-slate-900">
+                                <div className="text-sm font-black text-slate-900">
                                     {studentSearch
                                         ? 'Không tìm thấy thí sinh phù hợp'
                                         : activeTab === 'pending'
@@ -2876,7 +2901,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                         <button
                             type="button"
                             onClick={closeAddStudentsSheet}
-                            className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                            className="flex-1 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
                         >
                             Đóng
                         </button>
@@ -2884,7 +2909,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                             type="button"
                             onClick={() => handleAddSelectedStudents(false)}
                             disabled={addingStudents}
-                            className="flex-1 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-black text-white disabled:opacity-60"
+                            className="flex-1 rounded-2xl bg-slate-900 px-3 py-2 text-sm font-black text-white disabled:opacity-60"
                         >
                             {addingStudents ? 'Đang thêm...' : 'Thêm thường'}
                         </button>
@@ -2892,14 +2917,14 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                             type="button"
                             onClick={() => handleAddSelectedStudents(true)}
                             disabled={addingStudents}
-                            className="flex-1 rounded-2xl bg-amber-500 px-4 py-3 text-sm font-black text-white disabled:opacity-60"
+                            className="flex-1 rounded-2xl bg-amber-500 px-3 py-2 text-sm font-black text-white disabled:opacity-60"
                         >
                             Thêm cưỡng bức
                         </button>
                     </div>
                 }
             >
-                <div className="border-b border-slate-200 bg-white px-4 py-4">
+                <div className="border-b border-slate-200 bg-white px-3 py-2.5">
                     <div className="flex gap-2">
                         <input
                             type="text"
@@ -2909,13 +2934,13 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                 if (event.key === 'Enter') handleSearchAddStudents();
                             }}
                             placeholder="Nhập tên, CCCD hoặc SĐT..."
-                            className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                            className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                         />
                         <button
                             type="button"
                             onClick={handleSearchAddStudents}
                             disabled={addStudentsLoading}
-                            className="rounded-2xl bg-slate-900 px-4 py-3 text-xs font-black uppercase tracking-[0.12em] text-white disabled:opacity-60"
+                            className="rounded-2xl bg-slate-900 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-white disabled:opacity-60"
                         >
                             {addStudentsLoading ? 'Đang tìm...' : 'Tìm'}
                         </button>
@@ -2927,14 +2952,14 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                     ) : null}
                 </div>
 
-                <div className="p-4">
+                <div className="p-3">
                     {addStudentsLoading ? (
-                        <div className="flex flex-col items-center justify-center gap-3 py-16">
+                        <div className="flex flex-col items-center justify-center gap-2 py-16">
                             <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-blue-600 border-t-transparent" />
                             <p className="text-sm text-slate-500">Đang tìm học viên...</p>
                         </div>
                     ) : addStudentsResults.length ? (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             {addStudentsResults.map((student) => {
                                 const selected = selectedAddStudentIds.has(student.id);
                                 return (
@@ -2942,7 +2967,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                         key={student.id}
                                         type="button"
                                         onClick={() => toggleSelectAddStudent(student.id)}
-                                        className={`flex w-full items-center justify-between gap-3 rounded-[24px] border bg-white p-4 text-left shadow-sm transition ${
+                                        className={`flex w-full items-center justify-between gap-2 rounded-[24px] border bg-white p-3 text-left shadow-sm transition ${
                                             selected ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200'
                                         }`}
                                     >
@@ -2962,9 +2987,9 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                             })}
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                        <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
                             <Users size={48} className="text-slate-300" />
-                            <div className="text-lg font-black text-slate-900">Chưa có kết quả phù hợp</div>
+                            <div className="text-sm font-black text-slate-900">Chưa có kết quả phù hợp</div>
                             <p className="max-w-[280px] text-sm text-slate-500">
                                 Nhập ít nhất 2 ký tự rồi bấm tìm để chọn học viên thêm vào kỳ thi.
                             </p>
@@ -2983,23 +3008,23 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                     <button
                         type="button"
                         onClick={() => setShowConflictsSheet(false)}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
                     >
                         Đóng
                     </button>
                 }
             >
-                <div className="p-4">
+                <div className="p-3">
                     {conflictsLoading ? (
-                        <div className="flex flex-col items-center justify-center gap-3 py-16">
+                        <div className="flex flex-col items-center justify-center gap-2 py-16">
                             <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-rose-500 border-t-transparent" />
                             <p className="text-sm text-slate-500">Đang tải danh sách trùng đăng ký...</p>
                         </div>
                     ) : conflicts.length ? (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             {conflicts.map((item) => (
-                                <div key={item.student_id} className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-                                    <div className="flex items-start justify-between gap-3">
+                                <div key={item.student_id} className="rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm">
+                                    <div className="flex items-start justify-between gap-2">
                                         <div className="min-w-0">
                                             <div className="truncate text-sm font-bold text-slate-900">{item.ho_ten_full || 'Chưa có tên'}</div>
                                             <div className="mt-1 text-xs text-slate-500">CCCD: {item.cccd || '---'}</div>
@@ -3036,9 +3061,9 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                             ))}
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                        <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
                             <Info size={48} className="text-slate-300" />
-                            <div className="text-lg font-black text-slate-900">Không phát hiện hồ sơ trùng</div>
+                            <div className="text-sm font-black text-slate-900">Không phát hiện hồ sơ trùng</div>
                             <p className="max-w-[280px] text-sm text-slate-500">
                                 Hiện tại không có học viên nào giữ chỗ ở nhiều kỳ thi cùng lúc.
                             </p>
@@ -3057,25 +3082,25 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                     <button
                         type="button"
                         onClick={() => setShowHistorySheet(false)}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
                     >
                         Đóng
                     </button>
                 }
             >
-                <div className="p-4">
+                <div className="p-3">
                     {historyLoading ? (
-                        <div className="flex flex-col items-center justify-center gap-3 py-16">
+                        <div className="flex flex-col items-center justify-center gap-2 py-16">
                             <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-amber-500 border-t-transparent" />
                             <p className="text-sm text-slate-500">Đang tải lịch sử đăng ký...</p>
                         </div>
                     ) : historyRows.length ? (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             {historyRows.map((row) => {
                                 const isCurrentExam = Number(row.exam_id) === Number(exam.id);
                                 return (
-                                    <div key={row.registration_id || `${row.exam_id}-${row.registration_created_at}`} className={`rounded-[24px] border bg-white p-4 shadow-sm ${isCurrentExam ? 'border-blue-300' : 'border-slate-200'}`}>
-                                        <div className="flex items-start justify-between gap-3">
+                                    <div key={row.registration_id || `${row.exam_id}-${row.registration_created_at}`} className={`rounded-[24px] border bg-white p-3 shadow-sm ${isCurrentExam ? 'border-blue-300' : 'border-slate-200'}`}>
+                                        <div className="flex items-start justify-between gap-2">
                                             <div className="min-w-0">
                                                 <div className="truncate text-sm font-bold text-slate-900">
                                                     {row.exam_name || `Kỳ thi #${row.exam_id}`}
@@ -3100,9 +3125,9 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                             })}
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                        <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
                             <History size={48} className="text-slate-300" />
-                            <div className="text-lg font-black text-slate-900">Chưa có lịch sử đăng ký</div>
+                            <div className="text-sm font-black text-slate-900">Chưa có lịch sử đăng ký</div>
                             <p className="max-w-[280px] text-sm text-slate-500">
                                 Không tìm thấy bản ghi đăng ký nào cho học viên này.
                             </p>
@@ -3122,28 +3147,28 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                         <button
                             type="button"
                             onClick={() => setShowExcelPreviewSheet(false)}
-                            className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                            className="flex-1 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
                         >
                             Đóng
                         </button>
                         <button
                             type="button"
                             onClick={handleExportExcel}
-                            className="flex-1 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-black text-white"
+                            className="flex-1 rounded-2xl bg-slate-900 px-3 py-2 text-sm font-black text-white"
                         >
                             Tải Excel
                         </button>
                     </div>
                 }
             >
-                <div className="border-b border-slate-200 bg-white px-4 py-4">
+                <div className="border-b border-slate-200 bg-white px-3 py-2.5">
                     <div className="flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
                         <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">Tổng thí sinh: {approvedList.length}</span>
                         <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">Ngày thi: {formatDateVN(exam?.exam_date, true) || 'Chưa có'}</span>
                     </div>
                 </div>
 
-                <div className="overflow-x-auto bg-slate-100 px-4 py-4">
+                <div className="overflow-x-auto bg-slate-100 px-3 py-2.5">
                     <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600 shadow-sm">
                         <FileText size={14} />
                         Preview theo bố cục file xuất
@@ -3170,6 +3195,138 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                 </div>
             </OverlaySheet>
 
+            <OverlaySheet
+                open={showAttemptHistorySheet}
+                onClose={() => setShowAttemptHistorySheet(false)}
+                title="Lịch sử làm bài"
+                description={`${getExamTitle(exam)}${attemptHistoryData?.exams?.length != null ? ` • ${attemptHistoryData.exams.length} đề thi` : ''}`}
+                tone="blue"
+                footer={
+                    <button
+                        type="button"
+                        onClick={() => setShowAttemptHistorySheet(false)}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+                    >
+                        Đóng
+                    </button>
+                }
+            >
+                <div className="p-3">
+                    {attemptHistoryLoading ? (
+                        <div className="flex flex-col items-center justify-center gap-2 py-16">
+                            <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-blue-600 border-t-transparent" />
+                            <p className="text-sm text-slate-500">Đang tải lịch sử làm bài...</p>
+                        </div>
+                    ) : attemptHistoryError ? (
+                        <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+                            <AlertCircle size={48} className="text-slate-300" />
+                            <div className="text-sm font-black text-slate-900">Không thể tải dữ liệu</div>
+                            <p className="max-w-[280px] text-sm text-slate-500">{attemptHistoryError}</p>
+                        </div>
+                    ) : !attemptHistoryData || !Array.isArray(attemptHistoryData.students) || attemptHistoryData.students.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+                            <ClipboardCheck size={48} className="text-slate-300" />
+                            <div className="text-sm font-black text-slate-900">Chưa có học viên làm đề</div>
+                            <p className="max-w-[280px] text-sm text-slate-500">
+                                Chưa có học viên nào làm đề trong kỳ thi này.
+                            </p>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="mb-3 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                                <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
+                                    {attemptHistoryData.students.length} học viên
+                                </span>
+                                <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
+                                    {attemptHistoryData.exams?.length ?? 0} đề thi
+                                </span>
+                            </div>
+
+                            <div className="space-y-2">
+                                {attemptHistoryData.students.map((student) => {
+                                    const studentKey = String(student.student_id);
+                                    const isExpanded = expandedAttemptStudents.has(studentKey);
+                                    const examRows = Array.isArray(student.exams) ? student.exams : [];
+                                    return (
+                                        <div key={studentKey} className="rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm">
+                                            <button
+                                                type="button"
+                                                onClick={() => examRows.length > 0 && toggleAttemptStudent(student.student_id)}
+                                                className={`flex w-full items-center justify-between gap-2 text-left ${examRows.length > 0 ? '' : 'cursor-default'}`}
+                                            >
+                                                <div className="min-w-0">
+                                                    <div className="truncate text-sm font-bold text-slate-900">{student.ho_ten_full || '---'}</div>
+                                                    <div className="mt-1 truncate text-xs text-slate-500">CCCD: {student.cccd || '---'}</div>
+                                                </div>
+                                                {examRows.length > 0 ? (
+                                                    <ChevronDown size={16} className={`shrink-0 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                                ) : null}
+                                            </button>
+
+                                            <div className="mt-3 grid grid-cols-2 gap-2">
+                                                <div className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                                                    <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400">Số đề</div>
+                                                    <div className="mt-0.5 text-base font-black text-slate-900">{student.distinct_exams ?? '—'}</div>
+                                                </div>
+                                                <div className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                                                    <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400">Lượt làm</div>
+                                                    <div className="mt-0.5 text-base font-black text-slate-900">{student.total_attempts ?? '—'}</div>
+                                                </div>
+                                                <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2">
+                                                    <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-emerald-500">Hoàn thành</div>
+                                                    <div className="mt-0.5 text-base font-black text-emerald-700">{student.completed_attempts ?? '—'}</div>
+                                                </div>
+                                                <div className="rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2">
+                                                    <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-amber-600">Đang dở</div>
+                                                    <div className="mt-0.5 text-base font-black text-amber-700">{student.in_progress_attempts ?? '—'}</div>
+                                                </div>
+                                                <div className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                                                    <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400">Điểm TB</div>
+                                                    <div className="mt-0.5 text-base font-black text-slate-900">{formatAttemptScore(student.avg_score)}</div>
+                                                </div>
+                                                <div className="rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2">
+                                                    <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-blue-500">Điểm cao nhất</div>
+                                                    <div className="mt-0.5 text-base font-black text-blue-700">{formatAttemptScore(student.best_score)}</div>
+                                                </div>
+                                                <div className="col-span-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                                                    <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400">Lần gần nhất</div>
+                                                    <div className="mt-0.5 text-sm font-bold text-slate-700">{formatAttemptTime(student.last_activity)}</div>
+                                                </div>
+                                            </div>
+
+                                            {isExpanded && examRows.length > 0 ? (
+                                                <div className="mt-3 space-y-2">
+                                                    <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Chi tiết từng đề</div>
+                                                    {examRows.map((examRow) => (
+                                                        <div key={examRow.exam_id} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                                                            <div className="text-sm font-semibold text-slate-900">{examRow.exam_title || `Đề #${examRow.exam_id}`}</div>
+                                                            <div className="mt-2 flex flex-wrap gap-1.5">
+                                                                <span className="rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-slate-600">
+                                                                    Lượt làm: {examRow.attempts ?? '—'}
+                                                                </span>
+                                                                <span className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-700">
+                                                                    Hoàn thành: {examRow.completed_attempts ?? '—'}
+                                                                </span>
+                                                                <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-semibold text-amber-700">
+                                                                    Đang dở: {examRow.in_progress_attempts ?? '—'}
+                                                                </span>
+                                                                <span className="rounded-full bg-blue-100 px-2 py-1 text-[10px] font-semibold text-blue-700">
+                                                                    Điểm cao: {formatAttemptScore(examRow.best_score)}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </>
+                    )}
+                </div>
+            </OverlaySheet>
+
             {showStudentDetail && selectedStudent ? (
                 <StudentDetailSheet
                     student={selectedStudent}
@@ -3188,10 +3345,10 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                             className="w-full h-[100dvh] max-h-[100dvh] overflow-y-auto bg-white p-5 pb-8 shadow-2xl"
                             onClick={(e) => e.stopPropagation()}
                         >
-                        <div className="mb-4 flex items-center justify-between">
+                        <div className="mb-2.5 flex items-center justify-between">
                             <div>
                                 <p className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-600">Điểm danh học tập</p>
-                                <h3 className="text-lg font-black text-slate-900">Import lịch từ ảnh</h3>
+                                <h3 className="text-sm font-black text-slate-900">Import lịch từ ảnh</h3>
                                 <p className="text-[11px] text-slate-500">{importScheduleStep === 'upload' ? 'Bước 1/2' : 'Bước 2/2'}</p>
                             </div>
                             <button type="button" onClick={closeImportScheduleModal}
@@ -3201,7 +3358,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                         </div>
 
                         {importScheduleStep === 'upload' ? (
-                            <div className="space-y-4">
+                            <div className="space-y-2">
                                 <div>
                                     <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ảnh lịch học</label>
                                     <input
@@ -3216,7 +3373,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                 </div>
                             </div>
                         ) : (
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 <div className="flex flex-wrap gap-2 text-[11px] font-semibold">
                                     <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-1 text-emerald-800">
                                         ready: {importScheduleRows.filter((row) => row.status === 'ready').length}
@@ -3230,13 +3387,13 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                 </div>
 
                                 {importScheduleRows.length === 0 ? (
-                                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">
+                                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-5 text-center text-sm text-slate-500">
                                         Không có dòng lịch học.
                                     </div>
                                 ) : (
-                                    <div className="space-y-3">
+                                    <div className="space-y-2">
                                         {importScheduleRows.map((row, index) => (
-                                            <div key={row.row_id || `import_row_${index}`} className="rounded-2xl border border-slate-200 bg-white p-3">
+                                            <div key={row.row_id || `import_row_${index}`} className="rounded-2xl border border-slate-200 bg-white p-2.5">
                                                 <div className="mb-2 flex flex-wrap items-center gap-2">
                                                     <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                                                         row.status === 'ready'
@@ -3311,11 +3468,11 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                             </div>
                         )}
 
-                        <div className="mt-5 flex gap-3">
+                        <div className="mt-5 flex gap-2">
                             <button
                                 type="button"
                                 onClick={importScheduleStep === 'upload' ? closeImportScheduleModal : () => setImportScheduleStep('upload')}
-                                className="flex-1 rounded-2xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700"
+                                className="flex-1 rounded-2xl border border-slate-200 bg-white py-2 text-sm font-semibold text-slate-700"
                             >
                                 {importScheduleStep === 'upload' ? 'Đóng' : 'Quay lại'}
                             </button>
@@ -3324,7 +3481,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                     type="button"
                                     onClick={handlePreviewImportSchedule}
                                     disabled={importScheduleLoading || !importScheduleFile}
-                                    className="flex-1 rounded-2xl bg-emerald-600 py-3 text-sm font-black text-white disabled:opacity-60"
+                                    className="flex-1 rounded-2xl bg-emerald-600 py-2 text-sm font-black text-white disabled:opacity-60"
                                 >
                                     {importScheduleLoading ? 'Đang OCR...' : 'OCR & preview'}
                                 </button>
@@ -3333,7 +3490,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                     type="button"
                                     onClick={handleCommitImportSchedule}
                                     disabled={importScheduleSubmitting || importScheduleRows.length === 0 || hasImportNeedsReviewRows}
-                                    className="flex-1 rounded-2xl bg-emerald-600 py-3 text-sm font-black text-white disabled:opacity-60"
+                                    className="flex-1 rounded-2xl bg-emerald-600 py-2 text-sm font-black text-white disabled:opacity-60"
                                 >
                                     {importScheduleSubmitting ? 'Đang lưu...' : 'Xác nhận'}
                                 </button>
@@ -3352,10 +3509,10 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                             className="w-full h-[100dvh] max-h-[100dvh] overflow-y-auto bg-white p-5 pb-8 shadow-2xl"
                             onClick={(e) => e.stopPropagation()}
                         >
-                        <div className="mb-4 flex items-center justify-between">
+                        <div className="mb-2.5 flex items-center justify-between">
                             <div>
                                 <p className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-600">Điểm danh học tập</p>
-                                <h3 className="text-lg font-black text-slate-900">Tạo buổi học mới</h3>
+                                <h3 className="text-sm font-black text-slate-900">Tạo buổi học mới</h3>
                             </div>
                             <button type="button" onClick={() => setShowCreateSessionModal(false)}
                                 className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600">
@@ -3363,24 +3520,24 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                             </button>
                         </div>
 
-                        <div className="space-y-4">
+                        <div className="space-y-2">
                             <div>
                                 <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ngày học <span className="text-red-500">*</span></label>
                                 <input
                                     type="date"
                                     value={createSessionForm.session_date}
                                     onChange={(e) => setCreateSessionForm((f) => ({ ...f, session_date: e.target.value }))}
-                                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-2">
                                 <div>
                                     <label className="mb-1.5 block text-sm font-semibold text-slate-700">Giờ bắt đầu</label>
                                     <input
                                         type="time"
                                         value={createSessionForm.start_time}
                                         onChange={(e) => setCreateSessionForm((f) => ({ ...f, start_time: e.target.value }))}
-                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                                     />
                                 </div>
                                 <div>
@@ -3389,7 +3546,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                         type="time"
                                         value={createSessionForm.end_time}
                                         onChange={(e) => setCreateSessionForm((f) => ({ ...f, end_time: e.target.value }))}
-                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                                     />
                                 </div>
                             </div>
@@ -3400,19 +3557,19 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                     value={createSessionForm.note}
                                     onChange={(e) => setCreateSessionForm((f) => ({ ...f, note: e.target.value }))}
                                     placeholder="Ghi chú buổi học (tùy chọn)"
-                                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                                 />
                             </div>
                         </div>
 
-                        <div className="mt-5 flex gap-3">
+                        <div className="mt-5 flex gap-2">
                             <button type="button" onClick={() => setShowCreateSessionModal(false)}
-                                className="flex-1 rounded-2xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700">
+                                className="flex-1 rounded-2xl border border-slate-200 bg-white py-2 text-sm font-semibold text-slate-700">
                                 Hủy
                             </button>
                             <button type="button" onClick={handleCreateSession}
                                 disabled={createSessionLoading || !createSessionForm.session_date}
-                                className="flex-1 rounded-2xl bg-emerald-600 py-3 text-sm font-black text-white disabled:opacity-60">
+                                className="flex-1 rounded-2xl bg-emerald-600 py-2 text-sm font-black text-white disabled:opacity-60">
                                 {createSessionLoading ? 'Đang tạo...' : 'Tạo buổi học'}
                             </button>
                         </div>
@@ -3744,8 +3901,8 @@ export default function MobileExamSchedulesModule() {
                     footer={<span>{activeFilterMeta.label} • Hiển thị {filteredExams.length} / {filterCounts.all} kỳ thi</span>}
                 >
                     {nextExam ? (
-                        <div className="rounded-[20px] border border-[rgba(36,31,24,0.10)] bg-[rgba(255,253,248,0.96)] p-3 text-[var(--admin-ink)] shadow-[0_10px_24px_-22px_rgba(36,31,24,0.18)]">
-                            <div className="flex items-start justify-between gap-3">
+                        <div className="rounded-[20px] border border-[rgba(36,31,24,0.10)] bg-[rgba(255,253,248,0.96)] p-2.5 text-[var(--admin-ink)] shadow-[0_10px_24px_-22px_rgba(36,31,24,0.18)]">
+                            <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[var(--admin-ink)]">
                                         <Sparkles size={14} className="text-[var(--admin-champagne)]" />
@@ -3779,18 +3936,18 @@ export default function MobileExamSchedulesModule() {
                             </div>
                         </div>
                     ) : (
-                        <div className="rounded-[20px] border border-[rgba(36,31,24,0.10)] bg-[rgba(255,253,248,0.96)] p-3 text-[var(--admin-ink)] shadow-[0_10px_24px_-22px_rgba(36,31,24,0.18)]">
+                        <div className="rounded-[20px] border border-[rgba(36,31,24,0.10)] bg-[rgba(255,253,248,0.96)] p-2.5 text-[var(--admin-ink)] shadow-[0_10px_24px_-22px_rgba(36,31,24,0.18)]">
                             <div className="text-sm font-black text-[var(--admin-ink)]">Chưa có kỳ thi sắp tới</div>
                             <div className="mt-1 text-[13px] font-bold text-[var(--admin-ink)]">Tạo lịch mới để bắt đầu.</div>
                         </div>
                     )}
                 </MobileAdminHeroCard>
 
-                <div className="px-4 pb-[calc(var(--mb-bottom-nav-height)+24px)] pt-3">
-                    <div className="mb-2 flex items-end justify-between gap-3">
+                <div className="px-3 pb-[calc(var(--mb-bottom-nav-height)+24px)] pt-3">
+                    <div className="mb-2 flex items-end justify-between gap-2">
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Danh sách kỳ thi</p>
-                            <h2 className="mt-1 text-lg font-black text-slate-900">{filteredExams.length} kỳ thi</h2>
+                            <h2 className="mt-1 text-sm font-black text-slate-900">{filteredExams.length} kỳ thi</h2>
                         </div>
                         <div className="text-right text-[11px] font-semibold text-slate-500">
                             <div>{activeFilterMeta.label}</div>
@@ -3805,7 +3962,7 @@ export default function MobileExamSchedulesModule() {
                             accent="rose"
                         />
                     ) : filteredExams.length ? (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             {filteredExams.map((exam) => (
                                 <ExamCard key={exam.id} exam={exam} onOpen={setSelectedExam} />
                             ))}
@@ -3815,7 +3972,7 @@ export default function MobileExamSchedulesModule() {
                             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[24px] bg-slate-100 text-slate-400">
                                 <Calendar size={30} />
                             </div>
-                            <h3 className="mt-5 text-xl font-black text-slate-900">Không tìm thấy kỳ thi</h3>
+                            <h3 className="mt-5 text-sm font-black text-slate-900">Không tìm thấy kỳ thi</h3>
                             <p className="mx-auto mt-2 max-w-[280px] text-sm text-slate-500">
                                 Thử đổi bộ lọc hoặc tạo mới.
                             </p>
@@ -3824,7 +3981,7 @@ export default function MobileExamSchedulesModule() {
                                     <button
                                         type="button"
                                         onClick={() => setSearchTerm('')}
-                                        className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                                        className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
                                     >
                                         Xóa từ khóa
                                     </button>
@@ -3832,7 +3989,7 @@ export default function MobileExamSchedulesModule() {
                                 <button
                                     type="button"
                                     onClick={() => setFilter('all')}
-                                    className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-black text-white"
+                                    className="rounded-2xl bg-slate-900 px-3 py-2 text-sm font-black text-white"
                                 >
                                     Xem tất cả
                                 </button>
@@ -3874,23 +4031,23 @@ export default function MobileExamSchedulesModule() {
                         <button
                             type="button"
                             onClick={() => setShowGlobalConflicts(false)}
-                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
                         >
                             Đóng
                         </button>
                     }
                 >
-                    <div className="p-4">
+                    <div className="p-3">
                         {globalConflictsLoading ? (
-                            <div className="flex flex-col items-center justify-center gap-3 py-16">
+                            <div className="flex flex-col items-center justify-center gap-2 py-16">
                                 <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-rose-500 border-t-transparent" />
                                 <p className="text-sm text-slate-500">Đang tải danh sách trùng đăng ký...</p>
                             </div>
                         ) : globalConflicts.length ? (
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 {globalConflicts.map((item) => (
-                                    <div key={item.student_id} className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-                                        <div className="flex items-start justify-between gap-3">
+                                    <div key={item.student_id} className="rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm">
+                                        <div className="flex items-start justify-between gap-2">
                                             <div className="min-w-0">
                                                 <div className="truncate text-sm font-bold text-slate-900">{item.ho_ten_full || 'Chưa có tên'}</div>
                                                 <div className="mt-1 text-xs text-slate-500">CCCD: {item.cccd || '---'}</div>
@@ -3918,9 +4075,9 @@ export default function MobileExamSchedulesModule() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                            <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
                                 <Info size={48} className="text-slate-300" />
-                                <div className="text-lg font-black text-slate-900">Không phát hiện hồ sơ trùng</div>
+                                <div className="text-sm font-black text-slate-900">Không phát hiện hồ sơ trùng</div>
                                 <p className="max-w-[280px] text-sm text-slate-500">
                                     Hiện tại không có học viên nào giữ chỗ ở nhiều kỳ thi cùng lúc.
                                 </p>
@@ -3940,30 +4097,30 @@ export default function MobileExamSchedulesModule() {
                             <button
                                 type="button"
                                 onClick={loadTrashExams}
-                                className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                                className="flex-1 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
                             >
                                 Tải lại
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setShowTrashSheet(false)}
-                                className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                                className="flex-1 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
                             >
                                 Đóng
                             </button>
                         </div>
                     }
                 >
-                    <div className="p-4">
+                    <div className="p-3">
                         {trashLoading ? (
-                            <div className="flex flex-col items-center justify-center gap-3 py-16">
+                            <div className="flex flex-col items-center justify-center gap-2 py-16">
                                 <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-slate-500 border-t-transparent" />
                                 <p className="text-sm text-slate-500">Đang tải thùng rác...</p>
                             </div>
                         ) : trashExams.length ? (
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 {trashExams.map((exam) => (
-                                    <div key={exam.id} className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+                                    <div key={exam.id} className="rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm">
                                         <div className="text-sm font-black text-slate-900">{getExamTitle(exam)}</div>
                                         <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-500">
                                             <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
@@ -3978,7 +4135,7 @@ export default function MobileExamSchedulesModule() {
                                                 type="button"
                                                 onClick={() => handleRestoreExam(exam.id)}
                                                 disabled={trashActionId === exam.id}
-                                                className="flex-1 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm font-black text-emerald-700 disabled:opacity-50"
+                                                className="flex-1 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-black text-emerald-700 disabled:opacity-50"
                                             >
                                                 <span className="inline-flex items-center gap-2">
                                                     <RotateCcw size={15} />
@@ -3989,7 +4146,7 @@ export default function MobileExamSchedulesModule() {
                                                 type="button"
                                                 onClick={() => handlePermanentDeleteExam(exam)}
                                                 disabled={trashActionId === exam.id}
-                                                className="flex-1 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm font-black text-rose-700 disabled:opacity-50"
+                                                className="flex-1 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-black text-rose-700 disabled:opacity-50"
                                             >
                                                 <span className="inline-flex items-center gap-2">
                                                     <Trash2 size={15} />
@@ -4001,9 +4158,9 @@ export default function MobileExamSchedulesModule() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                            <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
                                 <Trash2 size={48} className="text-slate-300" />
-                                <div className="text-lg font-black text-slate-900">Thùng rác đang trống</div>
+                                <div className="text-sm font-black text-slate-900">Thùng rác đang trống</div>
                                 <p className="max-w-[280px] text-sm text-slate-500">
                                     Chưa có lịch thi nào bị chuyển vào thùng rác.
                                 </p>

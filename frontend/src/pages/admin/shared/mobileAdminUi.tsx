@@ -255,18 +255,14 @@ export function MobileAdminBottomSheet({
         aria-label="Đóng"
       />
       <div className="absolute inset-x-2 bottom-2 top-[max(env(safe-area-inset-top,0px),8px)] overflow-hidden rounded-t-[30px] rounded-b-[26px] border border-[rgba(14,165,233,0.18)] bg-[var(--admin-paper)] shadow-[0_18px_48px_-34px_rgba(14,165,233,0.16)]" style={{ height, maxHeight: 'calc(100dvh - 16px)' }}>
-        <div className="flex items-center justify-between border-b border-[rgba(14,165,233,0.18)] bg-[rgba(255,255,255,0.98)] px-4 pb-4 pt-3 text-[var(--admin-ink)]">
+        <div className="flex items-center justify-between border-b border-[rgba(14,165,233,0.18)] bg-white px-3 pb-3 pt-2.5">
           <div className="min-w-0">
-            <div className="mb-2 h-1 w-10 rounded-full bg-[rgba(37,99,235,0.42)]" />
-            <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--admin-champagne)]">Admin console</div>
-            <h3 className="mt-1 text-[17px] font-black leading-tight tracking-[-0.04em] text-[var(--admin-ink)]">{title}</h3>
+            <div className="mb-1 h-0.5 w-8 rounded-full bg-[rgba(37,99,235,0.42)]" />
+            <h3 className="text-[15px] font-bold leading-tight text-[var(--admin-ink)]">{title}</h3>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-[rgba(14,165,233,0.12)] text-[var(--admin-ink)] ring-1 ring-[rgba(14,165,233,0.14)] transition active:scale-95"
-          >
-            <X size={18} />
+          <button type="button" onClick={onClose}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[12px] bg-[rgba(14,165,233,0.12)] text-[var(--admin-ink)]">
+            <X size={16} />
           </button>
         </div>
         <div className="overflow-y-auto bg-[linear-gradient(180deg,#ffffff_0%,#eef6ff_100%)] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+18px)] pt-4" style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top,0px) - 104px)' }}>

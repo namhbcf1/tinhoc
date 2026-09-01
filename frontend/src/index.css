@@ -1,8 +1,4 @@
 @import "tailwindcss";
-/* VanTrangEdu Public Typography — pair distinctive serif display with humanist body.
-   Fraunces: variable optical-size serif (premium editorial feel, Vietnamese-friendly).
-   Plus Jakarta Sans: humanist sans (clean body, excellent Vietnamese diacritics rendering). */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400..900,0..100&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 /* ⛔ DARK MODE BỊ CẤM HOÀN TOÀN - Chỉ dùng chế độ sáng (light-only).
    KHÔNG được thêm lại @variant dark, dark: classes, hay prefers-color-scheme: dark.
@@ -41,9 +37,9 @@
   --radius-md: 0.75rem;
   --radius-sm: 0.5rem;
 
-  --font-sans: 'Plus Jakarta Sans', 'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-heading: 'Plus Jakarta Sans', 'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-display: 'Fraunces', 'Georgia', 'Times New Roman', serif;
+  --font-sans: 'Times New Roman', Times, serif;
+  --font-heading: 'Times New Roman', Times, serif;
+  --font-display: 'Times New Roman', Times, serif;
 
   --animate-blob: blob 7s infinite;
   --animate-spotlight: spotlight 2s ease .75s 1 forwards;
@@ -121,7 +117,7 @@
   body {
     background-color: var(--vt-ivory);
     color: var(--color-foreground);
-    font-family: var(--font-sans);
+    font-family: 'Times New Roman', Times, serif !important;
     font-size: 1rem;
     line-height: 1.6;
     background-image:

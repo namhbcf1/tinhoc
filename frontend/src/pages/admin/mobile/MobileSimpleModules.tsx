@@ -87,7 +87,7 @@ function BottomSheet({ isOpen, onClose, title, children, height = '100dvh' }) {
           className="absolute inset-0 bg-white shadow-2xl"
           style={{ height, maxHeight: '100dvh' }}
         >
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-2.5">
             <h3 className="text-base font-black tracking-tight text-slate-900">{title}</h3>
             <button
               type="button"
@@ -97,7 +97,7 @@ function BottomSheet({ isOpen, onClose, title, children, height = '100dvh' }) {
               <X size={18} />
             </button>
           </div>
-          <div className="overflow-y-auto px-4 py-4" style={{ maxHeight: 'calc(100dvh - 73px)' }}>
+          <div className="overflow-y-auto px-3 py-2.5" style={{ maxHeight: 'calc(100dvh - 73px)' }}>
             {children}
           </div>
         </div>
@@ -108,8 +108,8 @@ function BottomSheet({ isOpen, onClose, title, children, height = '100dvh' }) {
 
 function ModuleHero({ icon: Icon, title, description, iconTone = 'bg-blue-600', actions }) {
   return (
-    <div className="mx-4 mb-3 mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-      <div className="mb-2.5 flex items-start justify-between gap-3">
+    <div className="mx-4 mb-3 mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm">
+      <div className="mb-2.5 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="mb-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Admin mobile</p>
           <h2 className="text-[15px] font-black tracking-tight text-slate-900">{title}</h2>
@@ -144,8 +144,8 @@ function StatCard({ label, value, tone = 'slate' }) {
 
 function SectionCard({ title, description, actions, children }) {
   return (
-    <div className="mx-4 mb-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-      <div className="mb-2 flex items-start justify-between gap-3">
+    <div className="mx-4 mb-3 rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm">
+      <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="text-xs font-black tracking-tight text-slate-900">{title}</h3>
           {description ? <p className="mt-0.5 text-xs leading-5 text-slate-500">{description}</p> : null}
@@ -215,7 +215,7 @@ function StatusBadge({ children, tone = 'slate' }) {
 
 function EmptyState({ title, description }) {
   return (
-    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
+    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-10 text-center">
       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-400 shadow-sm">
         <LayoutGrid size={22} />
       </div>
@@ -449,7 +449,7 @@ export function MobilePostsModule() {
         </SectionCard>
 
         <SectionCard title="Tìm và lọc">
-          <div className="space-y-3">
+          <div className="space-y-2">
             <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Tìm theo tiêu đề, tóm tắt, tags..." />
             <div className="grid grid-cols-2 gap-2">
               <select
@@ -478,13 +478,13 @@ export function MobilePostsModule() {
 
         <SectionCard title="Danh sách bài viết" description={`${filteredPosts.length} bài`}>
           {loading ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {Array.from({ length: 4 }).map((_, index) => (
                 <div key={index} className="h-28 animate-pulse rounded-2xl bg-slate-100" />
               ))}
             </div>
           ) : filteredPosts.length ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {filteredPosts.map((post) => (
                 <div key={post.id} className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-sm">
                   {post.featured_image ? (
@@ -493,7 +493,7 @@ export function MobilePostsModule() {
                       style={{ backgroundImage: `url(${post.featured_image})` }}
                     />
                   ) : null}
-                  <div className="space-y-3 p-4">
+                  <div className="space-y-2 p-3">
                     <div className="flex flex-wrap gap-2">
                       <StatusBadge tone={post.status === 'published' ? 'emerald' : post.status === 'draft' ? 'amber' : 'slate'}>
                         {post.status === 'published' ? <CheckCircle2 size={12} /> : post.status === 'draft' ? <Clock3 size={12} /> : <Archive size={12} />}
@@ -534,14 +534,14 @@ export function MobilePostsModule() {
       </div>
 
       <BottomSheet isOpen={editorOpen} onClose={() => setEditorOpen(false)} title={editingPost ? 'Cập nhật bài viết' : 'Tạo bài viết'}>
-        <div className="space-y-4 pb-4">
+        <div className="space-y-2 pb-4">
           <div className="space-y-1.5">
             <label className="text-sm font-bold text-slate-700">Tiêu đề</label>
             <input
               type="text"
               value={formData.title}
               onChange={(event) => setFormData((current) => ({ ...current, title: event.target.value }))}
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
             />
           </div>
           <div className="space-y-1.5">
@@ -549,16 +549,16 @@ export function MobilePostsModule() {
             <textarea
               value={formData.excerpt}
               onChange={(event) => setFormData((current) => ({ ...current, excerpt: event.target.value }))}
-              className="min-h-20 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[16px] text-slate-900"
+              className="min-h-20 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-[16px] text-slate-900"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-slate-700">Danh mục</label>
               <select
                 value={formData.category}
                 onChange={(event) => setFormData((current) => ({ ...current, category: event.target.value }))}
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
               >
                 {POST_CATEGORIES.map((category) => (
                   <option key={category.value} value={category.value}>{category.label}</option>
@@ -570,7 +570,7 @@ export function MobilePostsModule() {
               <select
                 value={formData.status}
                 onChange={(event) => setFormData((current) => ({ ...current, status: event.target.value }))}
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
               >
                 {POST_STATUSES.map((status) => (
                   <option key={status.value} value={status.value}>{status.label}</option>
@@ -585,7 +585,7 @@ export function MobilePostsModule() {
               value={formData.tags}
               onChange={(event) => setFormData((current) => ({ ...current, tags: event.target.value }))}
               placeholder="IELTS, vstep, khai giảng..."
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
             />
           </div>
           <div className="space-y-1.5">
@@ -596,7 +596,7 @@ export function MobilePostsModule() {
                 value={formData.featured_image}
                 onChange={(event) => setFormData((current) => ({ ...current, featured_image: event.target.value }))}
                 placeholder="https://..."
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
               />
               <div className="flex gap-2">
                 <SecondaryButton onClick={() => fileInputRef.current?.click()} className="flex-1">
@@ -618,7 +618,7 @@ export function MobilePostsModule() {
             <textarea
               value={formData.content}
               onChange={(event) => setFormData((current) => ({ ...current, content: event.target.value }))}
-              className="min-h-48 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[16px] text-slate-900"
+              className="min-h-48 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-[16px] text-slate-900"
             />
           </div>
           <PrimaryButton onClick={handleSubmit} disabled={submitting} className="w-full">
@@ -723,7 +723,7 @@ export function MobileHomepageModule() {
         </SectionCard>
 
         <SectionCard title="Hiển thị section" description="">
-          <div className="space-y-3">
+          <div className="space-y-2">
             {[
               ['bannerEnabled', 'Banner hero'],
               ['statsEnabled', 'Khối thống kê'],
@@ -731,7 +731,7 @@ export function MobileHomepageModule() {
               ['whyChooseEnabled', 'Khối lý do chọn'],
               ['ctaEnabled', 'Khối CTA'],
             ].map(([key, label]) => (
-              <label key={key} className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3">
+              <label key={key} className="flex items-center justify-between rounded-2xl border border-slate-200 px-3 py-2">
                 <span className="text-sm font-semibold text-slate-700">{label}</span>
                 <input
                   type="checkbox"
@@ -745,32 +745,32 @@ export function MobileHomepageModule() {
         </SectionCard>
 
         <SectionCard title="Nội dung hero">
-          <div className="space-y-3">
+          <div className="space-y-2">
             <input
               type="text"
               value={settings.bannerTitle || ''}
               onChange={(event) => handleChange('bannerTitle', event.target.value)}
               placeholder="Tiêu đề banner"
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
             />
             <textarea
               value={settings.bannerDescription || ''}
               onChange={(event) => handleChange('bannerDescription', event.target.value)}
               placeholder="Mô tả banner"
-              className="min-h-24 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[16px] text-slate-900"
+              className="min-h-24 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-[16px] text-slate-900"
             />
             <input
               type="url"
               value={settings.bannerImage || ''}
               onChange={(event) => handleChange('bannerImage', event.target.value)}
               placeholder="URL ảnh banner"
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
             />
           </div>
         </SectionCard>
 
         <SectionCard title="Số liệu nổi bật">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             {[
               ['yearsExperience', 'Năm kinh nghiệm'],
               ['totalStudents', 'Học viên'],
@@ -782,7 +782,7 @@ export function MobileHomepageModule() {
                   type="number"
                   value={settings[key] || 0}
                   onChange={(event) => handleChange(key, Number(event.target.value || 0))}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+                  className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
                 />
               </div>
             ))}
@@ -790,40 +790,40 @@ export function MobileHomepageModule() {
         </SectionCard>
 
         <SectionCard title="Thông tin liên hệ">
-          <div className="space-y-3">
+          <div className="space-y-2">
             <input
               type="tel"
               value={settings.contactPhone || ''}
               onChange={(event) => handleChange('contactPhone', event.target.value)}
               placeholder="Số điện thoại"
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
             />
             <input
               type="email"
               value={settings.contactEmail || ''}
               onChange={(event) => handleChange('contactEmail', event.target.value)}
               placeholder="Email"
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
             />
             <textarea
               value={settings.contactAddress || ''}
               onChange={(event) => handleChange('contactAddress', event.target.value)}
               placeholder="Địa chỉ"
-              className="min-h-20 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[16px] text-slate-900"
+              className="min-h-20 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-[16px] text-slate-900"
             />
             <input
               type="url"
               value={settings.facebookUrl || ''}
               onChange={(event) => handleChange('facebookUrl', event.target.value)}
               placeholder="Facebook URL"
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
             />
             <input
               type="url"
               value={settings.zaloUrl || ''}
               onChange={(event) => handleChange('zaloUrl', event.target.value)}
               placeholder="Zalo URL"
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
             />
           </div>
         </SectionCard>
@@ -888,12 +888,12 @@ export function MobileLogsModule() {
         />
 
         <SectionCard title="Lọc nhật ký">
-          <div className="space-y-3">
+          <div className="space-y-2">
             <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Tìm kiếm..." />
             <select
               value={actionFilter}
               onChange={(event) => setActionFilter(event.target.value)}
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
             >
               <option value="">Tất cả hành động</option>
               {uniqueActions.map((action) => (
@@ -905,21 +905,21 @@ export function MobileLogsModule() {
 
         <SectionCard title="Timeline" description="">
           {loading ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {Array.from({ length: 5 }).map((_, index) => (
                 <div key={index} className="h-24 animate-pulse rounded-2xl bg-slate-100" />
               ))}
             </div>
           ) : filteredLogs.length ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {filteredLogs.map((log, index) => (
                 <button
                   type="button"
                   key={log.id || index}
                   onClick={() => setSelectedLog(log)}
-                  className="w-full rounded-[22px] border border-slate-200 bg-white p-4 text-left shadow-sm transition active:scale-[0.99]"
+                  className="w-full rounded-[22px] border border-slate-200 bg-white p-3 text-left shadow-sm transition active:scale-[0.99]"
                 >
-                  <div className="mb-2 flex items-start justify-between gap-3">
+                  <div className="mb-2 flex items-start justify-between gap-2">
                     <div>
                       <p className="text-sm font-black text-slate-900">{log.admin_username || log.admin_name || 'Hệ thống'}</p>
                       <p className="mt-1 text-xs text-slate-500">{log.entity_type || 'system'}</p>
@@ -939,27 +939,27 @@ export function MobileLogsModule() {
 
       <BottomSheet isOpen={Boolean(selectedLog)} onClose={() => setSelectedLog(null)} title="Chi tiết nhật ký">
         {selectedLog ? (
-          <div className="space-y-3 pb-2">
-            <div className="rounded-2xl bg-slate-50 p-4">
+          <div className="space-y-2 pb-2">
+            <div className="rounded-2xl bg-slate-50 p-3">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Admin</p>
               <p className="mt-1 text-base font-black text-slate-900">{selectedLog.admin_username || selectedLog.admin_name || 'Hệ thống'}</p>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-slate-200 p-4">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-2xl border border-slate-200 p-3">
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Hành động</p>
                 <p className="mt-1 text-sm font-bold text-slate-900">{selectedLog.action}</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 p-4">
+              <div className="rounded-2xl border border-slate-200 p-3">
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Thời gian</p>
                 <p className="mt-1 text-sm font-bold text-slate-900">{formatDateVN(selectedLog.created_at, true)}</p>
               </div>
             </div>
-            <div className="rounded-2xl border border-slate-200 p-4">
+            <div className="rounded-2xl border border-slate-200 p-3">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Mô tả</p>
               <p className="mt-1 text-sm leading-6 text-slate-700">{selectedLog.description || 'Không có mô tả chi tiết'}</p>
             </div>
             {selectedLog.details ? (
-              <div className="rounded-2xl border border-slate-200 bg-slate-950 p-4 text-sm text-slate-100">
+              <div className="rounded-2xl border border-slate-200 bg-slate-950 p-3 text-sm text-slate-100">
                 <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-5">
                   {typeof selectedLog.details === 'object'
                     ? JSON.stringify(selectedLog.details, null, 2)
@@ -1075,7 +1075,7 @@ export function MobileBackupModule() {
         />
 
         <SectionCard title="Xuất dữ liệu" description="">
-          <div className="space-y-3">
+          <div className="space-y-2">
             <PrimaryButton onClick={handleExportJson} className="w-full bg-slate-900 text-white shadow-none">
               <Download size={16} />
               Xuất JSON toàn bộ
@@ -1093,16 +1093,16 @@ export function MobileBackupModule() {
 
         <SectionCard title="Danh sách backup" description="">
           {loading ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {Array.from({ length: 4 }).map((_, index) => (
                 <div key={index} className="h-24 animate-pulse rounded-2xl bg-slate-100" />
               ))}
             </div>
           ) : backups.length ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {backups.map((backup) => (
-                <div key={backup.key} className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
+                <div key={backup.key} className="rounded-[22px] border border-slate-200 bg-white p-3 shadow-sm">
+                  <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-black text-slate-900">{backup.key?.split('/').pop() || backup.key}</p>
                       <p className="mt-1 text-xs text-slate-500">Ngày tạo: {formatDateVN(backup.uploaded, true)}</p>
@@ -1285,16 +1285,16 @@ export function MobileAdminsModule() {
 
         <SectionCard title="Danh sách admin" description="">
           {loading ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {Array.from({ length: 4 }).map((_, index) => (
                 <div key={index} className="h-28 animate-pulse rounded-2xl bg-slate-100" />
               ))}
             </div>
           ) : filteredAdmins.length ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {filteredAdmins.map((admin) => (
-                <div key={admin.id} className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="flex items-start gap-3">
+                <div key={admin.id} className="rounded-[22px] border border-slate-200 bg-white p-3 shadow-sm">
+                  <div className="flex items-start gap-2">
                     <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-white ${admin.role === 'super_admin' ? 'bg-rose-600' : 'bg-blue-600'}`}>
                       <User size={20} />
                     </div>
@@ -1334,41 +1334,41 @@ export function MobileAdminsModule() {
       </div>
 
       <BottomSheet isOpen={sheetOpen} onClose={() => setSheetOpen(false)} title={editingAdmin ? 'Cập nhật admin' : 'Tạo admin'}>
-        <div className="space-y-4 pb-4">
+        <div className="space-y-2 pb-4">
           <input
             type="text"
             value={formData.username}
             onChange={(event) => setFormData((current) => ({ ...current, username: event.target.value }))}
             placeholder="Username"
             disabled={Boolean(editingAdmin)}
-            className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900 disabled:opacity-70"
+            className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900 disabled:opacity-70"
           />
           <input
             type="password"
             value={formData.password}
             onChange={(event) => setFormData((current) => ({ ...current, password: event.target.value }))}
             placeholder={editingAdmin ? 'Để trống nếu không đổi mật khẩu' : 'Mật khẩu'}
-            className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+            className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
           />
           <input
             type="email"
             value={formData.email}
             onChange={(event) => setFormData((current) => ({ ...current, email: event.target.value }))}
             placeholder="Email"
-            className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+            className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
           />
           <input
             type="tel"
             value={formData.phone}
             onChange={(event) => setFormData((current) => ({ ...current, phone: event.target.value }))}
             placeholder="Số điện thoại"
-            className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+            className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             <select
               value={formData.role}
               onChange={(event) => setFormData((current) => ({ ...current, role: event.target.value }))}
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
             >
               {ADMIN_ROLES.map((role) => (
                 <option key={role.value} value={role.value}>{role.label}</option>
@@ -1377,7 +1377,7 @@ export function MobileAdminsModule() {
             <select
               value={formData.status}
               onChange={(event) => setFormData((current) => ({ ...current, status: event.target.value }))}
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900"
+              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-[16px] text-slate-900"
             >
               {ADMIN_STATUSES.map((status) => (
                 <option key={status.value} value={status.value}>{status.label}</option>

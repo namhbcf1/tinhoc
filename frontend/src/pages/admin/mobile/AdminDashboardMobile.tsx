@@ -10,7 +10,8 @@ import { ADMIN_SESSION_UPDATED_EVENT, getStoredAdmin, getStoredAdminToken } from
 import { getAdminTabsForTarget } from '../adminTabs';
 
 const MobileDashboardOverview = lazy(() => import('./MobileDashboardOverview'));
-const MobileClassesModule = lazy(() => import('./MobileClassesModule'));
+const MobileClassesModule = lazy(() => import('./MobileUnifiedClassesModule'));
+const MobileProgramPlatformModule = lazy(() => import('./MobileProgramPlatformModule'));
 const MobileStudentsModule = lazy(() => import('./MobileStudentsModule'));
 const MobilePaymentsModule = lazy(() => import('./MobilePaymentsModule'));
 const MobileDocumentsModule = lazy(() => import('./MobileDocumentsModule'));
@@ -132,7 +133,7 @@ export default function AdminDashboardMobile() {
 
     if (!admin) {
         return (
-            <div className="p-4">
+            <div className="p-3">
                 <AdminLoadingState
                     title="Đang mở admin mobile"
                     hint="Bố cục mobile và trạng thái tab gần nhất đang được dựng lại."
@@ -149,6 +150,8 @@ export default function AdminDashboardMobile() {
                 return <MobileDashboardOverview onNavigate={handleTabChange} />;
             case 'classes':
                 return <MobileClassesModule />;
+            case 'program-platform':
+                return <MobileProgramPlatformModule />;
             case 'students':
                 return <MobileStudentsModule />;
             case 'payments':
@@ -208,10 +211,10 @@ export default function AdminDashboardMobile() {
             onLogout={handleLogout}
         >
             {returnToUrl ? (
-                <div className="mb-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                <div className="mb-3 rounded-2xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
                     <a
                         href={returnToUrl}
-                        className="inline-flex items-center rounded-full border border-blue-300 bg-white px-4 py-2 font-medium text-blue-700 transition hover:border-blue-400 hover:bg-blue-100"
+                        className="inline-flex items-center rounded-full border border-blue-300 bg-white px-3 py-2 font-medium text-blue-700 transition hover:border-blue-400 hover:bg-blue-100"
                     >
                         Quay lại VanTrangExam
                     </a>
@@ -227,8 +230,8 @@ export default function AdminDashboardMobile() {
 
 function DeniedState() {
     return (
-        <div className="p-4 text-center">
-            <h2 className="text-lg font-bold text-slate-800">Không có quyền truy cập</h2>
+        <div className="p-3 text-center">
+            <h2 className="text-sm font-bold text-slate-800">Không có quyền truy cập</h2>
         </div>
     );
 }

@@ -229,25 +229,15 @@ function Toggle({
   );
 }
 
-function Panel({
-  title,
-  hint,
-  actions,
-  children,
-}: {
-  title: string;
-  hint?: string;
-  actions?: React.ReactNode;
-  children: React.ReactNode;
-}) {
+function Panel({ title, hint, actions, children }: { title: string; hint?: string; actions?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_22px_56px_-42px_rgba(15,23,42,0.28)]">
-      <div className="mb-5 flex flex-col gap-3 border-b border-slate-100 pb-4 md:flex-row md:items-start md:justify-between">
+    <section className="rounded-[16px] border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-950">{title}</h2>
-          {hint ? <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">{hint}</p> : null}
+          <h2 className="text-base font-bold text-slate-900">{title}</h2>
+          {hint ? <p className="mt-0.5 text-[13px] text-slate-500">{hint}</p> : null}
         </div>
-        {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+        {actions ? <div className="flex gap-2">{actions}</div> : null}
       </div>
       {children}
     </section>
@@ -278,83 +268,41 @@ function MetricCard({
   );
 }
 
-function StepCard({
-  number,
-  title,
-  description,
-  active,
-  completed,
-  onClick,
-}: {
-  number: string;
-  title: string;
-  description: string;
-  active: boolean;
-  completed: boolean;
-  onClick: () => void;
+function StepCard({ number, title, description, active, completed, onClick }: {
+  number: string; title: string; description: string; active: boolean; completed: boolean; onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full rounded-xl border px-3 py-3 text-left transition ${
-        active
-          ? 'border-blue-600 bg-blue-50 text-blue-900'
-          : 'border-slate-200 bg-white text-slate-800 hover:border-blue-300 hover:bg-blue-50/70'
-      }`}
-    >
-      <div className="flex items-start justify-between gap-4">
+    <button type="button" onClick={onClick}
+      className={`w-full rounded-[12px] border px-3 py-2.5 text-left transition ${active ? 'border-blue-500 bg-blue-50 text-blue-900' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50/60'}`}>
+      <div className="flex items-center justify-between gap-2">
         <div>
-          <div className={`text-xs font-semibold ${active ? 'text-blue-700' : 'text-slate-500'}`}>
-            Bước {number}
-          </div>
-          <div className="mt-1 text-sm font-semibold">{title}</div>
-          {active ? <div className="mt-1 text-xs text-slate-600">{description}</div> : null}
+          <div className={`text-[10px] font-semibold ${active ? 'text-blue-600' : 'text-slate-400'}`}>Bước {number}</div>
+          <div className="text-[13px] font-semibold leading-tight mt-0.5">{title}</div>
         </div>
-        <Badge className={completed ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}>
-          {completed ? 'Đã có' : 'Trống'}
-        </Badge>
+        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${completed ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+          {completed ? 'Có' : 'Trống'}
+        </span>
       </div>
     </button>
   );
 }
 
-function ContextCard({
-  label,
-  value,
-  hint,
-  active,
-  onFocus,
-  onClear,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-  active: boolean;
-  onFocus: () => void;
-  onClear: () => void;
+function ContextCard({ label, value, hint, active, onFocus, onClear }: {
+  label: string; value: string; hint: string; active: boolean; onFocus: () => void; onClear: () => void;
 }) {
   return (
-    <div className={`rounded-xl border px-3 py-3 ${active ? 'border-blue-300 bg-blue-50/70' : 'border-slate-200 bg-white'}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-xs font-semibold text-slate-500">{label}</div>
-          <div className="mt-2 text-sm font-semibold text-slate-900">{value || 'Chưa chọn'}</div>
-          <div className="mt-1 text-xs text-slate-500">{hint}</div>
+    <div className={`rounded-[12px] border px-3 py-2.5 ${active ? 'border-blue-300 bg-blue-50/60' : 'border-slate-200 bg-white'}`}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{label}</div>
+          <div className="text-[13px] font-semibold text-slate-900 truncate">{value || 'Chưa chọn'}</div>
         </div>
         {value ? (
-          <button type="button" onClick={onClear} className="text-xs font-semibold text-slate-400 transition hover:text-slate-700">
-            Bỏ chọn
-          </button>
+          <button type="button" onClick={onClear} className="shrink-0 text-[11px] font-semibold text-slate-400 hover:text-slate-700">X</button>
         ) : null}
       </div>
-      <button
-        type="button"
-        onClick={onFocus}
-        className="mt-4 inline-flex text-xs font-semibold text-blue-700 transition hover:text-blue-900"
-      >
-        Đi tới bước
-      </button>
+      <button type="button" onClick={onFocus}
+        className="mt-1.5 text-[11px] font-semibold text-blue-600 hover:text-blue-800">Đi tới bước →</button>
     </div>
   );
 }
@@ -1870,84 +1818,39 @@ export default function ProgramPlatformPage() {
         icon={Database}
         tone="violet"
         title="Chương trình tổng"
-        description="Điều phối đơn vị, chương trình, trình độ và field dùng chung theo một luồng rõ ràng hơn để admin cấu hình nhanh mà vẫn giữ được ngữ cảnh đang làm việc."
-        pills={(
-          <>
-            <LearningInfoPill>Bước hiện tại: {STEP_ITEMS.find((step) => step.id === activeStep)?.title || 'Chưa chọn'}</LearningInfoPill>
-            {selectedProgram ? <LearningInfoPill>Chương trình: {getProgramHierarchyLabel(selectedProgram)}</LearningInfoPill> : null}
-            {selectedLevel ? <LearningInfoPill>Trình độ: {getLevelHierarchyLabel(selectedLevel, programByUuid)}</LearningInfoPill> : null}
-            {selectedFieldDefinition ? <LearningInfoPill>Field: {selectedFieldDefinition.label}</LearningInfoPill> : null}
-          </>
-        )}
+        description=""
+        pills={<LearningInfoPill>Bước: {STEP_ITEMS.find((step) => step.id === activeStep)?.title || ''}</LearningInfoPill>}
         stats={[
-          { label: 'Đơn vị', value: organizers.length, hint: 'Nguồn tổ chức gốc cho toàn bộ chương trình.' },
-          { label: 'Chương trình', value: programs.length, hint: 'Các nhánh đào tạo và luồng vận hành đang cấu hình.' },
-          { label: 'Trình độ', value: levels.length, hint: 'Những level gắn theo từng chương trình.' },
-          { label: 'Field', value: fieldDefinitions.length, hint: 'Field động phục vụ biểu mẫu, metadata và export.' },
+          { label: 'Đơn vị', value: organizers.length, hint: '' },
+          { label: 'Chương trình', value: programs.length, hint: '' },
+          { label: 'Trình độ', value: levels.length, hint: '' },
+          { label: 'Field', value: fieldDefinitions.length, hint: '' },
         ]}
       />
 
-      <div className="space-y-6">
-        <Panel
-          title="Quản lý chương trình"
-          hint="Chọn bước bên dưới để thao tác. Luồng dễ nhất: Đơn vị → Chương trình → Trình độ (nếu cần) → Field."
-        >
-          <div className="flex flex-wrap gap-2">
-            <Badge className="border border-blue-200 bg-blue-50 text-blue-700">Đơn vị: {organizers.length}</Badge>
-            <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700">Chương trình: {programs.length}</Badge>
-            <Badge className="border border-amber-200 bg-amber-50 text-amber-700">Trình độ: {levels.length}</Badge>
-            <Badge className="border border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700">Field: {fieldDefinitions.length}</Badge>
+      <div className="space-y-4">
+        <Panel title="Quản lý chương trình" hint="Đơn vị → Chương trình → Trình độ → Field">
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            <Badge className="border-blue-200 bg-blue-50 text-blue-700 text-[10px]">Đơn vị: {organizers.length}</Badge>
+            <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700 text-[10px]">Chương trình: {programs.length}</Badge>
+            <Badge className="border-amber-200 bg-amber-50 text-amber-700 text-[10px]">Trình độ: {levels.length}</Badge>
+            <Badge className="border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700 text-[10px]">Field: {fieldDefinitions.length}</Badge>
           </div>
-          <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-2 md:grid-cols-4 mb-3">
             {STEP_ITEMS.map((step) => (
-              <StepCard
-                key={step.id}
-                number={step.number}
-                title={step.title}
-                description={step.description}
-                active={activeStep === step.id}
-                completed={stepCompletion[step.id]}
-                onClick={() => goToStep(step.id)}
-              />
+              <StepCard key={step.id} number={step.number} title={step.title} description={step.description}
+                active={activeStep === step.id} completed={stepCompletion[step.id]} onClick={() => goToStep(step.id)} />
             ))}
           </div>
-          <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-            <ContextCard
-              label="Đơn vị"
-              value={selectedOrganizer?.name || ''}
-              hint="Đang lọc chương trình theo đơn vị này"
-              active={activeStep === 'organizer'}
-              onFocus={() => goToStep('organizer')}
-              onClear={clearSelectedOrganizer}
-            />
-            <ContextCard
-              label="Chương trình"
-              value={selectedProgram ? getProgramHierarchyLabel(selectedProgram) : ''}
-              hint="Đang lọc trình độ và gợi ý phạm vi field"
-              active={activeStep === 'program'}
-              onFocus={() => goToStep('program')}
-              onClear={clearSelectedProgram}
-            />
-            <ContextCard
-              label="Trình độ"
-              value={selectedLevel ? getLevelHierarchyLabel(selectedLevel, programByUuid) : ''}
-              hint="Ưu tiên phạm vi cấp trình độ cho field"
-              active={activeStep === 'level'}
-              onFocus={() => goToStep('level')}
-              onClear={clearSelectedLevel}
-            />
-            <ContextCard
-              label="Field"
-              value={selectedFieldDefinition?.label || ''}
-              hint="Field đang chọn để quản lý lựa chọn"
-              active={activeStep === 'field'}
-              onFocus={() => goToStep('field')}
-              onClear={clearSelectedFieldDefinition}
-            />
+          <div className="grid gap-2 md:grid-cols-4">
+            <ContextCard label="Đơn vị" value={selectedOrganizer?.name || ''} hint="" active={activeStep === 'organizer'} onFocus={() => goToStep('organizer')} onClear={clearSelectedOrganizer} />
+            <ContextCard label="Chương trình" value={selectedProgram ? getProgramHierarchyLabel(selectedProgram) : ''} hint="" active={activeStep === 'program'} onFocus={() => goToStep('program')} onClear={clearSelectedProgram} />
+            <ContextCard label="Trình độ" value={selectedLevel ? getLevelHierarchyLabel(selectedLevel, programByUuid) : ''} hint="" active={activeStep === 'level'} onFocus={() => goToStep('level')} onClear={clearSelectedLevel} />
+            <ContextCard label="Field" value={selectedFieldDefinition?.label || ''} hint="" active={activeStep === 'field'} onFocus={() => goToStep('field')} onClear={clearSelectedFieldDefinition} />
           </div>
         </Panel>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {activeStep === 'organizer' ? renderOrganizerStep() : null}
           {activeStep === 'program' ? renderProgramStep() : null}
           {activeStep === 'level' ? renderLevelStep() : null}

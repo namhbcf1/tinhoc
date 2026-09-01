@@ -39,8 +39,8 @@ const BottomSheet = ({ isOpen, onClose, title, children, height = 'auto' }) => {
                     className={`absolute inset-0 bg-white shadow-2xl transition-transform duration-300 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
                     style={{ height: height === 'auto' ? '100dvh' : height, maxHeight: '100dvh' }}
                 >
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                        <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+                    <div className="flex items-center justify-between px-5 py-2.5 border-b border-slate-100">
+                        <h3 className="text-sm font-bold text-slate-900">{title}</h3>
                         <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full">
                             <X size={20} className="text-slate-500" />
                         </button>
@@ -70,8 +70,8 @@ const AssignmentCard = ({ assignment, className, onView, onEdit, onDelete }) => 
     const isOverdue = assignment.due_date && new Date(assignment.due_date) < new Date();
 
     return (
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-            <div className="flex items-start gap-3">
+        <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+            <div className="flex items-start gap-2">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isOverdue ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
                     <FileText size={22} />
                 </div>
@@ -86,7 +86,7 @@ const AssignmentCard = ({ assignment, className, onView, onEdit, onDelete }) => 
 
                     <p className="text-xs text-slate-500 mb-2 line-clamp-2">{assignment.description || 'Không có mô tả'}</p>
 
-                    <div className="flex items-center gap-3 text-xs text-slate-400">
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
                         <span className="flex items-center gap-1">
                             <Users size={12} /> {className || 'Lớp học'}
                         </span>
@@ -201,14 +201,14 @@ const AssignmentFormSheet = ({ isOpen, onClose, editingItem, classes, onSuccess 
 
     return (
         <BottomSheet isOpen={isOpen} onClose={onClose} title={editingItem ? 'Cập nhật bài tập' : 'Tạo bài tập mới'} height="90vh">
-            <div className="p-4 space-y-4 pb-8">
+            <div className="p-3 space-y-2 pb-8">
                 <div>
                     <label className="text-sm font-medium text-slate-600 mb-1.5 block">Tiêu đề *</label>
                     <input
                         type="text"
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Nhập tiêu đề bài tập"
                     />
                 </div>
@@ -218,7 +218,7 @@ const AssignmentFormSheet = ({ isOpen, onClose, editingItem, classes, onSuccess 
                     <textarea
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[100px]"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[100px]"
                         placeholder="Mô tả chi tiết bài tập..."
                     />
                 </div>
@@ -228,7 +228,7 @@ const AssignmentFormSheet = ({ isOpen, onClose, editingItem, classes, onSuccess 
                     <select
                         value={formData.class_id}
                         onChange={(e) => setFormData({ ...formData, class_id: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                         <option value="">-- Chọn lớp --</option>
                         {classes.map(c => (
@@ -237,14 +237,14 @@ const AssignmentFormSheet = ({ isOpen, onClose, editingItem, classes, onSuccess 
                     </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                     <div>
                         <label className="text-sm font-medium text-slate-600 mb-1.5 block">Hạn nộp</label>
                         <input
                             type="text"
                             value={formData.due_date}
                             onChange={handleDateInput}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             placeholder="dd/mm/yyyy"
                         />
                     </div>
@@ -255,7 +255,7 @@ const AssignmentFormSheet = ({ isOpen, onClose, editingItem, classes, onSuccess 
                             min="1"
                             value={formData.max_attempts}
                             onChange={(e) => setFormData({ ...formData, max_attempts: e.target.value })}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             placeholder="1"
                         />
                     </div>
@@ -268,7 +268,7 @@ const AssignmentFormSheet = ({ isOpen, onClose, editingItem, classes, onSuccess 
                         min="1"
                         value={formData.max_file_size}
                         onChange={(e) => setFormData({ ...formData, max_file_size: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="10"
                     />
                 </div>
@@ -277,7 +277,7 @@ const AssignmentFormSheet = ({ isOpen, onClose, editingItem, classes, onSuccess 
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 active:scale-[0.98] transition-all disabled:opacity-50"
+                        className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 active:scale-[0.98] transition-all disabled:opacity-50"
                     >
                         {loading ? 'Đang xử lý...' : (editingItem ? 'Cập nhật' : 'Tạo bài tập')}
                     </button>
@@ -316,7 +316,7 @@ const SubmissionsSheet = ({ isOpen, onClose, assignment }) => {
 
     return (
         <BottomSheet isOpen={isOpen} onClose={onClose} title={`Bài nộp - ${assignment.title}`} height="85vh">
-            <div className="p-4 pb-8">
+            <div className="p-3 pb-8">
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
                         <RefreshCw size={24} className="animate-spin text-indigo-600" />
@@ -327,9 +327,9 @@ const SubmissionsSheet = ({ isOpen, onClose, assignment }) => {
                         <p>Chưa có bài nộp nào</p>
                     </div>
                 ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                         {submissions.map(sub => (
-                            <div key={sub.id} className="bg-white p-4 rounded-xl border border-slate-100">
+                            <div key={sub.id} className="bg-white p-3 rounded-xl border border-slate-100">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="font-medium text-slate-800">{sub.student_name || 'Học viên'}</span>
                                     {sub.grade !== null && sub.grade !== undefined && (
@@ -374,23 +374,23 @@ const ConfirmDeleteSheet = ({ isOpen, onClose, item, onConfirm }) => {
 
     return (
         <BottomSheet isOpen={isOpen} onClose={onClose} title="Xác nhận xóa" height="auto">
-            <div className="p-4 pb-8">
+            <div className="p-3 pb-8">
                 <div className="text-center mb-6">
-                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2.5">
                         <Trash2 size={32} className="text-red-600" />
                     </div>
                     <p className="text-slate-700">Xóa bài tập</p>
-                    <p className="font-bold text-slate-900 text-lg">"{item.title}"?</p>
+                    <p className="font-bold text-slate-900 text-sm">"{item.title}"?</p>
                 </div>
 
-                <div className="flex gap-3">
-                    <button onClick={onClose} className="flex-1 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl">
+                <div className="flex gap-2">
+                    <button onClick={onClose} className="flex-1 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl">
                         Hủy
                     </button>
                     <button
                         onClick={handleConfirm}
                         disabled={loading}
-                        className="flex-1 py-3 bg-red-600 text-white font-semibold rounded-xl disabled:opacity-50"
+                        className="flex-1 py-2 bg-red-600 text-white font-semibold rounded-xl disabled:opacity-50"
                     >
                         {loading ? 'Đang xóa...' : 'Xóa'}
                     </button>
@@ -442,7 +442,7 @@ export default function MobileAssignmentsModule() {
         <PullToRefreshWrapper onRefresh={handleRefresh}>
         <div className="min-h-screen bg-slate-50">
             {/* Header */}
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-4 pt-3.5 pb-3 safe-area-inset-top">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-3 pt-3.5 pb-3 safe-area-inset-top">
                 <div className="mb-2.5 flex items-center justify-between">
                     <h2 className="text-base font-bold text-white">Quản lý Bài tập</h2>
                     <button onClick={handleCreate} className="rounded-xl bg-white/20 p-2 text-white">
@@ -490,7 +490,7 @@ export default function MobileAssignmentsModule() {
             </div>
 
             {/* Stats */}
-            <div className="px-4 -mt-2">
+            <div className="px-3 -mt-2">
                 <div className="rounded-2xl border border-slate-100 bg-white p-2.5 shadow-sm">
                     <div className="grid grid-cols-3 gap-2 text-center">
                         <div>
@@ -510,7 +510,7 @@ export default function MobileAssignmentsModule() {
             </div>
 
             {/* List */}
-            <div className="p-4 pb-24">
+            <div className="p-3 pb-24">
                 {loading ? (
                     <AdminLoadingState
                         title="Đang tải danh sách bài tập"
@@ -519,7 +519,7 @@ export default function MobileAssignmentsModule() {
                         accent="violet"
                     />
                 ) : filteredAssignments.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                         {filteredAssignments.map((item) => (
                             <AssignmentCard
                                 key={item.id}
@@ -533,7 +533,7 @@ export default function MobileAssignmentsModule() {
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 opacity-60">
-                        <FileText size={64} className="text-slate-300 mb-4" />
+                        <FileText size={64} className="text-slate-300 mb-2.5" />
                         <p className="text-slate-500 font-medium">Không có bài tập nào</p>
                     </div>
                 )}
