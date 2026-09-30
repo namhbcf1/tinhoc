@@ -3,7 +3,8 @@ import { CalendarCheck, GraduationCap } from 'lucide-react';
 import { buildApiUrl } from '../../utils/api-base-url';
 import { getStorageValue } from '../../utils/browser-storage';
 
-export const STUDY_PLATFORM_URL = 'https://vantrangexam.pages.dev/#/login';
+// Phải khớp với default của broker (backend/src/lib/auth/session-broker.ts getAppBaseUrl)
+export const STUDY_PLATFORM_URL = 'https://vantrangexam.com/#/login';
 
 type OpenStudyPlatformOptions = {
   target?: '_blank' | '_self';
@@ -33,6 +34,9 @@ export const STUDENT_PAGE_TITLES: Record<string, string> = {
   feedback:     'Phản hồi lớp học',
   study:        'Học tập',
   profile:      'Hồ sơ cá nhân',
+  'my-classes': 'Lớp của tôi',
+  attendance:   'Điểm danh',
+  reviews:      'Đánh giá',
 };
 
 export async function openStudyPlatform(options: OpenStudyPlatformOptions = {}) {

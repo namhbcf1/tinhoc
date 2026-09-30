@@ -128,7 +128,7 @@ export async function getDocumentPermissions(db: any, id: number) {
 export async function deleteDocument(db: any, id: number) {
   await db.prepare('DELETE FROM document_permissions WHERE document_id = ?').bind(id).run();
   await db.prepare('DELETE FROM document_downloads WHERE document_id = ?').bind(id).run();
-  await db.prepare('DELETE FROM documents WHERE id = ?').bind(id).run();
+  await db.prepare("DELETE FROM documents WHERE id = ? AND source_site = 'edu'").bind(id).run();
 }
 
 export async function recordDocumentDownload(db: any, docId: number, studentId: number, ip: string, ua: string) {

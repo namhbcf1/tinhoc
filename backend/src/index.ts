@@ -104,6 +104,7 @@ const ALLOWED_ORIGINS = [
   'https://vantrangedu.pages.dev',
   'https://vantrangexam.pages.dev',
   'https://www.vantrangexam.pages.dev',
+  'https://vantrangexam.com',
   'http://localhost:5173',
   'http://localhost:3000',
   'http://localhost:4173'

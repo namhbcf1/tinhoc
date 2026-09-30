@@ -25,6 +25,11 @@ bucket_name = "class-videos"
 ENVIRONMENT = "production"
 READ_ONLY_MODE = "false"
 
+# SSO handoff redirect bases — must be the PUBLIC domains, not *.pages.dev.
+# Without these the broker falls back to https://vantrangexam.pages.dev.
+EXAM_APP_URL = "https://vantrangexam.com"
+EDU_APP_URL = "https://vantrangedu.com"
+
 # MUST BE SET VIA: wrangler secret put JWT_SECRET
 # JWT_SECRET = ""
 

@@ -107,7 +107,7 @@ export async function markAllAsRead(db: D1Database, user_id: number | null = nul
 
 export async function deleteNotification(db: D1Database, notificationId: number) {
   const result = await db.prepare(`
-    DELETE FROM notifications WHERE id = ?
+    DELETE FROM notifications WHERE id = ? AND source_site = 'edu'
   `).bind(notificationId).run();
 
   return result;

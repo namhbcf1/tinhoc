@@ -540,7 +540,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                                             }}
                                         />
                                         <div className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors flex items-center justify-center">
-                                            <Eye size={24} className="text-white opacity-0 hover:opacity-100 transition-opacity drop-shadow-lg" />
+                                            <Eye size={24} className="text-white/90 transition-opacity drop-shadow-lg" />
                                         </div>
                                         <div className="placeholder hidden absolute inset-0 bg-slate-50 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-300">
                                             <User size={48} className="mb-2 opacity-50" />
@@ -585,7 +585,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                                                 }}
                                             />
                                             <div className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors flex items-center justify-center">
-                                                <Eye size={20} className="text-white opacity-0 hover:opacity-100 transition-opacity drop-shadow-lg" />
+                                                <Eye size={20} className="text-white/90 transition-opacity drop-shadow-lg" />
                                             </div>
                                             <div className="placeholder hidden absolute inset-0 bg-slate-50 flex items-center justify-center border-2 border-dashed border-slate-300">
                                                 <CreditCard size={32} className="text-slate-300" />
@@ -626,7 +626,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                                                 }}
                                             />
                                             <div className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors flex items-center justify-center">
-                                                <Eye size={20} className="text-white opacity-0 hover:opacity-100 transition-opacity drop-shadow-lg" />
+                                                <Eye size={20} className="text-white/90 transition-opacity drop-shadow-lg" />
                                             </div>
                                             <div className="placeholder hidden absolute inset-0 bg-slate-50 flex items-center justify-center border-2 border-dashed border-slate-300">
                                                 <CreditCard size={32} className="text-slate-300" />

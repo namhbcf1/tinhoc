@@ -181,7 +181,7 @@ assignments.put('/:id', authMiddleware, adminOnly, async (c) => {
     const { id } = c.req.param();
     const body = await c.req.json();
 
-    const existing = await db.prepare('SELECT * FROM assignments WHERE id = ?')
+    const existing = await db.prepare("SELECT * FROM assignments WHERE id = ? AND source_site = 'edu'")
         .bind(id).first();
 
     if (!existing) {
@@ -202,10 +202,10 @@ assignments.put('/:id', authMiddleware, adminOnly, async (c) => {
     updates.push('updated_at = CURRENT_TIMESTAMP');
     params.push(id);
 
-    await db.prepare(`UPDATE assignments SET ${updates.join(', ')} WHERE id = ?`)
+    await db.prepare(`UPDATE assignments SET ${updates.join(', ')} WHERE id = ? AND source_site = 'edu'`)
         .bind(...params).run();
 
-    const updated = await db.prepare('SELECT * FROM assignments WHERE id = ?')
+    const updated = await db.prepare("SELECT * FROM assignments WHERE id = ? AND source_site = 'edu'")
         .bind(id).first();
 
     return successResponse({
@@ -222,7 +222,7 @@ assignments.delete('/:id', authMiddleware, adminOnly, async (c) => {
     const r2 = c.env.R2;
     const { id } = c.req.param();
 
-    const existing = await db.prepare('SELECT * FROM assignments WHERE id = ?')
+    const existing = await db.prepare("SELECT * FROM assignments WHERE id = ? AND source_site = 'edu'")
         .bind(id).first();
 
     if (!existing) {
@@ -244,7 +244,7 @@ assignments.delete('/:id', authMiddleware, adminOnly, async (c) => {
     }
 
     // Delete from DB (cascade will delete submissions)
-    await db.prepare('DELETE FROM assignments WHERE id = ?').bind(id).run();
+    await db.prepare("DELETE FROM assignments WHERE id = ? AND source_site = 'edu'").bind(id).run();
 
     return successResponse({
         message: 'Xóa bài tập thành công',

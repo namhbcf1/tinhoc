@@ -37,6 +37,17 @@ export const authMiddleware: MiddlewareHandler<AuthContext> = async (c, next: Ne
     return errorResponse('Token đã hết hạn', 401) as Response;
   }
 
+  // Enforce audience: token phát cho app khác không dùng được ở route tài nguyên.
+  // MIỄN TRỪ /sso/* và /auth/* — đây là endpoint danh tính của broker, app chị em
+  // (vantrangexam) hợp lệ khi gọi bằng token aud='exam' của chính nó.
+  // (aud vắng mặt = token cũ trước khi có aud — vẫn chấp nhận để không đá user ra.)
+  const requestPath = c.req.path;
+  const isIdentityEndpoint = requestPath.startsWith('/sso/') || requestPath.startsWith('/auth/');
+  const aud = (payload as { aud?: string }).aud;
+  if (!isIdentityEndpoint && aud && aud !== 'edu') {
+    return errorResponse('Token không dành cho hệ thống này', 401) as Response;
+  }
+
   // Enforce 90-day max session lifetime for student tokens (JWT exp might be far future)
   if (payload.sid && payload.role === 'student') {
     const issuedAt = Math.floor(payload.iat as number);

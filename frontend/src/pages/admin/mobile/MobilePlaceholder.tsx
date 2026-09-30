@@ -1,8 +1,0 @@
-// @ts-nocheck
-export default function MobilePlaceholder({ title }) {
-  return (
-    <div className='p-3 text-slate-500'>
-      Module {title} is under construction
-    </div>
-  );
-}
