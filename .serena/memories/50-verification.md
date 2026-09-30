@@ -562,3 +562,14 @@ Admin can now see, per exam schedule, the vantrangexam attempt history: how many
 - `cd frontend && npm run build:prod` → PASS, `✓ built in 7.10s`. `dist/assets/index-muoj7yqn-CTZxc_Zw.js` 296.59 kB (gzip 92.02 kB). Chỉ còn cảnh báo chunk-size có sẵn từ trước (`heic2any` 1,352.92 kB) — không phải hồi quy.
 - stderr có sẵn từ trước, không liên quan: `Google Calendar API error ... Cannot read properties of undefined (reading 'replace')` ở `google-auth.ts:13` — đã graceful-handle, test vẫn xanh.
 - CHƯA deploy prod. Lưu ý: deploy backend sẽ fail cho tới khi user dọn 2 queue mồ côi `photo-3x4-pipeline` / `photo-3x4-pipeline-dev` trên tài khoản Cloudflare.
+
+## 2026-10-01 — DEPLOY prod cả 2 app + smoke test
+- **vantrangedu backend**: `npx wrangler deploy` OK. Version ID `a4d61e70-021d-4c5b-8333-8e7d713ddcf5`. Upload 3077.18 KiB / gzip 644.03 KiB, startup 140 ms.
+- **vantrangedu frontend**: `build:prod` (dist đã rm) hash mới `muojfyyx` → `npx wrangler pages deploy` OK, preview `https://fa76192f.vantrangedu.pages.dev`.
+- **vantrangexam**: `npm run deploy` OK, preview `https://087b0a03.vantrangexam.pages.dev`.
+- Verify CF API `workers/scripts/vantrangedu-api/settings` xác nhận prod THẬT SỰ có `EXAM_APP_URL = "https://vantrangexam.com"` và `EDU_APP_URL = "https://vantrangedu.com"` — đây là bằng chứng bug SSO redirect về `*.pages.dev` đã hết trên production.
+- Verify asset prod: `https://vantrangedu.com/` và `https://vantrangexam.com/` trả `Cache-Control: no-store, no-cache, must-revalidate`; index.html phục vụ đúng hash mới (`index-muojfyyx-DuUKXuwo.js` / `index-CCOWEW0I.js`); 4 asset edu + 3 asset exam đều `200 application/javascript` (không dính CDN cache poisoning).
+- CORS preflight prod `OPTIONS .../auth/login` với `Origin: https://vantrangexam.com` → `204` + `Access-Control-Allow-Origin: https://vantrangexam.com`. Xác nhận fix CORS sống.
+- Smoke API: exam `/api/auth/session`, `/api/library` → 401 (đúng, thiếu token). edu worker `/sso/handoffs` POST `{}` → 401, `/auth/session` → 401, `/students` + Bearer rác → 401. Không endpoint nào trả 404 → route tồn tại.
+- Bundle exam đã deploy không còn chuỗi `workers.dev`; chỉ chứa `vantrangedu.com` (broker gọi server-side qua `SSO_BROKER_URL` trong Pages env, fallback về worker `vantrangedu-api`).
+- Ghi chú: cảnh báo "Multiple environments are defined" của wrangler là vô hại (deploy top-level env, đúng ý định). `workers_dev = true` trong wrangler.toml nên worker vẫn có URL `*.workers.dev` — đó là kênh broker mà Pages exam gọi.

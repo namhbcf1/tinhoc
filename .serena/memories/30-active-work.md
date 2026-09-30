@@ -2,7 +2,7 @@
 
 ## Session: 2026-10-01 — Liên kết edu ↔ exam: SSO, điều hướng, mobile, source_site
 
-### Status: COMMITTED (d359b2196) — chưa deploy prod
+### Status: DEPLOYED prod (code d359b2196 · memory f08635ca6)<br>edu backend v`a4d61e70` · edu frontend hash `muojfyyx` · preview `fa76192f`
 
 ### Mô tả
 Rà soát 4 nhóm vấn đề khiến hai app con (`vantrangedu` broker ↔ `vantrangexam` consumer) liên kết chưa tốt: SSO đăng nhập chéo, điều hướng/menu, mobile hiển thị vỡ, dữ liệu không đồng bộ. Đã sửa gốc từng nhóm; các hạng mục cần quyết định sản phẩm hoặc thao tác tài khoản CF thì báo lại cho user chứ không tự làm.
