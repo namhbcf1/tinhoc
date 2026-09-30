@@ -1,5 +1,37 @@
 # Active Work — vantrangedu
 
+## Session: 2026-10-01 — Liên kết edu ↔ exam: SSO, điều hướng, mobile, source_site
+
+### Status: COMMITTED (d359b2196) — chưa deploy prod
+
+### Mô tả
+Rà soát 4 nhóm vấn đề khiến hai app con (`vantrangedu` broker ↔ `vantrangexam` consumer) liên kết chưa tốt: SSO đăng nhập chéo, điều hướng/menu, mobile hiển thị vỡ, dữ liệu không đồng bộ. Đã sửa gốc từng nhóm; các hạng mục cần quyết định sản phẩm hoặc thao tác tài khoản CF thì báo lại cho user chứ không tự làm.
+
+**Bug gốc nặng nhất (SSO prod):** `EXAM_APP_URL` / `EDU_APP_URL` KHÔNG có trong `backend/wrangler.toml` (chỉ khai trong `types/env.ts`), nên broker prod luôn fallback về `https://vantrangexam.pages.dev` thay vì `.com`.
+
+### Files changed
+- `backend/wrangler.toml` — thêm `EXAM_APP_URL`/`EDU_APP_URL` vào `[vars]` (domain công khai, không phải `*.pages.dev`).
+- `backend/src/index.ts` — thêm `https://vantrangexam.com` vào `ALLOWED_ORIGINS`. KHÔNG thêm `www.` (DNS không resolve — kiểm tra thực tế trả HTTP 000).
+- `backend/src/middleware/auth-middleware.ts` — enforce claim `aud`, MIỄN TRỪ `/sso/*` và `/auth/*`. Bắt buộc: exam proxy token `aud=exam` còn hạn sang đúng 2 nhóm endpoint danh tính này; enforce trắng sẽ phá SSO. `aud` vắng mặt (token cũ) vẫn chấp nhận.
+- `frontend/src/features/student/student-nav.tsx` — `STUDY_PLATFORM_URL` về `https://vantrangexam.com/#/login` (khớp default của `session-broker.ts getAppBaseUrl`); bổ sung title `my-classes`/`attendance`/`reviews` (header mobile trước hiện chung chung).
+- `backend/src/repositories/document-repository.ts` — `deleteDocument` xóa kèm `document_permissions` + `document_downloads`, và `AND source_site = 'edu'` khi xóa row chính.
+- `backend/src/routes/assignments.ts` — 4 chỗ còn thiếu scope: PUT/DELETE `existing` check, UPDATE, re-SELECT, DELETE.
+- `backend/src/db/notification-queries.ts` — `DELETE ... AND source_site = 'edu'`.
+- `frontend/src/pages/admin/mobile/MobileStudentsModule.tsx` — 3 chỗ nút xem ảnh bỏ `opacity-0 hover:*` (hover-only không bấm được trên cảm ứng).
+- `frontend/src/components/admin/MobileBottomNav.tsx` — XÓA (0 tham chiếu).
+- `frontend/src/pages/admin/mobile/MobilePlaceholder.tsx` — XÓA (0 tham chiếu).
+- `backend/migrations/0022_add_exam_level_to_exam_schedules.sql` → `0022a_...` — gỡ trùng số với `0022_teacher_performance_indexes.sql`.
+
+### Verification
+- backend `tsc --noEmit`: 0 lỗi. backend `npx vitest run`: 197/197 (28 file).
+- frontend `tsc --noEmit`: 0 lỗi. `npm run build:prod`: PASS 7.10s.
+- Chi tiết xem `50-verification.md` mục 2026-10-01.
+
+### Updated
+2026-10-01
+
+---
+
 ## Session: 2026-05-13 — Enterprise Program Platform polish
 
 ### Status: DEPLOYED (safe production browser smoke pass)

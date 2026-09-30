@@ -789,3 +789,21 @@
 - nav mới: thêm 3 trang (certificates/documents/messages) vào STUDENT_MAIN_MENU nhưng bottom nav mobile phải giữ gọn 4 mục.
 - Quyết định: thêm `primary?: boolean` vào StudentNavItem; mặc định (undefined) = hiện ở bottom nav; `primary: false` = chỉ sidebar desktop + drawer mobile. StudentBottomNav + StudentMobileLayout filter `item.primary !== false`.
 - Lý do: một nguồn menu duy nhất, tránh lệch label/icon/path giữa 3 chỗrender; sau này muốn đẩy mục nào xuống bottom nav chỉ cần xóa cờ.
+
+## 2026-10-01 — Enforce claim `aud` nhưng miễn trừ endpoint danh tính của broker
+- Thêm `aud` (audience) vào validate ở `auth-middleware.ts`: token phát cho app khác không dùng được ở route tài nguyên.
+- MIỄN TRỪ `/sso/*` và `/auth/*`. Lý do bắt buộc: vantrangexam proxy token `aud=exam` còn hạn của chính nó sang edu `/sso/handoffs` và `/auth/session` để lấy handoff/session — enforce trắng sẽ chặn hợp lệ này và phá SSO.
+- `aud` vắng mặt = token cũ phát trước khi có claim → vẫn chấp nhận, tránh đá user đang đăng nhập ra ngoài.
+- Hệ quả: muốn siết chặt hơn sau này phải backfill `aud` cho toàn bộ session còn hạn trước.
+
+## 2026-10-01 — KHÔNG thêm `www.vantrangexam.com` vào CORS
+- Kiểm tra DNS thực tế: `www.vantrangexam.com` trả HTTP 000 (không resolve). Thêm vào whitelist chỉ tạo config chết và gây hiểu nhầm. Nếu sau này bật `www` thì thêm lúc đó.
+
+## 2026-10-01 — Không tự quyết định số phận `sync_events` (master-data-events)
+- Phát hiện: `lib/program-platform/repository.ts:479` ghi row vào `sync_events` nhưng KHÔNG nơi nào dispatch (0 `fetch`, 0 `waitUntil`, 0 queue, 0 cron) và KHÔNG ai đọc bảng này. Toàn bộ pipeline đồng bộ sự kiện là code chết.
+- Dữ liệu dùng chung giữa 2 app hiện chỉ đi qua truy cập trực tiếp shared D1.
+- Quyết định: KHÔNG tự nối lại cũng KHÔNG tự xóa — đây là quyết định sản phẩm (cần biết có ý định đồng bộ realtime hay không). Báo cáo cho user.
+
+## 2026-10-01 — Không gộp migration trùng số giữa 2 repo
+- Trùng lặp chéo repo: edu `0021` == exam `008`, edu `0023` == exam `014`, edu `0031` vs exam `018`, edu `0022_teacher_performance_indexes` vs exam `011`.
+- Không thể gộp/xóa đơn phương vì hai repo có luồng deploy riêng và có thể đã chạy khác nhau trên prod. Cần audit trạng thái D1 thật rồi mới quyết định. Báo cáo cho user.

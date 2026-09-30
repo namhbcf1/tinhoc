@@ -554,3 +554,11 @@ Admin can now see, per exam schedule, the vantrangexam attempt history: how many
 - `npm run build:prod` suffix `mtj4qz08` sạch; `npx tsc --noEmit -p tsconfig.json` 0 lỗi.
 - Đủ chunk: Certificates/Documents/StudentMessaging + MobileCertificatesModule/MobileDocumentsModule (MobileMessages gộp chunk khác).
 - Deploy Pages `a7fb8116`. Curl production: `Certificates-mtj4qz08-Dzo0VH_v.js` 200 application/javascript; index chunk chứa cả 3 route mới; Certificates chunk có `var(--vt-ink)` (3); StudentMessaging chunk có "Trợ lý ảo"; MobileCertificatesModule có "Chưa có". ✓
+
+## 2026-10-01 — Verify liên kết edu ↔ exam (commit d359b2196)
+- `cd backend && npx tsc --noEmit` → 0 lỗi.
+- `cd backend && npx vitest run` → 197/197 PASS (28 file).
+- `cd frontend && npx tsc --noEmit` → 0 lỗi.
+- `cd frontend && npm run build:prod` → PASS, `✓ built in 7.10s`. `dist/assets/index-muoj7yqn-CTZxc_Zw.js` 296.59 kB (gzip 92.02 kB). Chỉ còn cảnh báo chunk-size có sẵn từ trước (`heic2any` 1,352.92 kB) — không phải hồi quy.
+- stderr có sẵn từ trước, không liên quan: `Google Calendar API error ... Cannot read properties of undefined (reading 'replace')` ở `google-auth.ts:13` — đã graceful-handle, test vẫn xanh.
+- CHƯA deploy prod. Lưu ý: deploy backend sẽ fail cho tới khi user dọn 2 queue mồ côi `photo-3x4-pipeline` / `photo-3x4-pipeline-dev` trên tài khoản Cloudflare.
