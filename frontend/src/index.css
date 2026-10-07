@@ -134,7 +134,11 @@
   body {
     background-color: var(--vt-ivory);
     color: var(--color-foreground);
-    font-family: 'Times New Roman', Times, serif !important;
+    /* REDESIGN 2026-10-07: trước đây hardcode 'Times New Roman', Times, serif !important.
+       Rule này chặn cả design system: phần tử nào tự set font-family: var(--font-sans) thì ra
+       Inter, phần tử nào thừa hưởng từ body thì ra Times New Roman ⇒ app bị TRỘN 2 FONT
+       (thấy rõ ở breadcrumb, nhãn form...). Nay trỏ về token --font-sans (Inter). */
+    font-family: var(--font-sans) !important;
     font-size: 1rem;
     line-height: 1.6;
     background-image:

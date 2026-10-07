@@ -141,19 +141,24 @@ export default function TrainingPage() {
             <div ref={container} className="relative bg-[var(--vt-paper)] overflow-hidden">
 
                 {/* Breadcrumb */}
-                <div className="vt-container pt-24 md:pt-28 pb-2">
+                <div className="vt-container pt-24 md:pt-28 pb-0">
                     <Breadcrumb items={breadcrumbItems} />
                 </div>
 
                 {/* ── Hero ───────────────────────────────────────── */}
-                <section className="relative pt-8 md:pt-14 pb-16 md:pb-24">
+                <section className="relative pt-4 md:pt-7 pb-16 md:pb-24">
                     <div aria-hidden="true" className="absolute inset-0 pointer-events-none">
                         <div className="absolute -top-32 right-[-10%] h-[28rem] w-[28rem] rounded-full bg-[var(--vt-emerald)]/8 blur-3xl" />
                         <div className="absolute bottom-[-10rem] left-[-10%] h-[24rem] w-[24rem] rounded-full bg-[var(--vt-champagne)]/12 blur-3xl" />
                     </div>
 
                     <div className="vt-container relative">
-                        <div className="max-w-3xl">
+                      {/* REDESIGN 2026-10-07: trước đây hero chỉ có 1 cột `max-w-3xl` nên
+                          nửa phải màn hình TRỐNG HOÀN TOÀN. Nay chia lưới 7/5: cột trái là
+                          nội dung, cột phải là "mục lục chương trình" (kẻ mảnh + số thứ tự)
+                          và 3 ô số liệu — đúng ngôn ngữ editorial, lấp khoảng trống có nghĩa. */}
+                      <div className="grid items-start gap-10 lg:grid-cols-12 lg:gap-14">
+                        <div className="lg:col-span-7">
                             <p className="t-eyebrow vt-eyebrow !text-[var(--vt-champagne-deep)]">
                                 Chương trình đào tạo
                             </p>
@@ -180,23 +185,52 @@ export default function TrainingPage() {
                             </div>
                         </div>
 
-                        {/* Stat row */}
-                        <div className="grid grid-cols-3 gap-3 sm:gap-4 mt-10 md:mt-16 max-w-3xl">
-                            {[
-                                { icon: Users, value: ACTIVE_STUDENTS, label: 'Học viên' },
-                                { icon: ThumbsUp, value: SATISFACTION_RATE, label: 'Hài lòng' },
-                                { icon: Award, value: YEARS_EXPERIENCE, label: 'Năm KN' },
-                            ].map(({ icon: Icon, value, label }) => (
-                                <div key={label} className="t-stat vt-stat-tile text-center p-3 sm:p-5">
-                                    <Icon size={18} className="text-[var(--vt-champagne-deep)] mx-auto" />
-                                    <p className="vt-display mt-2 text-[1.35rem] sm:text-[2.25rem] leading-none text-[var(--vt-ink)]"
-                                       style={{ fontVariationSettings: '"opsz" 72', fontWeight: 600 }}>
-                                        {value}
-                                    </p>
-                                    <p className="mt-1.5 text-[10px] sm:text-[13px] text-[var(--vt-ink-60)] leading-snug">{label}</p>
-                                </div>
-                            ))}
-                        </div>
+                        {/* Cột phải — mục lục chương trình + số liệu */}
+                        <aside className="lg:col-span-5">
+                            <div className="border-t border-[var(--color-rule-strong)] pt-5">
+                                <p className="t-eyebrow vt-eyebrow">Mục lục chương trình</p>
+                                <ol className="mt-5 divide-y divide-[var(--color-rule)]">
+                                    {[
+                                        { n: '01', name: 'Tiếng Anh giao tiếp', note: 'Nền tảng · phản xạ · phát âm' },
+                                        { n: '02', name: 'Luyện thi chứng chỉ', note: 'VSTEP · TOEIC · IELTS' },
+                                        { n: '03', name: 'Tin học văn phòng', note: 'Word · Excel · PowerPoint · MOS' },
+                                    ].map((row) => (
+                                        <li key={row.n} className="flex items-baseline gap-4 py-4">
+                                            <span className="vt-display text-[1.15rem] leading-none text-[var(--vt-champagne-deep)]"
+                                                  style={{ fontVariationSettings: '"opsz" 48', fontWeight: 600 }}>
+                                                {row.n}
+                                            </span>
+                                            <span className="min-w-0">
+                                                <span className="block vt-display text-[1.25rem] leading-tight text-[var(--vt-ink)]"
+                                                      style={{ fontVariationSettings: '"opsz" 48', fontWeight: 600 }}>
+                                                    {row.name}
+                                                </span>
+                                                <span className="mt-1 block text-[13px] text-[var(--vt-ink-60)]">{row.note}</span>
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ol>
+                            </div>
+
+                            {/* Stat row — chuyển vào cột phải cho cân lưới */}
+                            <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-4">
+                                {[
+                                    { icon: Users, value: ACTIVE_STUDENTS, label: 'Học viên' },
+                                    { icon: ThumbsUp, value: SATISFACTION_RATE, label: 'Hài lòng' },
+                                    { icon: Award, value: YEARS_EXPERIENCE, label: 'Năm KN' },
+                                ].map(({ icon: Icon, value, label }) => (
+                                    <div key={label} className="t-stat vt-stat-tile text-center p-3 sm:p-5">
+                                        <Icon size={18} className="text-[var(--vt-champagne-deep)] mx-auto" />
+                                        <p className="vt-display mt-2 text-[1.35rem] sm:text-[2.25rem] leading-none text-[var(--vt-ink)]"
+                                           style={{ fontVariationSettings: '"opsz" 72', fontWeight: 600 }}>
+                                            {value}
+                                        </p>
+                                        <p className="mt-1.5 text-[10px] sm:text-[13px] text-[var(--vt-ink-60)] leading-snug">{label}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </aside>
+                      </div>
                     </div>
                 </section>
 
