@@ -237,7 +237,7 @@
   width: 40px;
   height: 40px;
   border: 3px solid #e2e8f0;
-  border-top-color: #6366f1;
+  border-top-color: #0b2e6b;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -316,7 +316,7 @@
 }
 
 .docs-table th.th-sortable:hover {
-  color: #6366f1;
+  color: #0b2e6b;
 }
 
 .docs-table th.th-sortable svg {
@@ -447,12 +447,12 @@
 
 .docs-action-btn:hover {
   background: #f1f5f9;
-  color: #6366f1;
+  color: #0b2e6b;
 }
 
 .docs-action-btn.danger:hover {
   background: #fef2f2;
-  color: #dc2626;
+  color: #a3231f;
 }
 
 /* Grid View */
@@ -562,12 +562,12 @@
 
 .docs-card-actions button:hover {
   background: #f1f5f9;
-  color: #6366f1;
+  color: #0b2e6b;
 }
 
 .docs-card-actions button.danger:hover {
   background: #fef2f2;
-  color: #dc2626;
+  color: #a3231f;
   border-color: #fecaca;
 }
 
@@ -608,12 +608,12 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #0b2e6b 0%, #06183a 100%);
   color: white;
 }
 
 .docs-modal-header.share {
-  background: linear-gradient(135deg, #0ea5e9 0%, #22c55e 100%);
+  background: linear-gradient(135deg, #0b2e6b 0%, #0b2e6b 100%);
 }
 
 .docs-modal-header h2 {
@@ -672,7 +672,7 @@
 }
 
 .docs-form-group label .required {
-  color: #dc2626;
+  color: #a3231f;
 }
 
 .docs-form-group input,
@@ -689,8 +689,8 @@
 
 .docs-form-group input:focus,
 .docs-form-group textarea:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  border-color: #0b2e6b;
+  box-shadow: 0 0 0 4px rgba(11, 46, 107, 0.1);
 }
 
 .docs-form-group textarea {
@@ -722,7 +722,7 @@
 }
 
 .docs-access-option.selected {
-  border-color: #6366f1;
+  border-color: #0b2e6b;
   background: #eef2ff;
 }
 
@@ -731,7 +731,7 @@
 }
 
 .docs-access-option svg {
-  color: #6366f1;
+  color: #0b2e6b;
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -779,7 +779,7 @@
 .docs-checkbox input {
   width: 18px;
   height: 18px;
-  accent-color: #6366f1;
+  accent-color: #0b2e6b;
 }
 
 .docs-checkbox span {
@@ -800,14 +800,14 @@
 }
 
 .docs-file-drop:hover {
-  border-color: #6366f1;
+  border-color: #0b2e6b;
   background: #f5f3ff;
 }
 
 .docs-file-drop.has-file {
   border-style: solid;
-  border-color: #22c55e;
-  background: #f0fdf4;
+  border-color: #0b2e6b;
+  background: #f2ede2;
 }
 
 .docs-file-drop svg {
@@ -875,7 +875,7 @@
   padding: 8px;
   border-radius: 8px;
   cursor: pointer;
-  color: #dc2626;
+  color: #a3231f;
 }
 
 .docs-file-preview button:hover {
@@ -1001,13 +1001,13 @@
 }
 
 .docs-access-chip:hover {
-  border-color: #6366f1;
-  color: #6366f1;
+  border-color: #0b2e6b;
+  color: #0b2e6b;
 }
 
 .docs-access-chip.selected {
-  border-color: #6366f1;
-  background: #6366f1;
+  border-color: #0b2e6b;
+  background: #0b2e6b;
   color: white;
 }
 
@@ -1038,7 +1038,7 @@
   gap: 6px;
   font-size: 12px;
   font-weight: 600;
-  color: #6366f1;
+  color: #0b2e6b;
   text-transform: uppercase;
   padding-bottom: 8px;
   margin-bottom: 8px;
@@ -1068,7 +1068,7 @@
 .class-checkbox input {
   width: 18px;
   height: 18px;
-  accent-color: #6366f1;
+  accent-color: #0b2e6b;
   flex-shrink: 0;
 }
 
@@ -1103,7 +1103,7 @@
 }
 
 .docs-form-group select:focus {
-  border-color: #6366f1;
+  border-color: #0b2e6b;
 }
 
 /* Compact file drop for horizontal layout */

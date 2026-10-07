@@ -12,21 +12,21 @@
 :root {
     /* Light Academic Blue Admin Colors */
     --admin-primary: #1d4ed8;
-    --admin-primary-light: #38bdf8;
+    --admin-primary-light: #a8791f;
     --admin-primary-dark: #1e40af;
-    --admin-accent: #0ea5e9;
+    --admin-accent: #0b2e6b;
     --admin-accent-light: #bae6fd;
 
     /* Semantic Colors */
     --admin-success: #047857;
-    --admin-success-light: #6ee7b7;
+    --admin-success-light: #cfc7b6;
     --admin-warning: #d97706;
-    --admin-warning-light: #fbbf24;
+    --admin-warning-light: #a8791f;
     --admin-danger: #b91c1c;
     --admin-danger-light: #fca5a5;
     --admin-info: #2563eb;
     --admin-info-light: #93c5fd;
-    --admin-purple: #6366f1;
+    --admin-purple: #0b2e6b;
     --admin-cyan: #0891b2;
     --admin-pink: #be185d;
 
@@ -45,11 +45,11 @@
 
     /* Restrained Gradients */
     --gradient-primary: linear-gradient(135deg, #ffffff 0%, #dff3ff 100%);
-    --gradient-accent: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
-    --gradient-success: linear-gradient(135deg, #047857 0%, #6ee7b7 100%);
-    --gradient-warning: linear-gradient(135deg, #d97706 0%, #fbbf24 100%);
+    --gradient-accent: linear-gradient(135deg, #a8791f 0%, #0b2e6b 100%);
+    --gradient-success: linear-gradient(135deg, #047857 0%, #cfc7b6 100%);
+    --gradient-warning: linear-gradient(135deg, #d97706 0%, #a8791f 100%);
     --gradient-danger: linear-gradient(135deg, #b91c1c 0%, #fca5a5 100%);
-    --gradient-info: linear-gradient(135deg, #38bdf8 0%, #bae6fd 100%);
+    --gradient-info: linear-gradient(135deg, #a8791f 0%, #bae6fd 100%);
     --gradient-dark: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
     --gradient-mesh: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(224, 242, 254, 0.96) 100%);
 

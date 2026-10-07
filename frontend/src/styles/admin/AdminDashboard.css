@@ -141,7 +141,7 @@
 .btn-success:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(31, 111, 92,0.3); }
 
 .btn-info {
-  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  background: linear-gradient(135deg, #0b2e6b, #0b2e6b);
   color: #fff;
 }
 .btn-info:hover { transform: translateY(-1px); }
@@ -234,8 +234,8 @@ tbody tr:last-child td { border-bottom: none; }
 
 .stat-card.stat-primary  { border-top-color: #0b2e6b; }
 .stat-card.stat-success  { border-top-color: #1f6f5c; }
-.stat-card.stat-warning  { border-top-color: #f59e0b; }
-.stat-card.stat-info     { border-top-color: #0ea5e9; }
+.stat-card.stat-warning  { border-top-color: #a8791f; }
+.stat-card.stat-info     { border-top-color: #0b2e6b; }
 .stat-card.stat-purple   { border-top-color: #7c3aed; }
 .stat-card.stat-danger   { border-top-color: #a3231f; }
 
@@ -247,8 +247,8 @@ tbody tr:last-child td { border-bottom: none; }
 
 .stat-card.stat-primary .stat-icon  { background: #f2ede2; color: #0b2e6b; }
 .stat-card.stat-success .stat-icon  { background: #f2ede2; color: #1f6f5c; }
-.stat-card.stat-warning .stat-icon  { background: #fffbeb; color: #f59e0b; }
-.stat-card.stat-info .stat-icon     { background: #f0f9ff; color: #0ea5e9; }
+.stat-card.stat-warning .stat-icon  { background: #fffbeb; color: #a8791f; }
+.stat-card.stat-info .stat-icon     { background: #f0f9ff; color: #0b2e6b; }
 .stat-card.stat-purple .stat-icon   { background: #f5f3ff; color: #7c3aed; }
 .stat-card.stat-danger .stat-icon   { background: #fef2f2; color: #a3231f; }
 
@@ -314,9 +314,9 @@ tbody tr:last-child td { border-bottom: none; }
   display: flex; align-items: center; gap: clamp(10px, 1vw, 12px);
   padding: clamp(10px, 1.2vw, 12px) clamp(12px, 1.4vw, 16px); border-radius: clamp(8px, 1vw, 10px); border-left: 3px solid; transition: all 0.15s;
 }
-.alert-warning { background: #fffbeb; border-left-color: #f59e0b; }
+.alert-warning { background: #fffbeb; border-left-color: #a8791f; }
 .alert-danger  { background: #fef2f2; border-left-color: #a3231f; }
-.alert-info    { background: #f0f9ff; border-left-color: #0ea5e9; }
+.alert-info    { background: #f0f9ff; border-left-color: #0b2e6b; }
 .alert-success { background: #f2ede2; border-left-color: #1f6f5c; }
 
 .alert-content { flex: 1; display: flex; justify-content: space-between; align-items: center; }

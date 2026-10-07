@@ -250,14 +250,14 @@
 }
 
 .radio-option:hover {
-    border-color: #1d6f5f;
+    border-color: #0b2e6b;
 }
 
 .radio-option:has(input:checked) {
-    border-color: #1d6f5f;
+    border-color: #0b2e6b;
     background: rgba(29, 111, 95, 0.1);
     color: #14544a;
-    box-shadow: inset 0 0 0 1px #1d6f5f;
+    box-shadow: inset 0 0 0 1px #0b2e6b;
 }
 
 .radio-option:has(input:focus-visible) {
@@ -269,7 +269,7 @@
     width: 16px;
     height: 16px;
     margin: 0;
-    accent-color: #1d6f5f;
+    accent-color: #0b2e6b;
 }
 
 .text-red {
@@ -1528,7 +1528,7 @@
 }
 
 .vt-registration-page .upload-label::before {
-    background: var(--vt-emerald, #1d6f5f);
+    background: var(--vt-emerald, #0b2e6b);
 }
 
 /* Upload action buttons — ink pills matching the submit CTA (replace orange) */
@@ -1547,7 +1547,7 @@
 
 .vt-registration-page .upload-idle-action.camera-action,
 .vt-registration-page .upload-trigger:hover .upload-idle-action.camera-action {
-    background: var(--vt-emerald, #1d6f5f);
+    background: var(--vt-emerald, #0b2e6b);
 }
 
 .vt-registration-page .upload-waiting-note {

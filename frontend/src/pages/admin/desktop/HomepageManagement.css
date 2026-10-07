@@ -143,8 +143,8 @@
 .homepage-form-group input:focus,
 .homepage-form-group textarea:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #0b2e6b;
+  box-shadow: 0 0 0 3px rgba(11, 46, 107, 0.1);
 }
 
 .homepage-form-group textarea {

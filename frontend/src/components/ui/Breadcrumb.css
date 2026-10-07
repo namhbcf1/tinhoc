@@ -1,6 +1,7 @@
-/* Premium editorial (2026-10-07): trước đây dùng green Material #4CAF50 / #45a049 và
-   xám-lam #2c3e50 / #95a5a6 từ theme cũ — lạc hẳn khỏi hệ thống. Nay dùng token:
-   navy cho link, ink cho mục hiện tại, rule cho dấu phân cách; chữ nhỏ + tracking kiểu ấn phẩm. */
+/* Premium editorial (2026-10-07): trước đây dùng green Material và xám-lam từ theme cũ —
+   lạc hẳn khỏi hệ thống. Nay dùng token:
+   navy cho link, ink cho mục hiện tại, rule cho dấu phân cách; chữ nhỏ + tracking kiểu ấn phẩm.
+   (Lưu ý: script quét màu cũng thay hex NGAY TRONG comment — không ảnh hưởng hiển thị.) */
 .breadcrumb {
   margin-bottom: 20px;
 }
