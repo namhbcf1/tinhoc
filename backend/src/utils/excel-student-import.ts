@@ -1,4 +1,8 @@
-import XLSX from 'xlsx-js-style';
+// BẢO MẬT (2026-10-07): file này PARSE file Excel do admin upload (đầu vào không tin cậy)
+// nên phải dùng bản SheetJS chính thức >= 0.20.2 (đã vá Prototype Pollution <0.19.3 và
+// ReDoS <0.20.2). `xlsx-js-style@1.2.0` là fork của SheetJS 0.18.5 và CHỈ còn được dùng để
+// GHI file export có định dạng (routes/export.ts) — không dùng để đọc file người dùng.
+import XLSX from 'xlsx';
 
 export interface ImportStudentRow {
   cccd: string;
