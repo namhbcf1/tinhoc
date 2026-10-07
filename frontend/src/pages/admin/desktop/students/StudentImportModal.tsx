@@ -88,7 +88,7 @@ export default function StudentImportModal({ onClose, onImported }) {
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-6 py-4 rounded-t-[28px]">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-              <FileSpreadsheet size={20} className="text-emerald-600" />
+              <FileSpreadsheet size={20} className="text-[var(--color-navy)]" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900">Import học viên từ Excel</h2>
@@ -156,7 +156,7 @@ export default function StudentImportModal({ onClose, onImported }) {
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-center">
                   <p className="text-2xl font-bold text-emerald-700">{result.created}</p>
-                  <p className="text-xs font-medium text-emerald-600">Tạo thành công</p>
+                  <p className="text-xs font-medium text-[var(--color-navy)]">Tạo thành công</p>
                 </div>
                 <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-center">
                   <p className="text-2xl font-bold text-amber-700">{result.skipped}</p>
@@ -186,7 +186,7 @@ export default function StudentImportModal({ onClose, onImported }) {
 
               {result.created > 0 && (
                 <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 p-3">
-                  <CheckCircle size={16} className="text-emerald-600 shrink-0" />
+                  <CheckCircle size={16} className="text-[var(--color-navy)] shrink-0" />
                   <p className="text-sm text-emerald-700 font-medium">
                     Đã tạo {result.created} học viên thành công! Danh sách đã được làm mới.
                   </p>

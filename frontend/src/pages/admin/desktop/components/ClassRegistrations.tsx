@@ -156,7 +156,7 @@ export default function ClassRegistrations({ classId }) {
                     <Button size="sm" onClick={handleOpenAddModal} className="bg-blue-600 hover:bg-blue-700 text-white">
                         <UserPlus size={16} className="mr-2" /> Thêm học sinh
                     </Button>
-                    <Button variant="outline" size="sm" onClick={handleExportExcel} className="text-green-600 border-green-200 hover:bg-green-50">
+                    <Button variant="outline" size="sm" onClick={handleExportExcel} className="text-[var(--color-navy)] border-green-200 hover:bg-green-50">
                         <Download size={16} className="mr-2" /> Xuất Excel
                     </Button>
                 </div>

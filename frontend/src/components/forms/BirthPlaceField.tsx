@@ -51,8 +51,8 @@ export default function BirthPlaceField({
   radioOptionClassName = 'inline-flex items-center gap-2 text-sm text-slate-700',
   domesticTextClassName = '',
   foreignTextClassName = '',
-  inputClassName = 'w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100',
-  selectClassName = 'w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100',
+  inputClassName = 'w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-[var(--color-navy)] focus:ring-2 focus:ring-[var(--color-navy)]/15',
+  selectClassName = 'w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-[var(--color-navy)] focus:ring-2 focus:ring-[var(--color-navy)]/15',
   hintClassName = 'mt-1 text-xs text-slate-500',
   errorClassName = 'mt-1 text-xs text-red-500',
 }: BirthPlaceFieldProps) {

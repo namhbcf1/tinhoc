@@ -76,7 +76,7 @@ function IndeterminateCheckbox({ checked, indeterminate, onChange, title }) {
       ref={el => { if (el) el.indeterminate = indeterminate; }}
       checked={checked}
       onChange={onChange}
-      className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+      className="w-4 h-4 rounded border-slate-300 text-[var(--color-navy)] focus:ring-[var(--color-navy)]/15 cursor-pointer"
     />
   );
 }
@@ -147,7 +147,7 @@ export default function StudentTableView({
                 {bulkEnabled && (
                   <td className="px-3 py-2.5">
                     <input type="checkbox" checked={isSelected} onChange={() => onToggleSelect(student.id)}
-                      className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" />
+                      className="w-3.5 h-3.5 rounded border-slate-300 text-[var(--color-navy)] focus:ring-[var(--color-navy)]/15 cursor-pointer" />
                   </td>
                 )}
                 <td className="px-3 py-2.5">

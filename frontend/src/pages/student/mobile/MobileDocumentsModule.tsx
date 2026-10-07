@@ -26,7 +26,7 @@ const getFileColor = (fileType) => {
     const t = fileType.toLowerCase();
     if (t.includes('pdf')) return { bg: 'bg-red-500', light: 'bg-red-50 border-red-100', text: 'text-red-600' };
     if (t.includes('doc')) return { bg: 'bg-[var(--vt-ink)]', light: 'bg-[var(--vt-paper-soft)] border-[var(--vt-line-soft)]', text: 'text-[var(--vt-ink)]' };
-    if (t.includes('image') || t.includes('png') || t.includes('jpg')) return { bg: 'bg-emerald-500', light: 'bg-emerald-50 border-emerald-100', text: 'text-emerald-600' };
+    if (t.includes('image') || t.includes('png') || t.includes('jpg')) return { bg: 'bg-emerald-500', light: 'bg-emerald-50 border-emerald-100', text: 'text-[var(--color-navy)]' };
     if (t.includes('video') || t.includes('mp4')) return { bg: 'bg-[var(--vt-emerald)]', light: 'bg-[var(--vt-emerald-soft)] border-[var(--vt-emerald-soft)]', text: 'text-[var(--vt-emerald)]' };
     return { bg: 'bg-slate-500', light: 'bg-slate-50 border-slate-100', text: 'text-slate-600' };
 };

@@ -281,7 +281,7 @@ export default function AdminAttendancePage({ toast }) {
                               <td className="px-6 py-4 text-sm text-slate-400 font-medium">{idx + 1}</td>
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
-                                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ring-1 ${isPresent ? 'bg-emerald-100 text-emerald-600 ring-emerald-200' : 'bg-slate-100 text-slate-500 ring-slate-200'}`}>
+                                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ring-1 ${isPresent ? 'bg-emerald-100 text-[var(--color-navy)] ring-emerald-200' : 'bg-slate-100 text-slate-500 ring-slate-200'}`}>
                                     {(student.ho_ten_full || student.ho_ten || 'N').charAt(0)}
                                   </div>
                                   <span className="font-bold text-slate-700">{student.ho_ten_full || student.ho_ten || 'N/A'}</span>
@@ -348,7 +348,7 @@ export default function AdminAttendancePage({ toast }) {
                   </Card>
 
                   <Card className="glass-card p-6 border-0 shadow-sm flex items-center gap-4 bg-gradient-to-br from-emerald-50 to-white">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-[var(--color-navy)]">
                       <CheckCircle size={24} />
                     </div>
                     <div>

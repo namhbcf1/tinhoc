@@ -151,7 +151,7 @@ export default function SemanticLanding({
                 <section className="services-section py-24 relative z-20">
                     <div className="container px-4 mx-auto max-w-6xl">
                         <div className="text-center mb-16">
-                            <span className="text-emerald-600 font-black tracking-widest uppercase text-sm mb-3 block">Bento Grid System</span>
+                            <span className="text-[var(--color-navy)] font-black tracking-widest uppercase text-sm mb-3 block">Bento Grid System</span>
                             <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">{lang === 'vi' ? 'Hệ Sinh Thái Đào Tạo' : 'Education Ecosystem'}</h2>
                         </div>
                         <div className="grid md:grid-cols-3 gap-8">
@@ -178,7 +178,7 @@ export default function SemanticLanding({
                                 <Card className="service-card glass-panel h-full hover:shadow-2xl transition-all duration-500 border-0 bg-white/80 rounded-[2.5rem] overflow-hidden relative">
                                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                                     <CardContent className="p-10 relative z-10">
-                                        <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 mb-8 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                                        <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center text-[var(--color-navy)] mb-8 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-sm">
                                             <BookOpen size={32} />
                                         </div>
                                         <h3 className="text-2xl font-bold mb-4 group-hover:text-emerald-700 transition-colors text-slate-900 tracking-tight">
@@ -229,7 +229,7 @@ export default function SemanticLanding({
                                     <Card key={i} className="faq-item glass-panel border-0 shadow-md hover:shadow-xl transition-all duration-300 bg-white/90 rounded-3xl overflow-hidden group">
                                         <CardContent className="p-8 md:p-10">
                                             <div className="flex items-start gap-6">
-                                                <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-black text-xl shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300">
+                                                <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-[var(--color-navy)] flex items-center justify-center font-black text-xl shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300">
                                                     <HelpCircle size={24} />
                                                 </div>
                                                 <div>

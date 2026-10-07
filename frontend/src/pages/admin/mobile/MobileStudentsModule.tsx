@@ -427,7 +427,7 @@ export const StudentDetailSheet = ({ student, onClose, onEdit, onDelete, onRefre
                         <div className="space-y-2 py-6">
                             {/* Thông tin cá nhân */}
                             <div>
-                                <h3 className="text-xs font-bold text-emerald-600 uppercase tracking-wide mb-3">Thông tin cá nhân</h3>
+                                <h3 className="text-xs font-bold text-[var(--color-navy)] uppercase tracking-wide mb-3">Thông tin cá nhân</h3>
                                 <div className="space-y-2">
                                     <InfoRow icon={<User size={16} />} label="Họ và tên" value={`${displayStudent.ho || ''} ${displayStudent.ten_dem || ''} ${displayStudent.ten || ''}`.trim()} />
                                     <InfoRow icon={<Calendar size={16} />} label="Ngày sinh" value={dob} />
@@ -856,7 +856,7 @@ const HistoryEntryCard = ({ item }) => (
                 <div className="mt-1 text-sm text-slate-700">{item.old_value || 'Trống'}</div>
             </div>
             <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2">
-                <div className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-600">Sau chỉnh sửa</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--color-navy)]">Sau chỉnh sửa</div>
                 <div className="mt-1 text-sm text-slate-700">{item.new_value || 'Trống'}</div>
             </div>
         </div>
@@ -982,7 +982,7 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-5 py-6 space-y-6">
                     {/* Thông tin cá nhân */}
                     <div>
-                        <h3 className="text-xs font-bold text-emerald-600 uppercase tracking-wide mb-3">Thông tin cá nhân</h3>
+                        <h3 className="text-xs font-bold text-[var(--color-navy)] uppercase tracking-wide mb-3">Thông tin cá nhân</h3>
                         <div className="space-y-2">
                             <FormField label="Họ" value={formData.ho} onChange={(v) => setFormData({ ...formData, ho: v })} />
                             <FormField label="Tên đệm" value={formData.ten_dem} onChange={(v) => setFormData({ ...formData, ten_dem: v })} />
@@ -993,7 +993,7 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                                 <select
                                     value={formData.gioi_tinh}
                                     onChange={(e) => setFormData({ ...formData, gioi_tinh: e.target.value })}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15"
                                 >
                                     <option value="Nam">Nam</option>
                                     <option value="Nữ">Nữ</option>
@@ -1010,8 +1010,8 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
                                 toggleWrapperClassName=""
                                 radioGroupClassName="flex flex-wrap gap-2"
                                 radioOptionClassName="inline-flex items-center gap-2 text-sm text-slate-700"
-                                inputClassName="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                selectClassName="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                inputClassName="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15"
+                                selectClassName="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15"
                                 hintClassName="text-xs text-slate-500"
                             />
                             <FormField label="Dân tộc" value={formData.dan_toc} onChange={(v) => setFormData({ ...formData, dan_toc: v })} />
@@ -1133,7 +1133,7 @@ const FormField = ({ label, value, onChange, type = 'text', required = false, di
                 onChange={(e) => onChange(e.target.value)}
                 required={required}
                 disabled={disabled}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100 disabled:text-slate-500"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 disabled:bg-slate-100 disabled:text-slate-500"
             />
         </div>
     );

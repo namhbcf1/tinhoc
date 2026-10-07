@@ -120,7 +120,7 @@ export default function ExitIntentModal() {
                     <div className="p-5 sm:p-8 bg-white">
                         <div className="text-center mb-5">
                             <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">
-                                Giảm ngay <span className="text-green-600 text-3xl sm:text-4xl">20%</span> học phí
+                                Giảm ngay <span className="text-[var(--color-navy)] text-3xl sm:text-4xl">20%</span> học phí
                             </h3>
                             <p className="text-slate-600 text-base sm:text-lg">
                                 Áp dụng cho khóa học <strong>Tiếng Anh Cấp Tốc</strong> và <strong>VSTEP B1/B2</strong>
@@ -148,15 +148,15 @@ export default function ExitIntentModal() {
                         {/* Features */}
                         <ul className="space-y-2 mb-5 text-slate-700 text-sm sm:text-base">
                             <li className="flex items-center gap-2">
-                                <span className="text-green-600 font-bold" aria-hidden="true">✓</span>
+                                <span className="text-[var(--color-navy)] font-bold" aria-hidden="true">✓</span>
                                 Tặng kèm tài liệu học tập trị giá 500.000đ
                             </li>
                             <li className="flex items-center gap-2">
-                                <span className="text-green-600 font-bold" aria-hidden="true">✓</span>
+                                <span className="text-[var(--color-navy)] font-bold" aria-hidden="true">✓</span>
                                 Miễn phí 1 buổi học thử với giáo viên bản ngữ
                             </li>
                             <li className="flex items-center gap-2">
-                                <span className="text-green-600 font-bold" aria-hidden="true">✓</span>
+                                <span className="text-[var(--color-navy)] font-bold" aria-hidden="true">✓</span>
                                 Cam kết đầu ra hoặc học lại miễn phí
                             </li>
                         </ul>

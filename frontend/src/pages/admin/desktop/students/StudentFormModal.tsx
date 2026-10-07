@@ -30,7 +30,7 @@ function FormInput({ label, value, onChange, type = 'text', placeholder = '', re
         placeholder={placeholder}
         disabled={disabled}
         className={`w-full px-3 py-2.5 text-sm border rounded-xl outline-none transition-all duration-150
-          focus:ring-2 focus:border-emerald-400 ${error ? 'border-red-300 focus:ring-red-300' : 'border-slate-200 focus:ring-emerald-400'}
+          focus:ring-2 focus:border-[var(--color-navy)] ${error ? 'border-red-300 focus:ring-red-300' : 'border-slate-200 focus:ring-[var(--color-navy)]/15'}
           ${disabled ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white text-slate-800 hover:border-slate-300'}`}
       />
       {error && (
@@ -234,7 +234,7 @@ export default function StudentFormModal({ isEdit, formData, setFormData, select
                     <select
                       value={formData.gioi_tinh}
                       onChange={(e) => setFormData({ ...formData, gioi_tinh: e.target.value })}
-                      className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-white text-slate-800 outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition-all"
+                      className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-white text-slate-800 outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 focus:border-[var(--color-navy)] transition-all"
                     >
                       <option value="Nam">Nam</option>
                       <option value="Nữ">Nữ</option>
@@ -254,8 +254,8 @@ export default function StudentFormModal({ isEdit, formData, setFormData, select
                     toggleWrapperClassName=""
                     radioGroupClassName="flex flex-wrap gap-4"
                     radioOptionClassName="inline-flex items-center gap-2 text-sm text-slate-700"
-                    inputClassName="w-full px-3 py-2.5 text-sm border rounded-xl outline-none transition-all duration-150 border-slate-200 focus:ring-2 focus:border-emerald-400 focus:ring-emerald-400 bg-white text-slate-800 hover:border-slate-300"
-                    selectClassName="w-full px-3 py-2.5 text-sm border rounded-xl outline-none transition-all duration-150 border-slate-200 focus:ring-2 focus:border-emerald-400 focus:ring-emerald-400 bg-white text-slate-800 hover:border-slate-300"
+                    inputClassName="w-full px-3 py-2.5 text-sm border rounded-xl outline-none transition-all duration-150 border-slate-200 focus:ring-2 focus:border-[var(--color-navy)] focus:ring-[var(--color-navy)]/15 bg-white text-slate-800 hover:border-slate-300"
+                    selectClassName="w-full px-3 py-2.5 text-sm border rounded-xl outline-none transition-all duration-150 border-slate-200 focus:ring-2 focus:border-[var(--color-navy)] focus:ring-[var(--color-navy)]/15 bg-white text-slate-800 hover:border-slate-300"
                     hintClassName="text-xs text-slate-500"
                   />
                   </div>
@@ -294,7 +294,7 @@ export default function StudentFormModal({ isEdit, formData, setFormData, select
                   <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
                     <FormInput label="Mật khẩu" value={formData.password} onChange={update('password')} type="password" required error={errors.password} />
                     {formData.password && formData.password.length >= 8 && (
-                      <p className="mt-1 text-xs text-emerald-600 font-medium">Mật khẩu đủ mạnh</p>
+                      <p className="mt-1 text-xs text-[var(--color-navy)] font-medium">Mật khẩu đủ mạnh</p>
                     )}
                     {formData.password && formData.password.length > 0 && formData.password.length < 8 && (
                       <div className="mt-1.5">

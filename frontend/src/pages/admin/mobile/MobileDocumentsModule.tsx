@@ -118,7 +118,7 @@ const DocumentCard = ({ doc, onShare, onDownload, onDelete }) => {
                     </button>
                     <button
                         onClick={() => onDownload(doc)}
-                        className="p-2 text-green-600 bg-green-50 rounded-lg active:bg-green-100"
+                        className="p-2 text-[var(--color-navy)] bg-green-50 rounded-lg active:bg-green-100"
                     >
                         <Download size={16} />
                     </button>
@@ -715,7 +715,7 @@ export default function MobileDocumentsModule() {
                                 key={f.value}
                                 onClick={() => setFilterType(f.value)}
                                 className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all ${filterType === f.value
-                                    ? 'bg-white text-emerald-600'
+                                    ? 'bg-white text-[var(--color-navy)]'
                                     : 'bg-white/20 text-white'
                                     }`}
                             >
@@ -735,7 +735,7 @@ export default function MobileDocumentsModule() {
                             <p className="text-[10px] text-slate-500">Tổng</p>
                         </div>
                         <div>
-                            <p className="text-base font-bold text-green-600">{stats.public}</p>
+                            <p className="text-base font-bold text-[var(--color-navy)]">{stats.public}</p>
                             <p className="text-[10px] text-slate-500">Công khai</p>
                         </div>
                         <div>

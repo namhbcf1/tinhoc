@@ -371,7 +371,7 @@ export default function CertificateShipmentModal({ open, onOpenChange, certifica
                         <input
                           value={form.receiver_name}
                           onChange={(event) => setForm((prev) => ({ ...prev, receiver_name: event.target.value }))}
-                          className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-emerald-400"
+                          className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-[var(--color-navy)]"
                         />
                       </label>
                       <label className="text-sm font-semibold text-slate-700">
@@ -379,7 +379,7 @@ export default function CertificateShipmentModal({ open, onOpenChange, certifica
                         <input
                           value={form.receiver_phone}
                           onChange={(event) => setForm((prev) => ({ ...prev, receiver_phone: event.target.value }))}
-                          className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-emerald-400"
+                          className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-[var(--color-navy)]"
                         />
                       </label>
                       <label className="text-sm font-semibold text-slate-700">
@@ -388,7 +388,7 @@ export default function CertificateShipmentModal({ open, onOpenChange, certifica
                           rows={4}
                           value={form.raw_address}
                           onChange={(event) => setForm((prev) => ({ ...prev, raw_address: event.target.value }))}
-                          className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-emerald-400"
+                          className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-[var(--color-navy)]"
                         />
                       </label>
                       <label className="text-sm font-semibold text-slate-700">
@@ -399,7 +399,7 @@ export default function CertificateShipmentModal({ open, onOpenChange, certifica
                           step="10"
                           value={form.product_weight_grams}
                           onChange={(event) => setForm((prev) => ({ ...prev, product_weight_grams: Number(event.target.value) || 250 }))}
-                          className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-emerald-400"
+                          className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-[var(--color-navy)]"
                         />
                       </label>
                     </div>

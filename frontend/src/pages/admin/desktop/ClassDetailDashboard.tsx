@@ -28,7 +28,7 @@ import StudentFeedbackManagement from './StudentFeedbackManagement';
 
 const ActivityIcon = ({ status }) => {
     switch (status) {
-        case 'active': return <CheckCircle size={24} className="text-green-600" />;
+        case 'active': return <CheckCircle size={24} className="text-[var(--color-navy)]" />;
         case 'paused': return <AlertCircle size={24} className="text-yellow-600" />;
         case 'completed': return <CheckCircle size={24} className="text-blue-600" />;
         default: return <XCircle size={24} className="text-red-600" />;
@@ -1453,7 +1453,7 @@ function ReviewsTab({ classId, classStudents }: { classId: number; classStudents
                 </div>
                 <div className="flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2">
                     <Send size={12} className="text-emerald-500" />
-                    <span className="text-xs font-bold text-emerald-600 uppercase tracking-wide">Đã gửi</span>
+                    <span className="text-xs font-bold text-[var(--color-navy)] uppercase tracking-wide">Đã gửi</span>
                     <span className="text-sm font-extrabold text-emerald-700">{publishedCount}</span>
                 </div>
                 {draftCount > 0 && (
@@ -1522,7 +1522,7 @@ function ReviewsTab({ classId, classStudents }: { classId: number; classStudents
                                                         <button
                                                             disabled={actionLoading === review.id}
                                                             onClick={() => handleTogglePublish(review)}
-                                                            className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors ${review.status === 'published' ? 'text-slate-600 bg-slate-100 hover:bg-slate-200' : 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'}`}
+                                                            className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors ${review.status === 'published' ? 'text-slate-600 bg-slate-100 hover:bg-slate-200' : 'text-[var(--color-navy)] bg-emerald-50 hover:bg-emerald-100'}`}
                                                         >
                                                             {review.status === 'published' ? <><EyeOff size={12} /> Thu hồi</> : <><Send size={12} /> Gửi</>}
                                                         </button>

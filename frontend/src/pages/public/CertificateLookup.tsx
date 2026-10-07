@@ -90,7 +90,7 @@ export default function CertificateLookup() {
 
         <div className="container px-4 mx-auto max-w-3xl relative z-10">
           <div className="text-center mb-12 anim-fade-up">
-            <div className="inline-flex items-center justify-center p-4 bg-emerald-100 text-emerald-600 rounded-full mb-6">
+            <div className="inline-flex items-center justify-center p-4 bg-emerald-100 text-[var(--color-navy)] rounded-full mb-6">
               <Award size={40} className="drop-shadow-sm" />
             </div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">
@@ -130,7 +130,7 @@ export default function CertificateLookup() {
                     value={searchValue}
                     onChange={(e) => setSearchValue(e.target.value)}
                     placeholder={searchMethod === 'cccd' ? t('enterCCCD') : t('enterCertificateCode')}
-                    className="pl-12 h-14 bg-white/60 border-slate-200 focus:border-emerald-400 focus:ring-emerald-400/20 text-lg rounded-2xl"
+                    className="pl-12 h-14 bg-white/60 border-slate-200 focus:border-[var(--color-navy)] focus:ring-[var(--color-navy)]/15 text-lg rounded-2xl"
                     required
                   />
                 </div>

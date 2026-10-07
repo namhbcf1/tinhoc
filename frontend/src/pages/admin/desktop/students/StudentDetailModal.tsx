@@ -207,7 +207,7 @@ function HistoryItem({ item }) {
             <div className="text-slate-700">{normalizeHistoryValue(item.old_value)}</div>
           </div>
           <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2">
-            <div className="mb-1 font-semibold uppercase tracking-[0.12em] text-emerald-600">Sau chỉnh sửa</div>
+            <div className="mb-1 font-semibold uppercase tracking-[0.12em] text-[var(--color-navy)]">Sau chỉnh sửa</div>
             <div className="text-slate-700">{normalizeHistoryValue(item.new_value)}</div>
           </div>
         </div>

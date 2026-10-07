@@ -434,7 +434,7 @@ export default function StudentsManagement({ toast }) {
               <input type="text" value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Tìm tên, CCCD, email..."
-                className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 pl-7 pr-7 text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-200"
+                className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 pl-7 pr-7 text-sm outline-none focus:border-[var(--color-navy)] focus:ring-1 focus:ring-[var(--color-navy)]/15"
               />
               {searchTerm ? (
                 <button type="button" onClick={() => setSearchTerm('')}

@@ -69,7 +69,7 @@ function VideoPlayer({ url, title }: { url: string; title: string }) {
                         className="absolute inset-0 w-full h-full object-cover opacity-70"
                     />
                     <div className="relative z-10 w-20 h-20 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-xl transition-all group-hover:scale-110">
-                        <Play size={36} className="text-emerald-600 ml-1" fill="currentColor" />
+                        <Play size={36} className="text-[var(--color-navy)] ml-1" fill="currentColor" />
                     </div>
                 </button>
             )}
@@ -302,7 +302,7 @@ export default function PostDetailPage() {
                                         className="prose prose-lg prose-slate max-w-none
                       prose-headings:text-slate-900 prose-headings:font-bold
                       prose-p:text-slate-700 prose-p:leading-relaxed
-                      prose-a:text-green-600 prose-a:no-underline hover:prose-a:underline
+                      prose-a:text-[var(--color-navy)] prose-a:no-underline hover:prose-a:underline
                       prose-strong:text-slate-900
                       prose-ul:list-disc prose-ol:list-decimal
                       prose-img:rounded-lg prose-img:shadow-md"
@@ -353,7 +353,7 @@ export default function PostDetailPage() {
                                                             />
                                                         )}
                                                         <div>
-                                                            <h4 className="font-medium text-slate-800 group-hover:text-green-600 transition-colors line-clamp-2 text-sm">
+                                                            <h4 className="font-medium text-slate-800 group-hover:text-[var(--color-navy)] transition-colors line-clamp-2 text-sm">
                                                                 {relPost.title}
                                                             </h4>
                                                             <span className="text-xs text-slate-500 mt-1 block">

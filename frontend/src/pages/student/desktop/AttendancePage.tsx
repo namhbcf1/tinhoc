@@ -56,7 +56,7 @@ const mapJoinSource = (raw: any) => ({
 
 function ProgressBar({ pct }: { pct: number }) {
   const color = pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-amber-500' : 'bg-red-500';
-  const textColor = pct >= 80 ? 'text-emerald-600' : pct >= 60 ? 'text-amber-600' : 'text-red-600';
+  const textColor = pct >= 80 ? 'text-[var(--color-navy)]' : pct >= 60 ? 'text-amber-600' : 'text-red-600';
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -265,7 +265,7 @@ export default function AttendancePage({
           <div className="shrink-0 w-16 h-16 rounded-xl bg-emerald-50 border border-emerald-100 flex flex-col items-center justify-center">
             <span className={[
               'text-2xl font-black leading-none',
-              overallPct >= 80 ? 'text-emerald-600' : overallPct >= 60 ? 'text-amber-600' : 'text-red-600',
+              overallPct >= 80 ? 'text-[var(--color-navy)]' : overallPct >= 60 ? 'text-amber-600' : 'text-red-600',
             ].join(' ')}>
               {overallPct}
             </span>

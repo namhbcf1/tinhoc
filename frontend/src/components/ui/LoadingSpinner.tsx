@@ -43,7 +43,7 @@ export default function LoadingSpinner({
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-emerald-200/70 blur-2xl" />
             <div className={cn('relative flex items-center justify-center rounded-full border border-emerald-200/80 bg-gradient-to-br from-white to-emerald-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]', ui.ring)}>
-              <LoaderCircle size={ui.icon} className="animate-spin text-emerald-600" />
+              <LoaderCircle size={ui.icon} className="animate-spin text-[var(--color-navy)]" />
             </div>
           </div>
 

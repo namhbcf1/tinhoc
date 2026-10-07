@@ -463,7 +463,7 @@ export default function MobileAttendanceModule() {
               {saveSuccess && (
                 <Card className="border-0 bg-emerald-50 shadow-sm">
                   <CardContent className="p-3 flex items-center gap-2">
-                    <CheckCircle size={20} className="text-emerald-600 flex-shrink-0" />
+                    <CheckCircle size={20} className="text-[var(--color-navy)] flex-shrink-0" />
                     <p className="text-sm font-semibold text-emerald-700">
                       Điểm danh đã được lưu thành công!
                     </p>
@@ -481,7 +481,7 @@ export default function MobileAttendanceModule() {
                 return (
                   <div className="grid grid-cols-2 gap-2">
                     <Card className="border-0 shadow-sm p-3 flex items-center gap-2">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-[var(--color-navy)]">
                         <CheckCircle size={20} />
                       </div>
                       <div>

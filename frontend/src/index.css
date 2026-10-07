@@ -4,6 +4,26 @@
    KHÔNG được thêm lại @variant dark, dark: classes, hay prefers-color-scheme: dark.
    Quyết định này là VĨNH VIỄN. */
 
+/* ── FOCUS TOÀN CỤC (2026-10-07) ───────────────────────────────────────────────
+   Chromium vẽ focus ring mặc định theo MÀU ACCENT CỦA WINDOWS, nên trên máy có accent
+   xanh lá thì mọi input hiện viền XANH dù đã đổi hết class `focus:*` (đã kiểm: đổi 113 chỗ
+   class focus ở 29 file mà viền vẫn xanh). Định nghĩa tường minh theo design system:
+   focus = outline 2px navy. Không phụ thuộc theme hệ điều hành nữa. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-navy);
+    outline-offset: 2px;
+  }
+
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [contenteditable='true']:focus-visible {
+    outline: 2px solid var(--color-navy);
+    outline-offset: 1px;
+  }
+}
+
 @theme {
   /* ── Premium editorial palette (chốt 2026-10-07, xem DESIGN-SYSTEM.md) ──────
      Nguyên tắc: nền giấy ấm, mực navy, MỘT màu nhấn (gold), đường kẻ mảnh thay bóng đổ.

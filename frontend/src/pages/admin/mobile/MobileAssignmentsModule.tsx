@@ -498,7 +498,7 @@ export default function MobileAssignmentsModule() {
                             <p className="text-xs text-slate-500">Tổng</p>
                         </div>
                         <div>
-                            <p className="text-base font-bold text-green-600">{stats.active}</p>
+                            <p className="text-base font-bold text-[var(--color-navy)]">{stats.active}</p>
                             <p className="text-xs text-slate-500">Đang mở</p>
                         </div>
                         <div>

@@ -186,7 +186,7 @@ export default function StudentLookup() {
               {studentData.registrations && studentData.registrations.length > 0 && (
                 <Card className="anim-result-card glass-panel border border-emerald-100 shadow-xl shadow-emerald-900/5 bg-gradient-to-br from-white to-emerald-50/20 rounded-[2rem] overflow-hidden">
                   <div className="px-8 pt-8 pb-4 flex items-center gap-3">
-                    <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600"><BookOpen size={20} /></div>
+                    <div className="p-2 bg-emerald-100 rounded-lg text-[var(--color-navy)]"><BookOpen size={20} /></div>
                     <h2 className="text-2xl font-bold text-[var(--color-ink)]">Lớp đã đăng ký</h2>
                   </div>
                   <CardContent className="p-8 pt-0">

@@ -373,7 +373,7 @@ export default function StudentMessaging({ studentData }) {
                                 }`}
                             >
                               <p>{msg.content}</p>
-                              <p className={`text-xs mt-1 ${isStudent ? 'text-emerald-600 text-right' : 'text-slate-400'}`}>
+                              <p className={`text-xs mt-1 ${isStudent ? 'text-[var(--color-navy)] text-right' : 'text-slate-400'}`}>
                                 {formatTime(msg.created_at)}
                               </p>
                             </div>

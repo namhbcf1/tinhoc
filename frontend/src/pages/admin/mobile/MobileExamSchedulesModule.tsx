@@ -1623,7 +1623,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                         value={formData.class_seed_name}
                                         onChange={(event) => updateField('class_seed_name', event.target.value)}
                                         placeholder="Ví dụ: Lớp ôn thi B1"
-                                        className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                        className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-[var(--color-navy)] focus:ring-4 focus:ring-[var(--color-navy)]/15"
                                     />
                                 </div>
 
@@ -1660,7 +1660,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                             value={formData.class_seed_schedule_rule}
                                             onChange={(event) => updateField('class_seed_schedule_rule', event.target.value.toUpperCase())}
                                             placeholder="WEEKLY:1,3,5"
-                                            className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                            className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-[var(--color-navy)] focus:ring-4 focus:ring-[var(--color-navy)]/15"
                                         />
                                     </div>
                                     <div>
@@ -1671,7 +1671,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                             value={formData.class_seed_schedule_time}
                                             onChange={(event) => updateField('class_seed_schedule_time', event.target.value)}
                                             placeholder="19:00-21:00"
-                                            className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                            className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-[var(--color-navy)] focus:ring-4 focus:ring-[var(--color-navy)]/15"
                                         />
                                     </div>
                                 </div>
@@ -1684,7 +1684,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                             required={linkedClassEnabled}
                                             value={formData.class_seed_start_date}
                                             onChange={(event) => updateField('class_seed_start_date', event.target.value)}
-                                            className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                            className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-[var(--color-navy)] focus:ring-4 focus:ring-[var(--color-navy)]/15"
                                         />
                                     </div>
                                 </div>
@@ -1696,7 +1696,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                         onChange={(event) => updateField('class_seed_description', event.target.value)}
                                         rows={3}
                                         placeholder="Mục tiêu lớp, nội dung ôn tập hoặc nhắc nhở cho giáo viên"
-                                        className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                        className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-[var(--color-navy)] focus:ring-4 focus:ring-[var(--color-navy)]/15"
                                     />
                                 </div>
 
@@ -1708,7 +1708,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                                 type="date"
                                                 value={formData.class_seed_end_date}
                                                 onChange={(event) => updateField('class_seed_end_date', event.target.value)}
-                                                className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                                className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-[var(--color-navy)] focus:ring-4 focus:ring-[var(--color-navy)]/15"
                                             />
                                         </div>
                                         <div>
@@ -1718,7 +1718,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                                 min="1"
                                                 value={formData.class_seed_max_students}
                                                 onChange={(event) => updateField('class_seed_max_students', event.target.value)}
-                                                className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                                className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-[var(--color-navy)] focus:ring-4 focus:ring-[var(--color-navy)]/15"
                                             />
                                         </div>
                                         <div className="col-span-2">
@@ -1726,7 +1726,7 @@ const ExamFormSheet = ({ exam, onClose, onSuccess, onError }) => {
                                             <select
                                                 value={formData.class_seed_timezone}
                                                 onChange={(event) => updateField('class_seed_timezone', event.target.value)}
-                                                className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                                className="w-full rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 text-[15px] text-slate-900 outline-none transition focus:border-[var(--color-navy)] focus:ring-4 focus:ring-[var(--color-navy)]/15"
                                             >
                                                 {TIMEZONE_OPTIONS.map((item) => (
                                                     <option key={item} value={item}>{item}</option>
@@ -2703,12 +2703,12 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                 <div className="space-y-2 pb-4">
                                     {/* Header lớp + actions */}
                                     <div className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2">
-                                        <ClipboardCheck size={18} className="flex-shrink-0 text-emerald-600" />
+                                        <ClipboardCheck size={18} className="flex-shrink-0 text-[var(--color-navy)]" />
                                         <div className="min-w-0 flex-1">
                                             <p className="truncate text-sm font-semibold text-emerald-800">
                                                 {learningAttendance.class_name || 'Lớp học trực tuyến'}
                                             </p>
-                                            <p className="text-xs text-emerald-600">
+                                            <p className="text-xs text-[var(--color-navy)]">
                                                 {learningAttendance.sessions.length} buổi · {learningAttendance.students?.length ?? 0} HV
                                             </p>
                                         </div>
@@ -2787,7 +2787,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                                         <td className="px-2 py-2.5 text-center">
                                                             <span className={`text-xs font-bold ${
                                                                 student.present_count + (student.late_count ?? 0) === (student.expected_session_count ?? learningAttendance.sessions.length)
-                                                                    ? 'text-emerald-600'
+                                                                    ? 'text-[var(--color-navy)]'
                                                                     : student.present_count + (student.late_count ?? 0) === 0
                                                                         ? 'text-red-500'
                                                                         : 'text-amber-600'
@@ -3347,7 +3347,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                         >
                         <div className="mb-2.5 flex items-center justify-between">
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-600">Điểm danh học tập</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[var(--color-navy)]">Điểm danh học tập</p>
                                 <h3 className="text-sm font-black text-slate-900">Import lịch từ ảnh</h3>
                                 <p className="text-[11px] text-slate-500">{importScheduleStep === 'upload' ? 'Bước 1/2' : 'Bước 2/2'}</p>
                             </div>
@@ -3511,7 +3511,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                         >
                         <div className="mb-2.5 flex items-center justify-between">
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-600">Điểm danh học tập</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[var(--color-navy)]">Điểm danh học tập</p>
                                 <h3 className="text-sm font-black text-slate-900">Tạo buổi học mới</h3>
                             </div>
                             <button type="button" onClick={() => setShowCreateSessionModal(false)}
@@ -3527,7 +3527,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                     type="date"
                                     value={createSessionForm.session_date}
                                     onChange={(e) => setCreateSessionForm((f) => ({ ...f, session_date: e.target.value }))}
-                                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-[var(--color-navy)] focus:ring-4 focus:ring-[var(--color-navy)]/15"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-2">
@@ -3537,7 +3537,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                         type="time"
                                         value={createSessionForm.start_time}
                                         onChange={(e) => setCreateSessionForm((f) => ({ ...f, start_time: e.target.value }))}
-                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-[var(--color-navy)] focus:ring-4 focus:ring-[var(--color-navy)]/15"
                                     />
                                 </div>
                                 <div>
@@ -3546,7 +3546,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                         type="time"
                                         value={createSessionForm.end_time}
                                         onChange={(e) => setCreateSessionForm((f) => ({ ...f, end_time: e.target.value }))}
-                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-[var(--color-navy)] focus:ring-4 focus:ring-[var(--color-navy)]/15"
                                     />
                                 </div>
                             </div>
@@ -3557,7 +3557,7 @@ const ExamDetailSheet = ({ exam, onClose, onRefresh, onEdit, onDelete, onError }
                                     value={createSessionForm.note}
                                     onChange={(e) => setCreateSessionForm((f) => ({ ...f, note: e.target.value }))}
                                     placeholder="Ghi chú buổi học (tùy chọn)"
-                                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-[var(--color-navy)] focus:ring-4 focus:ring-[var(--color-navy)]/15"
                                 />
                             </div>
                         </div>

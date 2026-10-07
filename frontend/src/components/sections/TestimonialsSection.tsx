@@ -120,7 +120,7 @@ export default function TestimonialsSection() {
                     <div className="flex h-32 w-32 items-center justify-center rounded-full border-4 border-white bg-white/20 text-4xl font-bold text-white shadow-lg">
                       {avatarLetter}
                     </div>
-                    <div className="absolute -bottom-2 -right-2 rounded-full bg-white p-2 text-green-600 shadow-lg">
+                    <div className="absolute -bottom-2 -right-2 rounded-full bg-white p-2 text-[var(--color-navy)] shadow-lg">
                       <Quote size={20} />
                     </div>
                   </div>

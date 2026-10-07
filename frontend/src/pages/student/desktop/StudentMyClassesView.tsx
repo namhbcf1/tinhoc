@@ -154,7 +154,7 @@ function ClassCard({
           <div className="mb-0.5 font-bold">
             {didJoin ? (
               <>
-                <CheckCircle2 size={14} className="mr-1 inline text-emerald-600" />
+                <CheckCircle2 size={14} className="mr-1 inline text-[var(--color-navy)]" />
                 Buổi hôm nay: đã ghi nhận vào lớp
               </>
             ) : (

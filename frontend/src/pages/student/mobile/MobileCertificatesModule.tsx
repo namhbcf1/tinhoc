@@ -65,7 +65,7 @@ const CertificateCard = ({ certificate, onClick, onDownload, onShare, index }) =
                             event.stopPropagation();
                             onShare(certificate);
                         }}
-                        className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center active:scale-90 transition-transform"
+                        className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-2xl bg-emerald-50 text-[var(--color-navy)] flex items-center justify-center active:scale-90 transition-transform"
                     >
                         <Share2 size={16} />
                     </button>

@@ -2968,7 +2968,7 @@ export default function ExamSchedulesPage() {
                           <span className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider shadow-sm ${status.badgeClass}`}>
                             {status.label}
                           </span>
-                          <label className={`flex cursor-pointer items-center gap-1 rounded-full border px-2.5 py-1 text-[9px] font-semibold transition-colors ${exam.visible_on_homepage ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-400 hover:border-emerald-200 hover:text-emerald-600'}`}
+                          <label className={`flex cursor-pointer items-center gap-1 rounded-full border px-2.5 py-1 text-[9px] font-semibold transition-colors ${exam.visible_on_homepage ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-400 hover:border-emerald-200 hover:text-[var(--color-navy)]'}`}
                             onClick={(e) => e.stopPropagation()}>
                             <input
                               type="checkbox"
@@ -3028,7 +3028,7 @@ export default function ExamSchedulesPage() {
                           <Users size={14} className="text-slate-400" />
                           <span className="font-semibold text-slate-700">{totalStudents}</span>
                           <span className="text-slate-400">/</span>
-                          <span className="text-emerald-600 font-semibold">{approvedCount} đã duyệt</span>
+                          <span className="text-[var(--color-navy)] font-semibold">{approvedCount} đã duyệt</span>
                         </div>
                         {exam.class_seed_name ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">
@@ -3097,7 +3097,7 @@ export default function ExamSchedulesPage() {
                       type="checkbox"
                       checked={formData.visible_on_homepage === true}
                       onChange={e => updateFormField('visible_on_homepage', e.target.checked)}
-                      className="w-3.5 h-3.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                      className="w-3.5 h-3.5 rounded border-gray-300 text-[var(--color-navy)] focus:ring-[var(--color-navy)]/15"
                     />
                     Hiện ngoài trang chủ
                   </label>
@@ -3958,10 +3958,10 @@ export default function ExamSchedulesPage() {
                 <div className="space-y-4">
                   {/* Header thông tin lớp */}
                   <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
-                    <ClipboardCheck size={20} className="text-emerald-600 flex-shrink-0" />
+                    <ClipboardCheck size={20} className="text-[var(--color-navy)] flex-shrink-0" />
                     <div>
                       <p className="text-sm font-semibold text-emerald-800">{learningAttendance.class_name || 'Lớp học trực tuyến'}</p>
-                      <p className="text-xs text-emerald-600">{learningAttendance.sessions.length} buổi học · {learningAttendance.students.length} học viên</p>
+                      <p className="text-xs text-[var(--color-navy)]">{learningAttendance.sessions.length} buổi học · {learningAttendance.students.length} học viên</p>
                     </div>
                     <div className="ml-auto flex items-center gap-2">
                       <button
@@ -4214,7 +4214,7 @@ export default function ExamSchedulesPage() {
                               <span>Người duyệt: <span className="font-medium text-slate-700">{student.approved_by_name}</span></span>
                             )}
                             {student.zoom_checked_in_at ? (
-                              <span className="flex items-center gap-1 font-medium text-emerald-600">
+                              <span className="flex items-center gap-1 font-medium text-[var(--color-navy)]">
                                 <span>🎥</span>
                                 <span>Vào Zoom: {formatDateVN(student.zoom_checked_in_at, true)}</span>
                               </span>
@@ -4498,7 +4498,7 @@ export default function ExamSchedulesPage() {
                     value={option.value}
                     checked={isSelected}
                     onChange={() => setSelectedExcelScope(option.value)}
-                    className="mt-1 h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    className="mt-1 h-4 w-4 border-slate-300 text-[var(--color-navy)] focus:ring-[var(--color-navy)]/15"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
@@ -5126,7 +5126,7 @@ export default function ExamSchedulesPage() {
                   type="date"
                   value={createSessionForm.session_date}
                   onChange={(e) => setCreateSessionForm((f) => ({ ...f, session_date: e.target.value }))}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 text-sm"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -5136,7 +5136,7 @@ export default function ExamSchedulesPage() {
                     type="time"
                     value={createSessionForm.start_time}
                     onChange={(e) => setCreateSessionForm((f) => ({ ...f, start_time: e.target.value }))}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 text-sm"
                   />
                 </div>
                 <div>
@@ -5145,7 +5145,7 @@ export default function ExamSchedulesPage() {
                     type="time"
                     value={createSessionForm.end_time}
                     onChange={(e) => setCreateSessionForm((f) => ({ ...f, end_time: e.target.value }))}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 text-sm"
                   />
                 </div>
               </div>
@@ -5156,7 +5156,7 @@ export default function ExamSchedulesPage() {
                   value={createSessionForm.note}
                   onChange={(e) => setCreateSessionForm((f) => ({ ...f, note: e.target.value }))}
                   placeholder="Ví dụ: Học bù, thi thử..."
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 text-sm"
                 />
               </div>
             </div>

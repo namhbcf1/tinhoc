@@ -80,7 +80,7 @@ function GuideCard({ post }: { post: any }) {
                                 aria-label="Phát video"
                             >
                                 <div className="w-16 h-16 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-lg transition-all group-hover:scale-110">
-                                    <Play size={28} className="text-emerald-600 ml-1" fill="currentColor" />
+                                    <Play size={28} className="text-[var(--color-navy)] ml-1" fill="currentColor" />
                                 </div>
                             </button>
                         )}
@@ -101,7 +101,7 @@ function GuideCard({ post }: { post: any }) {
                     </span>
                     <Link
                         to={`/news/${post.slug || post.id}`}
-                        className="text-xs font-semibold text-emerald-600 hover:text-emerald-700"
+                        className="text-xs font-semibold text-[var(--color-navy)] hover:text-emerald-700"
                     >
                         Đọc thêm →
                     </Link>
@@ -208,7 +208,7 @@ export default function GuidesPage() {
                 <div className="container mx-auto px-4 py-14">
                     {loading ? (
                         <div className="flex justify-center items-center py-24">
-                            <Loader2 className="animate-spin text-emerald-600" size={40} />
+                            <Loader2 className="animate-spin text-[var(--color-navy)]" size={40} />
                         </div>
                     ) : posts.length === 0 ? (
                         <div className="text-center py-24">
