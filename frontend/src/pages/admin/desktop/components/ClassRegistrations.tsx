@@ -55,7 +55,6 @@ export default function ClassRegistrations({ classId }) {
         try {
             await api.updateSoPhach(regId, soPhach);
             // No toast needed for onBlur update to avoid spam, or subtle one
-            console.log('Updated so phach');
         } catch (error) {
             toast?.error('Lỗi cập nhật số phách: ' + error.message);
         }

@@ -909,7 +909,6 @@ const StudentEditModal = ({ student, onClose, onSave }) => {
 
     // Handle image upload success
     const handleImageUploadSuccess = (field) => (result) => {
-        console.log('Image upload success:', { field, result });
         const imageIdField = field === 'front' ? 'cccd_front_image_id' :
             field === 'back' ? 'cccd_back_image_id' : 'photo_3x4_image_id';
 

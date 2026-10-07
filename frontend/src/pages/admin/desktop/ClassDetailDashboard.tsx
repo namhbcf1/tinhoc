@@ -406,7 +406,6 @@ const PendingEnrollmentsTab = ({ classId, onCountChange }) => {
         setLoading(true);
         try {
             const response = await api.getPendingEnrollments(classId);
-            console.log('Pending enrollments response:', response);
 
             // Handle different response formats
             let list = [];
