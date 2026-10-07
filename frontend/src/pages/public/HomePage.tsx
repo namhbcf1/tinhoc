@@ -176,7 +176,7 @@ export default function HomePage() {
 
               <h1 className="hero-title vt-vietnamese-display text-[2.1rem] sm:text-[3.4rem] lg:text-[4.4rem] xl:text-[5rem]">
                 <span className="block">Học chuẩn mực.</span>
-                <span className="vt-title-shimmer block text-[var(--vt-emerald)] vt-vietnamese-accent">
+                <span className="vt-title-shimmer block text-[var(--color-gold)] vt-vietnamese-accent">
                   Thi tự tin.
                 </span>
                 <span className="block text-[var(--vt-champagne-deep)]">Hồ sơ rõ ràng.</span>

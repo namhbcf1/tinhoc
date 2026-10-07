@@ -24,6 +24,14 @@
   <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
   <link rel="dns-prefetch" href="https://www.clarity.ms" />
 
+  <!-- ========== DESIGN SYSTEM FONTS (premium editorial) ==========
+       Fraunces = tiêu đề serif, Inter = nội dung/UI. Xem DESIGN-SYSTEM.md.
+       CSP của app đã cho phép fonts.googleapis.com (style-src) + fonts.gstatic.com (font-src). -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..800;1,9..144,400..700&family=Inter:wght@400;500;600;700&display=swap" />
+
   <!-- ========== ANALYTICS & TRACKING ========== -->
   <!--
     GA4 + Clarity are initialized via JS (src/utils/analytics-init.js) using Vite env vars:

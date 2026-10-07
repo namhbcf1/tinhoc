@@ -5,41 +5,55 @@
    Quyết định này là VĨNH VIỄN. */
 
 @theme {
-  --color-background: #fcfcfd;
-  --color-foreground: #09090b;
-  --color-card: rgba(255, 255, 255, 0.7);
-  --color-card-foreground: #09090b;
-  --color-popover: rgba(255, 255, 255, 0.8);
-  --color-popover-foreground: #09090b;
+  /* ── Premium editorial palette (chốt 2026-10-07, xem DESIGN-SYSTEM.md) ──────
+     Nguyên tắc: nền giấy ấm, mực navy, MỘT màu nhấn (gold), đường kẻ mảnh thay bóng đổ.
+     Emerald #10b981 cũ bị bỏ (không còn là màu thương hiệu) — xanh lá chỉ dùng cho
+     trạng thái success. */
+  --color-paper: #faf7f0;
+  --color-paper-raised: #fffdf8;
+  --color-ink: #0e1b2c;
+  --color-ink-soft: #5c6672;
+  --color-rule: #e3ddd0;
+  --color-rule-strong: #cfc7b6;
+  --color-navy: #0b2e6b;
+  --color-gold: #a8791f;
+  --color-success: #1f6f5c;
+  --color-danger: #a3231f;
 
-  --color-primary: #10b981;
-  /* Emerald 500 */
-  --color-primary-foreground: #ffffff;
+  --color-background: #faf7f0;
+  --color-foreground: #0e1b2c;
+  --color-card: #fffdf8;
+  --color-card-foreground: #0e1b2c;
+  --color-popover: #fffdf8;
+  --color-popover-foreground: #0e1b2c;
 
-  --color-secondary: #f4f4f5;
-  --color-secondary-foreground: #18181b;
+  --color-primary: #0b2e6b;
+  --color-primary-foreground: #faf7f0;
 
-  --color-muted: #f4f4f5;
-  --color-muted-foreground: #71717a;
+  --color-secondary: #f2ede2;
+  --color-secondary-foreground: #0e1b2c;
 
-  --color-accent: #f4f4f5;
-  --color-accent-foreground: #18181b;
+  --color-muted: #f2ede2;
+  --color-muted-foreground: #5c6672;
 
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #fafafa;
+  --color-accent: #f2ede2;
+  --color-accent-foreground: #0e1b2c;
 
-  --color-border: rgba(228, 228, 231, 0.5);
-  /* Zinc 200 with opacity */
-  --color-input: rgba(228, 228, 231, 0.5);
-  --color-ring: rgba(16, 185, 129, 0.5);
+  --color-destructive: #a3231f;
+  --color-destructive-foreground: #faf7f0;
 
-  --radius-lg: 1rem;
-  --radius-md: 0.75rem;
-  --radius-sm: 0.5rem;
+  --color-border: #e3ddd0;
+  --color-input: #e3ddd0;
+  --color-ring: rgba(11, 46, 107, 0.35);
 
-  --font-sans: 'Times New Roman', Times, serif;
-  --font-heading: 'Times New Roman', Times, serif;
-  --font-display: 'Times New Roman', Times, serif;
+  /* Bo góc nhỏ & đều kiểu ấn phẩm (không bo 16–24px kiểu app tiêu dùng) */
+  --radius-lg: 0.5rem;
+  --radius-md: 0.375rem;
+  --radius-sm: 0.25rem;
+
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-heading: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
 
   --animate-blob: blob 7s infinite;
   --animate-spotlight: spotlight 2s ease .75s 1 forwards;
@@ -349,9 +363,11 @@
   }
 
   .vt-vietnamese-display {
-    font-family: var(--font-sans);
-    font-weight: 800;
-    letter-spacing: -0.035em;
+    /* Premium editorial: tiêu đề dùng serif Fraunces (hỗ trợ tiếng Việt qua subset
+       vietnamese của Google Fonts). Trước đây trỏ --font-sans nên tiêu đề ra sans. */
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
     line-height: 0.98;
     font-kerning: normal;
     font-feature-settings: "kern" 1, "liga" 1;
@@ -953,11 +969,12 @@
   .vt-title-shimmer {
     position: relative;
     width: fit-content;
-    background: linear-gradient(90deg, var(--vt-emerald) 0%, #22b59b 38%, var(--vt-champagne-deep) 52%, var(--vt-emerald) 72%);
+    /* Premium editorial: bỏ gradient teal trang trí — dùng 1 màu nhấn gold (xem DESIGN-SYSTEM.md) */
+    background: none;
     background-size: 260% 100%;
     -webkit-background-clip: text;
     background-clip: text;
-    color: transparent !important;
+    color: var(--color-gold) !important;
     animation: vtTitleShimmer 2.6s ease-in-out infinite;
   }
 
