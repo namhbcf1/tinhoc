@@ -544,3 +544,5 @@ pm run build; warning còn lại là CSS @import/chunk-size cũ.
 - CÙNG NGÀY, user đổi ý: gỡ Chứng chỉ/Tài liệu/Thông báo/Phản hồi khỏi MENU. STUDENT_MAIN_MENU còn đúng Lịch thi + Học tập (bỏ import Award/Bell/FileText/MessageSquareQuote). Giữ nguyên route /dashboard/{certificates,documents,messages,feedback}, TAB_MAP, lazy chunk — vào thẳng URL vẫn được. Deploy `1241c255`, suffix `mtj4vuq5`.
 
 - 2026-10-07: Redesign editorial — form login edu (frontend/src/pages/public/UnifiedLogin.tsx).
+
+- 2026-10-07: Redesign editorial /training + fix font body toàn cục + Breadcrumb.css (frontend/src/pages/public/TrainingPage.tsx, frontend/src/index.css, frontend/src/components/ui/Breadcrumb.css).

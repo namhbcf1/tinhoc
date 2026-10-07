@@ -636,3 +636,9 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
 ## 2026-10-07 — Redesign bước 4: form đăng nhập edu
 - UnifiedLogin.tsx: input/card/badge/ô số liệu chuyển sang token editorial (paper/rule, bo nhỏ 4-6px, bóng nhẹ), 2 quầng sáng đổi sang gold rất nhạt.
 - Verify: build:prod PASS 7.51s; ảnh _design-shots/edu-login-step1.png.
+
+## 2026-10-07 — Redesign bước 5: /training + 2 lỗi toàn cục
+- TrainingPage hero: lưới 7/5, thêm 'Mục lục chương trình' + chuyển stat row sang cột phải (hết trống nửa phải).
+- index.css: ody { font-family: 'Times New Roman' !important } (rule cũ) đã đổi sang ar(--font-sans) !important — trước đó app TRỘN 2 font (Inter ở chỗ tự set, Times ở chỗ thừa hưởng).
+- Breadcrumb.css: bỏ green Material #4CAF50/#45a049 → token navy/gold/rule + micro uppercase.
+- Verify: tsc 0 · build:prod PASS 7.42s · computed font .breadcrumb-link = Inter · ảnh _design-shots/edu-training-step4.png.
