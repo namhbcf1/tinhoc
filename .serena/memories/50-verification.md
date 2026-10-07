@@ -633,3 +633,6 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
 - Đã cài bản chính thức `"xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"` và đổi import trong file đó (chỉ dùng `XLSX.read` + `sheet_to_json`, API y hệt).
 - GIỮ `xlsx-js-style` cho `routes/export.ts` (đường GHI export có style; SheetJS cộng đồng không hỗ trợ style).
 - Verify: tsc **0** · `npm test` **197/197** · `wrangler deploy --dry-run` PASS (bundle 4182 KiB / gzip 880 KiB — chứa 2 bản SheetJS, vẫn dưới hạn mức). Cài đặt nay cần `cdn.sheetjs.com`.
+## 2026-10-07 — Redesign bước 4: form đăng nhập edu
+- UnifiedLogin.tsx: input/card/badge/ô số liệu chuyển sang token editorial (paper/rule, bo nhỏ 4-6px, bóng nhẹ), 2 quầng sáng đổi sang gold rất nhạt.
+- Verify: build:prod PASS 7.51s; ảnh _design-shots/edu-login-step1.png.

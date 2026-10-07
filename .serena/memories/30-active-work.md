@@ -542,3 +542,5 @@ pm run build; warning còn lại là CSS @import/chunk-size cũ.
 - Gắn nav: student-nav.tsx thêm id 'certificates'|'documents'|'messages' + flag `primary?: boolean` (false = chỉ sidebar/drawer, không nhét bottom nav) + icon Award/FileText/Bell + titles. StudentDashboard.tsx TAB_MAP + 3 lazy import; StudentDashboardMobile.tsx renderContent + 3 case; App.tsx thêm 3 Route /dashboard/{certificates,documents,messages}; StudentMobileLayout + StudentBottomNav filter `primary !== false`.
 - DashboardSidebar không filter → desktop sidebar hiện đủ 6 mục; bottom nav mobile vẫn 4 mục (Lịch thi/Phản hồi/Học tập/Cá nhân).
 - CÙNG NGÀY, user đổi ý: gỡ Chứng chỉ/Tài liệu/Thông báo/Phản hồi khỏi MENU. STUDENT_MAIN_MENU còn đúng Lịch thi + Học tập (bỏ import Award/Bell/FileText/MessageSquareQuote). Giữ nguyên route /dashboard/{certificates,documents,messages,feedback}, TAB_MAP, lazy chunk — vào thẳng URL vẫn được. Deploy `1241c255`, suffix `mtj4vuq5`.
+
+- 2026-10-07: Redesign editorial — form login edu (frontend/src/pages/public/UnifiedLogin.tsx).
