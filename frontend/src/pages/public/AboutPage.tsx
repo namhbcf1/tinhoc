@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useRef } from 'react';
 import ModernPublicLayout from '../../components/layout/ModernPublicLayout';
+import QuickFacts from '../../components/ui/QuickFacts';
 import {
     Users, Target, Award, MapPin, Phone, Mail,
     ShieldCheck, BookOpen, GraduationCap, Globe, ArrowRight, Sparkles,
@@ -73,7 +74,10 @@ export default function AboutPage() {
                     </div>
 
                     <div className="vt-container relative">
-                        <div className="max-w-4xl">
+                        {/* REDESIGN 2026-10-07: hero 1 cột `max-w-4xl` ⇒ nửa phải trống. Nay lưới 7/5,
+                            cột phải dùng component dùng chung QuickFacts (nhãn micro + số serif lớn). */}
+                        <div className="grid items-start gap-10 lg:grid-cols-12 lg:gap-14">
+                        <div className="lg:col-span-7 max-w-4xl">
                             <p className="a-eyebrow vt-eyebrow !text-[var(--vt-champagne-deep)]">
                                 Về chúng tôi · Established 2015
                             </p>
@@ -95,6 +99,18 @@ export default function AboutPage() {
                                     Đặt lịch tham quan
                                 </Link>
                             </div>
+                        </div>
+
+                        <div className="lg:col-span-5">
+                            <QuickFacts
+                                title="Tóm tắt"
+                                items={[
+                                    { label: 'Thành lập', value: '2015', note: 'Hơn một thập kỷ đào tạo tại Hà Nội' },
+                                    { label: 'Trụ sở', value: 'Hà Nội', note: 'Văn phòng & lớp học trực tiếp' },
+                                    { label: 'Học viên', value: '3.000+', note: 'Học sinh · sinh viên · người đi làm' },
+                                ]}
+                            />
+                        </div>
                         </div>
                     </div>
                 </section>
