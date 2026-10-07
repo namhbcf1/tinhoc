@@ -22,6 +22,11 @@ students.post('/upload-image', async (c) => {
   }
 });
 
+// BẢO MẬT (2026-10-07): route PUBLIC (ảnh hiển thị bằng <img>) nhưng trước đây nhận MỌI key
+// trong bucket R2 `vantrangedu-files` — bucket này còn chứa `documents/…` (tài liệu riêng)
+// và file bài tập. Nay chỉ phục vụ ảnh.
+const ALLOWED_STUDENT_IMAGE_PREFIXES = ['cccd-uploads/', 'student-images/'];
+
 students.get('/image/:key', async (c) => {
   const rawKey = c.req.param('key');
   let key = rawKey;
@@ -31,13 +36,20 @@ students.get('/image/:key', async (c) => {
     key = rawKey;
   }
 
+  const isAllowed = ALLOWED_STUDENT_IMAGE_PREFIXES.some((prefix) => key.startsWith(prefix));
+
+  if (!isAllowed || key.includes('..') || key.length > 300) {
+    console.warn('[students/image] từ chối key ngoài phạm vi ảnh:', key.slice(0, 120));
+    return new Response('Image not found', { status: 404 });
+  }
+
   const object = await c.env.R2.get(key);
   if (!object) return new Response('Image not found', { status: 404 });
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set('etag', object.httpEtag);
-  headers.set('Cache-Control', 'public, max-age=31536000');
-  headers.set('Access-Control-Allow-Origin', '*');
+  headers.set('X-Content-Type-Options', 'nosniff');
+  headers.set('Cache-Control', 'private, max-age=86400');
   return new Response(object.body, { headers });
 });
 
@@ -248,9 +260,15 @@ students.get('/:id/history', requireAdminOrTeacher, createGetEndpoint({
 }));
 
 // Protected: get student by CCCD — authenticated users only (admin/teacher full; student self-access)
+// BẢO MẬT (2026-10-07): học viên chỉ được đọc hồ sơ của CHÍNH MÌNH. Trước đây chỉ cần
+// requireAuth nên bất kỳ học viên nào biết CCCD của người khác là đọc được full PII.
 students.get('/:cccd', requireAuth, createGetEndpoint({
   params: z.object({ cccd: z.string() }),
   handler: (async (c: any, { params }: any) => {
+    const user = c.get('user');
+    if (user?.type === 'student' && String(user.cccd || '') !== String(params.cccd || '')) {
+      throw new Error('Không có quyền xem hồ sơ của học viên khác');
+    }
     return await StudentService.getStudentByCCCD(c, params.cccd);
   }) as any
 }));

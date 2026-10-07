@@ -41,11 +41,14 @@ function isBlockedFile(filename: string): boolean {
 const adminOnly = requireAdmin;
 
 /**
- * Student auth via CCCD header or JWT
+ * Student auth via JWT.
+ *
+ * BẢO MẬT (2026-10-07): đã BỎ nhánh xác thực bằng header `X-Student-CCCD`.
+ * Chỉ cần biết CCCD là nộp bài / xem bài tập thay người khác được — không token,
+ * không OTP. Frontend không còn nơi nào gửi header này.
  */
 const studentAuth = async (c: any, next: any) => {
     const authHeader = c.req.header('Authorization');
-    const studentCCCD = c.req.header('X-Student-CCCD');
 
     if (authHeader) {
         const token = authHeader.replace('Bearer ', '');
@@ -54,19 +57,6 @@ const studentAuth = async (c: any, next: any) => {
         if (payload) {
             c.set('user', payload);
             c.set('isAdmin', (payload as any).role === 'admin' || (payload as any).role === 'super_admin');
-            await next();
-            return;
-        }
-    }
-
-    if (studentCCCD) {
-        const db = c.env.DB;
-        const student = await db.prepare('SELECT id, cccd, ho_ten_full FROM students WHERE cccd = ?')
-            .bind(studentCCCD).first();
-
-        if (student) {
-            c.set('student', student);
-            c.set('isAdmin', false);
             await next();
             return;
         }

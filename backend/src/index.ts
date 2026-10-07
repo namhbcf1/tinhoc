@@ -75,9 +75,7 @@ export function resolveDefaultCacheControl(
   }
 
   const path = new URL(request.url).pathname;
-  const hasAuthContext = Boolean(
-    request.headers.get('Authorization') || request.headers.get('X-Student-CCCD'),
-  );
+  const hasAuthContext = Boolean(request.headers.get('Authorization'));
   const isPublic = PUBLIC_CACHEABLE_PATHS.some((publicPath) => path.includes(publicPath));
 
   if (isPublic && !hasAuthContext) {
@@ -119,7 +117,8 @@ app.use('/*', cors({
   },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   // CORS headers must include custom headers used by frontend (preflight)
-  allowHeaders: ['Content-Type', 'Authorization', 'X-Student-CCCD'],
+  // (X-Student-CCCD đã bị gỡ 2026-10-07 — xác thực học viên nay chỉ dùng JWT.)
+  allowHeaders: ['Content-Type', 'Authorization'],
 }));
 
 // Global rate limiting

@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { Env, JWTPayload } from '../types/env.js';
 import { requireAdmin } from '../middleware/auth-middleware.js';
+import { strictRateLimiter } from '../utils/rate-limiter.js';
 import {
   uploadToCloudflareImages,
   validateImageFile,
@@ -36,7 +37,10 @@ async function buildPreviewUrl(c: { env: Env }, imageId: string, fallbackUrl?: s
   return fallbackUrl || null;
 }
 
-app.post('/', async (c) => {
+// BẢO MẬT (2026-10-07): route này PUBLIC theo thiết kế (học viên đăng ký chưa có tài khoản)
+// nhưng nó ghi file vào R2/Cloudflare Images và GỌI OCR TRẢ PHÍ. Thêm rate limit thật
+// (bảng rate_limits) để chặn lạm dụng dung lượng/chi phí.
+app.post('/', strictRateLimiter, async (c) => {
   try {
     const formData = await c.req.formData();
     const file = formData.get('image') as File | null;
@@ -162,9 +166,23 @@ app.post('/', async (c) => {
   }
 });
 
+// BẢO MẬT (2026-10-07): route này PUBLIC (để hiển thị ảnh CCCD/3x4 bằng <img>), nhưng
+// trước đây nhận MỌI key trong bucket R2 `vantrangedu-files` — tức đọc được cả tài liệu,
+// video bài giảng… nếu biết key. Nay chỉ phục vụ ảnh do chính luồng upload này tạo ra.
+const ALLOWED_IMAGE_KEY_PREFIX = 'cccd-uploads/';
+
 app.get('/image/:key', async (c) => {
   try {
     const key = decodeURIComponent(c.req.param('key'));
+
+    if (
+      !key.startsWith(ALLOWED_IMAGE_KEY_PREFIX) ||
+      key.includes('..') ||
+      key.length > 300
+    ) {
+      return c.json({ success: false, error: 'Image not found.' }, 404);
+    }
+
     const object = await c.env.R2.get(key);
 
     if (!object) {
@@ -177,7 +195,8 @@ app.get('/image/:key', async (c) => {
     return new Response(object.body, {
       headers: {
         'Content-Type': object.httpMetadata?.contentType || 'image/jpeg',
-        'Cache-Control': 'public, max-age=31536000',
+        'X-Content-Type-Options': 'nosniff',
+        'Cache-Control': 'private, max-age=86400',
       },
     });
   } catch (error: any) {

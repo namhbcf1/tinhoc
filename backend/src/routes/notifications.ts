@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { Env, JWTPayload } from '../types/env.js';
 import { jsonResponse, errorResponse } from '../utils/helpers.js';
+import { requireAdmin } from '../middleware/auth-middleware.js';
 import {
   createNotification,
   getNotifications,
@@ -93,8 +94,11 @@ notifications.get('/unread-count', async (c) => {
 
 // ========================================
 // POST /notifications - Create notification (Admin only)
+// BẢO MẬT (2026-10-07): trước đây route này chỉ có requireAuth (mount ở index.ts) và lấy
+// user_id/user_type TỪ BODY ⇒ mọi học viên đã đăng nhập tạo được thông báo giả cho bất kỳ
+// ai hoặc broadcast 'all' (phishing trong app). Nay bắt buộc quyền admin.
 // ========================================
-notifications.post('/', async (c) => {
+notifications.post('/', requireAdmin, async (c) => {
   try {
     const { user_id, user_type, title, message, type, link } = await c.req.json() as any;
 

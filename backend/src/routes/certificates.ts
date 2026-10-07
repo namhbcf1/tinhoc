@@ -177,7 +177,9 @@ certificates.get('/:id/download', async (c) => {
     }
 
     const frontendUrl = (c.env as any).FRONTEND_URL || 'https://vantrangedu-3vg.pages.dev';
-    const lookupUrl = `${frontendUrl}/certificate/lookup?certificate_number=${(cert as any).certificate_number}&cccd=${(cert as any).cccd}`;
+    // BẢO MẬT (2026-10-07): KHÔNG nhúng CCCD vào URL trong QR (QR được in/chia sẻ công khai).
+    // Trang tra cứu chỉ cần `certificate_number`.
+    const lookupUrl = `${frontendUrl}/certificate/lookup?certificate_number=${encodeURIComponent((cert as any).certificate_number ?? '')}`;
     const qrCodeUrl = await generateQRCodeDataURL(lookupUrl);
 
     const certificateData = {
@@ -224,7 +226,8 @@ certificates.get('/:id/qr-code', async (c) => {
     }
 
     const frontendUrl = (c.env as any).FRONTEND_URL || 'https://vantrangedu-3vg.pages.dev';
-    const lookupUrl = `${frontendUrl}/certificate/lookup?certificate_number=${(cert as any).certificate_number}&cccd=${(cert as any).cccd}`;
+    // BẢO MẬT (2026-10-07): bỏ CCCD khỏi URL tra cứu trong QR (xem chú thích ở route download).
+    const lookupUrl = `${frontendUrl}/certificate/lookup?certificate_number=${encodeURIComponent((cert as any).certificate_number ?? '')}`;
     const qrCodeUrl = await generateQRCodeDataURL(lookupUrl);
 
     return jsonResponse({

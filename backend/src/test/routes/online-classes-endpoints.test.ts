@@ -273,7 +273,7 @@ describe('POST /online-classes (createClass)', () => {
 // ─── POST /online-classes/:id/enroll ────────────────────────────────────────
 
 describe('POST /online-classes/:id/enroll (enrollStudent)', () => {
-  it('nên chặn khi không có CCCD và không có JWT (401)', async () => {
+  it('nên chặn khi không có JWT (401)', async () => {
     const res = await app.fetch(
       new Request('http://localhost/online-classes/1/enroll', {
         method: 'POST'
@@ -282,18 +282,19 @@ describe('POST /online-classes/:id/enroll (enrollStudent)', () => {
 
     expect(res.status).toBe(401);
     const json = await res.json();
-    expect(json.error).toContain('Vui lòng đăng nhập với CCCD để đăng ký lớp');
+    expect(json.error).toContain('Vui lòng đăng nhập để đăng ký lớp');
   });
 
-  it('nên đăng ký thành công học viên với header X-Student-CCCD thật', async () => {
+  it('nên đăng ký thành công học viên với JWT học viên hợp lệ', async () => {
     // Chuẩn bị: tạo lớp và student thật trong DB
     const classId = await insertTestClass({ class_name: 'Lớp Đăng Ký Test' });
-    await insertTestStudent('098765432100');
+    const studentId = await insertTestStudent('098765432100');
+    const token = await makeStudentToken(studentId);
 
     const res = await app.fetch(
       new Request(`http://localhost/online-classes/${classId}/enroll`, {
         method: 'POST',
-        headers: { 'X-Student-CCCD': '098765432100' }
+        headers: { Authorization: `Bearer ${token}` }
       })
     );
 
@@ -311,19 +312,21 @@ describe('POST /online-classes/:id/enroll (enrollStudent)', () => {
     expect(enrollment.status).toBe('pending');
   });
 
-  it('nên trả về 401 khi CCCD không tồn tại trong DB', async () => {
+  it('KHÔNG chấp nhận xác thực chỉ bằng header X-Student-CCCD (lỗ hổng cũ)', async () => {
     const classId = await insertTestClass();
+    // CCCD này CÓ thật trong DB, nhưng header không còn được coi là xác thực.
+    await insertTestStudent('000000000000');
 
     const res = await app.fetch(
       new Request(`http://localhost/online-classes/${classId}/enroll`, {
         method: 'POST',
-        headers: { 'X-Student-CCCD': '000000000000' } // CCCD không có trong DB
+        headers: { 'X-Student-CCCD': '000000000000' }
       })
     );
 
     expect(res.status).toBe(401);
     const json = await res.json();
-    expect(json.error).toContain('Vui lòng đăng nhập với CCCD để đăng ký lớp');
+    expect(json.error).toContain('Vui lòng đăng nhập để đăng ký lớp');
   });
 
   it('nên trả về 400 khi lớp đã hết chỗ', async () => {
@@ -346,10 +349,11 @@ describe('POST /online-classes/:id/enroll (enrollStudent)', () => {
     ).bind(classId, s1Id).run();
 
     // Student 2 cố đăng ký — phải bị từ chối
+    const token2 = await makeStudentToken(s2Id);
     const res = await app.fetch(
       new Request(`http://localhost/online-classes/${classId}/enroll`, {
         method: 'POST',
-        headers: { 'X-Student-CCCD': '222222222222' }
+        headers: { Authorization: `Bearer ${token2}` }
       })
     );
 

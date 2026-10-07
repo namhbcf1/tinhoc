@@ -18,7 +18,7 @@ import {
   regenerateMeetLink, autoSyncMeetLink,
   enrollStudent, adminAddStudent,
   approveEnrollmentById, rejectEnrollmentById, removeStudent,
-  getAvailableStudents, findStudentForAuth,
+  getAvailableStudents,
   listEnrolledStudents, listActiveEnrollmentsWithStudents,
   isWithinClassTime,
   listPendingEnrollmentsWithStudents, getClassForName
@@ -62,12 +62,15 @@ const adminOnly = async (c: any, next: any) => {
 };
 
 /**
- * Flexible auth: JWT (admin/teacher/student) OR X-Student-CCCD header OR anonymous.
+ * Flexible auth: JWT (admin/teacher/student) OR anonymous.
  * Sets c 'user', 'student', 'isAdmin' context vars.
+ *
+ * BẢO MẬT (2026-10-07): đã BỎ nhánh xác thực bằng header `X-Student-CCCD`.
+ * Trước đây chỉ cần biết số CCCD (12 số) là mạo danh được học viên đó — không token,
+ * không OTP, không chữ ký. Frontend không còn nơi nào gửi header này.
  */
 const studentAuth = async (c: any, next: any) => {
   const authHeader = c.req.header('Authorization');
-  const studentCCCD = c.req.header('X-Student-CCCD');
 
   if (authHeader) {
     try {
@@ -85,16 +88,6 @@ const studentAuth = async (c: any, next: any) => {
       }
     } catch (err: any) {
       console.error('[studentAuth] JWT error:', err.message);
-    }
-  }
-
-  if (studentCCCD) {
-    const student = await findStudentForAuth(c.env.DB, studentCCCD);
-    if (student) {
-      c.set('student', student);
-      c.set('isAdmin', false);
-      await next();
-      return;
     }
   }
 
@@ -150,19 +143,31 @@ function buildSessionScheduleTime(
  */
 import { createOnlineClassEvent, deleteOnlineClassEvent } from '../services/google-calendar.js';
 
-onlineClasses.get('/test-google-auth', async (c) => {
+/**
+ * GET /test-google-auth — chẩn đoán cấu hình Google Calendar.
+ * BẢO MẬT (2026-10-07): trước đây PUBLIC, trả về client_email/admin_email/private_key_length
+ * và error.stack, đồng thời TẠO + XOÁ một event Google Calendar thật mỗi lần gọi.
+ * Nay: chỉ admin, không lộ định danh/độ dài khoá, và chỉ tạo event khi `?createTest=true`.
+ */
+onlineClasses.get('/test-google-auth', authMiddleware, adminOnly, async (c) => {
   const env = c.env;
+  const createTest = c.req.query('createTest') === 'true';
   const credCheck = {
-    GOOGLE_CLIENT_EMAIL: !!env.GOOGLE_CLIENT_EMAIL,
-    GOOGLE_PRIVATE_KEY: !!env.GOOGLE_PRIVATE_KEY,
-    GOOGLE_ADMIN_EMAIL: !!env.GOOGLE_ADMIN_EMAIL,
-    client_email_value: env.GOOGLE_CLIENT_EMAIL || 'NOT SET',
-    admin_email_value: env.GOOGLE_ADMIN_EMAIL || 'NOT SET',
-    private_key_length: env.GOOGLE_PRIVATE_KEY?.length || 0
+    hasClientEmail: !!env.GOOGLE_CLIENT_EMAIL,
+    hasPrivateKey: !!env.GOOGLE_PRIVATE_KEY,
+    hasAdminEmail: !!env.GOOGLE_ADMIN_EMAIL,
   };
 
   if (!env.GOOGLE_CLIENT_EMAIL || !env.GOOGLE_PRIVATE_KEY || !env.GOOGLE_ADMIN_EMAIL) {
     return successResponse({ status: 'FAILED', error: 'Missing Google credentials', credentials: credCheck });
+  }
+
+  if (!createTest) {
+    return successResponse({
+      status: 'CONFIGURED',
+      message: 'Google credentials đã được cấu hình. Thêm ?createTest=true nếu muốn tạo event thử.',
+      credentials: credCheck,
+    });
   }
 
   try {
@@ -184,11 +189,13 @@ onlineClasses.get('/test-google-auth', async (c) => {
     return successResponse({
       status: 'SUCCESS',
       message: 'Google Calendar API is working!',
-      test_result: { event_id: testResult.eventId, meet_link: testResult.meetLink },
+      test_result: { meet_link_created: Boolean(testResult.meetLink) },
       credentials: credCheck
     });
   } catch (error: any) {
-    return successResponse({ status: 'FAILED', error: error.message, error_stack: error.stack, credentials: credCheck });
+    // Không trả stack ra ngoài (lộ chi tiết nội bộ); log ở server.
+    console.error('[test-google-auth] Google Calendar error:', error);
+    return successResponse({ status: 'FAILED', error: 'Google Calendar API call failed', credentials: credCheck });
   }
 });
 
@@ -332,7 +339,7 @@ onlineClasses.get('/:id/my-status', studentAuth, async (c) => {
 
 /**
  * POST /online-classes/:id/enroll
- * Student self-enrollment. Requires JWT or X-Student-CCCD header.
+ * Student self-enrollment. BẮT BUỘC JWT (đã bỏ nhánh X-Student-CCCD — xem studentAuth).
  */
 onlineClasses.post('/:id/enroll', async (c) => {
   try {
@@ -347,7 +354,6 @@ onlineClasses.post('/:id/enroll', async (c) => {
     // Inline auth (bypass middleware to catch low-level errors)
     let student = null;
     const authHeader = c.req.header('Authorization');
-    const studentCCCD = c.req.header('X-Student-CCCD');
 
     if (authHeader) {
       try {
@@ -358,11 +364,7 @@ onlineClasses.post('/:id/enroll', async (c) => {
       } catch (_) { /* ignore */ }
     }
 
-    if (!student && studentCCCD) {
-      student = await findStudentForAuth(db, studentCCCD);
-    }
-
-    if (!student) return errorResponse('Vui lòng đăng nhập với CCCD để đăng ký lớp', 401);
+    if (!student) return errorResponse('Vui lòng đăng nhập để đăng ký lớp', 401);
 
     const result = await enrollStudent(db, classId, (student as any).id);
     return successResponse(result);
