@@ -642,3 +642,9 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
 - index.css: ody { font-family: 'Times New Roman' !important } (rule cũ) đã đổi sang ar(--font-sans) !important — trước đó app TRỘN 2 font (Inter ở chỗ tự set, Times ở chỗ thừa hưởng).
 - Breadcrumb.css: bỏ green Material #4CAF50/#45a049 → token navy/gold/rule + micro uppercase.
 - Verify: tsc 0 · build:prod PASS 7.42s · computed font .breadcrumb-link = Inter · ảnh _design-shots/edu-training-step4.png.
+
+## 2026-10-07 — Quét màu theme cũ trong 18 file CSS
+- 150 dòng màu legacy (Material green #4CAF50/#45a049/#2E7D32, emerald #10b981/#059669, #16a34a, xám-lam #2c3e50, #95a5a6, đỏ #e74c3c, cam #ff9800/#ffc107, xanh #3498db) → token editorial, quét theo ngữ nghĩa (success giữ #1f6f5c).
+- 26/51 file CSS là code chết (không import) — chưa xoá, ghi nhận để dọn sau. MobileDesignSystem.css được @import từ AdminMobileLayout + StudentMobileLayout nên VẪN DÙNG.
+- Script: scripts/sweep-legacy-colors.mjs (workspace root). Bug đã gặp: thay rgba(... thành hex ở ngữ cảnh success → mất dấu '(' → build lỗi 'Missing opening ('; đã sửa + hoàn nguyên rồi chạy lại.
+- Verify: build:prod PASS 7.47s · 0 màu legacy còn trong 18 file dùng · ảnh edu-login-step2.png, edu-register-after.png.

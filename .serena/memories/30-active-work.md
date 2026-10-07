@@ -546,3 +546,5 @@ pm run build; warning còn lại là CSS @import/chunk-size cũ.
 - 2026-10-07: Redesign editorial — form login edu (frontend/src/pages/public/UnifiedLogin.tsx).
 
 - 2026-10-07: Redesign editorial /training + fix font body toàn cục + Breadcrumb.css (frontend/src/pages/public/TrainingPage.tsx, frontend/src/index.css, frontend/src/components/ui/Breadcrumb.css).
+
+- 2026-10-07: Quét màu theme cũ 18 file CSS đang dùng → token editorial (commit design(css)).
