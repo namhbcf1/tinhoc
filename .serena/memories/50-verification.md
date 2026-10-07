@@ -628,3 +628,8 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
 - frontend: thêm `wrangler@^4.148.0` vào devDependencies (trước đây script deploy `npx wrangler` tải bản mới nhất mỗi lần ⇒ không tái lập được).
 - `npm audit` backend **22 lỗ (4 critical) → 6 lỗ (0 critical)**.
 - Verify: backend tsc 0 · `npm test` **28/28 file · 197/197** · `wrangler deploy --dry-run` PASS (config + bundle hợp lệ với wrangler 4) · frontend tsc 0 · build:prod PASS 7.31s · vitest 29/33 (4 fail có sẵn) · lint 0 error.
+## 2026-10-07 — Parse Excel import bằng SheetJS chính thức 0.20.3
+- `backend/src/utils/excel-student-import.ts` (đọc file Excel admin upload = input KHÔNG tin cậy) trước đây dùng `xlsx-js-style@1.2.0` — fork của SheetJS 0.18.5, dính Prototype Pollution (<0.19.3) + ReDoS (<0.20.2). Fork này không có trong advisory DB nên `npm audit` không báo, nhưng lỗ hổng là thật.
+- Đã cài bản chính thức `"xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"` và đổi import trong file đó (chỉ dùng `XLSX.read` + `sheet_to_json`, API y hệt).
+- GIỮ `xlsx-js-style` cho `routes/export.ts` (đường GHI export có style; SheetJS cộng đồng không hỗ trợ style).
+- Verify: tsc **0** · `npm test` **197/197** · `wrangler deploy --dry-run` PASS (bundle 4182 KiB / gzip 880 KiB — chứa 2 bản SheetJS, vẫn dưới hạn mức). Cài đặt nay cần `cdn.sheetjs.com`.
