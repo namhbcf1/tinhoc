@@ -697,3 +697,9 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
 - Nguon 2: focus ring MAC DINH cua Chromium theo MAU ACCENT WINDOWS (may nay xanh la). Rule trong @layer base KHONG thang (bang chung: anh truoc/sau trung hash). Phai dat NGOAI layer + !important.
 - BAI HOC: gia thuyet "OS accent" lan dau la DUNG, nhung toi da ket luan SAI khi thu tren app exam (input exam tu tat outline => khong thay mau) => KHONG duoc lay 1 thi nghiem am tinh de phu dinh gia thuyet.
 - Sau khi sua: outline rgb(11,46,107) navy, border navy, boxShadow navy.
+## 2026-10-07 — Quet not mau legacy indigo/violet/sky/pink (69 cho / 12 file CSS dang dung)
+- Bo sung map: #667eea, #764ba2, #6366f1, #8b5cf6, #a855f7, #0ea5e9, #38bdf8, #ec4899, #f59e0b, #fbbf24, #22c55e, #1d6f5f, #4ade80, #86efac + dang rgba() (23,111,96 / 99,102,241 / 102,126,234).
+- Ap dung: 69 cho / 12 file. Diff 1 dong/cho (da kiem theo luat git diff --numstat).
+- Script thay ca hex trong COMMENT (vo hai) — da sua lai comment Breadcrumb.css.
+- ⚠️ NHAC LAI: Get-Content cua PowerShell giai ma sai UTF-8 => comment hien mojibake GIA; kiem bang read tool thi dung. Khong ket luan encoding tu terminal.
+- Verify: tsc 0 · build:prod PASS 7.95s · anh edu-login-step3.png.
