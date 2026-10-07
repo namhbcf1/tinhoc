@@ -47,7 +47,13 @@ initViewportFix();
 initAdaptiveViewport();
 
 // ⛔ Dark mode bị cấm hoàn toàn — xóa dữ liệu cũ và đảm bảo chế độ sáng
-localStorage.removeItem('theme');
+// (bọc try/catch: Safari private mode / trình duyệt chặn storage sẽ ném SecurityError,
+//  trước đây lỗi này xảy ra ở module scope làm app không bao giờ mount → trắng màn hình)
+try {
+  localStorage.removeItem('theme');
+} catch {
+  /* storage bị chặn — không sao, chỉ là dọn dẹp */
+}
 document.documentElement.classList.remove('dark');
 
 // Initialize analytics (GA4, Clarity, FB Pixel) — skips gracefully if env vars not set

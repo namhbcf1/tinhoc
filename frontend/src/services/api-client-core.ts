@@ -70,7 +70,9 @@ export class ApiClient {
       }
       return false; // No exp claim → treat as permanent
     } catch (e) {
-      return false;
+      // Token không đọc được (hỏng/không phải JWT) ⇒ coi như HẾT HẠN.
+      // Trước đây trả false (fail-open) tức token rác được coi là còn hạn.
+      return true;
     }
   }
 

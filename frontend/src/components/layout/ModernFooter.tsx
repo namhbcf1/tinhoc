@@ -15,26 +15,26 @@ import {
 import { Facebook } from '../common/BrandIcons';
 
 const trustSignals = [
-    { icon: Award, label: 'VSTEP · IELTS · TOEIC', meta: 'Lộ trình học và thi rõ ràng' },
-    { icon: GraduationCap, label: '5.000+ học viên', meta: 'Đang theo học & đã tốt nghiệp' },
-    { icon: ShieldCheck, label: 'Hồ sơ minh bạch', meta: 'Quản lý học viên, lớp và chứng chỉ' },
-    { icon: Sparkles, label: 'Tư vấn 1-1', meta: 'Chọn đúng khóa trước khi đăng ký' },
+    { icon: Award, label: 'VSTEP Â· IELTS Â· TOEIC', meta: 'Lá»™ trÃ¬nh há»c vÃ  thi rÃµ rÃ ng' },
+    { icon: GraduationCap, label: '5.000+ há»c viÃªn', meta: 'Äang theo há»c & Ä‘Ã£ tá»‘t nghiá»‡p' },
+    { icon: ShieldCheck, label: 'Há»“ sÆ¡ minh báº¡ch', meta: 'Quáº£n lÃ½ há»c viÃªn, lá»›p vÃ  chá»©ng chá»‰' },
+    { icon: Sparkles, label: 'TÆ° váº¥n 1-1', meta: 'Chá»n Ä‘Ãºng khÃ³a trÆ°á»›c khi Ä‘Äƒng kÃ½' },
 ];
 
 const linkServices = [
-    { to: '/training', label: 'Đào tạo' },
-    { to: '/register', label: 'Đăng ký khóa học' },
-    { to: '/news', label: 'Tin tức & Blog' },
-    { to: '/about', label: 'Về chúng tôi' },
-    { to: '/contact', label: 'Liên hệ' },
+    { to: '/training', label: 'ÄÃ o táº¡o' },
+    { to: '/register', label: 'ÄÄƒng kÃ½ khÃ³a há»c' },
+    { to: '/news', label: 'Tin tá»©c & Blog' },
+    { to: '/about', label: 'Vá» chÃºng tÃ´i' },
+    { to: '/contact', label: 'LiÃªn há»‡' },
 ];
 
 const linkPrograms = [
-    { to: '/training', label: 'Tiếng Anh Giao Tiếp' },
-    { to: '/training', label: 'Luyện Thi Chứng Chỉ' },
-    { to: '/ho-tro-tieng-anh', label: 'Hỗ Trợ Tiếng Anh' },
-    { to: '/day-ngon-ngu', label: 'Dạy Ngôn Ngữ' },
-    { to: '/trung-tam-tieng-anh', label: 'Trung Tâm Tiếng Anh' },
+    { to: '/training', label: 'Tiáº¿ng Anh Giao Tiáº¿p' },
+    { to: '/training', label: 'Luyá»‡n Thi Chá»©ng Chá»‰' },
+    { to: '/ho-tro-tieng-anh', label: 'Há»— Trá»£ Tiáº¿ng Anh' },
+    { to: '/day-ngon-ngu', label: 'Dáº¡y NgÃ´n Ngá»¯' },
+    { to: '/trung-tam-tieng-anh', label: 'Trung TÃ¢m Tiáº¿ng Anh' },
     { to: '/english-support', label: 'English Support Services', muted: true },
     { to: '/language-center', label: 'Language Center', muted: true },
 ];
@@ -77,11 +77,11 @@ export default function ModernFooter() {
                 {/* Main footer grid */}
                 <div className="vt-container py-12 md:py-16">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
-                        {/* Brand block — spans 4/12 on desktop */}
+                        {/* Brand block â€” spans 4/12 on desktop */}
                         <div className="md:col-span-4 space-y-5">
-                            <Link to="/" className="inline-flex items-center gap-3 group" aria-label="Van Trang Education — Trang chủ">
+                            <Link to="/" className="inline-flex items-center gap-3 group" aria-label="Van Trang Education â€” Trang chá»§">
                                 <img
-                                    src="/logo.png"
+                                    src="/logo.webp"
                                     alt="Van Trang Education"
                                     width={56}
                                     height={56}
@@ -91,7 +91,7 @@ export default function ModernFooter() {
                                 <div className="leading-none">
                                     <p className="vt-display text-2xl text-white"
                                        style={{ fontVariationSettings: '"opsz" 72, "SOFT" 30', fontWeight: 600 }}>
-                                        Vân Trang
+                                        VÃ¢n Trang
                                     </p>
                                     <p className="mt-1 text-[10px] tracking-[0.28em] font-bold uppercase text-[var(--vt-champagne)]">
                                         Education
@@ -100,15 +100,15 @@ export default function ModernFooter() {
                             </Link>
 
                             <p className="text-sm leading-relaxed text-white/75 max-w-md">
-                                Hệ sinh thái đào tạo ngoại ngữ, tin học và quản lý hồ sơ học viên — chuẩn mực, đáng tin cậy, dễ theo dõi.
+                                Há»‡ sinh thÃ¡i Ä‘Ã o táº¡o ngoáº¡i ngá»¯, tin há»c vÃ  quáº£n lÃ½ há»“ sÆ¡ há»c viÃªn â€” chuáº©n má»±c, Ä‘Ã¡ng tin cáº­y, dá»… theo dÃµi.
                             </p>
 
                             <div className="space-y-2 text-sm text-white/70">
                                 <p className="font-semibold text-white/90 text-[13px]">
                                     VAN TRANG EDUCATION
                                 </p>
-                                <p><span className="text-white/55">Mã số thuế:</span> <span className="font-medium">0110058563</span></p>
-                                <p><span className="text-white/55">Người đại diện:</span> <span className="font-medium">Phạm Thị Vân Trang</span></p>
+                                <p><span className="text-white/55">MÃ£ sá»‘ thuáº¿:</span> <span className="font-medium">0110058563</span></p>
+                                <p><span className="text-white/55">NgÆ°á»i Ä‘áº¡i diá»‡n:</span> <span className="font-medium">Pháº¡m Thá»‹ VÃ¢n Trang</span></p>
                             </div>
 
                             {/* Social */}
@@ -145,7 +145,7 @@ export default function ModernFooter() {
                         <details className="vt-foot-section md:col-span-2 md:open:!open" open>
                             <summary className="flex items-center justify-between md:block">
                                 <span className="text-[11px] font-bold tracking-[0.22em] uppercase text-[var(--vt-champagne)]">
-                                    Dịch vụ
+                                    Dá»‹ch vá»¥
                                 </span>
                                 <ChevronDown size={18} className="vt-foot-chevron md:hidden text-[var(--vt-champagne)]" />
                             </summary>
@@ -168,7 +168,7 @@ export default function ModernFooter() {
                         <details className="vt-foot-section md:col-span-3 md:open:!open" open>
                             <summary className="flex items-center justify-between md:block">
                                 <span className="text-[11px] font-bold tracking-[0.22em] uppercase text-[var(--vt-champagne)]">
-                                    Chương trình
+                                    ChÆ°Æ¡ng trÃ¬nh
                                 </span>
                                 <ChevronDown size={18} className="vt-foot-chevron md:hidden text-[var(--vt-champagne)]" />
                             </summary>
@@ -194,7 +194,7 @@ export default function ModernFooter() {
                         <details className="vt-foot-section md:col-span-3 md:open:!open" open>
                             <summary className="flex items-center justify-between md:block">
                                 <span className="text-[11px] font-bold tracking-[0.22em] uppercase text-[var(--vt-champagne)]">
-                                    Liên hệ
+                                    LiÃªn há»‡
                                 </span>
                                 <ChevronDown size={18} className="vt-foot-chevron md:hidden text-[var(--vt-champagne)]" />
                             </summary>
@@ -233,9 +233,9 @@ export default function ModernFooter() {
                                 </li>
                                 <li>
                                     <p className="text-[11px] font-bold tracking-[0.16em] uppercase text-white/50 mb-1.5 flex items-center gap-2">
-                                        <MapPin size={12} /> Văn phòng
+                                        <MapPin size={12} /> VÄƒn phÃ²ng
                                     </p>
-                                    <p className="text-white/70 leading-relaxed">Hà Nội · Hỗ trợ Online toàn quốc</p>
+                                    <p className="text-white/70 leading-relaxed">HÃ  Ná»™i Â· Há»— trá»£ Online toÃ n quá»‘c</p>
                                 </li>
                             </ul>
                         </details>
@@ -246,15 +246,15 @@ export default function ModernFooter() {
                 <div className="border-t border-white/10">
                     <div className="vt-container py-5 md:py-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
                         <p className="text-white/55 text-center md:text-left">
-                            © {year} <span className="text-white/75 font-semibold">VAN TRANG EDUCATION</span>. Bảo lưu mọi quyền.
+                            Â© {year} <span className="text-white/75 font-semibold">VAN TRANG EDUCATION</span>. Báº£o lÆ°u má»i quyá»n.
                         </p>
                         <div className="flex items-center gap-5">
                             <Link to="/privacy" className="text-white/55 hover:text-[var(--vt-champagne)] transition-colors">
-                                Chính sách bảo mật
+                                ChÃ­nh sÃ¡ch báº£o máº­t
                             </Link>
-                            <span className="text-white/20">·</span>
+                            <span className="text-white/20">Â·</span>
                             <Link to="/terms" className="text-white/55 hover:text-[var(--vt-champagne)] transition-colors">
-                                Điều khoản sử dụng
+                                Äiá»u khoáº£n sá»­ dá»¥ng
                             </Link>
                         </div>
                     </div>

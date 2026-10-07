@@ -15,8 +15,8 @@ import { persistAdminSession } from '../../../utils/adminSession';
 import '../../../styles/admin/AdminLogin.css';
 
 const adminSchema = z.object({
-    username: z.string().min(1, 'Vui lòng nhập username'),
-    password: z.string().min(1, 'Vui lòng nhập password'),
+    username: z.string().min(1, 'Vui lÃ²ng nháº­p username'),
+    password: z.string().min(1, 'Vui lÃ²ng nháº­p password'),
 });
 
 function normalizeInternalPath(value) {
@@ -84,10 +84,10 @@ export default function AdminLogin() {
             if (response.success) {
                 finishAdminLogin(response.token, response.admin, 'local');
             } else {
-                setError(response.message || 'Đăng nhập thất bại');
+                setError(response.message || 'ÄÄƒng nháº­p tháº¥t báº¡i');
             }
         } catch (err) {
-            setError(err.message || 'Đăng nhập thất bại');
+            setError(err.message || 'ÄÄƒng nháº­p tháº¥t báº¡i');
         } finally {
             setIsLoading(false);
         }
@@ -112,7 +112,7 @@ export default function AdminLogin() {
                 }
 
                 if (response?.user?.type !== 'admin') {
-                    throw new Error('SSO ticket hiện tại không có quyền quản trị');
+                    throw new Error('SSO ticket hiá»‡n táº¡i khÃ´ng cÃ³ quyá»n quáº£n trá»‹');
                 }
 
                 finishAdminLogin(response.token, {
@@ -123,7 +123,7 @@ export default function AdminLogin() {
                 }, 'session');
             } catch (err) {
                 if (!cancelled) {
-                    setError(err.message || 'Không thể hoàn tất đăng nhập. Vui lòng thử lại.');
+                    setError(err.message || 'KhÃ´ng thá»ƒ hoÃ n táº¥t Ä‘Äƒng nháº­p. Vui lÃ²ng thá»­ láº¡i.');
                     setIsLoading(false);
                 }
             }
@@ -150,7 +150,7 @@ export default function AdminLogin() {
                 <div className="admin-login-header">
                     <Link to="/" className="admin-login-logo">
                         <img
-                            src="/logo.png"
+                            src="/logo.webp"
                             alt="VanTrangEdu Logo"
                             onError={(e) => {
                                 e.target.onerror = null;
@@ -160,7 +160,7 @@ export default function AdminLogin() {
                     </Link>
                     <div className="admin-login-badge">
                         <ShieldCheck size={20} />
-                        <span>Quản Trị Hệ Thống</span>
+                        <span>Quáº£n Trá»‹ Há»‡ Thá»‘ng</span>
                     </div>
                 </div>
 
@@ -168,8 +168,8 @@ export default function AdminLogin() {
                 <Card className="admin-login-card">
                     <CardContent className="admin-login-card-content">
                         <div className="admin-login-title">
-                            <h1>Đăng nhập Admin</h1>
-                            <p>Truy cập bảng điều khiển quản trị</p>
+                            <h1>ÄÄƒng nháº­p Admin</h1>
+                            <p>Truy cáº­p báº£ng Ä‘iá»u khiá»ƒn quáº£n trá»‹</p>
                         </div>
 
                         {error && (
@@ -181,14 +181,14 @@ export default function AdminLogin() {
 
                         <form onSubmit={form.handleSubmit(handleLogin)} className="admin-login-form">
                             <div className="admin-login-field">
-                                <Label htmlFor="username">Tên đăng nhập</Label>
+                                <Label htmlFor="username">TÃªn Ä‘Äƒng nháº­p</Label>
                                 <div className="admin-login-input-wrapper">
                                     <User className="admin-login-input-icon" size={18} />
                                     <Input
                                         id="username"
                                         name="username"
                                         autoComplete="username"
-                                        placeholder="Nhập username"
+                                        placeholder="Nháº­p username"
                                         className="admin-login-input"
                                         {...form.register('username')}
                                     />
@@ -199,14 +199,14 @@ export default function AdminLogin() {
                             </div>
 
                             <div className="admin-login-field">
-                                <Label htmlFor="password">Mật khẩu</Label>
+                                <Label htmlFor="password">Máº­t kháº©u</Label>
                                 <div className="admin-login-input-wrapper">
                                     <Lock className="admin-login-input-icon" size={18} />
                                     <Input
                                         id="password"
                                         name="password"
                                         type={showPassword ? 'text' : 'password'}
-                                        placeholder="Nhập mật khẩu (ít nhất 6 ký tự)"
+                                        placeholder="Nháº­p máº­t kháº©u (Ã­t nháº¥t 6 kÃ½ tá»±)"
                                         autoComplete="current-password"
                                         className="admin-login-input"
                                         {...form.register('password')}
@@ -215,7 +215,7 @@ export default function AdminLogin() {
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
                                         className="absolute right-3 top-1/2 -translate-y-1/2 min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--vt-ink-40)] hover:text-[var(--vt-ink-70)] transition-colors"
-                                        aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                                        aria-label={showPassword ? 'áº¨n máº­t kháº©u' : 'Hiá»‡n máº­t kháº©u'}
                                     >
                                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                     </button>
@@ -233,12 +233,12 @@ export default function AdminLogin() {
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="admin-login-btn-icon animate-spin" size={20} />
-                                        Đang xử lý...
+                                        Äang xá»­ lÃ½...
                                     </>
                                 ) : (
                                     <>
                                         <ArrowRight className="admin-login-btn-icon" size={20} />
-                                        Đăng nhập
+                                        ÄÄƒng nháº­p
                                     </>
                                 )}
                             </Button>
@@ -248,9 +248,9 @@ export default function AdminLogin() {
 
                 {/* Footer */}
                 <div className="admin-login-footer">
-                    <p>© {new Date().getFullYear()} VAN TRANG EDUCATION</p>
+                    <p>Â© {new Date().getFullYear()} VAN TRANG EDUCATION</p>
                     <Link to="/" className="admin-login-back-link">
-                        ← Quay về trang chủ
+                        â† Quay vá» trang chá»§
                     </Link>
                 </div>
             </div>

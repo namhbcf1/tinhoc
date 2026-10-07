@@ -162,8 +162,28 @@ export async function executeRequest(url, endpoint, options, token, authRole = n
         throw err;
       }
 
-      const data = await response.json();
-      return data;
+      // Một số endpoint trả 204/205 hoặc file nhị phân (export/download) — parse JSON mù
+      // sẽ ném "Unexpected end of JSON input" và bị nuốt thành lỗi chung.
+      if (response.status === 204 || response.status === 205) {
+        return null;
+      }
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.toLowerCase().includes('json')) {
+        const text = await response.text();
+        return text ? ({ success: true, data: text } as any) : null;
+      }
+
+      const text = await response.text();
+      if (!text) {
+        return null;
+      }
+
+      try {
+        return JSON.parse(text);
+      } catch {
+        // Body không phải JSON hợp lệ (proxy/edge trả HTML) — trả về nguyên văn để lớp gọi xử lý.
+        return { success: false, error: 'Phản hồi không hợp lệ từ máy chủ', raw: text } as any;
+      }
 
     } catch (error) {
       clearTimeout(timeoutId);

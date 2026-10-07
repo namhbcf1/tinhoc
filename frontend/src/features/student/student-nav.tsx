@@ -64,6 +64,17 @@ export async function openStudyPlatform(options: OpenStudyPlatformOptions = {}) 
     }
   }
 
+  if (popup) {
+    // Chống reverse tabnabbing: tab này sẽ được điều hướng sang domain khác
+    // (vantrangexam.com). Nếu còn giữ window.opener, trang đích có thể điều khiển
+    // ngược lại tab edu (đổi location sang trang giả mạo).
+    try {
+      popup.opener = null;
+    } catch {
+      // Ignore — một số trình duyệt không cho gán.
+    }
+  }
+
   const redirectToStudy = (nextUrl: string) => {
     if (target === '_self') {
       window.location.replace(nextUrl);
