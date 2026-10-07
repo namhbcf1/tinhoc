@@ -4,24 +4,18 @@
    KHÔNG được thêm lại @variant dark, dark: classes, hay prefers-color-scheme: dark.
    Quyết định này là VĨNH VIỄN. */
 
-/* ── FOCUS TOÀN CỤC (2026-10-07) ───────────────────────────────────────────────
-   Chromium vẽ focus ring mặc định theo MÀU ACCENT CỦA WINDOWS, nên trên máy có accent
-   xanh lá thì mọi input hiện viền XANH dù đã đổi hết class `focus:*` (đã kiểm: đổi 113 chỗ
-   class focus ở 29 file mà viền vẫn xanh). Định nghĩa tường minh theo design system:
-   focus = outline 2px navy. Không phụ thuộc theme hệ điều hành nữa. */
-@layer base {
-  :focus-visible {
-    outline: 2px solid var(--color-navy);
-    outline-offset: 2px;
-  }
-
-  input:focus-visible,
-  textarea:focus-visible,
-  select:focus-visible,
-  [contenteditable='true']:focus-visible {
-    outline: 2px solid var(--color-navy);
-    outline-offset: 1px;
-  }
+/* ── FOCUS: ép navy cho MỌI phần tử nhập liệu (2026-10-07) ─────────────────────
+   Vì sao cần `!important` + đặt NGOÀI @layer: focus ring mặc định của Chromium lấy theo
+   MÀU ACCENT CỦA WINDOWS (máy này accent xanh lá ⇒ input hiện outline 2px rgb(22,163,74)).
+   Rule trong @layer base KHÔNG thắng được. Bằng chứng từ trace runtime
+   (scripts/trace-style.mjs): computed outline = "2px solid rgb(22, 163, 74)" trong khi
+   border đã là navy. Đặt ngoài layer + !important để ghi đè chắc chắn. */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[contenteditable='true']:focus-visible {
+  outline: 2px solid var(--color-navy) !important;
+  outline-offset: 1px;
 }
 
 @theme {
@@ -303,7 +297,7 @@
     isolation: isolate;
     background:
       radial-gradient(circle at 10% -10%, rgba(212, 179, 111, 0.2), transparent 28rem),
-      radial-gradient(circle at 100% 6%, rgba(23, 111, 96, 0.13), transparent 30rem),
+      radial-gradient(circle at 100% 6%, rgba(168, 121, 31, 0.10), transparent 30rem),
       linear-gradient(180deg, var(--vt-ivory) 0%, var(--vt-paper) 45%, var(--vt-ivory) 100%);
     color: var(--vt-ink);
   }
@@ -846,7 +840,7 @@
   .vt-public-shell select:focus,
   .vt-public-shell textarea:focus {
     border-color: var(--vt-emerald);
-    box-shadow: 0 0 0 4px rgba(23, 111, 96, 0.12), 0 14px 34px -26px rgba(16, 32, 51, 0.4);
+    box-shadow: 0 0 0 4px rgba(11, 46, 107, 0.14), 0 14px 34px -26px rgba(16, 32, 51, 0.4);
   }
 
   /* ────────────────────────────────────────────────────────────────
@@ -1035,7 +1029,7 @@
 
   .vt-sparkle--emerald {
     background: var(--vt-emerald);
-    box-shadow: 0 0 0 6px rgba(23, 111, 96, 0.14), 0 0 30px rgba(23, 111, 96, 0.45);
+    box-shadow: 0 0 0 6px rgba(11, 46, 107, 0.16), 0 0 30px rgba(11, 46, 107, 0.35);
   }
 
   .vt-sparkle--emerald::before,
