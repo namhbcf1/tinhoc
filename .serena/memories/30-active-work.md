@@ -556,3 +556,5 @@ pm run build; warning còn lại là CSS @import/chunk-size cũ.
 - 2026-10-07: Tooling --click/--api cho scripts chụp & audit; audit sạch 8 trang công khai edu.
 
 - 2026-10-07: Tạo QuickFacts + áp cho hero /contact (frontend/src/components/ui/QuickFacts.tsx, frontend/src/pages/public/ContactPage.tsx).
+
+- 2026-10-07: Áp QuickFacts cho hero /about (frontend/src/pages/public/AboutPage.tsx).

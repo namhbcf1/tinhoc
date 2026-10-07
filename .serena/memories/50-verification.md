@@ -672,3 +672,7 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
 - Component mới frontend/src/components/ui/QuickFacts.tsx (nhãn micro + giá trị serif lớn + divide-y hairline) để tái dùng cho các hero 1 cột gây trống nửa phải.
 - ContactPage: hero 7/5, cột phải = Giờ làm việc / Địa bàn / Thời gian phản hồi (không trùng 3 card kênh liên hệ).
 - Verify: tsc 0 · build:prod PASS 7.33s · ảnh edu-contact-step1.png. Còn /about và các trang tương tự.
+
+## 2026-10-07 — QuickFacts cho hero /about
+- AboutPage: hero 7/5 + cột phải 'TÓM TẮT' (Thành lập 2015 · Trụ sở Hà Nội · Học viên 3.000+).
+- Verify: tsc 0 · build:prod PASS 7.08s · ảnh edu-about-step1.png.
