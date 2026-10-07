@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import QuickFacts from '../../components/ui/QuickFacts';
 import {
     MapPin,
     Phone,
@@ -172,7 +173,12 @@ export default function ContactPage() {
                 {/* Hero */}
                 <section className="vt-section">
                     <div className="vt-container">
-                        <div className="max-w-4xl">
+                        {/* REDESIGN 2026-10-07: hero trước đây chỉ 1 cột `max-w-4xl` ⇒ nửa phải màn
+                            hình trống. Nay lưới 7/5: cột trái là nội dung, cột phải là thông tin
+                            nhanh (giờ làm việc / địa bàn / thời gian phản hồi) — không trùng với 3
+                            card kênh liên hệ ở khối dưới. */}
+                        <div className="grid items-start gap-10 lg:grid-cols-12 lg:gap-14">
+                        <div className="lg:col-span-7 max-w-4xl">
                             <p className="c-eyebrow vt-eyebrow">Liên hệ · Tư vấn 1-1</p>
                             <h1 className="c-title vt-display mt-5 text-[clamp(2.5rem,6.5vw,4.75rem)] leading-[1.02]">
                                 <span className="block">Một cuộc trò chuyện</span>
@@ -195,6 +201,18 @@ export default function ContactPage() {
                                     Nhắn Zalo
                                 </a>
                             </div>
+                        </div>
+
+                        <div className="lg:col-span-5">
+                            <QuickFacts
+                                title="Thông tin nhanh"
+                                items={[
+                                    { label: 'Giờ làm việc', value: 'T2 – T7 · 8:00–17:30', note: 'Chủ nhật & lễ: hỗ trợ qua Zalo' },
+                                    { label: 'Địa bàn', value: 'Hà Nội · Online', note: 'Hỗ trợ học viên toàn quốc qua trực tuyến' },
+                                    { label: 'Thời gian phản hồi', value: '≤ 2 phút', note: 'Trong giờ hành chính; email trong 24h' },
+                                ]}
+                            />
+                        </div>
                         </div>
                     </div>
                 </section>
