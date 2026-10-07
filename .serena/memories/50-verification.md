@@ -681,3 +681,12 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
 - Trang dung indigo/violet/slate toan bo; da quet 21 nhom -> token editorial (giay, rule, navy, gold rat nhat, danger tint). Nut "Tra cuu" tu tim dam -> navy pill; tieu de -> serif ink.
 - Verify: tsc 0 · build:prod PASS 10.07s · anh edu-lookup-step1.png · diff 39 dong (da kiem khong hong ky tu).
 - CHUA SUA: input van hien VIEN XANH khi focus nhung khong den tu StudentLookup.tsx (da doi sang rule/navy) => nghi rule CSS toan cuc (input:focus / .glass-panel). Can truy tiep.
+## 2026-10-07 — Quet 113 cho class focus xanh + rule focus toan cuc (CHUA het vien xanh)
+- Quet 113 cho o 29 file: focus:border-emerald-*/focus:ring-emerald-*/focus:border-green-*/text-emerald-600 -> navy.
+- Them @layer base rule focus = outline 2px navy.
+- CHUA giai quyet: vien XANH khi focus tren /student-lookup VAN CON.
+  * Anh truoc/sau KHAU TRUNG HASH => khong phai do 113 class hay rule moi.
+  * Test tren app exam (CSS khac): KHONG co vien xanh => KHANG DINH la van de CSS edu, KHONG phai mau accent Windows (gia thuyet OS-accent SAI, da loai bo bang thi nghiem).
+  * Grep :focus + mau xanh: khong khop rule nao. Con gia tri legacy chua quet: #667eea, #6366f1, #1d6f5f, #22c55e o StudentsManagement.css, RegistrationFormA4.css, DocumentsManagement.css, QuestionRenderer.css, ExamSchedulesPage.css.
+- BUOC TIEP: trace runtime bang document.styleSheets de tim rule set outline-color/border-color/box-shadow mau xanh, roi sua tai goc. KHONG doan them.
+- Verify: tsc 0 · build:prod PASS 9.21s · diff 29 file (khong hong ky tu).
