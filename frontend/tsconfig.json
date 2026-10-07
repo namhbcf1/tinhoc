@@ -17,7 +17,9 @@
     "allowJs": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "gsap": ["./src/lib/gsap-runtime.ts"],
+      "@gsap/react": ["./src/lib/gsap-react.ts"]
     }
   },
   "include": ["src"]

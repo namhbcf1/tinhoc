@@ -16,6 +16,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // Đồng bộ với vite.config.ts: gsap/@gsap/react map sang stub nội bộ
+      // (2 package thật đã gỡ khỏi dependencies ngày 2026-10-07).
+      gsap: path.resolve(__dirname, './src/lib/gsap-runtime.ts'),
+      '@gsap/react': path.resolve(__dirname, './src/lib/gsap-react.ts'),
     },
   },
 });
