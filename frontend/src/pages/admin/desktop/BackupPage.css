@@ -32,7 +32,7 @@
 .backup-section h2 {
   margin: 0 0 20px 0;
   font-size: 20px;
-  color: #2c3e50;
+  color: #0e1b2c;
 }
 
 .export-actions {
@@ -44,7 +44,7 @@
 .csv-exports h3 {
   font-size: 16px;
   margin-bottom: 12px;
-  color: #34495e;
+  color: #0e1b2c;
 }
 
 .csv-buttons {
@@ -72,13 +72,13 @@
 .backup-info h4 {
   margin: 0 0 8px 0;
   font-size: 16px;
-  color: #2c3e50;
+  color: #0e1b2c;
 }
 
 .backup-info p {
   margin: 4px 0;
   font-size: 14px;
-  color: #7f8c8d;
+  color: #5c6672;
 }
 
 .backup-actions {
@@ -89,7 +89,7 @@
 .empty-state {
   text-align: center;
   padding: 40px;
-  color: #95a5a6;
+  color: #5c6672;
 }
 
 @media (max-width: 768px) {

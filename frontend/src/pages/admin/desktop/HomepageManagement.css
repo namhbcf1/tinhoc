@@ -29,7 +29,7 @@
   margin: 0;
   font-size: 22px;
   font-weight: 700;
-  color: #2c3e50;
+  color: #0e1b2c;
   flex: 0 1 auto;
   display: flex;
   align-items: center;
@@ -63,7 +63,7 @@
   margin: 0 0 20px 0;
   font-size: 18px;
   font-weight: 700;
-  color: #2c3e50;
+  color: #0e1b2c;
   padding-bottom: 12px;
   border-bottom: 2px solid #e5e7eb;
 }
@@ -98,7 +98,7 @@
 }
 
 .homepage-toggle.active {
-  background: #10b981;
+  background: #0b2e6b;
 }
 
 .homepage-toggle-slider {

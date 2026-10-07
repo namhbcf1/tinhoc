@@ -125,8 +125,8 @@
 
 /* AI Detection Visual Feedback */
 .camera-overlay-template.detected {
-    border-color: #10b981 !important;
-    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.85), 0 0 20px rgba(16, 185, 129, 0.5) !important;
+    border-color: #0b2e6b !important;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.85), 0 0 20px rgba(11, 46, 107, 0.5) !important;
     animation: pulse-green 2s ease-in-out infinite;
 }
 
@@ -141,10 +141,10 @@
 
 @keyframes pulse-green {
     0%, 100% {
-        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.85), 0 0 20px rgba(16, 185, 129, 0.5);
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.85), 0 0 20px rgba(11, 46, 107, 0.5);
     }
     50% {
-        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.85), 0 0 30px rgba(16, 185, 129, 0.8);
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.85), 0 0 30px rgba(11, 46, 107, 0.8);
     }
 }
 
@@ -310,7 +310,7 @@
 .camera-capture-btn.enabled {
     background: white;
     cursor: pointer;
-    box-shadow: 0 10px 48px rgba(16, 185, 129, 0.35) !important;
+    box-shadow: 0 10px 48px rgba(11, 46, 107, 0.35) !important;
 }
 
 .camera-capture-btn:hover:not(:disabled) {
@@ -376,7 +376,7 @@
     }
 
     .camera-capture-btn-inline.enabled {
-        box-shadow: 0 12px 48px rgba(16, 185, 129, 0.36) !important;
+        box-shadow: 0 12px 48px rgba(11, 46, 107, 0.36) !important;
     }
 
     .camera-capture-btn-inline.caution {
@@ -655,12 +655,12 @@
 }
 
 .confirm-btn {
-    background: #10b981;
+    background: #0b2e6b;
     color: white;
 }
 
 .confirm-btn:hover {
-    background: #059669;
+    background: #06183a;
 }
 
 /* Real-time Quality Feedback */

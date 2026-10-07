@@ -33,15 +33,15 @@
 }
 
 .confirm-dialog-danger {
-  background: #e74c3c;
+  background: #a3231f;
 }
 
 .confirm-dialog-warning {
-  background: #f39c12;
+  background: #a8791f;
 }
 
 .confirm-dialog-info {
-  background: #3498db;
+  background: #0b2e6b;
 }
 
 .confirm-dialog-body {
@@ -50,7 +50,7 @@
 
 .confirm-dialog-body p {
   margin: 0;
-  color: #2c3e50;
+  color: #0e1b2c;
   font-size: 16px;
   line-height: 1.6;
 }

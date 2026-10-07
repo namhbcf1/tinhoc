@@ -62,7 +62,7 @@ html, body {
 }
 
 .top-bar-link:hover {
-  color: #4CAF50;
+  color: #0b2e6b;
   background: rgba(76, 175, 80, 0.1);
   transform: translateY(clamp(-2px, -0.2vw, -1px));
 }
@@ -107,7 +107,7 @@ html, body {
 }
 
 .top-bar-btn-primary {
-  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+  background: linear-gradient(135deg, #0b2e6b 0%, #06183a 100%);
   color: white;
   border: 2px solid transparent;
   box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
@@ -116,7 +116,7 @@ html, body {
 .top-bar-btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(76, 175, 80, 0.4);
-  background: linear-gradient(135deg, #45a049 0%, #2d6e31 100%);
+  background: linear-gradient(135deg, #06183a 0%, #0a2450 100%);
 }
 
 .top-bar-btn-ghost {
@@ -159,8 +159,8 @@ html, body {
 }
 
 .lang-btn.active {
-  background: #4CAF50;
-  border-color: #4CAF50;
+  background: #0b2e6b;
+  border-color: #0b2e6b;
   color: white;
   box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 }
@@ -226,7 +226,7 @@ html, body {
 }
 
 .footer-section ul li a:hover {
-  color: #4CAF50;
+  color: #0b2e6b;
   transform: translateX(3px);
 }
 
@@ -246,7 +246,7 @@ html, body {
 }
 
 .navbar-menu li a {
-  color: #2c3e50;
+  color: #0e1b2c;
   text-decoration: none;
   font-weight: 600;
   font-size: 14px;
@@ -268,7 +268,7 @@ html, body {
   transform: translateX(-50%) scaleX(0);
   width: 60%;
   height: 2px;
-  background: #4CAF50;
+  background: #0b2e6b;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 2px;
 }
@@ -280,7 +280,7 @@ html, body {
 
 .navbar-menu li a:hover,
 .navbar-menu li a.active {
-  color: #4CAF50;
+  color: #0b2e6b;
   background: rgba(76, 175, 80, 0.08);
   transform: translateY(-1px);
 }
@@ -330,7 +330,7 @@ html, body {
 .dropdown-menu li a {
   padding: 14px 24px;
   display: block;
-  color: #2c3e50;
+  color: #0e1b2c;
   font-size: 14px;
   font-weight: 500;
   border-radius: 0;
@@ -343,7 +343,7 @@ html, body {
 
 .dropdown-menu li a:hover {
   background: linear-gradient(90deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%);
-  color: #4CAF50;
+  color: #0b2e6b;
   padding-left: 28px;
 }
 
@@ -405,7 +405,7 @@ html, body {
 }
 
 .footer-section h3 {
-  color: #4CAF50;
+  color: #0b2e6b;
   font-size: 22px;
   margin-bottom: 20px;
   font-weight: 700;
@@ -446,7 +446,7 @@ html, body {
 
 .cert-badge:hover {
   background: rgba(76, 175, 80, 0.2);
-  border-color: #4CAF50;
+  border-color: #0b2e6b;
   transform: translateY(-2px);
 }
 
@@ -480,7 +480,7 @@ html, body {
 }
 
 .footer-section ul li a:hover {
-  color: #4CAF50;
+  color: #0b2e6b;
   transform: translateX(3px);
 }
 
@@ -519,7 +519,7 @@ html, body {
 }
 
 .phone-link:hover {
-  color: #4CAF50;
+  color: #0b2e6b;
   transform: translateX(5px);
 }
 
@@ -535,7 +535,7 @@ html, body {
 }
 
 .email-link:hover {
-  color: #4CAF50;
+  color: #0b2e6b;
   transform: translateX(5px);
 }
 

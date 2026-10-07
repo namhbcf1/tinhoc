@@ -63,12 +63,12 @@
     /* ========================================
        COLOR PALETTE - Secondary (Emerald)
        ======================================== */
-    --mb-secondary: #10b981;
-    --mb-secondary-dark: #059669;
+    --mb-secondary: #0b2e6b;
+    --mb-secondary-dark: #06183a;
     --mb-secondary-darker: #047857;
-    --mb-secondary-light: #d1fae5;
-    --mb-secondary-bg: #ecfdf5;
-    --mb-secondary-hover: #34d399;
+    --mb-secondary-light: #f2ede2;
+    --mb-secondary-bg: #f2ede2;
+    --mb-secondary-hover: #a8791f;
 
     /* ========================================
        COLOR PALETTE - Student (Indigo/Blue)
@@ -120,17 +120,17 @@
     /* ========================================
        STATUS COLORS
        ======================================== */
-    --mb-success: #10b981;
-    --mb-success-light: #d1fae5;
-    --mb-success-dark: #059669;
+    --mb-success: #1f6f5c;
+    --mb-success-light: #f2ede2;
+    --mb-success-dark: #1f6f5c;
     
     --mb-warning: #f59e0b;
     --mb-warning-light: #fef3c7;
     --mb-warning-dark: #d97706;
     
-    --mb-danger: #ef4444;
+    --mb-danger: #a3231f;
     --mb-danger-light: #fee2e2;
-    --mb-danger-dark: #dc2626;
+    --mb-danger-dark: #a3231f;
     
     --mb-info: #3b82f6;
     --mb-info-light: #dbeafe;
@@ -512,7 +512,7 @@ body {
     width: 52px;
     height: 52px;
     border-radius: 18px;
-    background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+    background: linear-gradient(135deg, #0b2e6b 0%, #a8791f 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -614,10 +614,10 @@ body {
 }
 
 .mobile-drawer-item.active {
-    background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+    background: linear-gradient(135deg, #0b2e6b 0%, #a8791f 100%);
     color: white;
     font-weight: var(--mb-font-semibold);
-    box-shadow: 0 20px 34px -24px rgba(16, 185, 129, 0.7);
+    box-shadow: 0 20px 34px -24px rgba(11, 46, 107, 0.7);
 }
 
 /* Role-specific active states */
@@ -760,11 +760,11 @@ body {
 }
 
 .mobile-bottom-nav-item.active {
-    background: linear-gradient(135deg, rgba(16,185,129,0.14), rgba(20,184,166,0.12));
+    background: linear-gradient(135deg, rgba(11, 46, 107,0.14), rgba(20,184,166,0.12));
 }
 
 .mobile-bottom-nav-item.admin.active {
-    background: linear-gradient(135deg, rgba(29,78,216,0.14), rgba(16,185,129,0.12));
+    background: linear-gradient(135deg, rgba(29,78,216,0.14), rgba(11, 46, 107,0.12));
 }
 
 .mobile-bottom-nav-item.secondary.active {

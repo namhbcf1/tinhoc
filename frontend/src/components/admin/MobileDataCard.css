@@ -163,7 +163,7 @@
 }
 
 .mobile-data-card-action-btn.delete {
-    color: #dc2626;
+    color: #a3231f;
 }
 
 .mobile-data-card-action-btn.delete:active {
@@ -211,12 +211,12 @@
 
 .mobile-data-card-swipe-action.delete {
     right: 0;
-    background: #dc2626;
+    background: #a3231f;
 }
 
 .mobile-data-card-swipe-action.edit {
     left: 0;
-    background: #16a34a;
+    background: #0b2e6b;
 }
 
 
@@ -383,7 +383,7 @@
 }
 
 .mobile-data-card-action-btn.delete {
-    color: #dc2626;
+    color: #a3231f;
 }
 
 .mobile-data-card-action-btn.delete:active {
@@ -431,11 +431,11 @@
 
 .mobile-data-card-swipe-action.delete {
     right: 0;
-    background: #dc2626;
+    background: #a3231f;
 }
 
 .mobile-data-card-swipe-action.edit {
     left: 0;
-    background: #16a34a;
+    background: #0b2e6b;
 }
 

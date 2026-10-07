@@ -29,12 +29,12 @@
 
 .login-header h1 {
   font-size: 28px;
-  color: #2c3e50;
+  color: #0e1b2c;
   margin: 0 0 8px 0;
 }
 
 .login-header p {
-  color: #7f8c8d;
+  color: #5c6672;
   font-size: 14px;
   margin: 0;
 }
@@ -59,12 +59,12 @@
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  color: #7f8c8d;
+  color: #5c6672;
 }
 
 .tab-btn:hover {
   background: #f8f9fa;
-  color: #2c3e50;
+  color: #0e1b2c;
 }
 
 .tab-btn.active {
@@ -109,7 +109,7 @@
 
 .form-group label {
   font-weight: 600;
-  color: #2c3e50;
+  color: #0e1b2c;
   font-size: 14px;
 }
 
@@ -144,31 +144,31 @@
 }
 
 .btn-student {
-  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  background: linear-gradient(135deg, #0b2e6b 0%, #06183a 100%);
 }
 
 .btn-student:hover:not(:disabled) {
-  background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+  background: linear-gradient(135deg, #06183a 0%, #0a2450 100%);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
 }
 
 .btn-teacher {
-  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  background: linear-gradient(135deg, #a8791f 0%, #a8791f 100%);
 }
 
 .btn-teacher:hover:not(:disabled) {
-  background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
+  background: linear-gradient(135deg, #a8791f 0%, #e65100 100%);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
 }
 
 .btn-admin {
-  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  background: linear-gradient(135deg, #a3231f 0%, #a3231f 100%);
 }
 
 .btn-admin:hover:not(:disabled) {
-  background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+  background: linear-gradient(135deg, #a3231f 0%, #c62828 100%);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
 }
@@ -181,7 +181,7 @@
 }
 
 .register-hint {
-  color: #7f8c8d;
+  color: #5c6672;
   font-size: 14px;
   margin-bottom: 12px;
 }

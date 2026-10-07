@@ -18,7 +18,7 @@
 }
 
 .mobile-form-required {
-    color: #dc2626;
+    color: #a3231f;
     margin-left: 2px;
 }
 
@@ -48,7 +48,7 @@
 .mobile-form-textarea:focus,
 .mobile-form-select:focus {
     outline: none;
-    border-color: #16a34a;
+    border-color: #0b2e6b;
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
 }
 
@@ -82,7 +82,7 @@
 
 .mobile-form-error {
     font-size: 12px;
-    color: #dc2626;
+    color: #a3231f;
     margin-top: -4px;
 }
 
@@ -129,7 +129,7 @@
 .mobile-form.android .mobile-form-input:focus,
 .mobile-form.android .mobile-form-textarea:focus,
 .mobile-form.android .mobile-form-select:focus {
-    border-color: #16a34a;
+    border-color: #0b2e6b;
     box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
 }
 

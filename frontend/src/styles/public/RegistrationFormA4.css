@@ -2,7 +2,7 @@
 /* Use bundled Inter (already loaded globally). Avoid external Times New Roman import to prevent MIME/blocked font errors. */
 
 :root {
-    --primary-red: #dc2626;
+    --primary-red: #a3231f;
     --primary-orange: #f97316;
     --text-dark: #1a1a1a;
     --text-muted: #64748b;
@@ -549,7 +549,7 @@
     margin-top: 3px;
     width: 18px;
     height: 18px;
-    accent-color: #16a34a;
+    accent-color: #0b2e6b;
 }
 
 .checkbox-row span {
@@ -652,9 +652,9 @@
 }
 
 .success-box {
-    background: #f0fdf4;
-    color: #16a34a;
-    border: 1px solid #bbf7d0;
+    background: #f2ede2;
+    color: #1f6f5c;
+    border: 1px solid #e3ddd0;
 }
 
 .upload-waiting-note {
