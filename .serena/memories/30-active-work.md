@@ -375,41 +375,12 @@ Wave 2: 3 parallel agents fix toàn bộ TypeScript errors trong production code
 2026-05-06
 
 ## Recently Changed Files
-_Auto-updated at 2026-09-02 02:07 (33 files)_
+_Auto-updated at 2026-10-07 11:33 (4 files)_
 
-- backend/src/routes/cccd-upload.ts
-- backend/src/services/cccd-ocr-service.ts
-- backend/src/test/services/cccd-ocr.test.ts
-- backend/src/utils/email-service.ts
-- backend/src/utils/pdf-generator.ts
-- backend/wrangler.toml
-- frontend/index.html
-- frontend/src/App.tsx
-- frontend/src/components/admin/CCCDImportModal.tsx
-- frontend/src/components/layout/Layout.tsx
-- frontend/src/components/layout/ModernFooter.tsx
-- frontend/src/components/layout/ModernHeader.tsx
-- frontend/src/components/ui/ExitIntentModal.tsx
-- frontend/src/components/ui/FloatingCTA.tsx
-- frontend/src/pages/admin/auth/AdminLogin.tsx
-- frontend/src/pages/public/AboutPage.tsx
-- frontend/src/pages/public/AdmissionsPage.tsx
-- frontend/src/pages/public/CertificateLookup.tsx
-- frontend/src/pages/public/ConnectionsPage.tsx
-- frontend/src/pages/public/ContactPage.tsx
-- frontend/src/pages/public/Hub4Page.tsx
-- frontend/src/pages/public/LifePage.tsx
-- frontend/src/pages/public/PostDetailPage.tsx
-- frontend/src/pages/public/PrivacyPage.tsx
-- frontend/src/pages/public/ServicesPage.tsx
-- frontend/src/pages/public/TrainingPage.tsx
-- frontend/src/pages/public/UnifiedLogin.tsx
-- frontend/src/pages/public/UnitsPage.tsx
-- frontend/src/pages/public/register/desktop/StudentRegistrationDesktopView.tsx
-- frontend/src/pages/public/register/mobile/StudentRegistrationMobileView.tsx
-- frontend/src/pages/student/desktop/StudentFeedbackView.tsx
-- frontend/src/pages/student/mobile/MobileMessagesModule.tsx
-- frontend/src/utils/translations.ts
+- backend/package-lock.json
+- backend/package.json
+- frontend/package-lock.json
+- frontend/package.json
 
 ## 2026-06-06 16:47:32 +07:00 - Register view split
 - Tách rontend/src/pages/public/StudentRegistration.tsx thành container logic và StudentRegistrationView.tsx cho phần render UI.
