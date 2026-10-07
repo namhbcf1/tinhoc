@@ -62,6 +62,22 @@ try {
   }
   await page.goto(url, { waitUntil: 'networkidle', timeout: 60_000 }).catch(() => {});
   await page.waitForTimeout(Number(waitMs));
+
+  // --click=<selector>: bấm trước khi chụp (để verify dropdown/tab/modal).
+  // --click2=<selector>: bấm thêm một lần nữa (ví dụ mở modal rồi mở tiếp mục con).
+  for (const name of ['--click=', '--click2=']) {
+    const arg = flags.find((f) => f.startsWith(name));
+    if (!arg) continue;
+    const sel = arg.slice(name.length);
+    try {
+      await page.click(sel, { timeout: 6000 });
+      await page.waitForTimeout(1200);
+      console.log(`   đã bấm: ${sel}`);
+    } catch (err) {
+      console.log(`   ⚠ KHÔNG bấm được ${sel}: ${String(err).slice(0, 90)}`);
+    }
+  }
+
   await page.screenshot({ path: out, fullPage: flags.includes('--full') });
   console.log(`OK ${out}`);
 } finally {

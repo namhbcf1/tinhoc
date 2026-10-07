@@ -26,6 +26,8 @@ if (!executablePath) {
 const args = process.argv.slice(2);
 const widthArg = args.find((a) => a.startsWith('--width='));
 const width = widthArg ? Number(widthArg.split('=')[1]) : 1440;
+const apiArg = args.find((a) => a.startsWith('--api='));
+const apiBase = apiArg ? apiArg.slice('--api='.length).replace(/\/$/, '') : null;
 const urls = args.filter((a) => !a.startsWith('--'));
 
 const browser = await chromium.launch({ executablePath, args: ['--no-sandbox'] });
@@ -44,6 +46,23 @@ for (const url of urls) {
   });
 
   let status = 'ERR';
+  if (apiBase) {
+    await page.route('**/api/**', async (route) => {
+      const req = route.request();
+      if (req.method() !== 'GET') return route.continue();
+      const u = new URL(req.url());
+      try {
+        const resp = await fetch(`${apiBase}${u.pathname}${u.search}`, { headers: { accept: 'application/json' } });
+        await route.fulfill({
+          status: resp.status,
+          contentType: resp.headers.get('content-type') || 'application/json',
+          body: await resp.text(),
+        });
+      } catch {
+        await route.fulfill({ status: 502, contentType: 'application/json', body: '{}' });
+      }
+    });
+  }
   try {
     const resp = await page.goto(url, { waitUntil: 'networkidle', timeout: 45_000 });
     status = resp ? String(resp.status()) : '?';
