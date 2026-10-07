@@ -5,7 +5,10 @@
  * chỉ có 1243 ⇒ script trỏ thẳng `executablePath` vào chromium có sẵn, không cần tải thêm.
  *
  * Dùng:
- *   node scripts/shoot.mjs <url> <file.png> [width] [height] [waitMs] [--full]
+ *   node scripts/shoot.mjs <url> <file.png> [width] [height] [waitMs] [--full] [--api=https://vantrangedu.com]
+ *
+ * --api=<origin>: chuyển mọi request /api/* sang API production để chụp được trang có DỮ LIỆU
+ * THẬT (dev proxy trỏ localhost:8787 nên 500 khi backend chưa chạy). Chỉ đọc, không đụng repo.
  */
 import { chromium } from '@playwright/test';
 import { existsSync } from 'node:fs';
@@ -16,6 +19,8 @@ const CHROME_CANDIDATES = [
 ];
 
 const [url, out, width = '1440', height = '900', waitMs = '2500', ...flags] = process.argv.slice(2);
+const apiArg = flags.find((f) => f.startsWith('--api='));
+const apiBase = apiArg ? apiArg.slice('--api='.length).replace(/\/$/, '') : null;
 
 if (!url || !out) {
   console.error('Dùng: node scripts/shoot.mjs <url> <file.png> [width] [height] [waitMs] [--full]');
@@ -34,6 +39,27 @@ try {
     viewport: { width: Number(width), height: Number(height) },
     deviceScaleFactor: 1,
   });
+  if (apiBase) {
+    // Không dùng route.continue({ url }) vì Playwright bắt buộc cùng protocol (http→https bị chặn).
+    // Thay vào đó tự fetch rồi fulfill — vẫn là request ĐỌC ra ngoài, không sửa gì trong repo.
+    await page.route('**/api/**', async (route) => {
+      const req = route.request();
+      if (req.method() !== 'GET') return route.continue();
+      const u = new URL(req.url());
+      const target = `${apiBase}${u.pathname}${u.search}`;
+      try {
+        const resp = await fetch(target, { headers: { accept: 'application/json' } });
+        const body = await resp.text();
+        await route.fulfill({
+          status: resp.status,
+          contentType: resp.headers.get('content-type') || 'application/json',
+          body,
+        });
+      } catch (err) {
+        await route.fulfill({ status: 502, contentType: 'application/json', body: `{"success":false,"error":"${String(err).slice(0, 80)}"}` });
+      }
+    });
+  }
   await page.goto(url, { waitUntil: 'networkidle', timeout: 60_000 }).catch(() => {});
   await page.waitForTimeout(Number(waitMs));
   await page.screenshot({ path: out, fullPage: flags.includes('--full') });

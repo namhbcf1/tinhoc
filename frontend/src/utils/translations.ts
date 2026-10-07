@@ -159,6 +159,9 @@ export const translations = {
 
     // Certificates
     certificatesTitle: 'Chứng chỉ / Kết quả',
+    // Thiếu key này nên trang /certificate/lookup hiển thị nguyên chuỗi "certificateLookup"
+    // làm tiêu đề h1 (phát hiện bằng audit Playwright 2026-10-07).
+    certificateLookup: 'Tra cứu chứng chỉ',
     hasCertificates: '✅ Chứng chỉ đã có',
     noCertificates: 'Bạn chưa có chứng chỉ nào',
     completeClasses: 'Hoàn thành các lớp học và thi để nhận chứng chỉ.',
@@ -337,6 +340,7 @@ export const translations = {
 
     // Certificates
     certificatesTitle: 'Certificates / Results',
+    certificateLookup: 'Certificate lookup',
     hasCertificates: '✅ Certificates Earned',
     noCertificates: 'You don\'t have any certificates yet',
     completeClasses: 'Complete classes and exams to receive certificates.',
