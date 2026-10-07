@@ -657,3 +657,7 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
 - `frontend/scripts/shoot.mjs`: thêm `--api=<origin>` để chụp trang có dữ liệu thật (route.fulfill + fetch; KHÔNG dùng được route.continue vì Playwright chặn đổi protocol http→https).
 - ⚠️ **BÀI HỌC QUAN TRỌNG:** `Get-Content`/`Select-String` của PowerShell trong môi trường này **giải mã sai UTF-8** ⇒ nhìn thấy "mojibake" giả (ví dụ translations.ts trông như lỗi nhưng byte thật là `0xC6 0xB0` = 'ư' ĐÚNG). **Không bao giờ kết luận về encoding từ output terminal** — phải dùng read tool / Node / `textContent` của trình duyệt. (Mojibake ở ModernHeader trước đây là THẬT vì xác minh bằng textContent.)
 - Verify: tsc 0 · build:prod PASS 7.57s · audit lại /certificate/lookup → h1 "Tra cứu chứng chỉ".
+## 2026-10-07 — /news: toolbar lọc + quét màu CategoryFilter
+- NewsPage: card lọc (1 chip, nửa trái trống) → toolbar border-y + nhãn 'CHUYÊN MỤC' + số bài bên phải.
+- CategoryFilter.tsx: 12 chỗ màu lạnh/xanh (bg-white/slate/green) → token editorial (giấy, rule, navy, ink).
+- Verify: tsc 0 · build:prod PASS 7.61s · ảnh edu-news-step2.png (dữ liệu thật qua --api). Dropdown MỞ chưa chụp được (script chưa hỗ trợ click).
