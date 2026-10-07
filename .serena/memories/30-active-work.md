@@ -562,3 +562,5 @@ pm run build; warning còn lại là CSS @import/chunk-size cũ.
 - 2026-10-07: /student-lookup sang he thong editorial (frontend/src/pages/public/StudentLookup.tsx). Con vien xanh focus nghi do CSS toan cuc.
 
 - 2026-10-07: Quet 113 class focus xanh -> navy (29 file). Vien xanh focus van con, chua tim ra nguon; buoc tiep: trace document.styleSheets.
+
+- 2026-10-07: Sua tan goc vien xanh focus (index.css 849/1038/306 + rule ngoai layer !important) + them scripts/trace-style.mjs.

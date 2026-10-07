@@ -690,3 +690,10 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
   * Grep :focus + mau xanh: khong khop rule nao. Con gia tri legacy chua quet: #667eea, #6366f1, #1d6f5f, #22c55e o StudentsManagement.css, RegistrationFormA4.css, DocumentsManagement.css, QuestionRenderer.css, ExamSchedulesPage.css.
 - BUOC TIEP: trace runtime bang document.styleSheets de tim rule set outline-color/border-color/box-shadow mau xanh, roi sua tai goc. KHONG doan them.
 - Verify: tsc 0 · build:prod PASS 9.21s · diff 29 file (khong hong ky tu).
+## 2026-10-07 — TIM RA nguon vien XANH focus (trace runtime) va sua tan goc
+- Script moi: frontend/scripts/trace-style.mjs — doc computed style + quet document.styleSheets tim rule ap cho phan tu (thay vi grep mo).
+- Computed khi focus: outline "2px solid rgb(22,163,74)" + boxShadow "rgba(23,111,96,0.12) 0 0 0 4px" (ca hai xanh la).
+- Nguon 1: HARDCODE trong index.css dong 849 + 1038 (rgba(23,111,96,...)) — lot luoi vi truoc do chi map rgba(16,185,129 / rgba(5,150,105). Da doi sang navy; dong 306 -> gold rat nhat.
+- Nguon 2: focus ring MAC DINH cua Chromium theo MAU ACCENT WINDOWS (may nay xanh la). Rule trong @layer base KHONG thang (bang chung: anh truoc/sau trung hash). Phai dat NGOAI layer + !important.
+- BAI HOC: gia thuyet "OS accent" lan dau la DUNG, nhung toi da ket luan SAI khi thu tren app exam (input exam tu tat outline => khong thay mau) => KHONG duoc lay 1 thi nghiem am tinh de phu dinh gia thuyet.
+- Sau khi sua: outline rgb(11,46,107) navy, border navy, boxShadow navy.
