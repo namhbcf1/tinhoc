@@ -605,3 +605,12 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
 - **DOMPurify**: thêm `frontend/src/utils/sanitizeHtml.ts` (policy đồng bộ repo exam) và thay sanitizer regex ở `PostDetailPage.tsx`.
 - Verify: BE tsc **0** · FE tsc **0** · FE `build:prod` **PASS 7.96s** · FE vitest 29/33 (4 fail CÓ SẴN: `student-registration-ocr.test.ts` thiếu module, `authRedirect.test.ts` localStorage undefined).
 - ⚠️ BE vitest vẫn không chạy được (workerd crash) ⇒ 10 thay đổi backend chưa qua test tự động; cần nâng vitest 2→5 + pool-workers 0.5.41→0.22. Chưa deploy.
+## 2026-10-07 — ĐỢT 4 (edu): dọn dẹp & chất lượng
+- Gỡ 4 dependency CHẾT khỏi `frontend/package.json`: `react-helmet-async` (0 import), `cross-env` (0 import, không script nào dùng), `gsap` + `@gsap/react` (mọi import đã bị alias sang stub nội bộ `src/lib/gsap-runtime.ts`). Bổ sung alias gsap cho `tsconfig.json` (paths) VÀ `vitest.config.ts` — nếu chỉ sửa vite thì test vỡ (`Failed to resolve import "gsap"`), đã bắt được và sửa ngay trong phiên.
+- Sửa 404: 6 chỗ trỏ `/logo.png` (không tồn tại) → `/logo.webp`; `og-image.jpg` (không tồn tại) → `/logo.jpg` ở `SEO.tsx` + `PostDetailPage.tsx`.
+- Robustness: `main.tsx` bọc `localStorage.removeItem('theme')` trong try/catch (storage bị chặn = trắng màn hình); `api-request-engine.ts` guard 204/205 + content-type + JSON rỗng/hỏng; `api-client-core.ts` `isTokenExpired` catch nay trả `true` (fail-closed, trước fail-open); `student-nav.tsx` set `popup.opener = null` trước khi điều hướng sang domain khác (reverse tabnabbing).
+- `backend/src/routes/export.ts`: bỏ 6 dòng `Access-Control-Allow-Origin: *` (ghi đè whitelist CORS toàn cục).
+- `backend/src/index.ts`: `/exam-schedules/public-upcoming` thêm `AND <alias>.source_site IN ('edu','system')` cho 3 LEFT JOIN bảng program_* dùng chung với exam.
+- Xoá migration rỗng 0 byte `backend/migrations/add-student-edit-history.sql` (không ai tham chiếu).
+- Docs: `vantrangedu/CLAUDE.md` manualChunks không còn react-helmet-async; `CLAUDE.md` gốc + note `.claude/*.md` được đính chính.
+- Verify: BE tsc **0** · FE tsc **0** · FE `build:prod` **PASS 8.18s** · FE vitest **29/33** (4 fail có sẵn: `student-registration-ocr.test.ts` thiếu module, `authRedirect.test.ts` localStorage undefined). BE vitest vẫn chặn bởi workerd.
