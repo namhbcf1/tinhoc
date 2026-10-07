@@ -177,7 +177,7 @@ export default function UnifiedLogin() {
     }
   };
 
-  const inputCls = 'w-full h-12 pl-10 sm:pl-11 pr-4 rounded-xl border border-[var(--vt-line-strong)] bg-white text-[var(--vt-ink)] placeholder:text-[var(--vt-ink-40)] focus:outline-none focus:ring-4 focus:ring-[var(--vt-emerald)]/15 focus:border-[var(--vt-emerald)] transition-colors';
+  const inputCls = 'w-full h-12 pl-10 sm:pl-11 pr-4 rounded-md border border-[var(--color-rule)] bg-[var(--color-paper-raised)] text-[var(--vt-ink)] placeholder:text-[var(--vt-ink-40)] focus:outline-none focus:ring-4 focus:ring-[var(--vt-emerald)]/15 focus:border-[var(--vt-emerald)] transition-colors';
 
   return (
     <div className="vt-login-page min-h-screen grid lg:grid-cols-[1fr_1fr] bg-[var(--vt-paper)] text-[var(--vt-ink)]">
@@ -191,8 +191,8 @@ export default function UnifiedLogin() {
       {/* Left — Editorial brand panel */}
       <aside className="hidden lg:flex flex-col justify-between p-12 xl:p-16 relative overflow-hidden bg-[var(--vt-ink)] text-white min-h-screen">
         <div aria-hidden="true" className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-32 -right-32 h-[26rem] w-[26rem] rounded-full bg-[var(--vt-champagne)]/10 blur-3xl" />
-          <div className="absolute -bottom-32 -left-32 h-[22rem] w-[22rem] rounded-full bg-[var(--vt-emerald)]/15 blur-3xl" />
+          <div className="absolute -top-32 -right-32 h-[26rem] w-[26rem] rounded-full bg-[var(--color-gold)]/6 blur-3xl" />
+          <div className="absolute -bottom-32 -left-32 h-[22rem] w-[22rem] rounded-full bg-[var(--color-gold)]/8 blur-3xl" />
         </div>
 
         <div className="relative z-10">
@@ -230,7 +230,7 @@ export default function UnifiedLogin() {
               { icon: CalendarCheck2, title: 'Lịch thi dễ theo dõi', desc: 'Nắm ngày thi, giờ thi và thông tin chuẩn bị.' },
               { icon: Award, title: 'Chứng chỉ minh bạch', desc: 'Tra cứu kết quả và hồ sơ học tập sau khi hoàn thành.' },
             ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="group flex items-start gap-4 rounded-2xl border border-white/10 bg-white/[0.055] p-4 backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.085] hover:border-white/20">
+              <div key={title} className="group flex items-start gap-4 rounded-md border border-white/12 bg-white/[0.06] p-4 backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.085] hover:border-white/20">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--vt-champagne)]/15 text-[var(--vt-champagne)]">
                   <Icon size={20} />
                 </span>
@@ -248,7 +248,7 @@ export default function UnifiedLogin() {
               { num: '10+', label: 'Năm KN' },
               { num: '24h', label: 'Hỗ trợ' },
             ].map((s) => (
-              <div key={s.label} className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
+              <div key={s.label} className="rounded-md border border-white/12 bg-white/[0.05] p-4">
                 <p className="text-2xl font-extrabold tracking-[-0.04em] text-white">{s.num}</p>
                 <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/50">{s.label}</p>
               </div>
@@ -300,13 +300,13 @@ export default function UnifiedLogin() {
           )}
 
           <div className="flex justify-center lg:justify-start">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--vt-emerald-soft)] text-[var(--vt-emerald-deep)] text-xs font-semibold uppercase tracking-[0.14em]">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-[var(--color-rule)] bg-[var(--color-paper-raised)] text-[var(--color-navy)] text-xs font-semibold uppercase tracking-[0.14em]">
               <GraduationCap size={14} />
               Đăng nhập sinh viên
             </div>
           </div>
 
-          <div className="vt-paper-card !rounded-[2rem] !p-6 sm:!p-8 shadow-[0_28px_80px_rgba(15,35,50,0.13)]">
+          <div className="vt-paper-card !rounded-md !p-6 sm:!p-8 shadow-[0_18px_36px_-26px_rgba(15,35,50,0.30)]">
             {error && (
               <div
                 role="alert"
