@@ -186,18 +186,23 @@ export default function NewsPage() {
                                 {/* Main column */}
                                 <div className="lg:col-span-8">
                                     {allCategories.length > 0 && (
-                                        <div className="mb-10 vt-paper-card !p-4 md:!p-5">
+                                        /* REDESIGN 2026-10-07: trước đây là một "paper card" chỉ chứa
+                                           một chip lọc ⇒ nhìn như chiếm nửa trái rồi bỏ trống nửa phải.
+                                           Nay là TOOLBAR kiểu ấn phẩm: nhãn trái · chip lọc · số bài bên
+                                           phải, ngăn bằng 2 đường kẻ mảnh thay vì card + bóng. */
+                                        <div className="mb-10 flex flex-wrap items-center gap-x-4 gap-y-3 border-y border-[var(--color-rule)] py-4">
+                                            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--vt-ink-60)]">
+                                                Chuyên mục
+                                            </span>
                                             <CategoryFilter
                                                 categories={allCategories}
                                                 selected={selectedCategories}
                                                 onChange={(next) => { setSelectedCategories(next); setCurrentPage(1); }}
                                                 className="custom-category-filter"
                                             />
-                                            {selectedCategories.length > 0 && (
-                                                <p className="mt-3 text-xs uppercase tracking-[0.16em] text-[var(--vt-emerald-deep)] font-semibold">
-                                                    {filteredPosts.length} bài viết được lọc
-                                                </p>
-                                            )}
+                                            <span className="ml-auto shrink-0 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--vt-ink-60)]">
+                                                {filteredPosts.length} bài viết
+                                            </span>
                                         </div>
                                     )}
 

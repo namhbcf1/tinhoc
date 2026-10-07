@@ -34,19 +34,19 @@ export default function CategoryFilter({ categories, selected, onChange, classNa
                 <Filter size={16} />
                 Danh mục
                 {selected.length > 0 && (
-                    <Badge className="ml-1 bg-green-600 text-white">{selected.length}</Badge>
+                    <Badge className="ml-1 bg-[var(--color-navy)] text-[var(--color-paper)]">{selected.length}</Badge>
                 )}
             </Button>
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
+                <div className="absolute top-full left-0 mt-2 w-80 bg-[var(--color-paper-raised)] rounded-md border border-[var(--color-rule)] shadow-[0_18px_36px_-26px_rgba(15,35,50,0.35)] z-50 overflow-hidden">
                     {/* Header */}
-                    <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                        <h3 className="font-bold text-slate-900">Lọc theo danh mục</h3>
+                    <div className="p-4 border-b border-[var(--color-rule)] flex items-center justify-between">
+                        <h3 className="font-display text-[1.05rem] font-semibold text-[var(--color-ink)]">Lọc theo danh mục</h3>
                         <button
                             onClick={() => setIsOpen(false)}
-                            className="text-slate-400 hover:text-slate-600 transition-colors"
+                            className="text-[var(--vt-ink-40)] hover:text-[var(--color-ink)] transition-colors"
                         >
                             <X size={20} />
                         </button>
@@ -61,17 +61,17 @@ export default function CategoryFilter({ categories, selected, onChange, classNa
                                     <label
                                         key={category}
                                         className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${isSelected
-                                                ? 'bg-green-50 border-2 border-green-500'
-                                                : 'bg-slate-50 border-2 border-transparent hover:border-slate-200'
+                                                ? 'bg-[var(--color-secondary)] border-2 border-[var(--color-navy)]'
+                                                : 'border-2 border-transparent hover:border-[var(--color-rule)]'
                                             }`}
                                     >
                                         <input
                                             type="checkbox"
                                             checked={isSelected}
                                             onChange={() => handleToggle(category)}
-                                            className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                                            className="h-4 w-4 rounded-sm accent-[var(--color-navy)]"
                                         />
-                                        <span className={`flex-1 font-medium ${isSelected ? 'text-green-700' : 'text-slate-700'}`}>
+                                        <span className={`flex-1 font-medium ${isSelected ? 'text-[var(--color-navy)] font-semibold' : 'text-[var(--color-ink)]'}`}>
                                             {category}
                                         </span>
                                     </label>
@@ -82,12 +82,12 @@ export default function CategoryFilter({ categories, selected, onChange, classNa
 
                     {/* Footer */}
                     {selected.length > 0 && (
-                        <div className="p-4 border-t border-slate-100 bg-slate-50">
+                        <div className="p-4 border-t border-[var(--color-rule)] bg-[var(--color-secondary)]">
                             <Button
                                 onClick={handleClearAll}
                                 variant="outline"
                                 size="sm"
-                                className="w-full text-slate-600 hover:text-slate-900"
+                                className="w-full"
                             >
                                 Xóa tất cả bộ lọc
                             </Button>
@@ -102,7 +102,7 @@ export default function CategoryFilter({ categories, selected, onChange, classNa
                     {selected.map((category) => (
                         <Badge
                             key={category}
-                            className="bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer"
+                            className="border border-[var(--color-rule)] bg-[var(--color-paper)] text-[var(--color-navy)] hover:border-[var(--color-navy)] cursor-pointer"
                             onClick={() => handleToggle(category)}
                         >
                             {category}
