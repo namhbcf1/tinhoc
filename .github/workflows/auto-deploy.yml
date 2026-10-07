@@ -35,7 +35,7 @@ jobs:
         run: npm ci
 
       - name: 🧪 Run backend tests
-        run: npm test -- --run
+        run: npm test
         continue-on-error: true # TypeScript lib resolution issue in CI pool workers
 
   # ─── FRONTEND TESTS + BUILD ────────────────────────────────────
@@ -61,7 +61,7 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: 🧪 Run frontend tests
-        run: npm test -- --run
+        run: npm test
         continue-on-error: true # Frontend hiện chưa có test files; bỏ qua khi không có test
 
       - name: 🔨 Build frontend (smoke test)

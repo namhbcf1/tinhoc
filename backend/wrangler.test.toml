@@ -73,7 +73,10 @@ GOOGLE_PRIVATE_KEY = ""
 
 
 
-# NOTE: [ai] binding bị loại bỏ hoàn toàn trong file này.
-# Lý do: @cloudflare/vitest-pool-workers 0.5.41 dùng workerd không hỗ trợ
-# AI external worker (miniflare-internal:wrapped:__WRANGLER_EXTERNAL_AI_WORKER).
-# File wrangler.toml gốc vẫn giữ nguyên cho production/dev deploy.
+# NOTE (cập nhật 2026-10-07): [ai] binding được CỐ Ý bỏ khỏi file test.
+# - Lý do cũ ("vitest-pool-workers 0.5.41 dùng workerd không hỗ trợ AI") KHÔNG còn đúng:
+#   đã nâng lên pool-workers 0.22 + workerd 2026-08-15 và thử thêm [ai] thì 197/197 test
+#   vẫn pass.
+# - Nhưng khi có [ai], vitest in cảnh báo "Tests closed successfully but something prevents
+#   Vite server from exiting" ⇒ rủi ro treo job CI. Không test nào dùng env.AI nên bỏ lại.
+# File wrangler.toml gốc (production) vẫn giữ [ai] cho chatbot /ai/query.
