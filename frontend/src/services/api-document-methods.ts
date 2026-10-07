@@ -112,18 +112,28 @@ export function applyDocumentMethods(ApiClient) {
   };
 
   // Build download URL for a document (optionally scoped to a student)
+  // BẢO MẬT (2026-10-07): /documents/:id/download nay yêu cầu xác thực. Link mở bằng
+  // window.open() không gửi được header, nên token được gắn qua query `?token=`.
   ApiClient.prototype.getDocumentDownloadUrl = function(docId, studentId = null) {
-    let url = `${this.baseURL}/documents/${docId}/download`;
-    if (studentId) url += `?student_id=${studentId}`;
-    return url;
+    const params = new URLSearchParams();
+    if (studentId) params.set('student_id', String(studentId));
+    const token = this.getToken();
+    if (token) params.set('token', token);
+    const query = params.toString();
+    return `${this.baseURL}/documents/${docId}/download${query ? `?${query}` : ''}`;
   };
 
   // Download a document and trigger browser save dialog
   ApiClient.prototype.downloadDocument = async function(docId, fileName, studentId = null) {
-    let url = `${this.baseURL}/documents/${docId}/download`;
-    if (studentId) url += `?student_id=${studentId}`;
+    const params = new URLSearchParams();
+    if (studentId) params.set('student_id', String(studentId));
+    const query = params.toString();
+    const url = `${this.baseURL}/documents/${docId}/download${query ? `?${query}` : ''}`;
 
-    const response = await fetch(url);
+    const token = this.getToken();
+    const response = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
     if (!response.ok) throw new Error('Lỗi tải file');
 
     const blob = await response.blob();

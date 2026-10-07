@@ -79,7 +79,9 @@ export function applyClassMethods(ApiClient) {
   };
 
   // Get online classes visible to the current student
-  ApiClient.prototype.getStudentOnlineClasses = async function(params = {}, studentCCCD = null) {
+  // (tham số CCCD + header X-Student-CCCD đã bị gỡ 2026-10-07: backend không còn
+  //  chấp nhận xác thực bằng CCCD, chỉ dùng JWT của học viên.)
+  ApiClient.prototype.getStudentOnlineClasses = async function(params = {}) {
     const query = new URLSearchParams();
     Object.entries(params || {}).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
@@ -90,40 +92,32 @@ export function applyClassMethods(ApiClient) {
     const endpoint = `/online-classes${query.toString() ? `?${query.toString()}` : ''}`;
     return this.cachedRequest(
       endpoint,
-      {
-        tokenType: 'student',
-        headers: studentCCCD ? { 'X-Student-CCCD': studentCCCD } : {},
-      },
+      { tokenType: 'student' },
       { ttlMs: 5 * 60 * 1000 }
     );
   };
 
   // Get student-specific join status for an online class
-  ApiClient.prototype.getStudentOnlineClassStatus = async function(id, studentCCCD = null) {
+  ApiClient.prototype.getStudentOnlineClassStatus = async function(id) {
     return this.request(`/online-classes/${id}/my-status`, {
       tokenType: 'student',
-      headers: studentCCCD ? { 'X-Student-CCCD': studentCCCD } : {},
     });
   };
 
   // Get student-facing detail for an online class
-  ApiClient.prototype.getStudentOnlineClassDetail = async function(id, studentCCCD = null) {
+  ApiClient.prototype.getStudentOnlineClassDetail = async function(id) {
     return this.cachedRequest(
       `/online-classes/${id}`,
-      {
-        tokenType: 'student',
-        headers: studentCCCD ? { 'X-Student-CCCD': studentCCCD } : {},
-      },
+      { tokenType: 'student' },
       { ttlMs: 5 * 60 * 1000 }
     );
   };
 
   // Student self-enrollment for an online class
-  ApiClient.prototype.enrollInOnlineClass = async function(id, studentCCCD = null) {
+  ApiClient.prototype.enrollInOnlineClass = async function(id) {
     const response = await this.request(`/online-classes/${id}/enroll`, {
       method: 'POST',
       tokenType: 'student',
-      headers: studentCCCD ? { 'X-Student-CCCD': studentCCCD } : {},
     });
     this.invalidateCache(['/online-classes']);
     return response;

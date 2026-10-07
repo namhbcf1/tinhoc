@@ -11,6 +11,7 @@ import SocialShare from '../../components/common/SocialShare';
 import LazyImage from '../../components/ui/LazyImage';
 import ScrollToTopButton from '../../components/ui/ScrollToTopButton';
 import { formatDateVN } from '../../utils/dateUtils';
+import { sanitizeRichHtml } from '../../utils/sanitizeHtml';
 
 function getYouTubeEmbedUrl(url: string): string | null {
     if (!url) return null;
@@ -134,15 +135,10 @@ export default function PostDetailPage() {
 
     const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
-    // Strip dangerous tags/attributes before rendering HTML content
-    const sanitizeContent = (html) => {
-        if (!html) return '';
-        return html
-            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-            .replace(/on\w+="[^"]*"/g, '')
-            .replace(/on\w+='[^']*'/g, '')
-            .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '');
-    };
+    // BẢO MẬT (2026-10-07): trước đây là sanitizer regex tự viết (chỉ xoá <script>, <iframe>
+    // và on*="..." CÓ ngoặc kép) → bypass bằng <img src=x onerror=...>, <svg onload=...>.
+    // Nay dùng DOMPurify qua utils/sanitizeHtml (đồng bộ policy với repo vantrangexam).
+    const sanitizeContent = (html) => sanitizeRichHtml(html);
 
     const articleSchema = post ? {
         "@type": "NewsArticle",
