@@ -614,3 +614,12 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
 - Xoá migration rỗng 0 byte `backend/migrations/add-student-edit-history.sql` (không ai tham chiếu).
 - Docs: `vantrangedu/CLAUDE.md` manualChunks không còn react-helmet-async; `CLAUDE.md` gốc + note `.claude/*.md` được đính chính.
 - Verify: BE tsc **0** · FE tsc **0** · FE `build:prod` **PASS 8.18s** · FE vitest **29/33** (4 fail có sẵn: `student-registration-ocr.test.ts` thiếu module, `authRedirect.test.ts` localStorage undefined). BE vitest vẫn chặn bởi workerd.
+## 2026-10-07 — ĐỢT NỀN TẢNG: test infra backend chạy lại được (197/197)
+- Nâng `vitest` 2.1.9 → **4.1.11**, `@vitest/coverage-v8` 2.1.9 → **4.1.11**, `@cloudflare/vitest-pool-workers` 0.5.41 → **0.22.0** (0.22 yêu cầu vitest ^4.1, KHÔNG phải 5.x); workerd thực chạy **2026-08-15** (trước là 2024-12-30 gây crash `std::terminate` → ERR_RUNTIME_FAILURE).
+- API mới: pool-workers từ 0.6+ **bỏ subpath `/config`** ⇒ thay `defineWorkersConfig` bằng plugin `cloudflareTest()` + bỏ `test.pool`/`test.poolOptions` (theo đúng codemod `vitest-v3-to-v4` của Cloudflare).
+- Đổi `vitest.config.ts` → **`vitest.config.mts`**: package không có `"type": "module"` nên Vite coi config `.ts` là CJS và không require được package ESM-only.
+- Thêm lại `@types/node@^22.20.5` (bị npm prune trong lúc nâng cấp → `tsc` vỡ `Cannot find type definition file for 'node'`).
+- Script: `test` = `vitest run` (trước là watch mode), thêm `test:watch`; CI `auto-deploy.yml`: `npm test -- --run` → `npm test`.
+- `wrangler.test.toml`: chú thích `[ai]` cũ đã sai (workerd mới hỗ trợ AI, thử thêm vẫn 197/197) nhưng có `[ai]` thì vitest in "prevents Vite server from exiting" ⇒ cố ý bỏ, đã ghi lý do.
+- **KẾT QUẢ: `npm test` 28/28 file · 197/197 test PASS (17s) · `tsc` 0 lỗi · `npm audit` 22 lỗ (4 critical) → 7 lỗ (0 critical).** ⇒ Các thay đổi bảo mật Đợt 2 nay đã được suite chạy qua.
+- Còn lại: `@cloudflare/vitest-pool-workers` + `wrangler` vẫn báo high (transitive/không có fix trong devDeps hiện tại); nâng `wrangler` 4.76 → 4.148 để dọn phần còn lại (nên làm thành đợt riêng vì là tool deploy).
