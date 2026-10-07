@@ -648,3 +648,12 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
 - 26/51 file CSS là code chết (không import) — chưa xoá, ghi nhận để dọn sau. MobileDesignSystem.css được @import từ AdminMobileLayout + StudentMobileLayout nên VẪN DÙNG.
 - Script: scripts/sweep-legacy-colors.mjs (workspace root). Bug đã gặp: thay rgba(... thành hex ở ngữ cảnh success → mất dấu '(' → build lỗi 'Missing opening ('; đã sửa + hoàn nguyên rồi chạy lại.
 - Verify: build:prod PASS 7.47s · 0 màu legacy còn trong 18 file dùng · ảnh edu-login-step2.png, edu-register-after.png.
+
+## 2026-10-07 — Audit layout tự động + fix key i18n + chụp ảnh có dữ liệu thật
+- `frontend/scripts/audit-pages.mjs` (mới): audit nhiều URL một lượt — tràn ngang, trang gần trống, lỗi console/HTTP (kèm URL), "vùng phải bỏ trống" (<62% chiều rộng). Dùng để tìm lỗi khách quan thay vì soi ảnh.
+- Chạy 8 trang công khai edu: KHÔNG trang nào tràn ngang ✅ (fix /training đã hiệu quả).
+- **500 ở /api/posts, /api/exam-schedules/public-upcoming, /api/public/student-feedbacks là lỗi MÔI TRƯỜNG DEV** (proxy trỏ localhost:8787, backend chưa chạy). Production gọi thẳng trả **200** ⇒ không có bug production.
+- **BUG THẬT đã sửa:** `/certificate/lookup` hiển thị chuỗi `certificateLookup` làm h1 vì key thiếu trong `src/utils/translations.ts`; đã thêm VI + EN.
+- `frontend/scripts/shoot.mjs`: thêm `--api=<origin>` để chụp trang có dữ liệu thật (route.fulfill + fetch; KHÔNG dùng được route.continue vì Playwright chặn đổi protocol http→https).
+- ⚠️ **BÀI HỌC QUAN TRỌNG:** `Get-Content`/`Select-String` của PowerShell trong môi trường này **giải mã sai UTF-8** ⇒ nhìn thấy "mojibake" giả (ví dụ translations.ts trông như lỗi nhưng byte thật là `0xC6 0xB0` = 'ư' ĐÚNG). **Không bao giờ kết luận về encoding từ output terminal** — phải dùng read tool / Node / `textContent` của trình duyệt. (Mojibake ở ModernHeader trước đây là THẬT vì xác minh bằng textContent.)
+- Verify: tsc 0 · build:prod PASS 7.57s · audit lại /certificate/lookup → h1 "Tra cứu chứng chỉ".
