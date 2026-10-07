@@ -667,3 +667,8 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
 - audit-pages.mjs: --api=<origin> để audit với dữ liệu thật.
 - Audit 8 trang còn lại (about, contact, guides, student-lookup, register, ho-tro-tieng-anh, day-ngon-ngu, trung-tam-tieng-anh): TẤT CẢ ✅ (không lỗi HTTP, không tràn ngang, mép phải 1352/1440; /register 1059 là đúng vì phiếu A4 in).
 - Còn lại: mẫu lỗi lặp 'hero nửa phải trống' ở /contact, /about (đã sửa ở /training) → hướng: thêm khối thông tin nhanh bên phải.
+
+## 2026-10-07 — QuickFacts: lấp nửa phải hero /contact
+- Component mới frontend/src/components/ui/QuickFacts.tsx (nhãn micro + giá trị serif lớn + divide-y hairline) để tái dùng cho các hero 1 cột gây trống nửa phải.
+- ContactPage: hero 7/5, cột phải = Giờ làm việc / Địa bàn / Thời gian phản hồi (không trùng 3 card kênh liên hệ).
+- Verify: tsc 0 · build:prod PASS 7.33s · ảnh edu-contact-step1.png. Còn /about và các trang tương tự.
