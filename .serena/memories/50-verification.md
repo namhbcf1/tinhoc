@@ -676,3 +676,8 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
 ## 2026-10-07 — QuickFacts cho hero /about
 - AboutPage: hero 7/5 + cột phải 'TÓM TẮT' (Thành lập 2015 · Trụ sở Hà Nội · Học viên 3.000+).
 - Verify: tsc 0 · build:prod PASS 7.08s · ảnh edu-about-step1.png.
+
+## 2026-10-07 — /student-lookup ra khoi mau tim/violet
+- Trang dung indigo/violet/slate toan bo; da quet 21 nhom -> token editorial (giay, rule, navy, gold rat nhat, danger tint). Nut "Tra cuu" tu tim dam -> navy pill; tieu de -> serif ink.
+- Verify: tsc 0 · build:prod PASS 10.07s · anh edu-lookup-step1.png · diff 39 dong (da kiem khong hong ky tu).
+- CHUA SUA: input van hien VIEN XANH khi focus nhung khong den tu StudentLookup.tsx (da doi sang rule/navy) => nghi rule CSS toan cuc (input:focus / .glass-panel). Can truy tiep.
