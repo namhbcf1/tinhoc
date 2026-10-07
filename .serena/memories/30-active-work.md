@@ -552,3 +552,5 @@ pm run build; warning còn lại là CSS @import/chunk-size cũ.
 - 2026-10-07: Thêm scripts/audit-pages.mjs + shoot --api; fix key i18n certificateLookup (frontend/src/utils/translations.ts).
 
 - 2026-10-07: /news toolbar + CategoryFilter editorial (frontend/src/pages/public/NewsPage.tsx, frontend/src/components/ui/CategoryFilter.tsx).
+
+- 2026-10-07: Tooling --click/--api cho scripts chụp & audit; audit sạch 8 trang công khai edu.

@@ -661,3 +661,9 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
 - NewsPage: card lọc (1 chip, nửa trái trống) → toolbar border-y + nhãn 'CHUYÊN MỤC' + số bài bên phải.
 - CategoryFilter.tsx: 12 chỗ màu lạnh/xanh (bg-white/slate/green) → token editorial (giấy, rule, navy, ink).
 - Verify: tsc 0 · build:prod PASS 7.61s · ảnh edu-news-step2.png (dữ liệu thật qua --api). Dropdown MỞ chưa chụp được (script chưa hỗ trợ click).
+
+## 2026-10-07 — Tooling: --click cho shoot, --api cho audit; audit 8 trang công khai
+- shoot.mjs: --click/--click2 để chụp trạng thái tương tác (dropdown/tab/modal). Đã verify dropdown lọc /news (ảnh edu-news-filter-open.png).
+- audit-pages.mjs: --api=<origin> để audit với dữ liệu thật.
+- Audit 8 trang còn lại (about, contact, guides, student-lookup, register, ho-tro-tieng-anh, day-ngon-ngu, trung-tam-tieng-anh): TẤT CẢ ✅ (không lỗi HTTP, không tràn ngang, mép phải 1352/1440; /register 1059 là đúng vì phiếu A4 in).
+- Còn lại: mẫu lỗi lặp 'hero nửa phải trống' ở /contact, /about (đã sửa ở /training) → hướng: thêm khối thông tin nhanh bên phải.
