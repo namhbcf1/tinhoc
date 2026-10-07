@@ -594,3 +594,14 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
 - Nâng gói theo bản vá: `hono` 4.12.3 → **4.13.13** (hết 5 advisory), `react-router-dom` 7.18.1 → **7.18.4**, `postcss` 8.5.16 → **8.5.29**.
 - Verify: backend `tsc --noEmit` **0 lỗi**; frontend `tsc --noEmit` **0 lỗi** + `build:prod` **PASS 8.69s**. `npm audit`: backend 22 → 21 (4 critical còn lại thuộc `vitest 2`/`@cloudflare/vitest-pool-workers 0.5.41` — đợt sau), frontend 10 → **5**.
 - LƯU Ý DEPLOY: bảng `rate_limits` phải tồn tại trên prod (`migrations/add-rate-limits-table.sql` **chưa có** script `db:migrate:*` trong `backend/package.json`) — nếu chưa có thì limiter fail-open (không chặn, chỉ log). Chưa deploy.
+## 2026-10-07 — ĐỢT 2 P0: vá bảo mật edu (tài liệu, PII, header CCCD, QR, R2, DOMPurify)
+- **documents.ts**: thêm auth/requireAdmin cho toàn bộ route (trước đây `/for/online-class/:id`, `/for/offline-class/:id`, `/online-class/:classId`, `POST /student`, `/class/:classId`, `/:id/download`, `/:id/view`, `/:id/stats`, `/:id/permissions`, `GET /documents` đều KHÔNG auth) + `canViewDocument()` kiểm permission thật (public/student/class/staff) + bỏ `ACAO: *` và cache public ở route file.
+- **FE tải file vẫn chạy**: `downloadDocument` gửi `Authorization`; `getDocumentDownloadUrl` gắn `?token=`; backend nhận token qua header hoặc query.
+- **Bỏ `X-Student-CCCD`** ở `assignments.ts`/`online-classes.ts`/`index.ts` + FE `api-class-methods.ts` (đã xác minh FE không còn gọi 4 method đó); 4 test enroll chuyển sang JWT + 1 test chống hồi quy "chỉ header CCCD ⇒ 401".
+- **notifications**: `POST /` thêm `requireAdmin`. **students**: `GET /:cccd` kiểm chủ sở hữu.
+- **test-google-auth**: adminOnly, không lộ email/private_key_length/stack, chỉ tạo event Google khi `?createTest=true`.
+- **QR chứng chỉ**: 2 chỗ bỏ `cccd` khỏi `lookupUrl`.
+- **R2**: `/cccd-upload/image/:key` chỉ `cccd-uploads/`; `/students/image/:key` chỉ `cccd-uploads/` + `student-images/` (trước đây đọc mọi object, gồm `documents/…`); thêm chặn `..`/độ dài/nosniff/private cache. `POST /cccd-upload` thêm `strictRateLimiter`.
+- **DOMPurify**: thêm `frontend/src/utils/sanitizeHtml.ts` (policy đồng bộ repo exam) và thay sanitizer regex ở `PostDetailPage.tsx`.
+- Verify: BE tsc **0** · FE tsc **0** · FE `build:prod` **PASS 7.96s** · FE vitest 29/33 (4 fail CÓ SẴN: `student-registration-ocr.test.ts` thiếu module, `authRedirect.test.ts` localStorage undefined).
+- ⚠️ BE vitest vẫn không chạy được (workerd crash) ⇒ 10 thay đổi backend chưa qua test tự động; cần nâng vitest 2→5 + pool-workers 0.5.41→0.22. Chưa deploy.
