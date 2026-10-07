@@ -23,16 +23,16 @@ import SEO from '../../components/common/SEO';
 import { getStorageValue, removeStorageValue, setStorageValue } from '../../utils/browser-storage.js';
 import '../../styles/public/UnifiedLogin.css';
 
-// Validation Schemas â€” student only (teacher logs in via /admin/login)
+// Validation Schemas — student only (teacher logs in via /admin/login)
 const TEST_STUDENT_CCCD_REGEX = /^(?:00[1-9]|001[0-9])$/;
 const STUDENT_LOGIN_IDENTIFIER_REGEX = /^(?:test123|[0-9\s\-.]{7,20}|[^\s@]+@[^\s@]+\.[^\s@]+)$/;
 
 const studentSchema = z.object({
   cccd: z.string().refine(
     (value) => /^\d{9,12}$/.test(value) || TEST_STUDENT_CCCD_REGEX.test(value),
-    'CCCD/CMND khÃ´ng há»£p lá»‡'
+    'CCCD/CMND không hợp lệ'
   ),
-  sdt: z.string().regex(STUDENT_LOGIN_IDENTIFIER_REGEX, 'ThÃ´ng tin Ä‘Äƒng nháº­p khÃ´ng há»£p lá»‡'),
+  sdt: z.string().regex(STUDENT_LOGIN_IDENTIFIER_REGEX, 'Thông tin đăng nhập không hợp lệ'),
 });
 
 const saveSession = (key, value, remember) => {
@@ -136,10 +136,10 @@ export default function UnifiedLogin() {
           return;
         }
 
-        throw new Error('SSO ticket khÃ´ng há»£p lá»‡ cho á»©ng dá»¥ng nÃ y');
+        throw new Error('SSO ticket không hợp lệ cho ứng dụng này');
       } catch (err) {
         if (!cancelled) {
-          setError(err.message || 'KhÃ´ng thá»ƒ hoÃ n táº¥t Ä‘Äƒng nháº­p.');
+          setError(err.message || 'Không thể hoàn tất đăng nhập.');
           setIsLoading(false);
         }
       }
@@ -168,10 +168,10 @@ export default function UnifiedLogin() {
           navigate('/dashboard/exams', { replace: true });
         }
       } else {
-        setError('ThÃ´ng tin Ä‘Äƒng nháº­p khÃ´ng chÃ­nh xÃ¡c. Vui lÃ²ng kiá»ƒm tra láº¡i CCCD vÃ  sá»‘ Ä‘iá»‡n thoáº¡i hoáº·c email.');
+        setError('Thông tin đăng nhập không chính xác. Vui lòng kiểm tra lại CCCD và số điện thoại hoặc email.');
       }
     } catch (err) {
-      setError(err.message || 'KhÃ´ng thá»ƒ káº¿t ná»‘i mÃ¡y chá»§. Vui lÃ²ng kiá»ƒm tra káº¿t ná»‘i Internet vÃ  thá»­ láº¡i.');
+      setError(err.message || 'Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối Internet và thử lại.');
     } finally {
       setIsLoading(false);
     }
@@ -182,13 +182,13 @@ export default function UnifiedLogin() {
   return (
     <div className="vt-login-page min-h-screen grid lg:grid-cols-[1fr_1fr] bg-[var(--vt-paper)] text-[var(--vt-ink)]">
       <SEO
-        title="ÄÄƒng nháº­p"
-        description="ÄÄƒng nháº­p cá»•ng thÃ´ng tin sinh viÃªn cá»§a VÃ¢n Trang Education."
+        title="Đăng nhập"
+        description="Đăng nhập cổng thông tin sinh viên của Vân Trang Education."
         url="/login"
         noindex
       />
 
-      {/* Left â€” Editorial brand panel */}
+      {/* Left — Editorial brand panel */}
       <aside className="hidden lg:flex flex-col justify-between p-12 xl:p-16 relative overflow-hidden bg-[var(--vt-ink)] text-white min-h-screen">
         <div aria-hidden="true" className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-32 -right-32 h-[26rem] w-[26rem] rounded-full bg-[var(--vt-champagne)]/10 blur-3xl" />
@@ -206,7 +206,7 @@ export default function UnifiedLogin() {
             <div className="leading-none">
               <p className="vt-display text-2xl text-white"
                  style={{ fontVariationSettings: '"opsz" 72, "SOFT" 30', fontWeight: 600 }}>
-                VÃ¢n Trang
+                Vân Trang
               </p>
               <p className="mt-1.5 text-[10px] tracking-[0.28em] font-bold uppercase text-[var(--vt-champagne)]">
                 Education
@@ -216,19 +216,19 @@ export default function UnifiedLogin() {
         </div>
 
         <div className="relative z-10 max-w-xl">
-          <p className="vt-eyebrow !text-[var(--vt-champagne)]">Cá»•ng há»c viÃªn Â· VÃ¢n Trang</p>
+          <p className="vt-eyebrow !text-[var(--vt-champagne)]">Cổng học viên · Vân Trang</p>
           <h2 className="mt-5 text-[clamp(2.6rem,4.6vw,4.5rem)] font-extrabold leading-[0.96] tracking-[-0.045em] text-white">
-            Há»c táº­p, lá»‹ch thi vÃ  chá»©ng chá»‰ trong má»™t nÆ¡i.
+            Học tập, lịch thi và chứng chỉ trong một nơi.
           </h2>
           <p className="mt-6 max-w-md text-base leading-8 text-white/68">
-            ÄÄƒng nháº­p Ä‘á»ƒ theo dÃµi lá»›p Ä‘ang há»c, lá»‹ch thi sáº¯p tá»›i, há»c phÃ­, tÃ i liá»‡u vÃ  há»“ sÆ¡ chá»©ng chá»‰ Ä‘Ã£ cáº¥p.
+            Đăng nhập để theo dõi lớp đang học, lịch thi sắp tới, học phí, tài liệu và hồ sơ chứng chỉ đã cấp.
           </p>
 
           <div className="mt-10 grid gap-3 max-w-lg">
             {[
-              { icon: BookOpenCheck, title: 'Lá»›p há»c rÃµ rÃ ng', desc: 'Xem lá»›p Ä‘Ã£ Ä‘Äƒng kÃ½, tráº¡ng thÃ¡i duyá»‡t vÃ  lá»‹ch há»c.' },
-              { icon: CalendarCheck2, title: 'Lá»‹ch thi dá»… theo dÃµi', desc: 'Náº¯m ngÃ y thi, giá» thi vÃ  thÃ´ng tin chuáº©n bá»‹.' },
-              { icon: Award, title: 'Chá»©ng chá»‰ minh báº¡ch', desc: 'Tra cá»©u káº¿t quáº£ vÃ  há»“ sÆ¡ há»c táº­p sau khi hoÃ n thÃ nh.' },
+              { icon: BookOpenCheck, title: 'Lớp học rõ ràng', desc: 'Xem lớp đã đăng ký, trạng thái duyệt và lịch học.' },
+              { icon: CalendarCheck2, title: 'Lịch thi dễ theo dõi', desc: 'Nắm ngày thi, giờ thi và thông tin chuẩn bị.' },
+              { icon: Award, title: 'Chứng chỉ minh bạch', desc: 'Tra cứu kết quả và hồ sơ học tập sau khi hoàn thành.' },
             ].map(({ icon: Icon, title, desc }) => (
               <div key={title} className="group flex items-start gap-4 rounded-2xl border border-white/10 bg-white/[0.055] p-4 backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.085] hover:border-white/20">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--vt-champagne)]/15 text-[var(--vt-champagne)]">
@@ -244,9 +244,9 @@ export default function UnifiedLogin() {
 
           <div className="mt-10 grid grid-cols-3 gap-4 max-w-md">
             {[
-              { num: '500+', label: 'Há»c viÃªn' },
-              { num: '10+', label: 'NÄƒm KN' },
-              { num: '24h', label: 'Há»— trá»£' },
+              { num: '500+', label: 'Học viên' },
+              { num: '10+', label: 'Năm KN' },
+              { num: '24h', label: 'Hỗ trợ' },
             ].map((s) => (
               <div key={s.label} className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
                 <p className="text-2xl font-extrabold tracking-[-0.04em] text-white">{s.num}</p>
@@ -257,11 +257,11 @@ export default function UnifiedLogin() {
         </div>
 
         <div className="relative z-10 text-[11px] tracking-[0.14em] uppercase text-white/45">
-          Â© {new Date().getFullYear()} VAN TRANG EDUCATION
+          © {new Date().getFullYear()} VAN TRANG EDUCATION
         </div>
       </aside>
 
-      {/* Right â€” Login form */}
+      {/* Right — Login form */}
       <main className="relative flex items-center justify-center overflow-hidden p-4 sm:p-8 md:p-12 bg-[var(--vt-paper)]">
         <div aria-hidden="true" className="absolute -right-28 top-16 h-80 w-80 rounded-full bg-[var(--vt-emerald-soft)] blur-3xl" />
         <div aria-hidden="true" className="absolute -left-24 bottom-8 h-72 w-72 rounded-full bg-[var(--vt-champagne-soft)] blur-3xl" />
@@ -276,17 +276,17 @@ export default function UnifiedLogin() {
             />
             <p className="vt-display text-xl text-[var(--vt-ink)]"
                style={{ fontVariationSettings: '"opsz" 72, "SOFT" 30', fontWeight: 600 }}>
-              VÃ¢n Trang
+              Vân Trang
             </p>
           </Link>
 
           <div className="text-center lg:text-left">
-            <p className="vt-eyebrow justify-center lg:justify-start">Cá»•ng thÃ´ng tin Â· Há»c viÃªn</p>
+            <p className="vt-eyebrow justify-center lg:justify-start">Cổng thông tin · Học viên</p>
             <h1 className="mt-4 text-[clamp(2.15rem,4vw,3.15rem)] font-extrabold leading-[0.98] tracking-[-0.04em] text-[var(--vt-ink)]">
-              ChÃ o má»«ng trá»Ÿ láº¡i.
+              Chào mừng trở lại.
             </h1>
             <p className="mx-auto mt-4 max-w-md text-[var(--vt-ink-60)] leading-7 lg:mx-0">
-              Truy cáº­p há»“ sÆ¡ há»c táº­p, lá»‹ch há»c, lá»‹ch thi vÃ  chá»©ng chá»‰ trong vÃ i giÃ¢y.
+              Truy cập hồ sơ học tập, lịch học, lịch thi và chứng chỉ trong vài giây.
             </p>
           </div>
 
@@ -294,7 +294,7 @@ export default function UnifiedLogin() {
             <div className="p-4 rounded-xl bg-[var(--vt-emerald-soft)] text-[var(--vt-emerald-deep)] text-sm border border-[var(--vt-emerald)]/25 flex items-start gap-3">
               <ShieldCheck size={18} className="shrink-0 mt-0.5" />
               <p className="leading-relaxed">
-                Há»‡ thá»‘ng vá»«a cáº­p nháº­t báº£o máº­t. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i Ä‘á»ƒ tiáº¿p tá»¥c sá»­ dá»¥ng Ä‘áº§y Ä‘á»§ tÃ­nh nÄƒng.
+                Hệ thống vừa cập nhật bảo mật. Vui lòng đăng nhập lại để tiếp tục sử dụng đầy đủ tính năng.
               </p>
             </div>
           )}
@@ -302,7 +302,7 @@ export default function UnifiedLogin() {
           <div className="flex justify-center lg:justify-start">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--vt-emerald-soft)] text-[var(--vt-emerald-deep)] text-xs font-semibold uppercase tracking-[0.14em]">
               <GraduationCap size={14} />
-              ÄÄƒng nháº­p sinh viÃªn
+              Đăng nhập sinh viên
             </div>
           </div>
 
@@ -313,7 +313,7 @@ export default function UnifiedLogin() {
                 aria-live="assertive"
                 className="mb-5 p-4 rounded-xl bg-red-50 text-red-700 text-sm border border-red-200/70 flex items-start gap-3"
               >
-                <span className="font-bold shrink-0 mt-0.5">âš </span>
+                <span className="font-bold shrink-0 mt-0.5">⚠</span>
                 <span className="leading-relaxed">{error}</span>
               </div>
             )}
@@ -321,7 +321,7 @@ export default function UnifiedLogin() {
             <form onSubmit={studentForm.handleSubmit(handleStudentLogin)} className="space-y-5">
               <div className="space-y-2">
                 <label htmlFor="cccd" className="vt-overline text-[10px] text-[var(--vt-ink-70)]">
-                  Sá»‘ CCCD/CMND
+                  Số CCCD/CMND
                 </label>
                 <div className="relative">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--vt-ink-40)]" />
@@ -330,7 +330,7 @@ export default function UnifiedLogin() {
                     name="cccd"
                     inputMode="numeric"
                     autoComplete="off"
-                    placeholder="VÃ­ dá»¥: 001202012345"
+                    placeholder="Ví dụ: 001202012345"
                     className={inputCls}
                     {...studentForm.register('cccd')}
                   />
@@ -342,7 +342,7 @@ export default function UnifiedLogin() {
 
               <div className="space-y-2">
                 <label htmlFor="sdt" className="vt-overline text-[10px] text-[var(--vt-ink-70)]">
-                  Sá»‘ Ä‘iá»‡n thoáº¡i hoáº·c email
+                  Số điện thoại hoặc email
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--vt-ink-40)]" />
@@ -352,7 +352,7 @@ export default function UnifiedLogin() {
                     type="tel"
                     autoComplete="tel"
                     inputMode="tel"
-                    placeholder="09xx xxx xxx hoáº·c email@..."
+                    placeholder="09xx xxx xxx hoặc email@..."
                     className={inputCls}
                     {...studentForm.register('sdt')}
                   />
@@ -370,14 +370,14 @@ export default function UnifiedLogin() {
                     onChange={(e) => setRememberMe(e.target.checked)}
                     className="w-5 h-5 rounded border-[var(--vt-line-strong)] text-[var(--vt-emerald-deep)] focus:ring-[var(--vt-emerald)]/30 cursor-pointer"
                   />
-                  <span className="text-sm text-[var(--vt-ink-70)]">Ghi nhá»› Ä‘Äƒng nháº­p</span>
+                  <span className="text-sm text-[var(--vt-ink-70)]">Ghi nhớ đăng nhập</span>
                 </label>
                 <button
                   type="button"
                   onClick={() => setShowStudentForgotModal(true)}
                   className="text-sm text-[var(--vt-ink-50)] hover:text-[var(--vt-emerald-deep)] hover:underline underline-offset-2 transition-colors"
                 >
-                  QuÃªn thÃ´ng tin?
+                  Quên thông tin?
                 </button>
               </div>
 
@@ -389,11 +389,11 @@ export default function UnifiedLogin() {
                 {isLoading ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    Äang Ä‘Äƒng nháº­p...
+                    Đang đăng nhập...
                   </>
                 ) : (
                   <>
-                    ÄÄƒng nháº­p ngay
+                    Đăng nhập ngay
                     <ArrowRight size={16} />
                   </>
                 )}
@@ -401,18 +401,18 @@ export default function UnifiedLogin() {
 
               <div className="rounded-2xl bg-[var(--vt-paper-warm)] p-4 text-center border border-[var(--vt-emerald)]/20">
                 <p className="text-sm text-[var(--vt-ink-60)]">
-                  ChÆ°a cÃ³ tÃ i khoáº£n?{' '}
+                  Chưa có tài khoản?{' '}
                   <Link to="/register" className="font-bold text-[var(--vt-emerald-deep)] underline underline-offset-2 hover:text-[var(--vt-ink)] transition-colors">
-                    ÄÄƒng kÃ½ há»c viÃªn táº¡i Ä‘Ã¢y â†’
+                    Đăng ký học viên tại đây →
                   </Link>
                 </p>
               </div>
 
               <div className="text-center border-t border-[var(--vt-line)] pt-5">
                 <p className="text-xs text-[var(--vt-ink-50)]">
-                  Báº¡n lÃ  giáº£ng viÃªn?{' '}
+                  Bạn là giảng viên?{' '}
                   <Link to="/admin/login" className="font-semibold text-[var(--vt-ink-70)] hover:text-[var(--vt-emerald-deep)] hover:underline underline-offset-2 transition-colors">
-                    ÄÄƒng nháº­p táº¡i Ä‘Ã¢y
+                    Đăng nhập tại đây
                   </Link>
                 </p>
               </div>
@@ -422,7 +422,7 @@ export default function UnifiedLogin() {
           {/* Trust signal */}
           <div className="flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.16em] text-[var(--vt-ink-50)]">
             <Sparkles size={12} className="text-[var(--vt-champagne-deep)]" />
-            Báº£o máº­t theo chuáº©n TLS 1.3
+            Bảo mật theo chuẩn TLS 1.3
           </div>
         </div>
       </main>
@@ -441,7 +441,7 @@ export default function UnifiedLogin() {
               <button
                 onClick={() => setShowStudentForgotModal(false)}
                 className="absolute top-4 right-4 min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--vt-ink-40)] hover:text-[var(--vt-ink)] transition-colors"
-                aria-label="ÄÃ³ng"
+                aria-label="Đóng"
               >
                 <X size={20} />
               </button>
@@ -454,16 +454,16 @@ export default function UnifiedLogin() {
                 <div>
                   <h2 id="modal-title" className="vt-display text-xl text-[var(--vt-ink)]"
                       style={{ fontVariationSettings: '"opsz" 72, "SOFT" 30', fontWeight: 600 }}>
-                    LiÃªn há»‡ quáº£n trá»‹ viÃªn
+                    Liên hệ quản trị viên
                   </h2>
                   <p className="text-sm text-[var(--vt-ink-60)] mt-2 leading-relaxed">
-                    TÃ i khoáº£n sinh viÃªn dÃ¹ng CCCD vÃ  sá»‘ Ä‘iá»‡n thoáº¡i hoáº·c email Ä‘Ã£ Ä‘Äƒng kÃ½. Náº¿u báº¡n quÃªn hoáº·c
-                    cáº§n reset, vui lÃ²ng liÃªn há»‡:
+                    Tài khoản sinh viên dùng CCCD và số điện thoại hoặc email đã đăng ký. Nếu bạn quên hoặc
+                    cần reset, vui lòng liên hệ:
                   </p>
                 </div>
 
                 <div className="bg-[var(--vt-paper-soft)] border border-[var(--vt-line)] rounded-xl p-4 space-y-2">
-                  <p className="vt-overline text-[10px] text-[var(--vt-ink-60)]">Zalo Â· Admin</p>
+                  <p className="vt-overline text-[10px] text-[var(--vt-ink-60)]">Zalo · Admin</p>
                   <a
                     href="https://zalo.me/0962449563"
                     target="_blank"
@@ -473,14 +473,14 @@ export default function UnifiedLogin() {
                   >
                     096 244 9563
                   </a>
-                  <p className="text-xs text-[var(--vt-ink-50)]">Há»— trá»£: 7:30 â€“ 17:00 (Thá»© 2 â€“ Thá»© 7)</p>
+                  <p className="text-xs text-[var(--vt-ink-50)]">Hỗ trợ: 7:30 – 17:00 (Thứ 2 – Thứ 7)</p>
                 </div>
 
                 <button
                   onClick={() => setShowStudentForgotModal(false)}
                   className="vt-btn vt-btn--primary w-full justify-center"
                 >
-                  ÄÃ£ hiá»ƒu
+                  Đã hiểu
                 </button>
               </div>
             </div>

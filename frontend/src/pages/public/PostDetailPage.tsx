@@ -61,7 +61,7 @@ function VideoPlayer({ url, title }: { url: string; title: string }) {
                 <button
                     onClick={() => setPlaying(true)}
                     className="absolute inset-0 w-full h-full flex items-center justify-center group bg-slate-900"
-                    aria-label="PhÃ¡t video"
+                    aria-label="Phát video"
                 >
                     <img
                         src={`https://img.youtube.com/vi/${embedUrl.split('/embed/')[1]}/hqdefault.jpg`}
@@ -98,7 +98,7 @@ export default function PostDetailPage() {
                 // Try direct slug fetch first (efficient)
                 const response = await api.request(`/posts/slug/${slug}`);
                 foundPost = response;
-                // Still need related posts â€” fetch list only for related
+                // Still need related posts — fetch list only for related
                 const listResponse = await api.request('/posts?status=published');
                 allPosts = listResponse.posts || listResponse.data || listResponse;
             } catch {
@@ -119,11 +119,11 @@ export default function PostDetailPage() {
                     .slice(0, 3);
                 setRelatedPosts(related);
             } else {
-                setError('KhÃ´ng tÃ¬m tháº¥y bÃ i viáº¿t');
+                setError('Không tìm thấy bài viết');
             }
         } catch (err) {
             console.error('Error loading post:', err);
-            setError('Lá»—i táº£i bÃ i viáº¿t');
+            setError('Lỗi tải bài viết');
         } finally {
             setLoading(false);
         }
@@ -135,9 +135,9 @@ export default function PostDetailPage() {
 
     const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
-    // Báº¢O Máº¬T (2026-10-07): trÆ°á»›c Ä‘Ã¢y lÃ  sanitizer regex tá»± viáº¿t (chá»‰ xoÃ¡ <script>, <iframe>
-    // vÃ  on*="..." CÃ“ ngoáº·c kÃ©p) â†’ bypass báº±ng <img src=x onerror=...>, <svg onload=...>.
-    // Nay dÃ¹ng DOMPurify qua utils/sanitizeHtml (Ä‘á»“ng bá»™ policy vá»›i repo vantrangexam).
+    // BẢO MẬT (2026-10-07): trước đây là sanitizer regex tự viết (chỉ xoá <script>, <iframe>
+    // và on*="..." CÓ ngoặc kép) → bypass bằng <img src=x onerror=...>, <svg onload=...>.
+    // Nay dùng DOMPurify qua utils/sanitizeHtml (đồng bộ policy với repo vantrangexam).
     const sanitizeContent = (html) => sanitizeRichHtml(html);
 
     const articleSchema = post ? {
@@ -171,13 +171,13 @@ export default function PostDetailPage() {
             {
                 "@type": "ListItem",
                 "position": 1,
-                "name": "Trang chá»§",
+                "name": "Trang chủ",
                 "item": "https://vantrangedu.com"
             },
             {
                 "@type": "ListItem",
                 "position": 2,
-                "name": "Tin tá»©c",
+                "name": "Tin tức",
                 "item": "https://vantrangedu.com/news"
             },
             {
@@ -205,19 +205,19 @@ export default function PostDetailPage() {
         return (
             <ModernPublicLayout>
                 <SEO
-                    title="KhÃ´ng tÃ¬m tháº¥y bÃ i viáº¿t"
-                    description="BÃ i viáº¿t khÃ´ng tá»“n táº¡i hoáº·c Ä‘Ã£ bá»‹ xÃ³a."
+                    title="Không tìm thấy bài viết"
+                    description="Bài viết không tồn tại hoặc đã bị xóa."
                     url={slug ? `/news/${slug}` : '/news'}
                     noindex
                 />
                 <div className="min-h-screen bg-slate-50 flex items-center justify-center">
                     <Card className="max-w-md mx-auto">
                         <CardContent className="p-8 text-center">
-                            <h1 className="text-2xl font-bold text-slate-900 mb-4">KhÃ´ng tÃ¬m tháº¥y bÃ i viáº¿t</h1>
-                            <p className="text-slate-600 mb-6">{error || 'BÃ i viáº¿t khÃ´ng tá»“n táº¡i hoáº·c Ä‘Ã£ bá»‹ xÃ³a.'}</p>
+                            <h1 className="text-2xl font-bold text-slate-900 mb-4">Không tìm thấy bài viết</h1>
+                            <p className="text-slate-600 mb-6">{error || 'Bài viết không tồn tại hoặc đã bị xóa.'}</p>
                             <Link to="/news">
                                 <Button className="bg-green-600 hover:bg-green-700 text-white">
-                                    <ArrowLeft className="mr-2 h-4 w-4" /> Quay láº¡i tin tá»©c
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Quay lại tin tức
                                 </Button>
                             </Link>
                         </CardContent>
@@ -258,7 +258,7 @@ export default function PostDetailPage() {
                     <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8">
                         <div className="container mx-auto">
                             <Link to="/news" className="inline-flex items-center text-white/80 hover:text-white mb-4 transition-colors">
-                                <ArrowLeft className="mr-2 h-4 w-4" /> Quay láº¡i tin tá»©c
+                                <ArrowLeft className="mr-2 h-4 w-4" /> Quay lại tin tức
                             </Link>
                             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
                                 {post.title}
@@ -276,7 +276,7 @@ export default function PostDetailPage() {
                                 )}
                                 <span className="flex items-center gap-1">
                                     <Clock className="h-4 w-4" />
-                                    ~{Math.ceil((post.content?.length || 0) / 1000)} phÃºt Ä‘á»c
+                                    ~{Math.ceil((post.content?.length || 0) / 1000)} phút đọc
                                 </span>
                             </div>
                         </div>
@@ -336,7 +336,7 @@ export default function PostDetailPage() {
                             {relatedPosts.length > 0 && (
                                 <Card className="border-none shadow-md bg-white">
                                     <CardContent className="p-6">
-                                        <h3 className="font-bold text-lg text-slate-900 mb-4">BÃ i viáº¿t liÃªn quan</h3>
+                                        <h3 className="font-bold text-lg text-slate-900 mb-4">Bài viết liên quan</h3>
                                         <div className="space-y-4">
                                             {relatedPosts.map((relPost) => (
                                                 <Link
@@ -370,11 +370,11 @@ export default function PostDetailPage() {
 
                             <Card className="border-none shadow-md bg-gradient-to-br from-green-600 to-green-700 text-white">
                                 <CardContent className="p-6 text-center">
-                                    <h3 className="font-bold text-lg mb-2">Báº¡n cáº§n tÆ° váº¥n?</h3>
-                                    <p className="text-green-100 text-sm mb-4">LiÃªn há»‡ ngay Ä‘á»ƒ Ä‘Æ°á»£c há»— trá»£ miá»…n phÃ­!</p>
+                                    <h3 className="font-bold text-lg mb-2">Bạn cần tư vấn?</h3>
+                                    <p className="text-green-100 text-sm mb-4">Liên hệ ngay để được hỗ trợ miễn phí!</p>
                                     <a href="tel:0962449563">
                                         <Button className="bg-white text-green-700 hover:bg-green-50 w-full font-bold">
-                                            Gá»i: 096 244 9563
+                                            Gọi: 096 244 9563
                                         </Button>
                                     </a>
                                 </CardContent>

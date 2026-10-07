@@ -2426,7 +2426,7 @@ examSchedules.put('/:id/learning-sessions/:sessionId/attendance/:studentId', asy
     const registrationDate = toDateKey(registration?.created_at);
     const sessionDate = toDateKey(session.session_date);
     if (!registrationDate || !sessionDate || sessionDate < registrationDate || (examDateKey && sessionDate >= examDateKey)) {
-      return errorResponse('Buá»•i nÃ y khÃ´ng náº±m trong cá»­a sá»• Ä‘iá»ƒm danh cá»§a há»c viÃªn', 400);
+      return errorResponse('Buổi này không nằm trong cửa sổ điểm danh của học viên', 400);
     }
 
     const now = new Date().toISOString();

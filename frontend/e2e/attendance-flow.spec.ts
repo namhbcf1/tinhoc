@@ -54,7 +54,7 @@ test.describe('attendance role flows', () => {
         handle: ({ route }) =>
           fulfillJson(route, {
             success: true,
-            data: [{ id: 77, ten_lop: 'Lá»›p offline A' }],
+            data: [{ id: 77, ten_lop: 'Lớp offline A' }],
           }),
       },
       {
@@ -67,7 +67,7 @@ test.describe('attendance role flows', () => {
               {
                 date: '2026-03-28',
                 status: 'present',
-                notes: 'CÃ³ máº·t Ä‘áº§y Ä‘á»§',
+                notes: 'Có mặt đầy đủ',
               },
             ],
           }),
@@ -81,8 +81,8 @@ test.describe('attendance role flows', () => {
             data: [
               {
                 online_class_id: 501,
-                class_name: 'Lá»›p Zoom IELTS',
-                teacher_name: 'CÃ´ Lan',
+                class_name: 'Lớp Zoom IELTS',
+                teacher_name: 'Cô Lan',
                 present_count: 1,
                 total_sessions: 1,
                 records: [
@@ -101,12 +101,12 @@ test.describe('attendance role flows', () => {
 
     await page.goto('/dashboard/attendance');
 
-    await expect(page.getByText('Lá»›p offline A')).toBeVisible();
-    await expect(page.getByText('Lá»›p Zoom IELTS')).toBeVisible();
+    await expect(page.getByText('Lớp offline A')).toBeVisible();
+    await expect(page.getByText('Lớp Zoom IELTS')).toBeVisible();
     await expect(page.getByText(/online/i)).toBeVisible();
-    await expect(page.getByText('CÃ´ Lan')).toBeVisible();
+    await expect(page.getByText('Cô Lan')).toBeVisible();
 
-    await page.locator('button').filter({ hasText: 'Lá»›p Zoom IELTS' }).click();
+    await page.locator('button').filter({ hasText: 'Lớp Zoom IELTS' }).click();
     await expect(page.getByText('30/3/2026').first()).toBeVisible();
   });
 
@@ -133,7 +133,7 @@ test.describe('attendance role flows', () => {
         handle: ({ route }) =>
           fulfillJson(route, {
             success: true,
-            data: [{ class_id: 11, ten_lop: 'Lá»›p 11A' }],
+            data: [{ class_id: 11, ten_lop: 'Lớp 11A' }],
           }),
       },
       {

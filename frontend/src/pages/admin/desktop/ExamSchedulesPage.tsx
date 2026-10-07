@@ -2278,18 +2278,18 @@ export default function ExamSchedulesPage() {
 
   const runExcelAction = async (action, scope) => {
     if (!selectedExamForList?.id) {
-      error(action === 'preview' ? 'KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c ká»³ thi Ä‘á»ƒ preview.' : 'KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c ká»³ thi Ä‘á»ƒ xuáº¥t.');
+      error(action === 'preview' ? 'Không xác định được kỳ thi để preview.' : 'Không xác định được kỳ thi để xuất.');
       return false;
     }
 
     const scopeCount = getExcelScopeStudentCount(scope);
     if (scopeCount === 0) {
-      error(action === 'preview' ? 'KhÃ´ng cÃ³ dá»¯ liá»‡u Ä‘á»ƒ preview.' : 'KhÃ´ng cÃ³ dá»¯ liá»‡u Ä‘á»ƒ xuáº¥t.');
+      error(action === 'preview' ? 'Không có dữ liệu để preview.' : 'Không có dữ liệu để xuất.');
       return false;
     }
 
     if (scope === 'approved' && studentList.length === 0) {
-      error('KhÃ´ng cÃ³ thÃ­ sinh Ä‘Ã£ duyá»‡t. HÃ£y chá»n pháº¡m vi "Táº¥t cáº£" náº¿u muá»‘n gá»“m cáº£ há»c viÃªn chá» duyá»‡t.');
+      error('Không có thí sinh đã duyệt. Hãy chọn phạm vi "Tất cả" nếu muốn gồm cả học viên chờ duyệt.');
       return false;
     }
 
@@ -2309,7 +2309,7 @@ export default function ExamSchedulesPage() {
     try {
       const response = await api.getExamListExcelPreview(selectedExamForList.id, { scope });
       if (!response?.success) {
-        error(response?.message || 'KhÃ´ng thá»ƒ táº£i preview Excel.');
+        error(response?.message || 'Không thể tải preview Excel.');
         return false;
       }
       setExcelPreviewData(response.data || null);
@@ -2325,12 +2325,12 @@ export default function ExamSchedulesPage() {
 
   const openExcelScopeDialog = (action) => {
     if (!selectedExamForList?.id) {
-      error(action === 'preview' ? 'KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c ká»³ thi Ä‘á»ƒ preview.' : 'KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c ká»³ thi Ä‘á»ƒ xuáº¥t.');
+      error(action === 'preview' ? 'Không xác định được kỳ thi để preview.' : 'Không xác định được kỳ thi để xuất.');
       return;
     }
 
     if (totalExamStudentCount === 0) {
-      error(action === 'preview' ? 'KhÃ´ng cÃ³ dá»¯ liá»‡u Ä‘á»ƒ preview.' : 'KhÃ´ng cÃ³ dá»¯ liá»‡u Ä‘á»ƒ xuáº¥t.');
+      error(action === 'preview' ? 'Không có dữ liệu để preview.' : 'Không có dữ liệu để xuất.');
       return;
     }
 
@@ -2358,7 +2358,7 @@ export default function ExamSchedulesPage() {
     try {
       const response = await api.getExamListExcelPreview(examId, { scope });
       if (!response?.success) {
-        error(response?.message || 'KhÃ´ng thá»ƒ táº£i preview Excel.');
+        error(response?.message || 'Không thể tải preview Excel.');
         return false;
       }
       setExcelPreviewData(response.data || null);

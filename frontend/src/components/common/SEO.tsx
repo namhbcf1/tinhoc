@@ -7,8 +7,8 @@ import { useEffect } from 'react';
  * <head> automatically, so react-helmet-async is no longer needed.
  *
  * Two things React 19 does NOT handle, so we do them manually:
- *  1. <html lang> attribute â€” set via effect on document.documentElement.
- *  2. Inline <script type="application/ld+json"> â€” React 19 only hoists scripts
+ *  1. <html lang> attribute — set via effect on document.documentElement.
+ *  2. Inline <script type="application/ld+json"> — React 19 only hoists scripts
  *     with `src` or `async`; inline JSON-LD is injected into <head> via effect
  *     and removed on unmount so each page owns exactly one structured-data block.
  */
@@ -88,7 +88,7 @@ export default function SEO({
       },
     };
 
-  // 1. <html lang> â€” React 19 native metadata cannot render <html> attributes.
+  // 1. <html lang> — React 19 native metadata cannot render <html> attributes.
   useEffect(() => {
     const previous = document.documentElement.lang;
     document.documentElement.lang = pageLang;
@@ -97,7 +97,7 @@ export default function SEO({
     };
   }, [pageLang]);
 
-  // 2. JSON-LD structured data â€” inject into <head> (React 19 does not hoist
+  // 2. JSON-LD structured data — inject into <head> (React 19 does not hoist
   //    inline scripts without src/async). One <script> per mounted SEO instance.
   useEffect(() => {
     const script = document.createElement('script');
