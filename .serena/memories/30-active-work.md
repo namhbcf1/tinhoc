@@ -566,3 +566,5 @@ pm run build; warning còn lại là CSS @import/chunk-size cũ.
 - 2026-10-07: Sua tan goc vien xanh focus (index.css 849/1038/306 + rule ngoai layer !important) + them scripts/trace-style.mjs.
 
 - 2026-10-07: Quet mau legacy indigo/violet (69 cho/12 file CSS dang dung).
+
+- 2026-10-07: Chot duong cap quyen super KHONG can deploy = INSERT vao bang admins (D1) + login admin; cho thuc thi o vong sau (can doc scheme hash cua edu).

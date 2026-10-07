@@ -32,6 +32,16 @@ mkdirSync(outDir, { recursive: true });
 const browser = await chromium.launch({ executablePath: CHROME, args: ['--no-sandbox'] });
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 
+// Ghi lại mọi response lỗi (>=400) để truy bug "Unauthorized" ở dashboard.
+const fails = [];
+page.on('response', (r) => {
+  if (r.status() >= 400) {
+    const h = r.request().headers();
+    const auth = h['authorization'] ? 'CÓ Authorization' : 'KHÔNG có Authorization';
+    fails.push(`${r.status()} ${r.request().method()} ${r.url().replace(/^https?:\/\/[^/]+/, '')} [${auth}]`);
+  }
+});
+
 // Chuyển mọi request /api/* sang production (giữ method/body/headers) để login + phiên chạy thật.
 await page.route('**/api/**', async (route) => {
   const req = route.request();
@@ -57,10 +67,24 @@ await page.goto(`${BASE}/#/login`, { waitUntil: 'networkidle', timeout: 60_000 }
 await page.waitForTimeout(2500);
 
 console.log('2) điền thông tin đăng nhập');
+// Chế độ GIÁO VIÊN: gọi `node session-shots.mjs <username> --teacher <outDir> [route...]`
+// và đặt mật khẩu qua biến môi trường PW (không truyền mật khẩu trên dòng lệnh).
+const teacherMode = phone === '--teacher';
+const password = process.env.PW || '';
+if (teacherMode) {
+  const tab = await page.$('button:has-text("GIÁO VIÊN"), [role="tab"]:has-text("GIÁO VIÊN")');
+  if (tab) {
+    await tab.click();
+    await page.waitForTimeout(1500);
+    console.log('   đã chuyển tab GIÁO VIÊN');
+  } else {
+    console.log('   ⚠ không thấy tab GIÁO VIÊN');
+  }
+}
 const inputs = await page.$$('input');
 console.log(`   thấy ${inputs.length} input`);
 if (inputs[0]) await inputs[0].fill(cccd);
-if (inputs[1]) await inputs[1].fill(phone);
+if (inputs[1]) await inputs[1].fill(teacherMode ? password : phone);
 
 console.log('3) bấm đăng nhập');
 const submit = await page.$('button:has-text("ĐĂNG NHẬP"), button:has-text("Đăng nhập")');
@@ -87,5 +111,9 @@ for (const r of targets) {
   await page.screenshot({ path: `${outDir}/exam-${name}.png`, fullPage: true });
   console.log(`   -> ${outDir}/exam-${name}.png  (url: ${page.url()})`);
 }
+
+console.log('\n=== RESPONSE LỖI (>=400) ===');
+if (!fails.length) console.log('  (không có)');
+for (const f of [...new Set(fails)]) console.log(`  ${f}`);
 
 await browser.close();
