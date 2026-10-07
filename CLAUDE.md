@@ -116,7 +116,7 @@ chunk được fetch runtime → có race condition → Cloudflare SPA fallback 
 ```ts
 // Hiện tại là v4:
 manualChunks: {
-  'react-vendor-v4': ['react', 'react-dom', 'react-router-dom', 'react-helmet-async'],
+  'react-vendor-v4': ['react', 'react-dom', 'react-router-dom'], // react-helmet-async đã gỡ 2026-10-07 (dep chết)
   'icon-vendor-v4': ['lucide-react'],
   'form-vendor-v4': ['react-hook-form', '@hookform/resolvers', 'zod'],
   'image-vendor-v4': ['browser-image-compression'],

@@ -1216,7 +1216,6 @@ exportRoute.get('/students', requireAdmin, async (c) => {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': buildAttachmentDisposition(filename),
-        'Access-Control-Allow-Origin': '*',
       },
     });
   } catch (error: any) {
@@ -1355,7 +1354,6 @@ exportRoute.get('/class/:class_id', requireAdmin, async (c) => {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
-        'Access-Control-Allow-Origin': '*',
       },
     });
 
@@ -1390,7 +1388,6 @@ exportRoute.get('/class/:class_id/json', requireAdmin, async (c) => {
     }, null, 2), {
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
       },
     });
 
@@ -1459,7 +1456,6 @@ exportRoute.get('/class/:class_id/csv', requireAdmin, async (c) => {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
         'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
-        'Access-Control-Allow-Origin': '*',
       },
     });
   } catch (error: any) {
@@ -1659,7 +1655,6 @@ exportRoute.get('/exam/:exam_id', requireAdmin, async (c) => {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': buildAttachmentDisposition(filename),
-        'Access-Control-Allow-Origin': '*',
       },
     });
 
@@ -1706,7 +1701,6 @@ exportRoute.get('/exam/:exam_id/exam-list', requireAdmin, async (c) => {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': buildAttachmentDisposition(filename),
-        'Access-Control-Allow-Origin': '*',
       },
     });
 

@@ -310,9 +310,12 @@ app.get('/exam-schedules/public-upcoming', async (c) => {
         lvl.name as level_name,
         lvl.code as level_code
       FROM exam_schedules e
-      LEFT JOIN program_organizers org ON org.uuid = e.organizer_uuid
-      LEFT JOIN programs p ON p.uuid = e.program_uuid
-      LEFT JOIN program_levels lvl ON lvl.uuid = e.level_uuid
+      -- BẢO MẬT/cross-repo (2026-10-07): 3 bảng program_* là bảng DÙNG CHUNG với
+      -- vantrangexam ⇒ phải lọc source_site, nếu không sẽ rò tên/mã chương trình của
+      -- repo chị ra trang chủ công khai này.
+      LEFT JOIN program_organizers org ON org.uuid = e.organizer_uuid AND org.source_site IN ('edu', 'system')
+      LEFT JOIN programs p ON p.uuid = e.program_uuid AND p.source_site IN ('edu', 'system')
+      LEFT JOIN program_levels lvl ON lvl.uuid = e.level_uuid AND lvl.source_site IN ('edu', 'system')
       WHERE e.deleted_at IS NULL
         AND e.visible_on_homepage = 1
         AND e.exam_date >= datetime('now')
