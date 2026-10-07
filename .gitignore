@@ -121,3 +121,12 @@ frontend/screenshots/
 *cccd*.png
 # Added by code-review-graph
 .code-review-graph/
+
+# --- Added 2026-10-07: output của build/test lỡ bị track ---
+frontend/build-out.txt
+frontend/test-baseline.txt
+frontend/test-results.json
+frontend/tmp-*.mjs
+nul_
+test-results/
+playwright-report/

@@ -375,11 +375,9 @@ Wave 2: 3 parallel agents fix toàn bộ TypeScript errors trong production code
 2026-05-06
 
 ## Recently Changed Files
-_Auto-updated at 2026-10-07 12:03 (3 files)_
+_Auto-updated at 2026-10-07 12:30 (1 files)_
 
-- CLAUDE.md
-- backend/src/index.ts
-- backend/src/routes/export.ts
+- .gitignore
 
 ## 2026-06-06 16:47:32 +07:00 - Register view split
 - Tách rontend/src/pages/public/StudentRegistration.tsx thành container logic và StudentRegistrationView.tsx cho phần render UI.
