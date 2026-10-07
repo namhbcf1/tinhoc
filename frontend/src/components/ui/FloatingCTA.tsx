@@ -38,20 +38,20 @@ export default function FloatingCTA({ showAfter = 500 }) {
                             href="https://zalo.me/0339244566"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="bg-white text-blue-700 px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all font-bold text-sm flex items-center gap-2 whitespace-nowrap"
+                            className="bg-[var(--color-paper-raised)] text-[var(--color-navy)] border border-[var(--color-rule)] px-4 py-3 rounded-md transition-colors font-semibold text-sm flex items-center gap-2 whitespace-nowrap hover:border-[var(--color-navy)]"
                         >
                             <MessageCircle size={16} />
                             Tư vấn Zalo
                         </a>
                         <Link
                             to="/register"
-                            className="bg-white text-green-700 px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all font-bold text-sm flex items-center gap-2 whitespace-nowrap"
+                            className="bg-[var(--color-paper-raised)] text-[var(--color-navy)] border border-[var(--color-rule)] px-4 py-3 rounded-md transition-colors font-semibold text-sm flex items-center gap-2 whitespace-nowrap hover:border-[var(--color-navy)]"
                         >
                             📝 Đăng ký học viên
                         </Link>
                         <a
                             href="tel:0962449563"
-                            className="bg-white text-emerald-700 px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all font-bold text-sm flex items-center gap-2 whitespace-nowrap"
+                            className="bg-[var(--color-paper-raised)] text-[var(--color-navy)] border border-[var(--color-rule)] px-4 py-3 rounded-md transition-colors font-semibold text-sm flex items-center gap-2 whitespace-nowrap hover:border-[var(--color-navy)]"
                         >
                             <Phone size={16} />
                             096 244 9563
@@ -62,7 +62,7 @@ export default function FloatingCTA({ showAfter = 500 }) {
                 {/* Toggle Button */}
                 <button
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="relative bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-4 rounded-full shadow-lg hover:shadow-xl transition-all font-bold flex items-center gap-2 group"
+                    className="relative bg-[var(--color-navy)] text-[var(--color-paper)] px-6 py-4 rounded-md transition-colors font-semibold flex items-center gap-2 group hover:bg-[var(--color-ink)]"
                     aria-label="Liên hệ tư vấn"
                     aria-expanded={isExpanded}
                 >
@@ -85,7 +85,7 @@ export default function FloatingCTA({ showAfter = 500 }) {
 
                     {/* Pulse Ring — hidden when user prefers reduced motion */}
                     {!isExpanded && !reduceMotion && (
-                        <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-30" aria-hidden="true" />
+                        <span className="absolute inset-0 rounded-md bg-[var(--color-gold)] animate-ping opacity-25" aria-hidden="true" />
                     )}
                 </button>
             </div>

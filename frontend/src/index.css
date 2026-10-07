@@ -86,10 +86,13 @@
   --vt-champagne-deep: #9a7334;
   --vt-champagne-soft: rgba(212, 179, 111, 0.22);
   --vt-champagne-glow: rgba(212, 179, 111, 0.48);
-  --vt-emerald: #176f60;
-  --vt-emerald-deep: #0b493f;
-  --vt-emerald-soft: rgba(23, 111, 96, 0.12);
-  --vt-emerald-glow: rgba(23, 111, 96, 0.4);
+  /* Premium editorial (2026-10-07): token "emerald" cũ được GIỮ TÊN để không phải sửa 194 chỗ
+     dùng, nhưng đổi GIÁ TRỊ sang navy thương hiệu (tương phản mạnh, an toàn cho chữ nhỏ).
+     Gold vẫn là màu nhấn riêng (--color-gold). Xanh lá không còn dùng làm màu thương hiệu. */
+  --vt-emerald: #0b2e6b;
+  --vt-emerald-deep: #06183a;
+  --vt-emerald-soft: rgba(11, 46, 107, 0.10);
+  --vt-emerald-glow: rgba(11, 46, 107, 0.30);
   --vt-muted: #676159;
   --vt-muted-soft: #948b7f;
   --vt-line: rgba(19, 34, 56, 0.14);
@@ -340,7 +343,8 @@
     line-height: 1.04;
     font-kerning: normal;
     font-feature-settings: "kern" 1, "liga" 1;
-    color: var(--vt-ink);
+    /* KHÔNG hardcode mau: truoc day dat color = var(--vt-ink) nen de mat chu trang
+       (text-white) tren panel navy - CSS khong layer thang utility cua Tailwind v4. */
   }
 
   .vt-display-italic {
@@ -359,7 +363,7 @@
     line-height: 1.08;
     font-kerning: normal;
     font-feature-settings: "kern" 1, "liga" 1;
-    color: var(--vt-ink);
+    /* Không hardcode màu — để tiêu đề dùng được cả trên nền tối (xem ghi chú ở .vt-display). */
   }
 
   .vt-vietnamese-display {

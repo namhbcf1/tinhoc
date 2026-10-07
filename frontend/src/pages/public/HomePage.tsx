@@ -201,7 +201,8 @@ export default function HomePage() {
               {/* Trust quick-stats */}
               <div className="hero-meta mt-10 grid grid-cols-3 gap-2.5 sm:gap-4 max-w-xl">
                 {[
-                  { label: 'Kinh nghiệm', value: `${YEARS_EXPERIENCE}+` },
+                  // YEARS_EXPERIENCE đã là '10+' ⇒ trước đây cộng thêm '+' thành "10++"
+                  { label: 'Kinh nghiệm', value: YEARS_EXPERIENCE },
                   { label: 'Học viên', value: TOTAL_STUDENTS },
                   { label: 'Chương trình', value: TOTAL_COURSES },
                 ].map((item) => (
@@ -224,8 +225,8 @@ export default function HomePage() {
                   className="h-[300px] sm:h-[360px] w-full object-cover rounded-[1.45rem]"
                 />
                 <div className="absolute top-5 left-5 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-[var(--vt-line)]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--vt-emerald)] animate-pulse" />
-                  <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-[var(--vt-emerald-deep)]">Lớp đang học</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)] animate-pulse" />
+                  <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-[var(--color-navy)]">Lớp đang học</span>
                 </div>
               </div>
 
