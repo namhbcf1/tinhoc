@@ -623,3 +623,8 @@ Báo cáo đầy đủ: `AUDIT-2026-10-07-toan-du-an.md` (workspace root).
 - `wrangler.test.toml`: chú thích `[ai]` cũ đã sai (workerd mới hỗ trợ AI, thử thêm vẫn 197/197) nhưng có `[ai]` thì vitest in "prevents Vite server from exiting" ⇒ cố ý bỏ, đã ghi lý do.
 - **KẾT QUẢ: `npm test` 28/28 file · 197/197 test PASS (17s) · `tsc` 0 lỗi · `npm audit` 22 lỗ (4 critical) → 7 lỗ (0 critical).** ⇒ Các thay đổi bảo mật Đợt 2 nay đã được suite chạy qua.
 - Còn lại: `@cloudflare/vitest-pool-workers` + `wrangler` vẫn báo high (transitive/không có fix trong devDeps hiện tại); nâng `wrangler` 4.76 → 4.148 để dọn phần còn lại (nên làm thành đợt riêng vì là tool deploy).
+## 2026-10-07 — Nâng wrangler (edu) + dọn advisory
+- backend: `wrangler` 4.76.0 → **4.148.0**, kéo theo `@cloudflare/workers-types` 4.20260305 → **5.20261007** (peer của wrangler 4.148). `tsc` vẫn **0 lỗi** với types v5.
+- frontend: thêm `wrangler@^4.148.0` vào devDependencies (trước đây script deploy `npx wrangler` tải bản mới nhất mỗi lần ⇒ không tái lập được).
+- `npm audit` backend **22 lỗ (4 critical) → 6 lỗ (0 critical)**.
+- Verify: backend tsc 0 · `npm test` **28/28 file · 197/197** · `wrangler deploy --dry-run` PASS (config + bundle hợp lệ với wrangler 4) · frontend tsc 0 · build:prod PASS 7.31s · vitest 29/33 (4 fail có sẵn) · lint 0 error.
